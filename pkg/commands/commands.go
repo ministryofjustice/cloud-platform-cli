@@ -4,8 +4,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// AddCommands ... bla bla bla
+// AddCommands is a function to group all commands
 func AddCommands(topLevel *cobra.Command) {
-	addVersion(topLevel)
 	addTerraformCmd(topLevel)
 }
