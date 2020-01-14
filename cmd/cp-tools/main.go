@@ -1,68 +1,24 @@
 package main
 
 import (
-	"fmt"
-	"os"
+	"log"
 
-	actions "github.com/ministryofjustice/cloud-platform-tools/pkg/actions"
-	log "github.com/sirupsen/logrus"
-	cli "github.com/urfave/cli/v2"
+	"github.com/spf13/cobra"
+
+	commands "github.com/ministryofjustice/cloud-platform-tools/pkg/commands"
 )
 
 func main() {
-
-	log.SetOutput(os.Stdout)
-
-	app := &cli.App{
-		Commands: []*cli.Command{
-			{
-				Name:    "terraform",
-				Aliases: []string{"t"},
-				Usage:   "Terraform actions",
-				Subcommands: []*cli.Command{
-					{
-						Name:   "check-divergence",
-						Usage:  "Check if there are divergences in terraform",
-						Action: actions.TerraformCheckDivergence,
-						Flags: []cli.Flag{
-							&cli.StringFlag{Name: "workspace", Value: "default"},
-							&cli.StringFlag{Name: "var-file"},
-						},
-					},
-					{
-						Name:  "apply",
-						Usage: "Execute terraform apply",
-						Action: func(c *cli.Context) error {
-							fmt.Println("This is going to execute terraform apply - This feature is coming soon...", c.Args().First())
-							return nil
-						},
-					},
-				},
-			},
-		},
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:        "aws-access-key-id",
-				EnvVars:     []string{"AWS_ACCESS_KEY_ID"},
-				Usage:       "Access key required to execute terraform against AWS",
-				Required:    true,
-				DefaultText: "NO_DEFAULT",
-			},
-			&cli.StringFlag{
-				Name:        "aws-secret-access-key",
-				EnvVars:     []string{"AWS_SECRET_ACCESS_KEY"},
-				Usage:       "Access key required to execute terraform against AWS",
-				Required:    true,
-				DefaultText: "NO_DEFAULT",
-			},
-		},
-		Action: func(c *cli.Context) error {
-			return nil
+	cmds := &cobra.Command{
+		Use:   "cp-tools",
+		Short: "Internal multi-purpose CLI for the Cloud Platform team",
+		Run: func(cmd *cobra.Command, args []string) {
+			cmd.Help()
 		},
 	}
+	commands.AddCommands(cmds)
 
-	err := app.Run(os.Args)
-	if err != nil {
-		log.Fatal(err)
+	if err := cmds.Execute(); err != nil {
+		log.Fatalf("error during command execution: %v", err)
 	}
 }

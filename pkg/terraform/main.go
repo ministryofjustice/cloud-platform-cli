@@ -27,24 +27,26 @@ func (s *Commander) Terraform(args ...string) (*CmdOutput, error) {
 	var stdoutBuf bytes.Buffer
 	var stderrBuf bytes.Buffer
 	var exitCode int
+	var err error
+
+	contextLogger := log.WithFields(log.Fields{
+		"err":    err,
+		"stdout": stdoutBuf.String(),
+		"stderr": stderrBuf.String(),
+	})
 
 	cmd := exec.Command("terraform", args...)
 
 	cmd.Stdout = &stdoutBuf
 	cmd.Stderr = &stderrBuf
 
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
 		if exitError, ok := err.(*exec.ExitError); ok {
 			ws := exitError.Sys().(syscall.WaitStatus)
 			exitCode = ws.ExitStatus()
 		}
-
-		log.WithFields(log.Fields{
-			"err":    err,
-			"stdout": stdoutBuf.String(),
-			"stderr": stderrBuf.String(),
-		}).Error("cmd.Run() failed")
+		contextLogger.Error("cmd.Run() failed")
 	} else {
 		ws := cmd.ProcessState.Sys().(syscall.WaitStatus)
 		exitCode = ws.ExitStatus()
