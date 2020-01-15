@@ -58,9 +58,9 @@ func terraformCheckDivergence(o *terraformOptions) error {
 	contextLogger.Info("Executing terraform plan, if there is a drift this program execution will fail")
 
 	err := terraform.CheckDivergence(o.workspace, TfVarFile...)
+
 	if err != nil {
-		contextLogger.Error("Error executing plan, either an error or a divergence")
-		return err
+		contextLogger.Fatal("Error executing plan, either an error or a divergence")
 	}
 
 	return nil
