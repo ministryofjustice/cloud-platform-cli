@@ -7,4 +7,5 @@ import (
 // AddCommands is a function to group all commands
 func AddCommands(topLevel *cobra.Command) {
 	addTerraformCmd(topLevel)
+	addVersion(topLevel)
 }
