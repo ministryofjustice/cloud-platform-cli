@@ -10,8 +10,9 @@ import (
 
 // Commander empty struct which methods to execute terraform
 type Commander struct {
-	action string
-	cmd    []string
+	action        string
+	DisplayOutput bool
+	cmd           []string
 }
 
 // CmdOutput has the Stout and Stderr
@@ -114,8 +115,11 @@ func (s *Commander) CheckDivergence(ws string, cmd ...string) error {
 	)
 
 	output, err := s.Terraform(arg...)
-	log.Info(output.Stdout)
 
+	if s.DisplayOutput {
+		log.Info(output.Stdout)
+	}
+	
 	if output.ExitCode == 0 {
 		return nil
 	}

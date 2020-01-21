@@ -16,6 +16,7 @@ type terraformOptions struct {
 	secretAccessKey string
 	workspace       string
 	varFile         string
+	displayTfOutput bool
 }
 
 func addTerraformCmd(topLevel *cobra.Command) {
@@ -48,6 +49,11 @@ func terraformCheckDivergence(o *terraformOptions) error {
 	contextLogger := log.WithFields(log.Fields{"subcommand": "check-divergence"})
 
 	terraform := terraform.Commander{}
+
+	if o.displayTfOutput {
+		terraform.DisplayOutput = true
+	}
+
 	var TfVarFile []string
 
 	// Check if user provided a terraform var-file
@@ -73,6 +79,7 @@ func addCommonFlags(cmd *cobra.Command, o *terraformOptions) {
 	cmd.PersistentFlags().StringVarP(&o.accessKeyID, "aws-access-key-id", "", "", "Access key id of service account to be used by terraform")
 	cmd.PersistentFlags().StringVarP(&o.secretAccessKey, "aws-secret-access-key", "", "", "Secret access key of service account to be used by terraform")
 	cmd.PersistentFlags().StringVarP(&o.workspace, "workspace", "w", "default", "Default workspace where terraform is going to be executed")
+	cmd.PersistentFlags().BoolVarP(&o.displayTfOutput, "display-tf-output", "d", true, "Display or not terraform plan output")
 	cmd.PersistentFlags().StringVarP(&o.varFile, "var-file", "v", "", "tfvar to be used by terraform")
 
 	cmd.MarkPersistentFlagRequired("aws-access-key-id")

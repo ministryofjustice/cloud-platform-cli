@@ -1,12 +1,19 @@
 # Build Cloud Platform tools (CLI)
-FROM golang:1.12.2-alpine3.9 as cp_tools_builder
-RUN apk add git make
-RUN \
-    git clone https://github.com/ministryofjustice/cloud-platform-tools.git && \
-    cd cloud-platform-tools/cmd/cp-tools && \
-    CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o cp-tools .
+FROM golang:1.13.0-stretch AS cp_tools_builder
 
-FROM alpine:3
+ENV GO111MODULE=on \
+    CGO_ENABLED=0 \
+    GOOS=linux
+
+WORKDIR /build
+COPY go.mod .
+COPY go.sum .
+RUN go mod download
+COPY . .
+RUN go build -o cp-tools ./cmd/cp-tools/main.go 
+RUN pwd && ls
+
+FROM alpine:3.11.0
 
 ENV \
   TERRAFORM_VERSION=0.12.17 \
@@ -34,13 +41,14 @@ RUN \
     jq \
     openssl \
     openssl-dev \
-    python3 \
-  \
-  && pip3 install --upgrade pip \
-  && pip3 install pygithub boto3 \
-  && pip3 install awscli
+    python3
 
-COPY --from=cp_tools_builder /go/cloud-platform-tools/cmd/cp-tools/cp-tools /usr/local/bin/cp-tools
+RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
+    python3 get-pip.py && \
+    pip3 install pygithub boto3 && \
+    pip3 install awscli
+
+COPY --from=cp_tools_builder /build/cp-tools /usr/local/bin/cp-tools
 
 # Install git-crypt
 RUN git clone https://github.com/AGWA/git-crypt.git \
