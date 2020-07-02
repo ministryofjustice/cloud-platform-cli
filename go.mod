@@ -11,4 +11,5 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.6.1
 	github.com/urfave/cli/v2 v2.1.1
+	gopkg.in/yaml.v2 v2.2.4
 )

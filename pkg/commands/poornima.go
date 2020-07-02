@@ -1,14 +1,13 @@
 package commands
 
-import(
+import (
+	"strings"
+
+	enviroment "github.com/ministryofjustice/cloud-platform-tools/pkg/enviroment"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"strings"
-	envs "github.com/ministryofjustice/cloud-platform-tools/pkg/envs"
-
 )
-
 
 type PoornimaOptions struct {
 	message string
@@ -23,7 +22,7 @@ func addPoornima(topLevel *cobra.Command) {
 		Short: `This is a test for poornima.`,
 		Run: func(cmd *cobra.Command, args []string) {
 
-			envs.CreateTemplateRds()
+			enviroment.CreateTemplateRds()
 		},
 	}
 
