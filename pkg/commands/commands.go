@@ -8,4 +8,5 @@ import (
 func AddCommands(topLevel *cobra.Command) {
 	addTerraformCmd(topLevel)
 	addVersion(topLevel)
+	addEnvironmentCmd(topLevel)
 }
