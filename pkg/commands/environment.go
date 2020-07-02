@@ -2,6 +2,8 @@ package commands
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -52,6 +54,28 @@ func addEnvironmentRDSCmd() *cobra.Command {
 }
 func environmentRDSCreate(options *rdsCreateOptions) {
 	fmt.Println(options.namespace)
+	getEnvironmentsFromGithub()
+}
+
+// GetEnvironmentsFromGithub returns the environments names from Cloud Platform Environments
+// repository (in Github)
+func getEnvironmentsFromGithub() {
+	response, err := http.Get("https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-rds-instance/main/example/rds.tf")
+	if err != nil {
+		fmt.Println(err)
+	}
+	body, _ := ioutil.ReadAll(response.Body)
+	text := string(body)
+	fmt.Println(text)
+
+	response, err := http.Get("https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-rds-instance/main/example/rds.tf")
+	if err != nil {
+		return nil, err
+	}
+	data, _ := ioutil.ReadAll(response.Body)
+	content := string(data)
+	fmt.Println(content)
+
 }
 
 func addRDSCreateCommonFlags(cmd *cobra.Command, o *rdsCreateOptions) {
