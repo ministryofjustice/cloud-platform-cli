@@ -15,8 +15,6 @@ type rdsCreateOptions struct {
 
 func addEnvironmentCmd(topLevel *cobra.Command) {
 
-	var options rdsCreateOptions
-
 	rootCmd := &cobra.Command{
 		Use:   "environment",
 		Short: `Cloud Platform Environment actions.`,
@@ -26,6 +24,18 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 		Use:   "rds",
 		Short: `RDS instance operations, create, list, remove`,
 	}
+
+	environmentRDSCmd := addEnvironmentRDSCmd()
+
+	resourceRDSCmd.AddCommand(environmentRDSCmd)
+	rootCmd.AddCommand(resourceRDSCmd)
+	topLevel.AddCommand(rootCmd)
+
+}
+
+func addEnvironmentRDSCmd() *cobra.Command {
+
+	var options rdsCreateOptions
 
 	rdsCreateCmd := &cobra.Command{
 		Use:   "create",
@@ -37,12 +47,9 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 
 	addRDSCreateCommonFlags(rdsCreateCmd, &options)
 
-	resourceRDSCmd.AddCommand(rdsCreateCmd)
-	rootCmd.AddCommand(resourceRDSCmd)
-	topLevel.AddCommand(rootCmd)
+	return rdsCreateCmd
 
 }
-
 func environmentRDSCreate(options *rdsCreateOptions) {
 	fmt.Println(options.namespace)
 }
