@@ -2,10 +2,14 @@ package enviroment
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os/exec"
+	"path/filepath"
+	"strings"
 
 	b64 "encoding/base64"
 
@@ -29,6 +33,7 @@ type MetaDataFromGH struct {
 	application     string
 	owner           string
 	sourceCode      string
+	namespace       string
 }
 
 // GetEnvironmentsFromGH returns the environments names from Cloud Platform Environments
@@ -98,6 +103,36 @@ func (s *MetaDataFromGH) GetEnvironmentsMetadataFromGH() error {
 	s.owner = t.Metadata.Annotations.CloudPlatformJusticeGovUkOwner
 	s.application = t.Metadata.Annotations.CloudPlatformJusticeGovUkApplication
 	s.sourceCode = t.Metadata.Annotations.CloudPlatformJusticeGovUkSourceCode
+	s.namespace = t.Metadata.Name
+
+	return nil
+}
+
+// downloadTemplate returns a template file from an URL
+func downloadTemplate(url string) (string, error) {
+
+	response, err := http.Get("https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-rds-instance/main/example/rds.tf")
+	if err != nil {
+		return "", err
+	}
+	data, _ := ioutil.ReadAll(response.Body)
+	content := string(data)
+
+	return content, nil
+}
+
+func validatePath() error {
+	path, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
+	if err != nil {
+		return err
+	}
+
+	FullPath := strings.TrimSpace(string(path))
+	repoName := filepath.Base(FullPath)
+
+	if repoName != "cloud-platform-environments" {
+		return errors.New("cloud-platform-environments directory not found")
+	}
 
 	return nil
 }

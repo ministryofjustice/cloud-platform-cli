@@ -3,8 +3,6 @@ package enviroment
 import (
 	"os"
 	"text/template"
-
-	"github.com/davecgh/go-spew/spew"
 )
 
 type templateRds struct {
@@ -15,11 +13,6 @@ type templateRds struct {
 	Namespace    string
 	TeamName     string
 }
-
-// func pullTheFileFromTheFollowingURL() {
-// URL:
-// 	github / blawldsfasdfasf / asdfasfda
-// }
 
 // CreateTemplateRds creates the terraform files from environment's template folder
 func CreateTemplateRds() error {
@@ -40,6 +33,15 @@ func CreateTemplateRds() error {
 
 func templateRdsSetValues() (*templateRds, error) {
 	values := templateRds{}
+
+	err := validatePath()
+	if err != nil {
+		outsidePath := promptYesNo{label: "WARNING: You are outside the cloud-platform environment. Do you want to continue and render templates on the screen?", defaultValue: 0}
+		err = outsidePath.promptyesNo()
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	environments, err := GetEnvironmentsFromGH()
 	if err != nil {
@@ -75,26 +77,11 @@ func templateRdsSetValues() (*templateRds, error) {
 		return nil, err
 	}
 
-	spew.Dump(application)
-
-	// businessUnit, err := promptString("Business Unit?")
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// values.BusinessUnit = businessUnit
-
-	// teamName, err := promptString("Application name?")
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// values.TeamName = teamName
-
-	// namespace, err := promptString("Namespace where your RDS is going to be accessed from?")
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// values.Namespace = namespace
+	businessUnit := promptString{label: "Business Unit?", defaultValue: metadata.businessUnit}
+	businessUnit.promptString()
+	if err != nil {
+		return nil, err
+	}
 
 	return &values, nil
-
 }
