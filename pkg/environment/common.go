@@ -16,14 +16,14 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// EnvironmentsFromGH holds folder names (environments names) from cloud-platform-environments
-// repository
-type EnvironmentsFromGH struct {
+// NamespacesFromGH holds namespaces names (folders) from
+// cloud-platform-environments repository
+type NamespacesFromGH struct {
 	Name string `json:"name"`
 }
 
-// MetaDataFromGH holds folder names (environments names) from cloud-platform-environments
-// repository
+// MetaDataFromGH holds folder names (environments names) from
+// cloud-platform-environments repository
 type MetaDataFromGH struct {
 	FileName        string `json:"name"`
 	Content         string `json:"content"`
@@ -32,14 +32,15 @@ type MetaDataFromGH struct {
 	businessUnit    string
 	application     string
 	owner           string
+	ownerEmail      string
 	sourceCode      string
 	namespace       string
 }
 
-// GetEnvironmentsFromGH returns the environments names from Cloud Platform Environments
+// GetNamespacesFromGH returns the environments names from Cloud Platform Environments
 // repository (in Github)
-func GetEnvironmentsFromGH() (*[]EnvironmentsFromGH, error) {
-	var e []EnvironmentsFromGH
+func GetNamespacesFromGH() (*[]NamespacesFromGH, error) {
+	var n []NamespacesFromGH
 
 	response, err := http.Get("https://api.github.com/repos/ministryofjustice/cloud-platform-environments/contents/namespaces/live-1.cloud-platform.service.justice.gov.uk")
 	if err != nil {
@@ -47,14 +48,14 @@ func GetEnvironmentsFromGH() (*[]EnvironmentsFromGH, error) {
 	}
 
 	data, _ := ioutil.ReadAll(response.Body)
-	err = json.Unmarshal(data, &e)
-	return &e, nil
+	err = json.Unmarshal(data, &n)
+	return &n, nil
 }
 
 // GetEnvironmentsMetadataFromGH returns the metadata about an environment from
 // Cloud Platform Environments repository (in Github)
 func (s *MetaDataFromGH) GetEnvironmentsMetadataFromGH() error {
-	url := fmt.Sprintf("https://api.github.com/repos/ministryofjustice/cloud-platform-environments/contents/namespaces/live-1.cloud-platform.service.justice.gov.uk/%s/00-namespace.yaml", s.environmentName)
+	url := fmt.Sprintf("https://api.github.com/repos/ministryofjustice/cloud-platform-environments/contents/namespaces/live-1.cloud-platform.service.justice.gov.uk/%s/00-namespace.yaml", s.namespace)
 
 	response, err := http.Get(url)
 	if err != nil {
@@ -101,6 +102,8 @@ func (s *MetaDataFromGH) GetEnvironmentsMetadataFromGH() error {
 	s.isProduction = t.Metadata.Labels.CloudPlatformJusticeGovUkIsProduction
 	s.businessUnit = t.Metadata.Annotations.CloudPlatformJusticeGovUkBusinessUnit
 	s.owner = t.Metadata.Annotations.CloudPlatformJusticeGovUkOwner
+	s.environmentName = t.Metadata.Labels.CloudPlatformJusticeGovUkEnvironmentName
+	s.ownerEmail = strings.Split(t.Metadata.Annotations.CloudPlatformJusticeGovUkOwner, ": ")[1]
 	s.application = t.Metadata.Annotations.CloudPlatformJusticeGovUkApplication
 	s.sourceCode = t.Metadata.Annotations.CloudPlatformJusticeGovUkSourceCode
 	s.namespace = t.Metadata.Name

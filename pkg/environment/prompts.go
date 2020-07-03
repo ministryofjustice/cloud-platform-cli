@@ -53,7 +53,7 @@ func (s *promptYesNo) promptyesNo() error {
 	return nil
 }
 
-func promptSelectEnvironments(e *[]EnvironmentsFromGH) (string, error) {
+func promptSelectNamespaces(e *[]NamespacesFromGH) (string, error) {
 
 	templates := &promptui.SelectTemplates{
 		Label:    "{{ . }}?",

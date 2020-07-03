@@ -2,18 +2,18 @@ package enviroment
 
 import (
 	"os"
-	"strings"
 	"text/template"
 )
 
 type templateRds struct {
-	IsProduction bool
-	Environment  string
-	BusinessUnit string
-	Application  string
-	Namespace    string
-	TeamName     string
-	ModuleName   string
+	IsProduction          bool
+	EnvironmentName       string
+	BusinessUnit          string
+	Application           string
+	Namespace             string
+	InfrastructureSupport string
+	RdsModuleName         string
+	TeamName              string
 }
 
 // CreateTemplateRds creates the terraform files from environment's template folder
@@ -51,20 +51,32 @@ func templateRdsSetValues() (*templateRds, error) {
 		}
 	}
 
-	environments, err := GetEnvironmentsFromGH()
+	namespaces, err := GetNamespacesFromGH()
 	if err != nil {
 		panic(err)
 	}
 
 	// spew.Dump(environments)
 
-	environmentName, err := promptSelectEnvironments(environments)
+	namespaceName, err := promptSelectNamespaces(namespaces)
 	if err != nil {
 		return nil, err
 	}
 
-	metadata := MetaDataFromGH{environmentName: environmentName}
+	metadata := MetaDataFromGH{namespace: namespaceName}
 	err = metadata.GetEnvironmentsMetadataFromGH()
+	if err != nil {
+		return nil, err
+	}
+
+	rdsModuleName := promptString{label: "Module name for RDS?", defaultValue: "rds"}
+	rdsModuleName.promptString()
+	if err != nil {
+		return nil, err
+	}
+
+	environmentName := promptString{label: "Environment?", defaultValue: metadata.environmentName}
+	environmentName.promptString()
 	if err != nil {
 		return nil, err
 	}
@@ -91,14 +103,25 @@ func templateRdsSetValues() (*templateRds, error) {
 		return nil, err
 	}
 
+	teamName := promptString{label: "Team's name", defaultValue: ""}
+	teamName.promptString()
+	if err != nil {
+		return nil, err
+	}
+
+	email := promptString{label: "Team's email", defaultValue: metadata.ownerEmail}
+	email.promptString()
+	if err != nil {
+		return nil, err
+	}
+
 	values.Application = application.value
 	values.BusinessUnit = businessUnit.value
-	values.Environment = environmentName
+	values.EnvironmentName = environmentName.value
 	values.IsProduction = isProduction.value
-
-	// We use replacer to be consistent with terraform modules (not dashes, only underscores)
-	r := strings.NewReplacer("-", "_")
-	values.TeamName = r.Replace(application.value)
+	values.RdsModuleName = rdsModuleName.value
+	values.InfrastructureSupport = email.value
+	values.TeamName = teamName.value
 
 	return &values, nil
 }
