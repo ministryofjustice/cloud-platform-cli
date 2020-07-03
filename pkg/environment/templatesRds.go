@@ -2,6 +2,7 @@ package enviroment
 
 import (
 	"os"
+	"strings"
 	"text/template"
 )
 
@@ -12,11 +13,18 @@ type templateRds struct {
 	Application  string
 	Namespace    string
 	TeamName     string
+	ModuleName   string
 }
 
 // CreateTemplateRds creates the terraform files from environment's template folder
 func CreateTemplateRds() error {
-	tpl, err := template.ParseGlob("templates/terraform/rds/*")
+
+	RdsTemplate, err := downloadTemplate("https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-rds-instance/add-template/template/rds.tmpl")
+	if err != nil {
+		panic(err)
+	}
+
+	tpl := template.Must(template.New("rds").Parse(RdsTemplate))
 
 	rdsValues, err := templateRdsSetValues()
 	if err != nil {
@@ -82,6 +90,15 @@ func templateRdsSetValues() (*templateRds, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	values.Application = application.value
+	values.BusinessUnit = businessUnit.value
+	values.Environment = environmentName
+	values.IsProduction = isProduction.value
+
+	// We use replacer to be consistent with terraform modules (not dashes, only underscores)
+	r := strings.NewReplacer("-", "_")
+	values.TeamName = r.Replace(application.value)
 
 	return &values, nil
 }

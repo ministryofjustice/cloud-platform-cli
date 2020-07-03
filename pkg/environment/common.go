@@ -111,7 +111,7 @@ func (s *MetaDataFromGH) GetEnvironmentsMetadataFromGH() error {
 // downloadTemplate returns a template file from an URL
 func downloadTemplate(url string) (string, error) {
 
-	response, err := http.Get("https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-rds-instance/main/example/rds.tf")
+	response, err := http.Get(url)
 	if err != nil {
 		return "", err
 	}

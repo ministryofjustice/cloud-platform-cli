@@ -3,7 +3,7 @@ package commands
 import (
 	"strings"
 
-	enviroment "github.com/ministryofjustice/cloud-platform-tools/pkg/enviroment"
+	environment "github.com/ministryofjustice/cloud-platform-tools/pkg/environment"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -22,7 +22,7 @@ func addPoornima(topLevel *cobra.Command) {
 		Short: `This is a test for poornima.`,
 		Run: func(cmd *cobra.Command, args []string) {
 
-			enviroment.CreateTemplateRds()
+			environment.CreateTemplateRds()
 		},
 	}
 
