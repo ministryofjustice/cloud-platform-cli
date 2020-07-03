@@ -1,9 +1,9 @@
 package commands
 
 import (
-	"fmt"
 	"strings"
 
+	environment "github.com/ministryofjustice/cloud-platform-tools/pkg/environment"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -51,14 +51,14 @@ func addEnvironmentRDSCmd() *cobra.Command {
 
 }
 func environmentRDSCreate(options *rdsCreateOptions) {
-	fmt.Println(options.namespace)
+	// fmt.Println(options.namespace)
+	environment.CreateTemplateRds()
 }
 
 func addRDSCreateCommonFlags(cmd *cobra.Command, o *rdsCreateOptions) {
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 	cmd.PersistentFlags().StringVarP(&o.namespace, "namespace", "", "", "Namespace for which RDS has to be created")
-	cmd.MarkPersistentFlagRequired("namespace")
 
 	cmd.PersistentFlags().VisitAll(func(f *pflag.Flag) {
 		if viper.IsSet(f.Name) && viper.GetString(f.Name) != "" {
