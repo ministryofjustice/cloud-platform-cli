@@ -9,4 +9,5 @@ func AddCommands(topLevel *cobra.Command) {
 	addTerraformCmd(topLevel)
 	addPoornima(topLevel)
 	addVersion(topLevel)
+	addEnvironmentCmd(topLevel)
 }
