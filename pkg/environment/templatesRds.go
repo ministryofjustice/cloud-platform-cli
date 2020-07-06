@@ -1,6 +1,7 @@
 package enviroment
 
 import (
+	"fmt"
 	"os"
 	"text/template"
 
@@ -16,7 +17,7 @@ type templateRds struct {
 	InfrastructureSupport string
 	RdsModuleName         string
 	TeamName              string
-	outputFile            bool
+	validPath             bool
 }
 
 // CreateTemplateRds creates the terraform files from environment's template folder
@@ -33,9 +34,19 @@ func CreateTemplateRds(cmd *cobra.Command, args []string) error {
 	}
 
 	tpl := template.Must(template.New("rds").Parse(RdsTemplate))
-	err = tpl.Execute(os.Stdout, rdsValues)
-	if err != nil {
-		return (err)
+
+	if rdsValues.validPath == true {
+		outputPath := fmt.Sprintf("namespaces/live-1.cloud-platform.service.justice.gov.uk/%s/resources/rds.tf", rdsValues.Namespace)
+		f, _ := outputFileWriter(outputPath)
+		err = tpl.Execute(f, rdsValues)
+		if err != nil {
+			return (err)
+		}
+	} else {
+		err = tpl.Execute(os.Stdout, rdsValues)
+		if err != nil {
+			return (err)
+		}
 	}
 
 	return nil
@@ -44,12 +55,11 @@ func CreateTemplateRds(cmd *cobra.Command, args []string) error {
 func templateRdsSetValues() (*templateRds, error) {
 	values := templateRds{}
 
-	outputFile, err := validPath()
+	validPath, err := validPath()
 	if err != nil {
 		return nil, err
 	}
-
-	values.outputFile = outputFile
+	values.validPath = validPath
 
 	namespaces, err := GetNamespacesFromGH()
 	if err != nil {
@@ -62,6 +72,7 @@ func templateRdsSetValues() (*templateRds, error) {
 	if err != nil {
 		return nil, err
 	}
+	values.Namespace = namespaceName
 
 	metadata := MetaDataFromGH{namespace: namespaceName}
 	err = metadata.GetEnvironmentsMetadataFromGH()
