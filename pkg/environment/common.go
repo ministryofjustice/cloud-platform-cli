@@ -127,26 +127,59 @@ func downloadTemplate(url string) (string, error) {
 func validPath() (bool, error) {
 	path, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
 	if err != nil {
-		return false, err
+		// If we land here it means we aren't even inside a Git repository, should we continue
+		// and print in the STOUT?
+		err := continueIfPathNotValid()
+		if err != nil {
+			return false, err
+		}
+		return false, nil
 	}
 
 	FullPath := strings.TrimSpace(string(path))
 	repoName := filepath.Base(FullPath)
 
 	if repoName != "cloud-platform-environments" {
-		outsidePath := promptYesNo{
-			label:        "WARNING: You are outside cloud-platform-environment repo. If you decide to continue the template is going to be rendered on screen?",
-			defaultValue: 0,
-		}
-		err = outsidePath.promptyesNo()
+		err := continueIfPathNotValid()
 		if err != nil {
 			return false, err
 		}
 
-		if outsidePath.value == false {
-			os.Exit(0)
-		}
+		return false, nil
 	}
 
-	return false, nil
+	return true, nil
+}
+
+func continueIfPathNotValid() error {
+	outsidePath := promptYesNo{
+		label:        "WARNING: You are outside cloud-platform-environment repo. If you decide to continue the template is going to be rendered on screen?",
+		defaultValue: 0,
+	}
+	err := outsidePath.promptyesNo()
+	if err != nil {
+		return err
+	}
+
+	if outsidePath.value == false {
+		os.Exit(0)
+	}
+
+	return nil
+}
+
+func outputFileWriter(fileName string) (*os.File, error) {
+	EnvRepoPath, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
+	if err != nil {
+		return nil, err
+	}
+
+	fullPath := fmt.Sprintf("%s/%s", strings.TrimSpace(string(EnvRepoPath)), fileName)
+
+	f, err := os.Create(fullPath)
+	if err != nil {
+		return nil, err
+	}
+
+	return f, nil
 }
