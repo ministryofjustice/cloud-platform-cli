@@ -22,9 +22,9 @@ type NamespacesFromGH struct {
 	Name string `json:"name"`
 }
 
-// MetaDataFromGH holds folder names (environments names) from
+// MetaDataFromNamespaceGH holds folder names (environments names) from
 // cloud-platform-environments repository
-type MetaDataFromGH struct {
+type MetaDataFromNamespaceGH struct {
 	FileName        string `json:"name"`
 	Content         string `json:"content"`
 	isProduction    string
@@ -52,9 +52,9 @@ func GetNamespacesFromGH() (*[]NamespacesFromGH, error) {
 	return &n, nil
 }
 
-// GetEnvironmentsMetadataFromGH returns the metadata about an environment from
-// Cloud Platform Environments repository (in Github)
-func (s *MetaDataFromGH) GetEnvironmentsMetadataFromGH() error {
+// GetEnvironmentsMetadataFromNamespaceGH returns the metadata about an environment from
+// Cloud Platform Environments repository - 00-namespace.yaml (in Github)
+func (s *MetaDataFromNamespaceGH) GetEnvironmentsMetadataFromNamespaceGH() error {
 	url := fmt.Sprintf("https://api.github.com/repos/ministryofjustice/cloud-platform-environments/contents/namespaces/live-1.cloud-platform.service.justice.gov.uk/%s/00-namespace.yaml", s.namespace)
 
 	response, err := http.Get(url)

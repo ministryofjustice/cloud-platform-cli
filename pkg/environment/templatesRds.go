@@ -76,8 +76,8 @@ func templateRdsSetValues() (*templateRds, error) {
 	}
 	values.Namespace = namespaceName
 
-	metadata := MetaDataFromGH{namespace: namespaceName}
-	err = metadata.GetEnvironmentsMetadataFromGH()
+	metadata := MetaDataFromNamespaceGH{namespace: namespaceName}
+	err = metadata.GetEnvironmentsMetadataFromNamespaceGH()
 	if err != nil {
 		return nil, err
 	}
