@@ -3,6 +3,7 @@ module github.com/ministryofjustice/cloud-platform-tools
 go 1.13
 
 require (
+	github.com/MakeNowJust/heredoc v1.0.0
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/davecgh/go-spew v1.1.1
 	github.com/gookit/color v1.2.5

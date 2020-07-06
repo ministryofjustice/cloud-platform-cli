@@ -3,6 +3,7 @@ package commands
 import (
 	environment "github.com/ministryofjustice/cloud-platform-tools/pkg/environment"
 
+	"github.com/MakeNowJust/heredoc"
 	"github.com/spf13/cobra"
 )
 
@@ -20,6 +21,9 @@ var environmentCmd = &cobra.Command{
 var environmentRdsCmd = &cobra.Command{
 	Use:   "rds",
 	Short: `RDS instances operations, create, list, remove`,
+	Example: heredoc.Doc(`
+	$ moj-cp environment rds create
+	`),
 }
 
 var environmentRdsCreateCmd = &cobra.Command{
