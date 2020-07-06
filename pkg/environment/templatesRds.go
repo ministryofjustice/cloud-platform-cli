@@ -42,6 +42,8 @@ func CreateTemplateRds(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return (err)
 		}
+		fmt.Printf("RDS instance created in the file namespaces/live-1.cloud-platform.service.justice.gov.uk/%s/resources/rds.tf\n", rdsValues.Namespace)
+		fmt.Printf("Please review the file before raising PR\n")
 	} else {
 		err = tpl.Execute(os.Stdout, rdsValues)
 		if err != nil {
