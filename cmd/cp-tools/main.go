@@ -1,7 +1,8 @@
 package main
 
 import (
-	"log"
+	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 
@@ -19,6 +20,7 @@ func main() {
 	commands.AddCommands(cmds)
 
 	if err := cmds.Execute(); err != nil {
-		log.Fatalf("error during command execution: %v", err)
+		fmt.Printf("Error during command execution: %v", err)
+		os.Exit(0)
 	}
 }

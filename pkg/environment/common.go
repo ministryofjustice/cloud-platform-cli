@@ -2,11 +2,11 @@ package enviroment
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -124,18 +124,29 @@ func downloadTemplate(url string) (string, error) {
 	return content, nil
 }
 
-func validatePath() error {
+func validPath() (bool, error) {
 	path, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	FullPath := strings.TrimSpace(string(path))
 	repoName := filepath.Base(FullPath)
 
 	if repoName != "cloud-platform-environments" {
-		return errors.New("cloud-platform-environments directory not found")
+		outsidePath := promptYesNo{
+			label:        "WARNING: You are outside cloud-platform-environment repo. If you decide to continue the template is going to be rendered on screen?",
+			defaultValue: 0,
+		}
+		err = outsidePath.promptyesNo()
+		if err != nil {
+			return false, err
+		}
+
+		if outsidePath.value == false {
+			os.Exit(0)
+		}
 	}
 
-	return nil
+	return false, nil
 }

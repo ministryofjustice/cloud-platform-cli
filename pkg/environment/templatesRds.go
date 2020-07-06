@@ -3,6 +3,8 @@ package enviroment
 import (
 	"os"
 	"text/template"
+
+	"github.com/spf13/cobra"
 )
 
 type templateRds struct {
@@ -14,26 +16,26 @@ type templateRds struct {
 	InfrastructureSupport string
 	RdsModuleName         string
 	TeamName              string
+	outputFile            bool
 }
 
 // CreateTemplateRds creates the terraform files from environment's template folder
-func CreateTemplateRds() error {
+func CreateTemplateRds(cmd *cobra.Command, args []string) error {
 
 	RdsTemplate, err := downloadTemplate("https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-rds-instance/add-template/template/rds.tmpl")
 	if err != nil {
-		panic(err)
+		return (err)
 	}
-
-	tpl := template.Must(template.New("rds").Parse(RdsTemplate))
 
 	rdsValues, err := templateRdsSetValues()
 	if err != nil {
-		panic(err)
+		return (err)
 	}
 
+	tpl := template.Must(template.New("rds").Parse(RdsTemplate))
 	err = tpl.Execute(os.Stdout, rdsValues)
 	if err != nil {
-		panic(err)
+		return (err)
 	}
 
 	return nil
@@ -42,18 +44,16 @@ func CreateTemplateRds() error {
 func templateRdsSetValues() (*templateRds, error) {
 	values := templateRds{}
 
-	err := validatePath()
+	outputFile, err := validPath()
 	if err != nil {
-		outsidePath := promptYesNo{label: "WARNING: You are outside the cloud-platform environment. Do you want to continue and render templates on the screen?", defaultValue: 0}
-		err = outsidePath.promptyesNo()
-		if err != nil {
-			return nil, err
-		}
+		return nil, err
 	}
+
+	values.outputFile = outputFile
 
 	namespaces, err := GetNamespacesFromGH()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	// spew.Dump(environments)
