@@ -6,13 +6,13 @@ import (
 
 	"github.com/spf13/cobra"
 
-	commands "github.com/ministryofjustice/cloud-platform-tools/pkg/commands"
+	commands "github.com/ministryofjustice/cloud-platform-moj-cp/pkg/commands"
 )
 
 func main() {
 	cmds := &cobra.Command{
-		Use:   "cp-tools",
-		Short: "Internal multi-purpose CLI for the Cloud Platform team",
+		Use:   "moj-cp",
+		Short: "Multi-purpose CLI from the Cloud Platform team",
 		Run: func(cmd *cobra.Command, args []string) {
 			cmd.Help()
 		},

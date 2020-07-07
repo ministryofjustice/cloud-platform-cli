@@ -1,7 +1,7 @@
 package commands
 
 import (
-	environment "github.com/ministryofjustice/cloud-platform-tools/pkg/environment"
+	environment "github.com/ministryofjustice/cloud-platform-moj-cp/pkg/environment"
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/spf13/cobra"
