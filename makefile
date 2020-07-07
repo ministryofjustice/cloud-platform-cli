@@ -1,5 +1,5 @@
-IMAGE := ministryofjustice/cloud-platform-tools-terraform
-TAG := 0.3
+IMAGE := ministryofjustice/cloud-platform-moj-cp
+TAG := 0.1
 
 build: .built-docker-image
 
