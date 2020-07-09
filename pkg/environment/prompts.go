@@ -1,4 +1,4 @@
-package enviroment
+package environment
 
 import (
 	"errors"
@@ -53,26 +53,26 @@ func (s *promptYesNo) promptyesNo() error {
 	return nil
 }
 
-func promptSelectNamespaces(e *[]NamespacesFromGH) (string, error) {
+func promptSelectGithubTeam(t []string) (string, error) {
 
 	templates := &promptui.SelectTemplates{
 		Label:    "{{ . }}?",
-		Active:   "\U0001F336 {{ .Name | cyan }}",
-		Inactive: "  {{ .Name | cyan }}",
-		Selected: "\U0001F336 {{ .Name | red | cyan }}",
+		Active:   "\U0001F336 {{ . | cyan }}",
+		Inactive: "  {{ . | cyan }}",
+		Selected: "\U0001F336 {{ . | red | cyan }}",
 	}
 
 	searcher := func(input string, index int) bool {
-		environment := (*e)[index]
-		name := strings.Replace(strings.ToLower(environment.Name), " ", "", -1)
+		team := t[index]
+		name := strings.Replace(strings.ToLower(team), " ", "", -1)
 		input = strings.Replace(strings.ToLower(input), " ", "", -1)
 
 		return strings.Contains(name, input)
 	}
 
 	prompt := promptui.Select{
-		Label:     "Live Environments",
-		Items:     *e,
+		Label:     "Github Team",
+		Items:     t,
 		Templates: templates,
 		Size:      8,
 		Searcher:  searcher,
@@ -83,7 +83,7 @@ func promptSelectNamespaces(e *[]NamespacesFromGH) (string, error) {
 		return "", err
 	}
 
-	return (*e)[i].Name, nil
+	return t[i], nil
 }
 
 /////////////////
