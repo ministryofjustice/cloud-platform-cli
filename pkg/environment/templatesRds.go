@@ -43,7 +43,7 @@ func CreateTemplateRds(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Printf("RDS File generated in namespaces/live-1.cloud-platform.service.justice.gov.uk/%s/resources/rds.tf\n", rdsValues.Namespace)
-	color.Error.Println("This template is using default values provided by your namespace information. Please review before raising PR")
+	color.Info.Tips("This template is using default values provided by your namespace information. Please review before raising PR")
 
 	return nil
 }

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 )
 
@@ -98,6 +99,9 @@ func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	}
+
+	fmt.Printf("Namespace files generated under namespaces/live-1.cloud-platform.service.justice.gov.uk/%s\n", namespaceValues.Namespace)
+	color.Info.Tips("Please review before raising PR")
 
 	return nil
 }
