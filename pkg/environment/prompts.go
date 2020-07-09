@@ -2,6 +2,7 @@ package environment
 
 import (
 	"errors"
+	"regexp"
 	"strings"
 
 	"github.com/manifoldco/promptui"
@@ -28,6 +29,22 @@ func (s *promptString) promptString() error {
 		Label:    s.label,
 		Default:  s.defaultValue,
 		Validate: validateEmptyInput,
+	}
+
+	result, err := prompt.Run()
+	if err != nil {
+		return err
+	}
+
+	s.value = result
+	return nil
+}
+
+func (s *promptString) promptEmail() error {
+	prompt := promptui.Prompt{
+		Label:    s.label,
+		Default:  s.defaultValue,
+		Validate: validateEmailInput,
 	}
 
 	result, err := prompt.Run()
@@ -93,6 +110,14 @@ func promptSelectGithubTeam(t []string) (string, error) {
 func validateEmptyInput(input string) error {
 	if len(strings.TrimSpace(input)) < 1 {
 		return errors.New("This input must not be empty")
+	}
+	return nil
+}
+
+func validateEmailInput(input string) error {
+	re := regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
+	if re.MatchString(input) == false {
+		return errors.New("Please introduce a valid email address")
 	}
 	return nil
 }

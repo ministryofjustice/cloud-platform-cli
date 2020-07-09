@@ -159,7 +159,7 @@ func templateNamespaceSetValues() (*templateEnvironment, error) {
 	}
 
 	InfrastructureSupport := promptString{label: "Team's email", defaultValue: ""}
-	err = InfrastructureSupport.promptString()
+	err = InfrastructureSupport.promptEmail()
 	if err != nil {
 		return nil, err
 	}
