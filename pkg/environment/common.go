@@ -147,9 +147,15 @@ func getGitHubTeams() ([]string, error) {
 
 	repo, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
 	if err != nil {
-		return nil, err
+		return nil, errors.New("You are outside cloud-platform-environment repo")
 	}
 	targetPath := strings.TrimSpace(string(repo)) + "/namespaces/live-1.cloud-platform.service.justice.gov.uk/"
+	FullPath := strings.TrimSpace(string(repo))
+	repoName := filepath.Base(FullPath)
+
+	if repoName != "cloud-platform-environments" {
+		return nil, errors.New("You are outside cloud-platform-environment repo")
+	}
 
 	re := regexp.MustCompile("github:(.*)\"")
 

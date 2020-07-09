@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"text/template"
 
+	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 )
 
@@ -41,8 +42,8 @@ func CreateTemplateRds(cmd *cobra.Command, args []string) error {
 		return (err)
 	}
 
-	fmt.Printf("Template generated in module in namespaces/live-1.cloud-platform.service.justice.gov.uk/%s/resources/rds.tf\n", rdsValues.Namespace)
-	fmt.Printf("This template is using default values provided by your namespace information. Please review before raising PR\n")
+	fmt.Printf("RDS File generated in namespaces/live-1.cloud-platform.service.justice.gov.uk/%s/resources/rds.tf\n", rdsValues.Namespace)
+	color.Error.Println("This template is using default values provided by your namespace information. Please review before raising PR")
 
 	return nil
 }
