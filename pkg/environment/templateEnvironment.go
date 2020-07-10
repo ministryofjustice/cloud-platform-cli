@@ -138,7 +138,7 @@ func templateNamespaceSetValues() (*templateEnvironment, error) {
 	}
 
 	IsProduction := promptYesNo{
-		label:        "Is this a production namespace? (please answer true or false)",
+		label:        "Is this a production namespace? (choose Yes or No)",
 		defaultValue: 0,
 	}
 	err = IsProduction.promptyesNo()
