@@ -21,7 +21,6 @@ type templateEnvironment struct {
 	BusinessUnit          string
 	Application           string
 	InfrastructureSupport string
-	TeamName              string
 	SourceCode            string
 	Owner                 string
 	validPath             bool
@@ -176,16 +175,6 @@ func templateNamespaceSetValues() (*templateEnvironment, error) {
 		return nil, err
 	}
 
-	teamName := promptString{
-		label:        "Team's name",
-		defaultValue: "",
-		validation:   "no-spaces-and-no-uppercase",
-	}
-	err = teamName.promptString()
-	if err != nil {
-		return nil, err
-	}
-
 	InfrastructureSupport := promptString{
 		label:        "What is the email address for the team which owns the application? (this should not be a named individual's email address)",
 		defaultValue: "",
@@ -225,7 +214,6 @@ func templateNamespaceSetValues() (*templateEnvironment, error) {
 	values.InfrastructureSupport = InfrastructureSupport.value
 	values.SourceCode = SourceCode.value
 	values.Owner = Owner.value
-	values.TeamName = teamName.value
 
 	return &values, nil
 }
