@@ -66,6 +66,10 @@ func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 			url:  "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/cli-template/namespace-resources-cli-template/resources/versions.tf",
 			name: "resources/versions.tf",
 		},
+		{
+			url:  "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/cli-template/namespace-resources-cli-template/resources/variables.tf",
+			name: "resources/variables.tf",
+		},
 	}
 
 	err := initTemplateNamespace(templates)
