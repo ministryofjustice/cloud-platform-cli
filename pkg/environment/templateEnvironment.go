@@ -118,25 +118,39 @@ func templateNamespaceSetValues() (*templateEnvironment, error) {
 		return nil, err
 	}
 
-	Namespace := promptString{label: "Namespace name", defaultValue: "", validation: "no-spaces"}
+	Namespace := promptString{
+		label:        "What is the name of your namespace? This should be of the form: <application>-<environment>. e.g. myapp-dev (lower-case letters and dashes only)",
+		defaultValue: "",
+		validation:   "no-spaces",
+	}
 	err = Namespace.promptString()
 	if err != nil {
 		return nil, err
 	}
 
-	Environment := promptString{label: "Environment name", defaultValue: "", validation: "no-spaces"}
+	Environment := promptString{
+		label:        "What type of application environment is this namespace for? e.g. development, staging, production",
+		defaultValue: "",
+		validation:   "no-spaces",
+	}
 	err = Environment.promptString()
 	if err != nil {
 		return nil, err
 	}
 
-	IsProduction := promptYesNo{label: "Is Production?", defaultValue: 0}
+	IsProduction := promptYesNo{
+		label:        "Is this a production namespace? (please answer true or false)",
+		defaultValue: 0,
+	}
 	err = IsProduction.promptyesNo()
 	if err != nil {
 		return nil, err
 	}
 
-	Application := promptString{label: "Application name", defaultValue: ""}
+	Application := promptString{
+		label:        "What is the name of your application/service? (e.g. Send money to a prisoner)",
+		defaultValue: "",
+	}
 	err = Application.promptString()
 	if err != nil {
 		return nil, err
@@ -144,13 +158,19 @@ func templateNamespaceSetValues() (*templateEnvironment, error) {
 
 	GithubTeam, err := promptSelectGithubTeam(GithubTeams)
 
-	businessUnit := promptString{label: "Business Unit", defaultValue: ""}
+	businessUnit := promptString{
+		label:        "Which part of the MoJ is responsible for this service? (e.g HMPPS, Legal Aid Agency)",
+		defaultValue: "",
+	}
 	err = businessUnit.promptString()
 	if err != nil {
 		return nil, err
 	}
 
-	SlackChannel := promptString{label: "Slack Channel", defaultValue: ""}
+	SlackChannel := promptString{
+		label:        "What is the best slack channel (without the '#') to use if we need to contact your team?\n(If you don't have a team slack channel, please create one)",
+		defaultValue: "",
+	}
 	err = SlackChannel.promptString()
 	if err != nil {
 		return nil, err
@@ -162,19 +182,30 @@ func templateNamespaceSetValues() (*templateEnvironment, error) {
 		return nil, err
 	}
 
-	InfrastructureSupport := promptString{label: "Team's email", defaultValue: "", validation: "email"}
+	InfrastructureSupport := promptString{
+		label:        "What is the email address for the team which owns the application? (this should not be a named individual's email address)",
+		defaultValue: "",
+		validation:   "email",
+	}
 	err = InfrastructureSupport.promptString()
 	if err != nil {
 		return nil, err
 	}
 
-	SourceCode := promptString{label: "Source Code", defaultValue: "", validation: "url"}
+	SourceCode := promptString{
+		label:        "What is the Github repository URL of the source code for this application?",
+		defaultValue: "",
+		validation:   "url",
+	}
 	err = SourceCode.promptString()
 	if err != nil {
 		return nil, err
 	}
 
-	Owner := promptString{label: "Owner", defaultValue: ""}
+	Owner := promptString{
+		label:        "Which team in your organisation is responsible for this application? (e.g. Sentence Planning)",
+		defaultValue: "",
+	}
 	err = Owner.promptString()
 	if err != nil {
 		return nil, err
