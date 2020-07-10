@@ -84,7 +84,7 @@ func promptSelectGithubTeam(t []string) (string, error) {
 	}
 
 	prompt := promptui.Select{
-		Label:     "Github Team",
+		Label:     "What is the name of your Github team? (this must be an exact match, or you will not have access to your namespace)",
 		Items:     t,
 		Templates: templates,
 		Size:      8,
