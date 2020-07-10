@@ -114,13 +114,13 @@ func templateNamespaceSetValues() (*templateEnvironment, error) {
 		return nil, err
 	}
 
-	Namespace := promptString{label: "Namespace name", defaultValue: ""}
+	Namespace := promptString{label: "Namespace name", defaultValue: "", validation: "no-spaces"}
 	err = Namespace.promptString()
 	if err != nil {
 		return nil, err
 	}
 
-	Environment := promptString{label: "Environment name", defaultValue: ""}
+	Environment := promptString{label: "Environment name", defaultValue: "", validation: "no-spaces"}
 	err = Environment.promptString()
 	if err != nil {
 		return nil, err
@@ -152,19 +152,19 @@ func templateNamespaceSetValues() (*templateEnvironment, error) {
 		return nil, err
 	}
 
-	teamName := promptString{label: "Team's name", defaultValue: ""}
+	teamName := promptString{label: "Team's name", defaultValue: "", validation: "no-spaces"}
 	err = teamName.promptString()
 	if err != nil {
 		return nil, err
 	}
 
-	InfrastructureSupport := promptString{label: "Team's email", defaultValue: ""}
-	err = InfrastructureSupport.promptEmail()
+	InfrastructureSupport := promptString{label: "Team's email", defaultValue: "", validation: "email"}
+	err = InfrastructureSupport.promptString()
 	if err != nil {
 		return nil, err
 	}
 
-	SourceCode := promptString{label: "Source Code", defaultValue: ""}
+	SourceCode := promptString{label: "Source Code", defaultValue: "", validation: "url"}
 	err = SourceCode.promptString()
 	if err != nil {
 		return nil, err
