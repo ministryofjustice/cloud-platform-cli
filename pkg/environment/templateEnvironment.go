@@ -121,7 +121,7 @@ func templateNamespaceSetValues() (*templateEnvironment, error) {
 	Namespace := promptString{
 		label:        "What is the name of your namespace? This should be of the form: <application>-<environment>. e.g. myapp-dev (lower-case letters and dashes only)",
 		defaultValue: "",
-		validation:   "no-spaces",
+		validation:   "no-spaces-and-no-uppercase",
 	}
 	err = Namespace.promptString()
 	if err != nil {
@@ -131,7 +131,7 @@ func templateNamespaceSetValues() (*templateEnvironment, error) {
 	Environment := promptString{
 		label:        "What type of application environment is this namespace for? e.g. development, staging, production",
 		defaultValue: "",
-		validation:   "no-spaces",
+		validation:   "no-spaces-and-no-uppercase",
 	}
 	err = Environment.promptString()
 	if err != nil {
@@ -176,7 +176,11 @@ func templateNamespaceSetValues() (*templateEnvironment, error) {
 		return nil, err
 	}
 
-	teamName := promptString{label: "Team's name", defaultValue: "", validation: "no-spaces"}
+	teamName := promptString{
+		label:        "Team's name",
+		defaultValue: "",
+		validation:   "no-spaces-and-no-uppercase",
+	}
 	err = teamName.promptString()
 	if err != nil {
 		return nil, err

@@ -35,8 +35,8 @@ func (s *promptString) promptString() error {
 	switch s.validation {
 	case "email":
 		prompt.Validate = validateEmailInput
-	case "no-spaces":
-		prompt.Validate = validateWhiteSpaces
+	case "no-spaces-and-no-uppercase":
+		prompt.Validate = validateWhiteSpacesAndUpperCase
 	case "url":
 		prompt.Validate = validateURL
 	default:
@@ -118,10 +118,15 @@ func validateEmailInput(input string) error {
 	return nil
 }
 
-func validateWhiteSpaces(input string) error {
+func validateWhiteSpacesAndUpperCase(input string) error {
 	re := regexp.MustCompile(`\s`)
+	re1 := regexp.MustCompile(`[A-Z]+`)
+
 	if re.MatchString(input) == true {
 		return errors.New("This input must consist of lower-case letters and dashes only (not whitespaces)")
+	}
+	if re1.MatchString(input) == true {
+		return errors.New("This input must consist of lower-case letters only")
 	}
 	if len(strings.TrimSpace(input)) < 1 {
 		return errors.New("This input must not be empty")
