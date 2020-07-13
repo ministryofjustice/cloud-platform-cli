@@ -1,7 +1,7 @@
 package commands
 
 import (
-	environment "github.com/ministryofjustice/cloud-platform-moj-cp/pkg/environment"
+	environment "github.com/ministryofjustice/cloud-platform-cli/pkg/environment"
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/spf13/cobra"
@@ -23,7 +23,7 @@ var environmentCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: `Create an environment`,
 	Example: heredoc.Doc(`
-	$ moj-cp environment create
+	$ cloud-platform environment create
 	`),
 	RunE: environment.CreateTemplateNamespace,
 }
@@ -32,7 +32,7 @@ var environmentRdsCmd = &cobra.Command{
 	Use:   "rds",
 	Short: `RDS instances operations, create, list, remove`,
 	Example: heredoc.Doc(`
-	$ moj-cp environment rds create
+	$ cloud-platform environment rds create
 	`),
 }
 

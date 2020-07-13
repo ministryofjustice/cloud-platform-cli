@@ -1,4 +1,4 @@
-IMAGE := ministryofjustice/cloud-platform-moj-cp
+IMAGE := ministryofjustice/cloud-platform-cli
 TAG := 0.1
 
 build: .built-docker-image

@@ -119,7 +119,7 @@ func (s *Commander) CheckDivergence(ws string, cmd ...string) error {
 	if s.DisplayOutput {
 		log.Info(output.Stdout)
 	}
-	
+
 	if output.ExitCode == 0 {
 		return nil
 	}
