@@ -23,7 +23,7 @@ type templateRds struct {
 // CreateTemplateRds creates the terraform files from environment's template folder
 func CreateTemplateRds(cmd *cobra.Command, args []string) error {
 
-	RdsTemplate, err := downloadTemplate("https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-rds-instance/template-patch/template/rds.tmpl")
+	RdsTemplate, err := downloadTemplate("https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-rds-instance/main/template/rds.tmpl")
 	if err != nil {
 		return (err)
 	}
