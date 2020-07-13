@@ -1,7 +1,8 @@
-package enviroment
+package environment
 
 import (
-	"encoding/json"
+	"bufio"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -9,24 +10,17 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
-
-	b64 "encoding/base64"
 
 	"gopkg.in/yaml.v2"
 )
 
-// NamespacesFromGH holds namespaces names (folders) from
+// metadataFromNamespace holds folder names (environments names) from
 // cloud-platform-environments repository
-type NamespacesFromGH struct {
-	Name string `json:"name"`
-}
-
-// MetaDataFromNamespaceGH holds folder names (environments names) from
-// cloud-platform-environments repository
-type MetaDataFromNamespaceGH struct {
-	FileName        string `json:"name"`
-	Content         string `json:"content"`
+type metadataFromNamespace struct {
+	FileName        string
+	Content         string
 	isProduction    string
 	environmentName string
 	businessUnit    string
@@ -35,41 +29,10 @@ type MetaDataFromNamespaceGH struct {
 	ownerEmail      string
 	sourceCode      string
 	namespace       string
+	envRepoPath     string
 }
 
-// GetNamespacesFromGH returns the environments names from Cloud Platform Environments
-// repository (in Github)
-func GetNamespacesFromGH() (*[]NamespacesFromGH, error) {
-	var n []NamespacesFromGH
-
-	response, err := http.Get("https://api.github.com/repos/ministryofjustice/cloud-platform-environments/contents/namespaces/live-1.cloud-platform.service.justice.gov.uk")
-	if err != nil {
-		return nil, err
-	}
-
-	data, _ := ioutil.ReadAll(response.Body)
-	err = json.Unmarshal(data, &n)
-	return &n, nil
-}
-
-// GetEnvironmentsMetadataFromNamespaceGH returns the metadata about an environment from
-// Cloud Platform Environments repository - 00-namespace.yaml (in Github)
-func (s *MetaDataFromNamespaceGH) GetEnvironmentsMetadataFromNamespaceGH() error {
-	url := fmt.Sprintf("https://api.github.com/repos/ministryofjustice/cloud-platform-environments/contents/namespaces/live-1.cloud-platform.service.justice.gov.uk/%s/00-namespace.yaml", s.namespace)
-
-	response, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-
-	data, _ := ioutil.ReadAll(response.Body)
-	err = json.Unmarshal(data, &s)
-	if err != nil {
-		log.Fatalf("Could not decode JSON from Github (containing the metadata): %v", err)
-		return err
-	}
-
-	// I know about bellow! But is the safest way how to do it in Go
+func (s *metadataFromNamespace) getNamespaceMetadata() error {
 	type envNamespace struct {
 		APIVersion string `yaml:"apiVersion"`
 		Kind       string `yaml:"kind"`
@@ -90,10 +53,12 @@ func (s *MetaDataFromNamespaceGH) GetEnvironmentsMetadataFromNamespaceGH() error
 
 	t := envNamespace{}
 
-	sDec, _ := b64.StdEncoding.DecodeString(s.Content)
-	s.Content = string(sDec)
+	namespaceFile, err := ioutil.ReadFile(fmt.Sprintf("%s/namespaces/live-1.cloud-platform.service.justice.gov.uk/%s/00-namespace.yaml", s.envRepoPath, s.namespace))
+	if err != nil {
+		return err
+	}
 
-	err = yaml.Unmarshal([]byte(s.Content), &t)
+	err = yaml.Unmarshal(namespaceFile, &t)
 	if err != nil {
 		log.Fatalf("Could not decode YAML (probably an error within 00-namespace.yaml file): %v", err)
 		return err
@@ -111,59 +76,38 @@ func (s *MetaDataFromNamespaceGH) GetEnvironmentsMetadataFromNamespaceGH() error
 	return nil
 }
 
-// downloadTemplate returns a template file from an URL
-func downloadTemplate(url string) (string, error) {
-
-	response, err := http.Get(url)
+func (s *metadataFromNamespace) checkNamespaceExist() error {
+	_, err := ioutil.ReadFile(fmt.Sprintf("%s/namespaces/live-1.cloud-platform.service.justice.gov.uk/%s/00-namespace.yaml", s.envRepoPath, s.namespace))
 	if err != nil {
-		return "", err
+		return errors.New("You are in the wrong folder, go to your namespace folder")
 	}
-	data, _ := ioutil.ReadAll(response.Body)
-	content := string(data)
-
-	return content, nil
+	return nil
 }
 
-func validPath() (bool, error) {
+func (s *metadataFromNamespace) checkPath() (bool, error) {
 	path, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
 	if err != nil {
-		// If we land here it means we aren't even inside a Git repository, should we continue
-		// and print in the STOUT?
-		err := continueIfPathNotValid()
-		if err != nil {
-			return false, err
-		}
-		return false, nil
+		return false, errors.New("You are outside cloud-platform-environment repo")
 	}
-
 	FullPath := strings.TrimSpace(string(path))
+	s.envRepoPath = FullPath
 	repoName := filepath.Base(FullPath)
 
 	if repoName != "cloud-platform-environments" {
-		err := continueIfPathNotValid()
-		if err != nil {
-			return false, err
-		}
-
-		return false, nil
+		return false, errors.New("You are outside cloud-platform-environment repo")
 	}
 
 	return true, nil
 }
 
-func continueIfPathNotValid() error {
-	outsidePath := promptYesNo{
-		label:        "WARNING: You are outside cloud-platform-environment repo. If you decide to continue the template is going to be rendered on screen?",
-		defaultValue: 0,
-	}
-	err := outsidePath.promptyesNo()
+func (s *metadataFromNamespace) getNamespaceFromPath() error {
+	path, err := os.Getwd()
 	if err != nil {
 		return err
 	}
 
-	if outsidePath.value == false {
-		os.Exit(0)
-	}
+	parts := strings.Split(path, "/")
+	s.namespace = parts[len(parts)-1]
 
 	return nil
 }
@@ -182,4 +126,81 @@ func outputFileWriter(fileName string) (*os.File, error) {
 	}
 
 	return f, nil
+}
+
+func downloadTemplate(url string) (string, error) {
+
+	response, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	data, _ := ioutil.ReadAll(response.Body)
+	content := string(data)
+
+	return content, nil
+}
+
+// In the future we would like to point to one of our API servers
+// The CLI shouldn't be getting this information by itself
+func getGitHubTeams() ([]string, error) {
+	var teams []string
+
+	repo, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
+	if err != nil {
+		return nil, errors.New("You are outside cloud-platform-environment repo")
+	}
+	targetPath := strings.TrimSpace(string(repo)) + "/namespaces/live-1.cloud-platform.service.justice.gov.uk/"
+	FullPath := strings.TrimSpace(string(repo))
+	repoName := filepath.Base(FullPath)
+
+	if repoName != "cloud-platform-environments" {
+		return nil, errors.New("You are outside cloud-platform-environment repo")
+	}
+
+	re := regexp.MustCompile("github:(.*)\"")
+
+	err = filepath.Walk(targetPath, func(path string, info os.FileInfo, err error) error {
+		r, err := regexp.MatchString("01-rbac.yaml", info.Name())
+		if err == nil && r {
+			f, err := os.Open(path)
+			if err != nil {
+				return err
+			}
+			defer f.Close()
+
+			scanner := bufio.NewScanner(f)
+			for scanner.Scan() {
+				if strings.Contains(scanner.Text(), "github") {
+					match := re.FindStringSubmatch(scanner.Text())
+					if len(match) > 1 {
+						teams = append(teams, match[1])
+					}
+				}
+				if err := scanner.Err(); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	teamClean := removeDuplicates(teams)
+	return teamClean, nil
+}
+
+func removeDuplicates(elements []string) []string {
+	encountered := map[string]bool{}
+	result := []string{}
+
+	for v := range elements {
+		if encountered[elements[v]] == true {
+		} else {
+			encountered[elements[v]] = true
+			result = append(result, elements[v])
+		}
+	}
+	return result
 }

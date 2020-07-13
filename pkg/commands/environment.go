@@ -10,12 +10,22 @@ import (
 func addEnvironmentCmd(topLevel *cobra.Command) {
 	topLevel.AddCommand(environmentCmd)
 	environmentCmd.AddCommand(environmentRdsCmd)
+	environmentCmd.AddCommand(environmentCreateCmd)
 	environmentRdsCmd.AddCommand(environmentRdsCreateCmd)
 }
 
 var environmentCmd = &cobra.Command{
 	Use:   "environment",
 	Short: `Cloud Platform Environment actions`,
+}
+
+var environmentCreateCmd = &cobra.Command{
+	Use:   "create",
+	Short: `Create an environment`,
+	Example: heredoc.Doc(`
+	$ moj-cp environment create
+	`),
+	RunE: environment.CreateTemplateNamespace,
 }
 
 var environmentRdsCmd = &cobra.Command{

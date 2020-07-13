@@ -1,7 +1,9 @@
-package enviroment
+package environment
 
 import (
 	"errors"
+	"net/url"
+	"regexp"
 	"strings"
 
 	"github.com/manifoldco/promptui"
@@ -17,6 +19,7 @@ type promptString struct {
 	label        string
 	defaultValue string
 	value        string
+	validation   string
 }
 
 //////////////
@@ -25,9 +28,19 @@ type promptString struct {
 
 func (s *promptString) promptString() error {
 	prompt := promptui.Prompt{
-		Label:    s.label,
-		Default:  s.defaultValue,
-		Validate: validateEmptyInput,
+		Label:   s.label,
+		Default: s.defaultValue,
+	}
+
+	switch s.validation {
+	case "email":
+		prompt.Validate = validateEmailInput
+	case "no-spaces-and-no-uppercase":
+		prompt.Validate = validateWhiteSpacesAndUpperCase
+	case "url":
+		prompt.Validate = validateURL
+	default:
+		prompt.Validate = validateEmptyInput
 	}
 
 	result, err := prompt.Run()
@@ -53,26 +66,26 @@ func (s *promptYesNo) promptyesNo() error {
 	return nil
 }
 
-func promptSelectNamespaces(e *[]NamespacesFromGH) (string, error) {
+func promptSelectGithubTeam(t []string) (string, error) {
 
 	templates := &promptui.SelectTemplates{
 		Label:    "{{ . }}?",
-		Active:   "\U0001F336 {{ .Name | cyan }}",
-		Inactive: "  {{ .Name | cyan }}",
-		Selected: "\U0001F336 {{ .Name | red | cyan }}",
+		Active:   "\U0001F336 {{ . | cyan }}",
+		Inactive: "  {{ . | cyan }}",
+		Selected: "\U0001F336 {{ . | red | cyan }}",
 	}
 
 	searcher := func(input string, index int) bool {
-		environment := (*e)[index]
-		name := strings.Replace(strings.ToLower(environment.Name), " ", "", -1)
+		team := t[index]
+		name := strings.Replace(strings.ToLower(team), " ", "", -1)
 		input = strings.Replace(strings.ToLower(input), " ", "", -1)
 
 		return strings.Contains(name, input)
 	}
 
 	prompt := promptui.Select{
-		Label:     "Live Environments",
-		Items:     *e,
+		Label:     "What is the name of your Github team? (this must be an exact match, or you will not have access to your namespace)",
+		Items:     t,
 		Templates: templates,
 		Size:      8,
 		Searcher:  searcher,
@@ -83,7 +96,7 @@ func promptSelectNamespaces(e *[]NamespacesFromGH) (string, error) {
 		return "", err
 	}
 
-	return (*e)[i].Name, nil
+	return t[i], nil
 }
 
 /////////////////
@@ -93,6 +106,42 @@ func promptSelectNamespaces(e *[]NamespacesFromGH) (string, error) {
 func validateEmptyInput(input string) error {
 	if len(strings.TrimSpace(input)) < 1 {
 		return errors.New("This input must not be empty")
+	}
+	return nil
+}
+
+func validateEmailInput(input string) error {
+	re := regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
+	if re.MatchString(input) == false {
+		return errors.New("Please introduce a valid email address")
+	}
+	return nil
+}
+
+func validateWhiteSpacesAndUpperCase(input string) error {
+	re := regexp.MustCompile(`\s`)
+	re1 := regexp.MustCompile(`[A-Z]+`)
+
+	if re.MatchString(input) == true {
+		return errors.New("This input must consist of lower-case letters and dashes only (not whitespaces)")
+	}
+	if re1.MatchString(input) == true {
+		return errors.New("This input must consist of lower-case letters only")
+	}
+	if len(strings.TrimSpace(input)) < 1 {
+		return errors.New("This input must not be empty")
+	}
+	return nil
+}
+
+func validateURL(input string) error {
+	u, err := url.Parse(input)
+	if err != nil {
+		return errors.New("Not valid URL. Please introduce a valid URL")
+	} else if u.Scheme == "" || u.Host == "" {
+		return errors.New("Not valid URL. Valid URL must be an absolute URL")
+	} else if u.Scheme != "http" && u.Scheme != "https" {
+		return errors.New("Not valid URL. URLs should start with http or https")
 	}
 	return nil
 }

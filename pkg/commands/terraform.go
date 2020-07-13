@@ -37,7 +37,6 @@ func addTerraformCmd(topLevel *cobra.Command) {
 	}
 
 	addCommonFlags(checkDivergence, &options)
-
 	rootCmd.AddCommand(checkDivergence)
 	topLevel.AddCommand(rootCmd)
 }
