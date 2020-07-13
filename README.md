@@ -1,6 +1,6 @@
 # Cloud Platform Tool CLI
 
-`moj-cp` is a command-line tool used by the cloud-platform team to achieve common repetitive tasks against the platform. The resulting binary checks things like:
+`cloud-platform` is a command-line tool used by the cloud-platform team to achieve common repetitive tasks against the platform. The resulting binary checks things like:
 
    - Create templates for the environments repo
    - Divergences in terraform states
@@ -9,24 +9,24 @@
 
 ## Install
 
-`moj-cp` can be installed and upgraded by running:
+`cloud-platform` can be installed and upgraded by running:
 
 ```shell
-GO111MODULE=on go get github.com/ministryofjustice/cloud-platform-moj-cp/cmd/moj-cp
+GO111MODULE=on go get github.com/ministryofjustice/cloud-platform-cli/cmd/cloud-platform
 ```
 
 ## Usage
 
-`moj-cp` has different subcommands. Execute: `moj-cp --help` in order to check them out. Remember some of the subcommands requires `AWS_*` keys.
+`cloud-platform` has different subcommands. Execute: `cloud-platform --help` in order to check them out. Remember some of the subcommands requires `AWS_*` keys.
 
-### `moj-cp terraform` 
+### `cloud-platform terraform` 
 
-`moj-cp terraform` simply is a terraform wrapper which allows us to execute terraform commands. It also includes `check-divergence` command which fails in case there are pending terraform changes.
+`cloud-platform terraform` simply is a terraform wrapper which allows us to execute terraform commands. It also includes `check-divergence` command which fails in case there are pending terraform changes.
 
 Usage example:
 
 ```shell
-$ moj-cp terraform check-divergence --workspace manager --var-file prod.tfvars
+$ cloud-platform terraform check-divergence --workspace manager --var-file prod.tfvars
 INFO[0000] Executing terraform plan, if there is a drift this program execution will fail  subcommand=check-divergence
 INFO[0002] Initializing modules...
 

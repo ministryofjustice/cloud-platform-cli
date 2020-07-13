@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	terraform "github.com/ministryofjustice/cloud-platform-moj-cp/pkg/terraform"
+	terraform "github.com/ministryofjustice/cloud-platform-cli/pkg/terraform"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"

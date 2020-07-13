@@ -1,4 +1,4 @@
-module github.com/ministryofjustice/cloud-platform-moj-cp
+module github.com/ministryofjustice/cloud-platform-cli
 
 go 1.13
 

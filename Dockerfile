@@ -1,5 +1,5 @@
 # Build Cloud Platform tools (CLI)
-FROM golang:1.13.0-stretch AS cp_tools_builder
+FROM golang:1.13.0-stretch AS cloud_platform_cli_builder
 
 ENV GO111MODULE=on \
     CGO_ENABLED=0 \
@@ -10,7 +10,7 @@ COPY go.mod .
 COPY go.sum .
 RUN go mod download
 COPY . .
-RUN go build -o cp-tools ./cmd/cp-tools/main.go 
+RUN go build -o cloud-platform ./cmd/cloud-platform/main.go 
 RUN pwd && ls
 
 FROM alpine:3.11.0
@@ -48,7 +48,7 @@ RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
     pip3 install pygithub boto3 && \
     pip3 install awscli
 
-COPY --from=cp_tools_builder /build/cp-tools /usr/local/bin/cp-tools
+COPY --from=cloud_platform_cli_builder /build/cloud-platform /usr/local/bin/cloud-platform
 
 # Install git-crypt
 RUN git clone https://github.com/AGWA/git-crypt.git \
