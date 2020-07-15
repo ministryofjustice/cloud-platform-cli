@@ -19,7 +19,7 @@ GO111MODULE=on go get github.com/ministryofjustice/cloud-platform-cli/cmd/cloud-
 
 `cloud-platform` has different subcommands. Execute: `cloud-platform --help` in order to check them out. Remember some of the subcommands requires `AWS_*` keys.
 
-### `cloud-platform terraform` 
+### `cloud-platform terraform`
 
 `cloud-platform terraform` simply is a terraform wrapper which allows us to execute terraform commands. It also includes `check-divergence` command which fails in case there are pending terraform changes.
 
@@ -45,8 +45,8 @@ should now work.
 
 If you ever set or change modules or backend configuration for Terraform,
 rerun this command to reinitialize your working directory. If you forget, other
-commands will detect it and remind you to do so if necessary. 
-INFO[0003]                                              
+commands will detect it and remind you to do so if necessary.
+INFO[0003]
 INFO[0015] Refreshing Terraform state in-memory prior to plan...
 The refreshed state will be used to calculate this plan, but will not be
 persisted to local or remote state storage.
@@ -69,6 +69,19 @@ No changes. Infrastructure is up-to-date.
 
 This means that Terraform did not detect any differences between your
 configuration and real physical resources that exist. As a result, no
-actions need to be performed. 
+actions need to be performed.
 
 ```
+
+## Develop
+
+You will need golang installed (version 1.14 or greater).
+
+### Build locally
+
+```
+go mod download
+go build -o cloud-platform ./cmd/cloud-platform/main.go
+```
+
+This will create a `cloud-platform` binary.
