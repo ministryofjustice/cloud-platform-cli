@@ -85,3 +85,12 @@ go build -o cloud-platform ./cmd/cloud-platform/main.go
 ```
 
 This will create a `cloud-platform` binary.
+
+### Updating / Publishing
+
+This project includes a [github action](.github/workflows/docker-hub.yml) which
+will automatically build a new docker image and push it to [docker hub], tagged
+with the release number, whenever you create a new release via the [github ui].
+
+[docker hub]: https://hub.docker.com/repository/docker/ministryofjustice/cloud-platform-cli
+[github ui]: https://github.com/ministryofjustice/cloud-platform-cli/releases
