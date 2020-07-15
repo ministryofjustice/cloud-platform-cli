@@ -38,36 +38,36 @@ func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 
 	templates := []*templateEnvironmentFile{
 		{
-			url:  "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template/00-namespace.yaml",
 			name: "00-namespace.yaml",
+			url:  templatesBaseUrl + "/" + "00-namespace.yaml",
 		},
 		{
-			url:  "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template/01-rbac.yaml",
 			name: "01-rbac.yaml",
+			url:  templatesBaseUrl + "/" + "01-rbac.yaml",
 		},
 		{
-			url:  "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template/02-limitrange.yaml",
 			name: "02-limitrange.yaml",
+			url:  templatesBaseUrl + "/" + "02-limitrange.yaml",
 		},
 		{
-			url:  "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template/03-resourcequota.yaml",
 			name: "03-resourcequota.yaml",
+			url:  templatesBaseUrl + "/" + "03-resourcequota.yaml",
 		},
 		{
-			url:  "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template/04-networkpolicy.yaml",
 			name: "04-networkpolicy.yaml",
+			url:  templatesBaseUrl + "/" + "04-networkpolicy.yaml",
 		},
 		{
-			url:  "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template/resources/main.tf",
 			name: "resources/main.tf",
+			url:  templatesBaseUrl + "/" + "resources/main.tf",
 		},
 		{
-			url:  "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template/resources/versions.tf",
 			name: "resources/versions.tf",
+			url:  templatesBaseUrl + "/" + "resources/versions.tf",
 		},
 		{
-			url:  "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template/resources/variables.tf",
 			name: "resources/variables.tf",
+			url:  templatesBaseUrl + "/" + "resources/variables.tf",
 		},
 	}
 
