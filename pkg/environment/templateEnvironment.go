@@ -103,7 +103,7 @@ func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	fmt.Printf("Namespace files generated under namespaces/live-1.cloud-platform.service.justice.gov.uk/%s\n", namespaceValues.Namespace)
+	fmt.Printf("Namespace files generated under %s/%s\n", namespaceBaseFolder, namespaceValues.Namespace)
 	color.Info.Tips("Please review before raising PR")
 
 	return nil

@@ -35,14 +35,14 @@ func CreateTemplateRds(cmd *cobra.Command, args []string) error {
 
 	tpl := template.Must(template.New("rds").Parse(RdsTemplate))
 
-	outputPath := fmt.Sprintf("namespaces/live-1.cloud-platform.service.justice.gov.uk/%s/resources/rds.tf", rdsValues.Namespace)
+	outputPath := fmt.Sprintf("%s/%s/resources/rds.tf", namespaceBaseFolder, rdsValues.Namespace)
 	f, _ := outputFileWriter(outputPath)
 	err = tpl.Execute(f, rdsValues)
 	if err != nil {
 		return (err)
 	}
 
-	fmt.Printf("RDS File generated in namespaces/live-1.cloud-platform.service.justice.gov.uk/%s/resources/rds.tf\n", rdsValues.Namespace)
+	fmt.Printf("RDS File generated in %s/%s/resources/rds.tf\n", namespaceBaseFolder, rdsValues.Namespace)
 	color.Info.Tips("This template is using default values provided by your namespace information. Please review before raising PR")
 
 	return nil
