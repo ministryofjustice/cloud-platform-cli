@@ -75,7 +75,7 @@ actions need to be performed.
 
 ## Develop
 
-You will need golang installed (version 1.14 or greater).
+You will need golang installed (version 1.13 or greater).
 
 ### Build locally
 
