@@ -237,14 +237,14 @@ func setupPaths(t []*templateEnvironmentFile, namespace string) error {
 	}
 	fullPath := strings.TrimSpace(string(path))
 	for _, s := range t {
-		s.outputPath = fullPath + fmt.Sprintf("/namespaces/live-1.cloud-platform.service.justice.gov.uk/%s/", namespace) + s.name
+		s.outputPath = fullPath + fmt.Sprintf("/%s/%s/", namespaceBaseFolder, namespace) + s.name
 	}
 
-	err = os.Mkdir(fullPath+fmt.Sprintf("/namespaces/live-1.cloud-platform.service.justice.gov.uk/%s/", namespace), 0755)
+	err = os.Mkdir(fullPath+fmt.Sprintf("/%s/%s/", namespaceBaseFolder, namespace), 0755)
 	if err != nil {
 		return err
 	}
-	err = os.Mkdir(fullPath+fmt.Sprintf("/namespaces/live-1.cloud-platform.service.justice.gov.uk/%s/resources", namespace), 0755)
+	err = os.Mkdir(fullPath+fmt.Sprintf("/%s/%s/resources", namespaceBaseFolder, namespace), 0755)
 	if err != nil {
 		return err
 	}
