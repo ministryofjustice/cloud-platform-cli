@@ -79,12 +79,11 @@ You will need golang installed (version 1.14 or greater).
 
 ### Build locally
 
-```
-go mod download
-go build -o cloud-platform ./cmd/cloud-platform/main.go
-```
+Run `make` to create a `cloud-platform` binary.
 
-This will create a `cloud-platform` binary.
+### Testing
+
+Run `make test` to run the unit tests.
 
 ### Updating / Publishing
 
