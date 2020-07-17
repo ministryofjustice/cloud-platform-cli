@@ -20,12 +20,13 @@ type templateRds struct {
 	TeamName              string
 }
 
+const RdsTemplateFile = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-rds-instance/main/template/rds.tmpl"
 const RdsTfFile = "resources/rds.tf"
 
 // CreateTemplateRds creates the terraform files from environment's template folder
 func CreateTemplateRds(cmd *cobra.Command, args []string) error {
 
-	RdsTemplate, err := downloadTemplate("https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-rds-instance/main/template/rds.tmpl")
+	RdsTemplate, err := downloadTemplate(RdsTemplateFile)
 	if err != nil {
 		return (err)
 	}
