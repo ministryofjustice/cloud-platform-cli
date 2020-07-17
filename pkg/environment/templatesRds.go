@@ -67,18 +67,16 @@ func templateRdsSetValues() (*templateRds, error) {
 		return nil, err
 	}
 
-	err = metadata.getNamespaceMetadata()
-	if err != nil {
-		return nil, err
-	}
+	namespace := Namespace{}
+	namespace.ReadYamlFile("00-namespace.yaml")
 
-	values.Application = metadata.application
-	values.Namespace = metadata.namespace
-	values.BusinessUnit = metadata.businessUnit
-	values.EnvironmentName = metadata.environmentName
-	values.IsProduction, _ = strconv.ParseBool(metadata.isProduction)
+	values.Application = namespace.application
+	values.Namespace = namespace.name
+	values.BusinessUnit = namespace.businessUnit
+	values.EnvironmentName = namespace.environmentName
+	values.IsProduction, _ = strconv.ParseBool(namespace.isProduction)
 	values.RdsModuleName = "rds"
-	values.InfrastructureSupport = metadata.ownerEmail
+	values.InfrastructureSupport = namespace.ownerEmail
 	values.TeamName = "teamName"
 
 	return &values, nil

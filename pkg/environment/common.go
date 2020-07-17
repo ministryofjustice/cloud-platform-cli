@@ -5,15 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
-
-	"gopkg.in/yaml.v2"
 )
 
 // all yaml and terraform templates will be pulled from URL endpoints below here
@@ -34,50 +31,6 @@ type metadataFromNamespace struct {
 	sourceCode      string
 	namespace       string
 	envRepoPath     string
-}
-
-func (s *metadataFromNamespace) getNamespaceMetadata() error {
-	type envNamespace struct {
-		APIVersion string `yaml:"apiVersion"`
-		Kind       string `yaml:"kind"`
-		Metadata   struct {
-			Name   string `yaml:"name"`
-			Labels struct {
-				CloudPlatformJusticeGovUkIsProduction    string `yaml:"cloud-platform.justice.gov.uk/is-production"`
-				CloudPlatformJusticeGovUkEnvironmentName string `yaml:"cloud-platform.justice.gov.uk/environment-name"`
-			} `yaml:"labels"`
-			Annotations struct {
-				CloudPlatformJusticeGovUkBusinessUnit string `yaml:"cloud-platform.justice.gov.uk/business-unit"`
-				CloudPlatformJusticeGovUkApplication  string `yaml:"cloud-platform.justice.gov.uk/application"`
-				CloudPlatformJusticeGovUkOwner        string `yaml:"cloud-platform.justice.gov.uk/owner"`
-				CloudPlatformJusticeGovUkSourceCode   string `yaml:"cloud-platform.justice.gov.uk/source-code"`
-			} `yaml:"annotations"`
-		} `yaml:"metadata"`
-	}
-
-	t := envNamespace{}
-
-	namespaceFile, err := ioutil.ReadFile(fmt.Sprintf("%s/%s/%s/00-namespace.yaml", s.envRepoPath, namespaceBaseFolder, s.namespace))
-	if err != nil {
-		return err
-	}
-
-	err = yaml.Unmarshal(namespaceFile, &t)
-	if err != nil {
-		log.Fatalf("Could not decode YAML (probably an error within 00-namespace.yaml file): %v", err)
-		return err
-	}
-
-	s.isProduction = t.Metadata.Labels.CloudPlatformJusticeGovUkIsProduction
-	s.businessUnit = t.Metadata.Annotations.CloudPlatformJusticeGovUkBusinessUnit
-	s.owner = t.Metadata.Annotations.CloudPlatformJusticeGovUkOwner
-	s.environmentName = t.Metadata.Labels.CloudPlatformJusticeGovUkEnvironmentName
-	s.ownerEmail = strings.Split(t.Metadata.Annotations.CloudPlatformJusticeGovUkOwner, ": ")[1]
-	s.application = t.Metadata.Annotations.CloudPlatformJusticeGovUkApplication
-	s.sourceCode = t.Metadata.Annotations.CloudPlatformJusticeGovUkSourceCode
-	s.namespace = t.Metadata.Name
-
-	return nil
 }
 
 func (s *metadataFromNamespace) checkNamespaceExist() error {
