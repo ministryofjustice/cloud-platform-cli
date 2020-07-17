@@ -61,11 +61,6 @@ func templateRdsSetValues() (*templateRds, error) {
 		return nil, err
 	}
 
-	err = metadata.checkNamespaceExist()
-	if err != nil {
-		return nil, err
-	}
-
 	namespace := Namespace{}
 	namespace.ReadYamlFile("00-namespace.yaml")
 

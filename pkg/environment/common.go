@@ -3,7 +3,6 @@ package environment
 import (
 	"bufio"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -31,14 +30,6 @@ type metadataFromNamespace struct {
 	sourceCode      string
 	namespace       string
 	envRepoPath     string
-}
-
-func (s *metadataFromNamespace) checkNamespaceExist() error {
-	_, err := ioutil.ReadFile(fmt.Sprintf("%s/%s/%s/00-namespace.yaml", s.envRepoPath, namespaceBaseFolder, s.namespace))
-	if err != nil {
-		return errors.New("You are in the wrong folder, go to your namespace folder")
-	}
-	return nil
 }
 
 func (s *metadataFromNamespace) checkPath() (bool, error) {
