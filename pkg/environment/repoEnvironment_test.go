@@ -11,6 +11,7 @@ func TestRequireCpEnvRepo(t *testing.T) {
 		t.Errorf("This should have passed")
 	}
 
+	// Fail if we're not in the CP-env repo (which we're not)
 	re = RepoEnvironment{}
 	err := re.MustBeInCloudPlatformEnvironments()
 	if err == nil {
