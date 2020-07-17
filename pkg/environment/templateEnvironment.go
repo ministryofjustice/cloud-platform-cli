@@ -12,6 +12,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// all yaml and terraform templates will be pulled from URL endpoints below here
+const templatesBaseUrl = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template"
+
 type templateEnvironment struct {
 	IsProduction          bool
 	Namespace             string

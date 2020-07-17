@@ -12,8 +12,6 @@ import (
 	"strings"
 )
 
-// all yaml and terraform templates will be pulled from URL endpoints below here
-const templatesBaseUrl = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template"
 const namespaceBaseFolder = "namespaces/live-1.cloud-platform.service.justice.gov.uk"
 
 // metadataFromNamespace holds folder names (environments names) from
