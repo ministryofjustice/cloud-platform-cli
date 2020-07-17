@@ -7,12 +7,6 @@ import (
 	"strings"
 )
 
-// Get information about the current execution context, wrt. the environments
-// repo.  Answer questions like:
-//   * Is the current directory inside a working copy of the right repository?
-//   * Does this folder contain a file with a specific name (e.g. 00-namespace.yml)?
-//   * What is the name of the namespace whose definition folder I am in?
-
 type RepoEnvironment struct {
 	repository string
 }
