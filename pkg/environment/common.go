@@ -48,18 +48,6 @@ func (s *metadataFromNamespace) checkPath() (bool, error) {
 	return true, nil
 }
 
-func (s *metadataFromNamespace) getNamespaceFromPath() error {
-	path, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
-	parts := strings.Split(path, "/")
-	s.namespace = parts[len(parts)-1]
-
-	return nil
-}
-
 func outputFileWriter(fileName string) (*os.File, error) {
 	f, err := os.Create(fileName)
 	if err != nil {
