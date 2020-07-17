@@ -15,38 +15,6 @@ import (
 const CloudPlatformEnvRepo = "cloud-platform-environments"
 const namespaceBaseFolder = "namespaces/live-1.cloud-platform.service.justice.gov.uk"
 
-// metadataFromNamespace holds folder names (environments names) from
-// cloud-platform-environments repository
-type metadataFromNamespace struct {
-	FileName        string
-	Content         string
-	isProduction    string
-	environmentName string
-	businessUnit    string
-	application     string
-	owner           string
-	ownerEmail      string
-	sourceCode      string
-	namespace       string
-	envRepoPath     string
-}
-
-func (s *metadataFromNamespace) checkPath() (bool, error) {
-	path, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
-	if err != nil {
-		return false, errors.New("You are outside cloud-platform-environment repo")
-	}
-	FullPath := strings.TrimSpace(string(path))
-	s.envRepoPath = FullPath
-	repoName := filepath.Base(FullPath)
-
-	if repoName != CloudPlatformEnvRepo {
-		return false, errors.New("You are outside cloud-platform-environment repo")
-	}
-
-	return true, nil
-}
-
 func outputFileWriter(fileName string) (*os.File, error) {
 	f, err := os.Create(fileName)
 	if err != nil {
