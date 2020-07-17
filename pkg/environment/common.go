@@ -16,6 +16,10 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// all yaml and terraform templates will be pulled from URL endpoints below here
+const templatesBaseUrl = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template"
+const namespaceBaseFolder = "namespaces/live-1.cloud-platform.service.justice.gov.uk"
+
 // metadataFromNamespace holds folder names (environments names) from
 // cloud-platform-environments repository
 type metadataFromNamespace struct {
@@ -53,7 +57,7 @@ func (s *metadataFromNamespace) getNamespaceMetadata() error {
 
 	t := envNamespace{}
 
-	namespaceFile, err := ioutil.ReadFile(fmt.Sprintf("%s/namespaces/live-1.cloud-platform.service.justice.gov.uk/%s/00-namespace.yaml", s.envRepoPath, s.namespace))
+	namespaceFile, err := ioutil.ReadFile(fmt.Sprintf("%s/%s/%s/00-namespace.yaml", s.envRepoPath, namespaceBaseFolder, s.namespace))
 	if err != nil {
 		return err
 	}
@@ -77,7 +81,7 @@ func (s *metadataFromNamespace) getNamespaceMetadata() error {
 }
 
 func (s *metadataFromNamespace) checkNamespaceExist() error {
-	_, err := ioutil.ReadFile(fmt.Sprintf("%s/namespaces/live-1.cloud-platform.service.justice.gov.uk/%s/00-namespace.yaml", s.envRepoPath, s.namespace))
+	_, err := ioutil.ReadFile(fmt.Sprintf("%s/%s/%s/00-namespace.yaml", s.envRepoPath, namespaceBaseFolder, s.namespace))
 	if err != nil {
 		return errors.New("You are in the wrong folder, go to your namespace folder")
 	}
@@ -149,7 +153,7 @@ func getGitHubTeams() ([]string, error) {
 	if err != nil {
 		return nil, errors.New("You are outside cloud-platform-environment repo")
 	}
-	targetPath := strings.TrimSpace(string(repo)) + "/namespaces/live-1.cloud-platform.service.justice.gov.uk/"
+	targetPath := strings.TrimSpace(string(repo)) + "/" + namespaceBaseFolder + "/"
 	FullPath := strings.TrimSpace(string(repo))
 	repoName := filepath.Base(FullPath)
 
