@@ -35,8 +35,7 @@ func CreateTemplateRds(cmd *cobra.Command, args []string) error {
 
 	tpl := template.Must(template.New("rds").Parse(RdsTemplate))
 
-	outputPath := fmt.Sprintf("%s/%s/resources/rds.tf", namespaceBaseFolder, rdsValues.Namespace)
-	f, _ := outputFileWriter(outputPath)
+	f, _ := outputFileWriter("resources/rds.tf")
 	err = tpl.Execute(f, rdsValues)
 	if err != nil {
 		return (err)

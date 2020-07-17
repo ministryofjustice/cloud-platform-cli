@@ -70,14 +70,7 @@ func (s *metadataFromNamespace) getNamespaceFromPath() error {
 }
 
 func outputFileWriter(fileName string) (*os.File, error) {
-	EnvRepoPath, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
-	if err != nil {
-		return nil, err
-	}
-
-	fullPath := fmt.Sprintf("%s/%s", strings.TrimSpace(string(EnvRepoPath)), fileName)
-
-	f, err := os.Create(fullPath)
+	f, err := os.Create(fileName)
 	if err != nil {
 		return nil, err
 	}
