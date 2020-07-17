@@ -8,6 +8,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+const NamespaceYamlFile = "00-namespace.yaml"
+
 type Namespace struct {
 	name            string
 	isProduction    string
@@ -20,6 +22,11 @@ type Namespace struct {
 	namespace       string
 }
 
+func (ns *Namespace) ReadYaml() error {
+	return ns.ReadYamlFile(NamespaceYamlFile)
+}
+
+// This is a public function so that we can use it in our tests
 func (ns *Namespace) ReadYamlFile(filename string) error {
 	contents, err := ioutil.ReadFile(filename)
 	if err != nil {

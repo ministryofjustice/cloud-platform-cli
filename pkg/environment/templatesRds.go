@@ -57,7 +57,7 @@ func templateRdsSetValues() (*templateRds, error) {
 	}
 
 	namespace := Namespace{}
-	namespace.ReadYamlFile("00-namespace.yaml")
+	namespace.ReadYaml()
 
 	values.Application = namespace.application
 	values.Namespace = namespace.name
