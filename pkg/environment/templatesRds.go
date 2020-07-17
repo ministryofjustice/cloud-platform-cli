@@ -60,7 +60,10 @@ func templateRdsSetValues() (*templateRds, error) {
 	}
 
 	ns := Namespace{}
-	ns.ReadYaml()
+	err = ns.ReadYaml()
+	if err != nil {
+		return nil, err
+	}
 
 	values.Application = ns.application
 	values.Namespace = ns.name
