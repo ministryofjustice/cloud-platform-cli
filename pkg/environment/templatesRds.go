@@ -20,6 +20,8 @@ type templateRds struct {
 	TeamName              string
 }
 
+const RdsTfFile = "resources/rds.tf"
+
 // CreateTemplateRds creates the terraform files from environment's template folder
 func CreateTemplateRds(cmd *cobra.Command, args []string) error {
 
@@ -35,13 +37,13 @@ func CreateTemplateRds(cmd *cobra.Command, args []string) error {
 
 	tpl := template.Must(template.New("rds").Parse(RdsTemplate))
 
-	f, _ := outputFileWriter("resources/rds.tf")
+	f, _ := outputFileWriter(RdsTfFile)
 	err = tpl.Execute(f, rdsValues)
 	if err != nil {
 		return (err)
 	}
 
-	fmt.Printf("RDS File generated in %s/%s/resources/rds.tf\n", namespaceBaseFolder, rdsValues.Namespace)
+	fmt.Printf("RDS File generated in %s\n", RdsTfFile)
 	color.Info.Tips("This template is using default values provided by your namespace information. Please review before raising PR")
 
 	return nil
