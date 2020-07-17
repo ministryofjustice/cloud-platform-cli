@@ -4,6 +4,20 @@ import (
 	"testing"
 )
 
+func TestRequireCpEnvRepo(t *testing.T) {
+	// Pass if we're in the right repository
+	re := RepoEnvironment{repository: CloudPlatformEnvRepo}
+	if re.MustBeInCloudPlatformEnvironments() != nil {
+		t.Errorf("This should have passed")
+	}
+
+	re = RepoEnvironment{}
+	err := re.MustBeInCloudPlatformEnvironments()
+	if err == nil {
+		t.Errorf("This should have failed")
+	}
+}
+
 // If we assign a string value to 'repository', we get it back
 func TestRepoEnvironmentRepository(t *testing.T) {
 	re := RepoEnvironment{repository: "foobar"}

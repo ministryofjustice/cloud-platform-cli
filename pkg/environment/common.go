@@ -12,6 +12,7 @@ import (
 	"strings"
 )
 
+const CloudPlatformEnvRepo = "cloud-platform-environments"
 const namespaceBaseFolder = "namespaces/live-1.cloud-platform.service.justice.gov.uk"
 
 // metadataFromNamespace holds folder names (environments names) from
@@ -39,7 +40,7 @@ func (s *metadataFromNamespace) checkPath() (bool, error) {
 	s.envRepoPath = FullPath
 	repoName := filepath.Base(FullPath)
 
-	if repoName != "cloud-platform-environments" {
+	if repoName != CloudPlatformEnvRepo {
 		return false, errors.New("You are outside cloud-platform-environment repo")
 	}
 

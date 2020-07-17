@@ -2,6 +2,7 @@ package environment
 
 import (
 	"errors"
+	"fmt"
 	"os/exec"
 	"strings"
 )
@@ -14,6 +15,17 @@ import (
 
 type RepoEnvironment struct {
 	repository string
+}
+
+func (re *RepoEnvironment) MustBeInCloudPlatformEnvironments() error {
+	err, repo := re.Repository()
+	if err != nil {
+		return err
+	}
+	if repo != CloudPlatformEnvRepo {
+		return errors.New(fmt.Sprintf("This command may only be run from within a working copy of the %s repository\n", CloudPlatformEnvRepo))
+	}
+	return nil
 }
 
 // set and return the name of the git repository which the current working
