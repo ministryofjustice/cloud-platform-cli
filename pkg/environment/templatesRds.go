@@ -52,9 +52,9 @@ func CreateTemplateRds(cmd *cobra.Command, args []string) error {
 
 func templateRdsSetValues() (*templateRds, error) {
 	values := templateRds{}
-	metadata := metadataFromNamespace{}
 
-	_, err := metadata.checkPath()
+	re := RepoEnvironment{}
+	err := re.MustBeInCloudPlatformEnvironments()
 	if err != nil {
 		return nil, err
 	}
