@@ -82,7 +82,7 @@ func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 		return (err)
 	}
 
-	namespaceValues, err := templateNamespaceSetValues()
+	namespaceValues, err := promptUserForNamespaceValues()
 	if err != nil {
 		return (err)
 	}
@@ -119,7 +119,7 @@ func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func templateNamespaceSetValues() (*templateEnvironment, error) {
+func promptUserForNamespaceValues() (*templateEnvironment, error) {
 
 	values := templateEnvironment{}
 
