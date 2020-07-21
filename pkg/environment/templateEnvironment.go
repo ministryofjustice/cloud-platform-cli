@@ -1,11 +1,8 @@
 package environment
 
 import (
-	"errors"
 	"fmt"
 	"os"
-	"os/exec"
-	"strings"
 	"text/template"
 
 	"github.com/gookit/color"
@@ -243,20 +240,15 @@ func downloadTemplateContents(t []*templateEnvironmentFile) error {
 }
 
 func setupPaths(t []*templateEnvironmentFile, namespace string) error {
-	path, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
-	if err != nil {
-		return errors.New("You are outside cloud-platform-environment repo")
-	}
-	fullPath := strings.TrimSpace(string(path))
 	for _, s := range t {
-		s.outputPath = fullPath + fmt.Sprintf("/%s/%s/", namespaceBaseFolder, namespace) + s.name
+		s.outputPath = fmt.Sprintf("%s/%s/", namespaceBaseFolder, namespace) + s.name
 	}
 
-	err = os.Mkdir(fullPath+fmt.Sprintf("/%s/%s/", namespaceBaseFolder, namespace), 0755)
+  err := os.Mkdir(fmt.Sprintf("%s/%s/", namespaceBaseFolder, namespace), 0755)
 	if err != nil {
 		return err
 	}
-	err = os.Mkdir(fullPath+fmt.Sprintf("/%s/%s/resources", namespaceBaseFolder, namespace), 0755)
+	err = os.Mkdir(fmt.Sprintf("%s/%s/resources", namespaceBaseFolder, namespace), 0755)
 	if err != nil {
 		return err
 	}
