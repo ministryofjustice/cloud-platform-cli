@@ -36,6 +36,12 @@ type templateEnvironmentFile struct {
 // CreateTemplateNamespace creates the terraform files from environment's template folder
 func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 
+	re := RepoEnvironment{}
+	err := re.mustBeInCloudPlatformEnvironments()
+	if err != nil {
+		return err
+	}
+
 	templates := []*templateEnvironmentFile{
 		{
 			name: "00-namespace.yaml",
@@ -71,7 +77,7 @@ func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 		},
 	}
 
-	err := downloadTemplateContents(templates)
+	err = downloadTemplateContents(templates)
 	if err != nil {
 		return (err)
 	}
@@ -115,12 +121,6 @@ func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 
 func templateNamespaceSetValues() (*templateEnvironment, error) {
 
-	re := RepoEnvironment{}
-	err := re.mustBeInCloudPlatformEnvironments()
-	if err != nil {
-		return nil, err
-	}
-
 	values := templateEnvironment{}
 
 	Namespace := promptString{
@@ -128,7 +128,7 @@ func templateNamespaceSetValues() (*templateEnvironment, error) {
 		defaultValue: "",
 		validation:   "no-spaces-and-no-uppercase",
 	}
-	err = Namespace.promptString()
+  err := Namespace.promptString()
 	if err != nil {
 		return nil, err
 	}
