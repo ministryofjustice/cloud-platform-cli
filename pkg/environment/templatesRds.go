@@ -20,10 +20,13 @@ type templateRds struct {
 	TeamName              string
 }
 
+const rdsTemplateFile = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-rds-instance/main/template/rds.tmpl"
+const rdsTfFile = "resources/rds.tf"
+
 // CreateTemplateRds creates the terraform files from environment's template folder
 func CreateTemplateRds(cmd *cobra.Command, args []string) error {
 
-	RdsTemplate, err := downloadTemplate("https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-rds-instance/main/template/rds.tmpl")
+	RdsTemplate, err := downloadTemplate(rdsTemplateFile)
 	if err != nil {
 		return (err)
 	}
@@ -35,14 +38,13 @@ func CreateTemplateRds(cmd *cobra.Command, args []string) error {
 
 	tpl := template.Must(template.New("rds").Parse(RdsTemplate))
 
-	outputPath := fmt.Sprintf("%s/%s/resources/rds.tf", namespaceBaseFolder, rdsValues.Namespace)
-	f, _ := outputFileWriter(outputPath)
+	f, _ := outputFileWriter(rdsTfFile)
 	err = tpl.Execute(f, rdsValues)
 	if err != nil {
 		return (err)
 	}
 
-	fmt.Printf("RDS File generated in %s/%s/resources/rds.tf\n", namespaceBaseFolder, rdsValues.Namespace)
+	fmt.Printf("RDS File generated in %s\n", rdsTfFile)
 	color.Info.Tips("This template is using default values provided by your namespace information. Please review before raising PR")
 
 	return nil
@@ -50,35 +52,26 @@ func CreateTemplateRds(cmd *cobra.Command, args []string) error {
 
 func templateRdsSetValues() (*templateRds, error) {
 	values := templateRds{}
-	metadata := metadataFromNamespace{}
 
-	_, err := metadata.checkPath()
+	re := RepoEnvironment{}
+	err := re.mustBeInCloudPlatformEnvironments()
 	if err != nil {
 		return nil, err
 	}
 
-	err = metadata.getNamespaceFromPath()
+	ns := Namespace{}
+	err = ns.readYaml()
 	if err != nil {
 		return nil, err
 	}
 
-	err = metadata.checkNamespaceExist()
-	if err != nil {
-		return nil, err
-	}
-
-	err = metadata.getNamespaceMetadata()
-	if err != nil {
-		return nil, err
-	}
-
-	values.Application = metadata.application
-	values.Namespace = metadata.namespace
-	values.BusinessUnit = metadata.businessUnit
-	values.EnvironmentName = metadata.environmentName
-	values.IsProduction, _ = strconv.ParseBool(metadata.isProduction)
+	values.Application = ns.application
+	values.Namespace = ns.name
+	values.BusinessUnit = ns.businessUnit
+	values.EnvironmentName = ns.environmentName
+	values.IsProduction, _ = strconv.ParseBool(ns.isProduction)
 	values.RdsModuleName = "rds"
-	values.InfrastructureSupport = metadata.ownerEmail
+	values.InfrastructureSupport = ns.ownerEmail
 	values.TeamName = "teamName"
 
 	return &values, nil
