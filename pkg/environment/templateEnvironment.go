@@ -244,11 +244,7 @@ func setupPaths(t []*templateEnvironmentFile, namespace string) error {
 		s.outputPath = fmt.Sprintf("%s/%s/", namespaceBaseFolder, namespace) + s.name
 	}
 
-  err := os.Mkdir(fmt.Sprintf("%s/%s/", namespaceBaseFolder, namespace), 0755)
-	if err != nil {
-		return err
-	}
-	err = os.Mkdir(fmt.Sprintf("%s/%s/resources", namespaceBaseFolder, namespace), 0755)
+  err := os.MkdirAll(fmt.Sprintf("%s/%s/resources", namespaceBaseFolder, namespace), 0755)
 	if err != nil {
 		return err
 	}
