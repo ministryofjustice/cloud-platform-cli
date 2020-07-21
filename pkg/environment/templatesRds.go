@@ -31,7 +31,7 @@ func CreateTemplateRds(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-  rdsTemplate, err := downloadTemplate(rdsTemplateFile)
+	rdsTemplate, err := downloadTemplate(rdsTemplateFile)
 	if err != nil {
 		return (err)
 	}
@@ -59,7 +59,7 @@ func getRdsValuesFromNamespace() (*templateRds, error) {
 	values := templateRds{}
 
 	ns := Namespace{}
-  err := ns.readYaml()
+	err := ns.readYaml()
 	if err != nil {
 		return nil, err
 	}
