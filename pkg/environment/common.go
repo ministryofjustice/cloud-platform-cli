@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-const CloudPlatformEnvRepo = "cloud-platform-environments"
+const cloudPlatformEnvRepo = "cloud-platform-environments"
 const namespaceBaseFolder = "namespaces/live-1.cloud-platform.service.justice.gov.uk"
 
 func outputFileWriter(fileName string) (*os.File, error) {

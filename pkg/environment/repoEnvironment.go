@@ -11,13 +11,13 @@ type RepoEnvironment struct {
 	repository string
 }
 
-func (re *RepoEnvironment) MustBeInCloudPlatformEnvironments() error {
+func (re *RepoEnvironment) mustBeInCloudPlatformEnvironments() error {
 	err, repo := re.Repository()
 	if err != nil {
 		return err
 	}
-	if repo != CloudPlatformEnvRepo {
-		return errors.New(fmt.Sprintf("This command may only be run from within a working copy of the %s repository\n", CloudPlatformEnvRepo))
+	if repo != cloudPlatformEnvRepo {
+		return errors.New(fmt.Sprintf("This command may only be run from within a working copy of the %s repository\n", cloudPlatformEnvRepo))
 	}
 	return nil
 }

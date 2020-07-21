@@ -6,14 +6,14 @@ import (
 
 func TestRequireCpEnvRepo(t *testing.T) {
 	// Pass if we're in the right repository
-	re := RepoEnvironment{repository: CloudPlatformEnvRepo}
-	if re.MustBeInCloudPlatformEnvironments() != nil {
+	re := RepoEnvironment{repository: cloudPlatformEnvRepo}
+	if re.mustBeInCloudPlatformEnvironments() != nil {
 		t.Errorf("This should have passed")
 	}
 
 	// Fail if we're not in the CP-env repo (which we're not)
 	re = RepoEnvironment{}
-	err := re.MustBeInCloudPlatformEnvironments()
+	err := re.mustBeInCloudPlatformEnvironments()
 	if err == nil {
 		t.Errorf("This should have failed")
 	}

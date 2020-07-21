@@ -20,13 +20,13 @@ type templateRds struct {
 	TeamName              string
 }
 
-const RdsTemplateFile = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-rds-instance/main/template/rds.tmpl"
-const RdsTfFile = "resources/rds.tf"
+const rdsTemplateFile = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-rds-instance/main/template/rds.tmpl"
+const rdsTfFile = "resources/rds.tf"
 
 // CreateTemplateRds creates the terraform files from environment's template folder
 func CreateTemplateRds(cmd *cobra.Command, args []string) error {
 
-	RdsTemplate, err := downloadTemplate(RdsTemplateFile)
+	RdsTemplate, err := downloadTemplate(rdsTemplateFile)
 	if err != nil {
 		return (err)
 	}
@@ -38,13 +38,13 @@ func CreateTemplateRds(cmd *cobra.Command, args []string) error {
 
 	tpl := template.Must(template.New("rds").Parse(RdsTemplate))
 
-	f, _ := outputFileWriter(RdsTfFile)
+	f, _ := outputFileWriter(rdsTfFile)
 	err = tpl.Execute(f, rdsValues)
 	if err != nil {
 		return (err)
 	}
 
-	fmt.Printf("RDS File generated in %s\n", RdsTfFile)
+	fmt.Printf("RDS File generated in %s\n", rdsTfFile)
 	color.Info.Tips("This template is using default values provided by your namespace information. Please review before raising PR")
 
 	return nil
@@ -54,13 +54,13 @@ func templateRdsSetValues() (*templateRds, error) {
 	values := templateRds{}
 
 	re := RepoEnvironment{}
-	err := re.MustBeInCloudPlatformEnvironments()
+	err := re.mustBeInCloudPlatformEnvironments()
 	if err != nil {
 		return nil, err
 	}
 
 	ns := Namespace{}
-	err = ns.ReadYaml()
+	err = ns.readYaml()
 	if err != nil {
 		return nil, err
 	}

@@ -22,12 +22,12 @@ type Namespace struct {
 	namespace       string
 }
 
-func (ns *Namespace) ReadYaml() error {
-	return ns.ReadYamlFile(NamespaceYamlFile)
+func (ns *Namespace) readYaml() error {
+	return ns.readYamlFile(NamespaceYamlFile)
 }
 
 // This is a public function so that we can use it in our tests
-func (ns *Namespace) ReadYamlFile(filename string) error {
+func (ns *Namespace) readYamlFile(filename string) error {
 	contents, err := ioutil.ReadFile(filename)
 	if err != nil {
 		fmt.Printf("Failed to read namespace YAML file: %s", filename)
