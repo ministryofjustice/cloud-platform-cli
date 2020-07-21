@@ -26,7 +26,7 @@ type templateEnvironment struct {
 	validPath             bool
 }
 
-type templateEnvironmentFile struct {
+type templateFromUrl struct {
 	outputPath string
 	content    string
 	name       string
@@ -174,8 +174,8 @@ func promptUserForNamespaceValues() (*templateEnvironment, error) {
 	return &values, nil
 }
 
-func downloadAndInitialiseTemplates(namespace string) (error, []*templateEnvironmentFile) {
-	templates := []*templateEnvironmentFile{
+func downloadAndInitialiseTemplates(namespace string) (error, []*templateFromUrl) {
+	templates := []*templateFromUrl{
 		{
 			name: "00-namespace.yaml",
 			url:  templatesBaseUrl + "/" + "00-namespace.yaml",
@@ -221,7 +221,7 @@ func downloadAndInitialiseTemplates(namespace string) (error, []*templateEnviron
 	return nil, templates
 }
 
-func createNamespaceFiles(templates []*templateEnvironmentFile, namespaceValues *templateEnvironment) error {
+func createNamespaceFiles(templates []*templateFromUrl, namespaceValues *templateEnvironment) error {
 	err := os.MkdirAll(fmt.Sprintf("%s/%s/resources", namespaceBaseFolder, namespaceValues.Namespace), 0755)
 	if err != nil {
 		return err

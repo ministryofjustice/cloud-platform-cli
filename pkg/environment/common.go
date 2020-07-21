@@ -18,7 +18,7 @@ func outputFileWriter(fileName string) (*os.File, error) {
 	return f, nil
 }
 
-func downloadTemplateContents(t []*templateEnvironmentFile) error {
+func downloadTemplateContents(t []*templateFromUrl) error {
 	for _, s := range t {
 		content, err := downloadTemplate(s.url)
 		if err != nil {
