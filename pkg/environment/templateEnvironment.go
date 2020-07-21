@@ -113,12 +113,14 @@ func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 }
 
 func templateNamespaceSetValues() (*templateEnvironment, error) {
-	values := templateEnvironment{}
 
-	GithubTeams, err := getGitHubTeams()
+	re := RepoEnvironment{}
+	err := re.mustBeInCloudPlatformEnvironments()
 	if err != nil {
 		return nil, err
 	}
+
+	values := templateEnvironment{}
 
 	Namespace := promptString{
 		label:        "What is the name of your namespace? This should be of the form: <application>-<environment>. e.g. myapp-dev (lower-case letters and dashes only)",
@@ -158,7 +160,14 @@ func templateNamespaceSetValues() (*templateEnvironment, error) {
 		return nil, err
 	}
 
-	GithubTeam, err := promptSelectGithubTeam(GithubTeams)
+	GithubTeam := promptString{
+		label:        "What is the name of your Github team? (this must be an exact match, or you will not have access to your namespace)",
+		defaultValue: "",
+	}
+	err = GithubTeam.promptString()
+	if err != nil {
+		return nil, err
+	}
 
 	businessUnit := promptString{
 		label:        "Which part of the MoJ is responsible for this service? (e.g HMPPS, Legal Aid Agency)",
@@ -210,7 +219,7 @@ func templateNamespaceSetValues() (*templateEnvironment, error) {
 	values.Application = Application.value
 	values.BusinessUnit = businessUnit.value
 	values.Namespace = Namespace.value
-	values.GithubTeam = GithubTeam
+	values.GithubTeam = GithubTeam.value
 	values.Environment = Environment.value
 	values.IsProduction = IsProduction.value
 	values.SlackChannel = SlackChannel.value

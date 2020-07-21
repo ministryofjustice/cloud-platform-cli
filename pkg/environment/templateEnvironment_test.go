@@ -6,7 +6,7 @@ import (
 
 func TestRunningOutsideEnvironmentsWorkingCopy(t *testing.T) {
 	err := CreateTemplateNamespace(nil, nil)
-	if err.Error() != "You are outside cloud-platform-environment repo" {
+	if err.Error() != "This command may only be run from within a working copy of the cloud-platform-environments repository\n" {
 		t.Errorf("Unexpected error: %s", err)
 	}
 }
