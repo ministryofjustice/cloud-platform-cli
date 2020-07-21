@@ -47,48 +47,9 @@ func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 		return (err)
 	}
 
-	templates := []*templateEnvironmentFile{
-		{
-			name: "00-namespace.yaml",
-			url:  templatesBaseUrl + "/" + "00-namespace.yaml",
-		},
-		{
-			name: "01-rbac.yaml",
-			url:  templatesBaseUrl + "/" + "01-rbac.yaml",
-		},
-		{
-			name: "02-limitrange.yaml",
-			url:  templatesBaseUrl + "/" + "02-limitrange.yaml",
-		},
-		{
-			name: "03-resourcequota.yaml",
-			url:  templatesBaseUrl + "/" + "03-resourcequota.yaml",
-		},
-		{
-			name: "04-networkpolicy.yaml",
-			url:  templatesBaseUrl + "/" + "04-networkpolicy.yaml",
-		},
-		{
-			name: "resources/main.tf",
-			url:  templatesBaseUrl + "/" + "resources/main.tf",
-		},
-		{
-			name: "resources/versions.tf",
-			url:  templatesBaseUrl + "/" + "resources/versions.tf",
-		},
-		{
-			name: "resources/variables.tf",
-			url:  templatesBaseUrl + "/" + "resources/variables.tf",
-		},
-	}
-
-	err = downloadTemplateContents(templates)
+  err, templates := downloadAndInitialiseTemplates(namespaceValues.Namespace)
 	if err != nil {
-		return (err)
-	}
-
-	for _, s := range templates {
-		s.outputPath = fmt.Sprintf("%s/%s/", namespaceBaseFolder, namespaceValues.Namespace) + s.name
+		return err
 	}
 
   err = os.MkdirAll(fmt.Sprintf("%s/%s/resources", namespaceBaseFolder, namespaceValues.Namespace), 0755)
@@ -229,6 +190,53 @@ func promptUserForNamespaceValues() (*templateEnvironment, error) {
 	values.Owner = Owner.value
 
 	return &values, nil
+}
+
+func downloadAndInitialiseTemplates(namespace string) (error, []*templateEnvironmentFile) {
+	templates := []*templateEnvironmentFile{
+		{
+			name: "00-namespace.yaml",
+			url:  templatesBaseUrl + "/" + "00-namespace.yaml",
+		},
+		{
+			name: "01-rbac.yaml",
+			url:  templatesBaseUrl + "/" + "01-rbac.yaml",
+		},
+		{
+			name: "02-limitrange.yaml",
+			url:  templatesBaseUrl + "/" + "02-limitrange.yaml",
+		},
+		{
+			name: "03-resourcequota.yaml",
+			url:  templatesBaseUrl + "/" + "03-resourcequota.yaml",
+		},
+		{
+			name: "04-networkpolicy.yaml",
+			url:  templatesBaseUrl + "/" + "04-networkpolicy.yaml",
+		},
+		{
+			name: "resources/main.tf",
+			url:  templatesBaseUrl + "/" + "resources/main.tf",
+		},
+		{
+			name: "resources/versions.tf",
+			url:  templatesBaseUrl + "/" + "resources/versions.tf",
+		},
+		{
+			name: "resources/variables.tf",
+			url:  templatesBaseUrl + "/" + "resources/variables.tf",
+		},
+	}
+
+  err := downloadTemplateContents(templates)
+	if err != nil {
+		return err, nil
+	}
+
+	for _, s := range templates {
+		s.outputPath = fmt.Sprintf("%s/%s/", namespaceBaseFolder, namespace) + s.name
+	}
+  return nil, templates
 }
 
 func downloadTemplateContents(t []*templateEnvironmentFile) error {
