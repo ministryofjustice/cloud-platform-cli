@@ -35,7 +35,6 @@ type templateEnvironmentFile struct {
 
 // CreateTemplateNamespace creates the terraform files from environment's template folder
 func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
-
 	re := RepoEnvironment{}
 	err := re.mustBeInCloudPlatformEnvironments()
 	if err != nil {
@@ -52,26 +51,9 @@ func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-  err = os.MkdirAll(fmt.Sprintf("%s/%s/resources", namespaceBaseFolder, namespaceValues.Namespace), 0755)
+  err = createNamespaceFiles(templates, namespaceValues)
 	if err != nil {
 		return err
-	}
-
-	for _, i := range templates {
-		t, err := template.New("namespaceTemplates").Parse(i.content)
-		if err != nil {
-			return err
-		}
-
-		f, err := os.Create(i.outputPath)
-		if err != nil {
-			return err
-		}
-
-		err = t.Execute(f, namespaceValues)
-		if err != nil {
-			return err
-		}
 	}
 
 	fmt.Printf("Namespace files generated under %s/%s\n", namespaceBaseFolder, namespaceValues.Namespace)
@@ -249,4 +231,29 @@ func downloadTemplateContents(t []*templateEnvironmentFile) error {
 	}
 
 	return nil
+}
+
+func createNamespaceFiles(templates []*templateEnvironmentFile, namespaceValues *templateEnvironment) error {
+  err := os.MkdirAll(fmt.Sprintf("%s/%s/resources", namespaceBaseFolder, namespaceValues.Namespace), 0755)
+	if err != nil {
+		return err
+	}
+
+	for _, i := range templates {
+		t, err := template.New("namespaceTemplates").Parse(i.content)
+		if err != nil {
+			return err
+		}
+
+		f, err := os.Create(i.outputPath)
+		if err != nil {
+			return err
+		}
+
+		err = t.Execute(f, namespaceValues)
+		if err != nil {
+			return err
+		}
+	}
+  return nil
 }
