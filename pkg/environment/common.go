@@ -100,3 +100,11 @@ func removeDuplicates(elements []string) []string {
 	}
 	return result
 }
+
+func directoryExists(path string) bool {
+	if stat, err := os.Stat(path); err == nil && stat.IsDir() {
+		return true
+	} else {
+		return false
+	}
+}
