@@ -46,12 +46,12 @@ func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 		return (err)
 	}
 
-  err, templates := downloadAndInitialiseTemplates(namespaceValues.Namespace)
+	err, templates := downloadAndInitialiseTemplates(namespaceValues.Namespace)
 	if err != nil {
 		return err
 	}
 
-  err = createNamespaceFiles(templates, namespaceValues)
+	err = createNamespaceFiles(templates, namespaceValues)
 	if err != nil {
 		return err
 	}
@@ -71,7 +71,7 @@ func promptUserForNamespaceValues() (*templateEnvironment, error) {
 		defaultValue: "",
 		validation:   "no-spaces-and-no-uppercase",
 	}
-  err := Namespace.promptString()
+	err := Namespace.promptString()
 	if err != nil {
 		return nil, err
 	}
@@ -210,7 +210,7 @@ func downloadAndInitialiseTemplates(namespace string) (error, []*templateEnviron
 		},
 	}
 
-  err := downloadTemplateContents(templates)
+	err := downloadTemplateContents(templates)
 	if err != nil {
 		return err, nil
 	}
@@ -218,11 +218,11 @@ func downloadAndInitialiseTemplates(namespace string) (error, []*templateEnviron
 	for _, s := range templates {
 		s.outputPath = fmt.Sprintf("%s/%s/", namespaceBaseFolder, namespace) + s.name
 	}
-  return nil, templates
+	return nil, templates
 }
 
 func createNamespaceFiles(templates []*templateEnvironmentFile, namespaceValues *templateEnvironment) error {
-  err := os.MkdirAll(fmt.Sprintf("%s/%s/resources", namespaceBaseFolder, namespaceValues.Namespace), 0755)
+	err := os.MkdirAll(fmt.Sprintf("%s/%s/resources", namespaceBaseFolder, namespaceValues.Namespace), 0755)
 	if err != nil {
 		return err
 	}
@@ -243,5 +243,5 @@ func createNamespaceFiles(templates []*templateEnvironmentFile, namespaceValues 
 			return err
 		}
 	}
-  return nil
+	return nil
 }
