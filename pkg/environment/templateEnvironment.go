@@ -42,6 +42,11 @@ func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	namespaceValues, err := promptUserForNamespaceValues()
+	if err != nil {
+		return (err)
+	}
+
 	templates := []*templateEnvironmentFile{
 		{
 			name: "00-namespace.yaml",
@@ -82,18 +87,13 @@ func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 		return (err)
 	}
 
-	namespaceValues, err := promptUserForNamespaceValues()
-	if err != nil {
-		return (err)
+	for _, s := range templates {
+		s.outputPath = fmt.Sprintf("%s/%s/", namespaceBaseFolder, namespaceValues.Namespace) + s.name
 	}
 
   err = os.MkdirAll(fmt.Sprintf("%s/%s/resources", namespaceBaseFolder, namespaceValues.Namespace), 0755)
 	if err != nil {
 		return err
-	}
-
-	for _, s := range templates {
-		s.outputPath = fmt.Sprintf("%s/%s/", namespaceBaseFolder, namespaceValues.Namespace) + s.name
 	}
 
 	for _, i := range templates {
