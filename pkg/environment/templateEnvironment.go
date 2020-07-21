@@ -86,7 +86,9 @@ func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	setupPaths(templates, namespaceValues.Namespace)
+	for _, s := range templates {
+		s.outputPath = fmt.Sprintf("%s/%s/", namespaceBaseFolder, namespaceValues.Namespace) + s.name
+	}
 
 	for _, i := range templates {
 		t, err := template.New("namespaceTemplates").Parse(i.content)
@@ -239,10 +241,4 @@ func downloadTemplateContents(t []*templateEnvironmentFile) error {
 	}
 
 	return nil
-}
-
-func setupPaths(t []*templateEnvironmentFile, namespace string) {
-	for _, s := range t {
-		s.outputPath = fmt.Sprintf("%s/%s/", namespaceBaseFolder, namespace) + s.name
-	}
 }
