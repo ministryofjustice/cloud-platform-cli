@@ -26,13 +26,6 @@ type templateEnvironment struct {
 	validPath             bool
 }
 
-type templateFromUrl struct {
-	outputPath string
-	content    string
-	name       string
-	url        string
-}
-
 // CreateTemplateNamespace creates the terraform files from environment's template folder
 func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 	re := RepoEnvironment{}

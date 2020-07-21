@@ -9,6 +9,13 @@ import (
 const cloudPlatformEnvRepo = "cloud-platform-environments"
 const namespaceBaseFolder = "namespaces/live-1.cloud-platform.service.justice.gov.uk"
 
+type templateFromUrl struct {
+	outputPath string
+	content    string
+	name       string
+	url        string
+}
+
 func outputFileWriter(fileName string) (*os.File, error) {
 	f, err := os.Create(fileName)
 	if err != nil {
