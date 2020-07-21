@@ -221,18 +221,6 @@ func downloadAndInitialiseTemplates(namespace string) (error, []*templateEnviron
   return nil, templates
 }
 
-func downloadTemplateContents(t []*templateEnvironmentFile) error {
-	for _, s := range t {
-		content, err := downloadTemplate(s.url)
-		if err != nil {
-			return err
-		}
-		s.content = content
-	}
-
-	return nil
-}
-
 func createNamespaceFiles(templates []*templateEnvironmentFile, namespaceValues *templateEnvironment) error {
   err := os.MkdirAll(fmt.Sprintf("%s/%s/resources", namespaceBaseFolder, namespaceValues.Namespace), 0755)
 	if err != nil {

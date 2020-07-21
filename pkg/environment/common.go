@@ -18,6 +18,18 @@ func outputFileWriter(fileName string) (*os.File, error) {
 	return f, nil
 }
 
+func downloadTemplateContents(t []*templateEnvironmentFile) error {
+	for _, s := range t {
+		content, err := downloadTemplate(s.url)
+		if err != nil {
+			return err
+		}
+		s.content = content
+	}
+
+	return nil
+}
+
 func downloadTemplate(url string) (string, error) {
 
 	response, err := http.Get(url)
