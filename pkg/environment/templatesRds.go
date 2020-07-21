@@ -31,17 +31,17 @@ func CreateTemplateRds(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	RdsTemplate, err := downloadTemplate(rdsTemplateFile)
+  rdsTemplate, err := downloadTemplate(rdsTemplateFile)
 	if err != nil {
 		return (err)
 	}
 
-	rdsValues, err := templateRdsSetValues()
+	rdsValues, err := getRdsValuesFromNamespace()
 	if err != nil {
 		return (err)
 	}
 
-	tpl := template.Must(template.New("rds").Parse(RdsTemplate))
+	tpl := template.Must(template.New("rds").Parse(rdsTemplate))
 
 	f, _ := outputFileWriter(rdsTfFile)
 	err = tpl.Execute(f, rdsValues)
@@ -55,7 +55,7 @@ func CreateTemplateRds(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func templateRdsSetValues() (*templateRds, error) {
+func getRdsValuesFromNamespace() (*templateRds, error) {
 	values := templateRds{}
 
 	ns := Namespace{}
