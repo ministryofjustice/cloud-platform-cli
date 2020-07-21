@@ -74,7 +74,7 @@ func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 		},
 	}
 
-	err := initTemplateNamespace(templates)
+	err := downloadTemplateContents(templates)
 	if err != nil {
 		return (err)
 	}
@@ -230,7 +230,7 @@ func templateNamespaceSetValues() (*templateEnvironment, error) {
 	return &values, nil
 }
 
-func initTemplateNamespace(t []*templateEnvironmentFile) error {
+func downloadTemplateContents(t []*templateEnvironmentFile) error {
 	for _, s := range t {
 		content, err := downloadTemplate(s.url)
 		if err != nil {
