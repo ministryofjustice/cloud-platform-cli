@@ -9,10 +9,10 @@ import (
 	"github.com/manifoldco/promptui"
 )
 
-type promptYesNo struct {
+type promptTrueFalse struct {
 	label        string
-	defaultValue int
-	value        bool
+	defaultValue string
+	value        string
 }
 
 type promptString struct {
@@ -52,17 +52,16 @@ func (s *promptString) promptString() error {
 	return nil
 }
 
-func (s *promptYesNo) promptyesNo() error {
+func (s *promptTrueFalse) prompttrueFalse() error {
 	prompt := promptui.Select{
-		Label:     s.label,
-		Items:     []string{"Yes", "No"},
-		CursorPos: s.defaultValue,
+		Label: s.label,
+		Items: []string{"true", "false"},
 	}
 	_, result, err := prompt.Run()
 	if err != nil {
 		return err
 	}
-	s.value = result == "Yes"
+	s.value = result
 	return nil
 }
 

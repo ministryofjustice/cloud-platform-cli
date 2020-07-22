@@ -13,7 +13,7 @@ import (
 const templatesBaseUrl = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template"
 
 type namespaceValues struct {
-	IsProduction          bool
+	IsProduction          string
 	Namespace             string
 	Environment           string
 	GithubTeam            string
@@ -78,11 +78,11 @@ func promptUserForNamespaceValues() (*namespaceValues, error) {
 		return nil, err
 	}
 
-	IsProduction := promptYesNo{
-		label:        "Is this a production namespace? (choose Yes or No)",
-		defaultValue: 0,
+	IsProduction := promptTrueFalse{
+		label:        "Is this a production namespace? (choose 'true' or 'false')",
+		defaultValue: "false",
 	}
-	err = IsProduction.promptyesNo()
+	err = IsProduction.prompttrueFalse()
 	if err != nil {
 		return nil, err
 	}
