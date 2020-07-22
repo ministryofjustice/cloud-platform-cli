@@ -12,7 +12,7 @@ import (
 // all yaml and terraform templates will be pulled from URL endpoints below here
 const templatesBaseUrl = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template"
 
-type environmentValues struct {
+type namespaceValues struct {
 	IsProduction          bool
 	Namespace             string
 	Environment           string
@@ -33,30 +33,30 @@ func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	namespaceValues, err := promptUserForNamespaceValues()
+	nsValues, err := promptUserForNamespaceValues()
 	if err != nil {
 		return (err)
 	}
 
-	err, templates := downloadAndInitialiseTemplates(namespaceValues.Namespace)
+	err, templates := downloadAndInitialiseTemplates(nsValues.Namespace)
 	if err != nil {
 		return err
 	}
 
-	err = createNamespaceFiles(templates, namespaceValues)
+	err = createNamespaceFiles(templates, nsValues)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("Namespace files generated under %s/%s\n", namespaceBaseFolder, namespaceValues.Namespace)
+	fmt.Printf("Namespace files generated under %s/%s\n", namespaceBaseFolder, nsValues.Namespace)
 	color.Info.Tips("Please review before raising PR")
 
 	return nil
 }
 
-func promptUserForNamespaceValues() (*environmentValues, error) {
+func promptUserForNamespaceValues() (*namespaceValues, error) {
 
-	values := environmentValues{}
+	values := namespaceValues{}
 
 	Namespace := promptString{
 		label:        "What is the name of your namespace? This should be of the form: <application>-<environment>. e.g. myapp-dev (lower-case letters and dashes only)",
@@ -213,8 +213,8 @@ func downloadAndInitialiseTemplates(namespace string) (error, []*templateFromUrl
 	return nil, templates
 }
 
-func createNamespaceFiles(templates []*templateFromUrl, namespaceValues *environmentValues) error {
-	err := os.MkdirAll(fmt.Sprintf("%s/%s/resources", namespaceBaseFolder, namespaceValues.Namespace), 0755)
+func createNamespaceFiles(templates []*templateFromUrl, nsValues *namespaceValues) error {
+	err := os.MkdirAll(fmt.Sprintf("%s/%s/resources", namespaceBaseFolder, nsValues.Namespace), 0755)
 	if err != nil {
 		return err
 	}
@@ -230,7 +230,7 @@ func createNamespaceFiles(templates []*templateFromUrl, namespaceValues *environ
 			return err
 		}
 
-		err = t.Execute(f, namespaceValues)
+		err = t.Execute(f, nsValues)
 		if err != nil {
 			return err
 		}
