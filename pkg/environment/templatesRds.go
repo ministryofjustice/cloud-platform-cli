@@ -2,23 +2,11 @@ package environment
 
 import (
 	"fmt"
-	"strconv"
-	"text/template"
+	"os"
 
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 )
-
-type templateRds struct {
-	IsProduction          bool
-	EnvironmentName       string
-	BusinessUnit          string
-	Application           string
-	Namespace             string
-	InfrastructureSupport string
-	RdsModuleName         string
-	TeamName              string
-}
 
 const rdsTemplateFile = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-rds-instance/main/template/rds.tmpl"
 const rdsTfFile = "resources/rds.tf"
@@ -31,22 +19,9 @@ func CreateTemplateRds(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	rdsTemplate, err := downloadTemplate(rdsTemplateFile)
+	err = createRdsTfFile()
 	if err != nil {
-		return (err)
-	}
-
-	rdsValues, err := getRdsValuesFromNamespace()
-	if err != nil {
-		return (err)
-	}
-
-	tpl := template.Must(template.New("rds").Parse(rdsTemplate))
-
-	f, _ := outputFileWriter(rdsTfFile)
-	err = tpl.Execute(f, rdsValues)
-	if err != nil {
-		return (err)
+		return err
 	}
 
 	fmt.Printf("RDS File generated in %s\n", rdsTfFile)
@@ -55,23 +30,20 @@ func CreateTemplateRds(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func getRdsValuesFromNamespace() (*templateRds, error) {
-	values := templateRds{}
-
-	ns := Namespace{}
-	err := ns.readYaml()
+func createRdsTfFile() error {
+	// The rds "template" is actually an example file that we can just save
+	// "as is" into the user's resources/ directory as `rds.tf`
+	rdsTemplate, err := downloadTemplate(rdsTemplateFile)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	values.Application = ns.application
-	values.Namespace = ns.name
-	values.BusinessUnit = ns.businessUnit
-	values.EnvironmentName = ns.environmentName
-	values.IsProduction, _ = strconv.ParseBool(ns.isProduction)
-	values.RdsModuleName = "rds"
-	values.InfrastructureSupport = ns.ownerEmail
-	values.TeamName = "teamName"
+	f, err := os.Create(rdsTfFile)
+	if err != nil {
+		return err
+	}
+	f.WriteString(rdsTemplate)
+	f.Close()
 
-	return &values, nil
+	return nil
 }
