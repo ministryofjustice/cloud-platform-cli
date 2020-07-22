@@ -12,19 +12,6 @@ import (
 // all yaml and terraform templates will be pulled from URL endpoints below here
 const templatesBaseUrl = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template"
 
-type namespaceValues struct {
-	Application           string
-	BusinessUnit          string
-	Environment           string
-	GithubTeam            string
-	InfrastructureSupport string
-	IsProduction          string
-	Namespace             string
-	Owner                 string
-	SlackChannel          string
-	SourceCode            string
-}
-
 // CreateTemplateNamespace creates the terraform files from environment's template folder
 func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 	re := RepoEnvironment{}
@@ -54,9 +41,9 @@ func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func promptUserForNamespaceValues() (*namespaceValues, error) {
+func promptUserForNamespaceValues() (*Namespace, error) {
 
-	values := namespaceValues{}
+	values := Namespace{}
 
 	Namespace := promptString{
 		label:        "What is the name of your namespace? This should be of the form: <application>-<environment>. e.g. myapp-dev (lower-case letters and dashes only)",
@@ -213,7 +200,7 @@ func downloadAndInitialiseTemplates(namespace string) (error, []*templateFromUrl
 	return nil, templates
 }
 
-func createNamespaceFiles(templates []*templateFromUrl, nsValues *namespaceValues) error {
+func createNamespaceFiles(templates []*templateFromUrl, nsValues *Namespace) error {
 	err := os.MkdirAll(fmt.Sprintf("%s/%s/resources", namespaceBaseFolder, nsValues.Namespace), 0755)
 	if err != nil {
 		return err

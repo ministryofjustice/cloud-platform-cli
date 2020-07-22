@@ -23,7 +23,7 @@ func TestOutputsInterpolatedTemplateToPath(t *testing.T) {
 		},
 	}
 
-	values := namespaceValues{
+	values := Namespace{
 		Namespace: "mynamespace",
 	}
 
