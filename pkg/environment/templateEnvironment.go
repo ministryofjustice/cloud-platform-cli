@@ -220,7 +220,7 @@ func createNamespaceFiles(templates []*templateFromUrl, namespaceValues *environ
 	}
 
 	for _, i := range templates {
-		t, err := template.New("namespaceTemplates").Parse(i.content)
+		t, err := template.New("").Parse(i.content)
 		if err != nil {
 			return err
 		}
