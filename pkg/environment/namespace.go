@@ -14,12 +14,14 @@ type Namespace struct {
 	Application           string
 	BusinessUnit          string
 	Environment           string
+	GithubTeam            string
 	InfrastructureSupport string
 	IsProduction          string
 	Name                  string
 	Namespace             string
 	Owner                 string
 	OwnerEmail            string
+	SlackChannel          string
 	SourceCode            string
 }
 
