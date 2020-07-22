@@ -23,7 +23,6 @@ type templateEnvironment struct {
 	InfrastructureSupport string
 	SourceCode            string
 	Owner                 string
-	validPath             bool
 }
 
 // CreateTemplateNamespace creates the terraform files from environment's template folder
