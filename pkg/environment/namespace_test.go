@@ -4,11 +4,11 @@ import (
 	"testing"
 )
 
-// If we assign a string value to 'name', we get it back
+// If we assign a string value to 'Namespace', we get it back
 func TestNamespaceName(t *testing.T) {
-	ns := Namespace{Name: "foobar"}
-	if ns.Name != "foobar" {
-		t.Errorf("Something went wrong: %s", ns.Name)
+	ns := Namespace{Namespace: "foobar"}
+	if ns.Namespace != "foobar" {
+		t.Errorf("Something went wrong: %s", ns.Namespace)
 	}
 }
 
@@ -16,8 +16,8 @@ func TestNamespaceName(t *testing.T) {
 func TestNamespaceFromYamlFile(t *testing.T) {
 	ns := Namespace{}
 	ns.readYamlFile("fixtures/foobar-namespace.yml")
-	if ns.Name != "foobar" {
-		t.Errorf("Expect foobar, got: %s", ns.Name)
+	if ns.Namespace != "foobar" {
+		t.Errorf("Expect foobar, got: %s", ns.Namespace)
 	}
 
 	if ns.IsProduction != "false" {

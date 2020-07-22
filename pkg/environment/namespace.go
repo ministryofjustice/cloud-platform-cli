@@ -17,7 +17,6 @@ type Namespace struct {
 	GithubTeam            string
 	InfrastructureSupport string
 	IsProduction          string
-	Name                  string
 	Namespace             string
 	Owner                 string
 	OwnerEmail            string
@@ -45,8 +44,8 @@ func (ns *Namespace) parseYaml(yamlData []byte) error {
 		APIVersion string `yaml:"apiVersion"`
 		Kind       string `yaml:"kind"`
 		Metadata   struct {
-			Name   string `yaml:"name"`
-			Labels struct {
+			Namespace string `yaml:"name"`
+			Labels    struct {
 				IsProduction string `yaml:"cloud-platform.justice.gov.uk/is-production"`
 				Environment  string `yaml:"cloud-platform.justice.gov.uk/environment-name"`
 			} `yaml:"labels"`
@@ -67,15 +66,14 @@ func (ns *Namespace) parseYaml(yamlData []byte) error {
 		return err
 	}
 
-	ns.Name = t.Metadata.Name
-	ns.IsProduction = t.Metadata.Labels.IsProduction
-	ns.BusinessUnit = t.Metadata.Annotations.BusinessUnit
-	ns.Owner = t.Metadata.Annotations.Owner
-	ns.Environment = t.Metadata.Labels.Environment
-	ns.OwnerEmail = strings.Split(t.Metadata.Annotations.Owner, ": ")[1]
 	ns.Application = t.Metadata.Annotations.Application
+	ns.BusinessUnit = t.Metadata.Annotations.BusinessUnit
+	ns.Environment = t.Metadata.Labels.Environment
+	ns.IsProduction = t.Metadata.Labels.IsProduction
+	ns.Namespace = t.Metadata.Namespace
+	ns.Owner = t.Metadata.Annotations.Owner
+	ns.OwnerEmail = strings.Split(t.Metadata.Annotations.Owner, ": ")[1]
 	ns.SourceCode = t.Metadata.Annotations.SourceCode
-	ns.Namespace = t.Metadata.Name
 
 	return nil
 }
