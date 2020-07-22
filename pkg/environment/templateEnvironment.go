@@ -12,7 +12,7 @@ import (
 // all yaml and terraform templates will be pulled from URL endpoints below here
 const templatesBaseUrl = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template"
 
-type templateEnvironment struct {
+type environmentValues struct {
 	IsProduction          bool
 	Namespace             string
 	Environment           string
@@ -54,9 +54,9 @@ func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func promptUserForNamespaceValues() (*templateEnvironment, error) {
+func promptUserForNamespaceValues() (*environmentValues, error) {
 
-	values := templateEnvironment{}
+	values := environmentValues{}
 
 	Namespace := promptString{
 		label:        "What is the name of your namespace? This should be of the form: <application>-<environment>. e.g. myapp-dev (lower-case letters and dashes only)",
@@ -213,7 +213,7 @@ func downloadAndInitialiseTemplates(namespace string) (error, []*templateFromUrl
 	return nil, templates
 }
 
-func createNamespaceFiles(templates []*templateFromUrl, namespaceValues *templateEnvironment) error {
+func createNamespaceFiles(templates []*templateFromUrl, namespaceValues *environmentValues) error {
 	err := os.MkdirAll(fmt.Sprintf("%s/%s/resources", namespaceBaseFolder, namespaceValues.Namespace), 0755)
 	if err != nil {
 		return err
