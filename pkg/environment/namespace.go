@@ -11,16 +11,16 @@ import (
 const NamespaceYamlFile = "00-namespace.yaml"
 
 type Namespace struct {
-	Name                  string
-	IsProduction          string
-	BusinessUnit          string
-	Owner                 string
-	Environment           string
-	OwnerEmail            string
 	Application           string
+	BusinessUnit          string
+	Environment           string
 	InfrastructureSupport string
-	SourceCode            string
+	IsProduction          string
+	Name                  string
 	Namespace             string
+	Owner                 string
+	OwnerEmail            string
+	SourceCode            string
 }
 
 func (ns *Namespace) readYaml() error {

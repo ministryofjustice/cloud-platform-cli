@@ -13,16 +13,16 @@ import (
 const templatesBaseUrl = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template"
 
 type namespaceValues struct {
-	IsProduction          string
-	Namespace             string
+	Application           string
+	BusinessUnit          string
 	Environment           string
 	GithubTeam            string
-	SlackChannel          string
-	BusinessUnit          string
-	Application           string
 	InfrastructureSupport string
-	SourceCode            string
+	IsProduction          string
+	Namespace             string
 	Owner                 string
+	SlackChannel          string
+	SourceCode            string
 }
 
 // CreateTemplateNamespace creates the terraform files from environment's template folder
