@@ -28,6 +28,7 @@ jobs:
           version: latest
           args: release --rm-dist
           workdir: ./cmd/cloud-platform
+          binary: cloud-platform
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
