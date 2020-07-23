@@ -38,6 +38,7 @@ func TestCreateNamespace(t *testing.T) {
 		InfrastructureSupport: "some-team@digital.justice.gov.uk",
 		SourceCode:            "https://github.com/ministryofjustice/somerepo",
 		GithubTeam:            "my-github-team",
+		SlackChannel:          "my-team-slack-channel",
 	}
 
 	_, templates := downloadAndInitialiseTemplates(ns.Namespace)
@@ -47,6 +48,7 @@ func TestCreateNamespace(t *testing.T) {
 	dir := namespaceBaseFolder + "/foobar/"
 	namespaceFile := dir + "00-namespace.yaml"
 	rbacFile := dir + "01-rbac.yaml"
+	variablesTfFile := dir + "resources/variables.tf"
 
 	filenames := []string{
 		namespaceFile,
@@ -55,7 +57,7 @@ func TestCreateNamespace(t *testing.T) {
 		dir + "03-resourcequota.yaml",
 		dir + "04-networkpolicy.yaml",
 		dir + "resources/main.tf",
-		dir + "resources/variables.tf",
+		variablesTfFile,
 		dir + "resources/versions.tf",
 	}
 
@@ -73,6 +75,7 @@ func TestCreateNamespace(t *testing.T) {
 		namespaceFile:   "cloud-platform.justice.gov.uk/owner: \"Some Team: some-team@digital.justice.gov.uk\"",
 		namespaceFile:   "cloud-platform.justice.gov.uk/source-code: \"https://github.com/ministryofjustice/somerepo\"",
 		rbacFile:        "name: \"github:my-github-team\"",
+		variablesTfFile: "my-team-slack-channel",
 	}
 
 	for filename, searchString := range stringsInFiles {
