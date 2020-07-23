@@ -87,9 +87,18 @@ Run `make test` to run the unit tests.
 
 ### Updating / Publishing
 
-This project includes a [github action](.github/workflows/docker-hub.yml) which
-will automatically build a new docker image and push it to [docker hub], tagged
-with the release number, whenever you create a new release via the [github ui].
+This project includes a [github action](.github/workflows/build-release.yml) which
+will automatically do the following steps:
+
+* build a new release and make it available in the [github ui]
+* build a new docker image and push it to [docker hub], tagged with the version number
+
+In order to trigger this action, push a new tag version like this:
+
+```
+git tag [my new version]
+git push --tags
+```
 
 [docker hub]: https://hub.docker.com/repository/docker/ministryofjustice/cloud-platform-cli
 [github ui]: https://github.com/ministryofjustice/cloud-platform-cli/releases
