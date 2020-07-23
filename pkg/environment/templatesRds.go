@@ -30,6 +30,8 @@ func CreateTemplateRds(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+//------------------------------------------------------------------------------
+
 func createRdsTfFile() error {
 	// The rds "template" is actually an example file that we can just save
 	// "as is" into the user's resources/ directory as `rds.tf`
