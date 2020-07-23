@@ -3,6 +3,7 @@ package environment
 import (
 	"io/ioutil"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -16,28 +17,57 @@ func cleanUpNamespacesFolder(namespace string) {
 }
 
 func TestCreateNamespace(t *testing.T) {
-	ns := Namespace{Namespace: "foobar"}
+	ns := Namespace{
+		Namespace:             "foobar",
+		BusinessUnit:          "My Biz Unit",
+		Environment:           "envname",
+		Application:           "My App",
+		Owner:                 "Some Team",
+		InfrastructureSupport: "some-team@digital.justice.gov.uk",
+		SourceCode:            "https://github.com/ministryofjustice/somerepo",
+	}
 
 	_, templates := downloadAndInitialiseTemplates(ns.Namespace)
 
 	createNamespaceFiles(templates, &ns)
 
-  dir := namespaceBaseFolder + "/foobar/"
+	dir := namespaceBaseFolder + "/foobar/"
 	filenames := []string{
-    dir + "00-namespace.yaml",
-    dir + "01-rbac.yaml",
-    dir + "02-limitrange.yaml",
-    dir + "03-resourcequota.yaml",
-    dir + "04-networkpolicy.yaml",
-    dir + "resources/main.tf",
-    dir + "resources/variables.tf",
-    dir + "resources/versions.tf",
+		dir + "00-namespace.yaml",
+		dir + "01-rbac.yaml",
+		dir + "02-limitrange.yaml",
+		dir + "03-resourcequota.yaml",
+		dir + "04-networkpolicy.yaml",
+		dir + "resources/main.tf",
+		dir + "resources/variables.tf",
+		dir + "resources/versions.tf",
 	}
 
 	for _, f := range filenames {
-    if _, err := os.Stat(f); os.IsNotExist(err) {
-      t.Errorf("Expected file %s to be created", f)
-    }
+		if _, err := os.Stat(f); os.IsNotExist(err) {
+			t.Errorf("Expected file %s to be created", f)
+		}
+	}
+
+	// test value interpolation
+	filename := dir + "00-namespace.yaml"
+	contents, err := ioutil.ReadFile(filename)
+	if err != nil {
+		t.Errorf("Unexpected error: %s", err)
+	}
+
+	testStrings := []string{
+		"name: foobar",
+		"cloud-platform.justice.gov.uk/business-unit: \"My Biz Unit\"",
+		"cloud-platform.justice.gov.uk/environment-name: \"envname\"",
+		"cloud-platform.justice.gov.uk/application: \"My App\"",
+		"cloud-platform.justice.gov.uk/owner: \"Some Team: some-team@digital.justice.gov.uk\"",
+		"cloud-platform.justice.gov.uk/source-code: \"https://github.com/ministryofjustice/somerepo\"",
+	}
+	for _, s := range testStrings {
+		if !(strings.Contains(string(contents), s)) {
+			t.Errorf("Didn't find %s in contents of %s", s, filename)
+		}
 	}
 
 	cleanUpNamespacesFolder("foobar")
