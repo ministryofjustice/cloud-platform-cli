@@ -14,7 +14,7 @@ const rdsTfFile = "resources/rds.tf"
 // CreateTemplateRds creates the terraform files from environment's template folder
 func CreateTemplateRds(cmd *cobra.Command, args []string) error {
 	re := RepoEnvironment{}
-	err := re.mustBeInCloudPlatformEnvironments()
+	err := re.mustBeInANamespaceFolder()
 	if err != nil {
 		return err
 	}
