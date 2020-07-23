@@ -7,29 +7,29 @@ import (
 )
 
 func cleanUpNamespacesFolder(namespace string) {
-  namespaceFolder := namespaceBaseFolder+"/"+namespace
-  os.RemoveAll(namespaceBaseFolder)
-  os.Remove(namespaceFolder+"/resources")
-  os.Remove(namespaceFolder)
-  os.Remove(namespaceBaseFolder)
-  os.Remove("namespaces")
+	namespaceFolder := namespaceBaseFolder + "/" + namespace
+	os.RemoveAll(namespaceBaseFolder)
+	os.Remove(namespaceFolder + "/resources")
+	os.Remove(namespaceFolder)
+	os.Remove(namespaceBaseFolder)
+	os.Remove("namespaces")
 }
 
 func TestCreateNamespace(t *testing.T) {
-  ns := Namespace{ Namespace: "foobar" }
+	ns := Namespace{Namespace: "foobar"}
 
 	_, templates := downloadAndInitialiseTemplates(ns.Namespace)
-  if len(templates) != 8 {
-    t.Errorf("Expected 8 templates, got: %d", len(templates))
-  }
+	if len(templates) != 8 {
+		t.Errorf("Expected 8 templates, got: %d", len(templates))
+	}
 
-  filename := namespaceBaseFolder+"/foobar/00-namespace.yaml"
-  createNamespaceFiles(templates, &ns)
+	filename := namespaceBaseFolder + "/foobar/00-namespace.yaml"
+	createNamespaceFiles(templates, &ns)
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		t.Errorf("Expected file %s to be created", filename)
 	}
 
-  cleanUpNamespacesFolder("foobar")
+	cleanUpNamespacesFolder("foobar")
 }
 
 func TestRunningOutsideEnvironmentsWorkingCopy(t *testing.T) {
@@ -67,6 +67,6 @@ func TestOutputsInterpolatedTemplateToPath(t *testing.T) {
 		t.Errorf("Expected:\nname: mynamespace\nGot: %s\n", contents)
 	}
 
-  cleanUpNamespacesFolder("mynamespace")
-  os.Remove(filename)
+	cleanUpNamespacesFolder("mynamespace")
+	os.Remove(filename)
 }
