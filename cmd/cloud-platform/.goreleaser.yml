@@ -1,0 +1,4 @@
+builds:
+  -
+    id: build
+    binary: cloud-platform
