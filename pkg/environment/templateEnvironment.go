@@ -25,12 +25,7 @@ func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 		return (err)
 	}
 
-	err, templates := downloadAndInitialiseTemplates(nsValues.Namespace)
-	if err != nil {
-		return err
-	}
-
-	err = createNamespaceFiles(templates, nsValues)
+	err = createNamespaceFiles(nsValues)
 	if err != nil {
 		return err
 	}
@@ -200,8 +195,13 @@ func downloadAndInitialiseTemplates(namespace string) (error, []*templateFromUrl
 	return nil, templates
 }
 
-func createNamespaceFiles(templates []*templateFromUrl, nsValues *Namespace) error {
+func createNamespaceFiles(nsValues *Namespace) error {
 	err := os.MkdirAll(fmt.Sprintf("%s/%s/resources", namespaceBaseFolder, nsValues.Namespace), 0755)
+	if err != nil {
+		return err
+	}
+
+	err, templates := downloadAndInitialiseTemplates(nsValues.Namespace)
 	if err != nil {
 		return err
 	}

@@ -41,9 +41,7 @@ func TestCreateNamespace(t *testing.T) {
 		SlackChannel:          "my-team-slack-channel",
 	}
 
-	_, templates := downloadAndInitialiseTemplates(ns.Namespace)
-
-	createNamespaceFiles(templates, &ns)
+	createNamespaceFiles(&ns)
 
 	dir := namespaceBaseFolder + "/foobar/"
 	namespaceFile := dir + "00-namespace.yaml"
