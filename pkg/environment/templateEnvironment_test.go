@@ -37,6 +37,7 @@ func TestCreateNamespace(t *testing.T) {
 		Owner:                 "Some Team",
 		InfrastructureSupport: "some-team@digital.justice.gov.uk",
 		SourceCode:            "https://github.com/ministryofjustice/somerepo",
+		GithubTeam:            "my-github-team",
 	}
 
 	_, templates := downloadAndInitialiseTemplates(ns.Namespace)
@@ -75,6 +76,10 @@ func TestCreateNamespace(t *testing.T) {
 	for _, s := range testStrings {
 		fileContainsString(t, filename, s)
 	}
+
+	filename = dir + "01-rbac.yaml"
+	str := "name: \"github:my-github-team\""
+	fileContainsString(t, filename, str)
 
 	cleanUpNamespacesFolder("foobar")
 }
