@@ -19,14 +19,25 @@ func TestCreateNamespace(t *testing.T) {
 	ns := Namespace{Namespace: "foobar"}
 
 	_, templates := downloadAndInitialiseTemplates(ns.Namespace)
-	if len(templates) != 8 {
-		t.Errorf("Expected 8 templates, got: %d", len(templates))
+
+	createNamespaceFiles(templates, &ns)
+
+  dir := namespaceBaseFolder + "/foobar/"
+	filenames := []string{
+    dir + "00-namespace.yaml",
+    dir + "01-rbac.yaml",
+    dir + "02-limitrange.yaml",
+    dir + "03-resourcequota.yaml",
+    dir + "04-networkpolicy.yaml",
+    dir + "resources/main.tf",
+    dir + "resources/variables.tf",
+    dir + "resources/versions.tf",
 	}
 
-	filename := namespaceBaseFolder + "/foobar/00-namespace.yaml"
-	createNamespaceFiles(templates, &ns)
-	if _, err := os.Stat(filename); os.IsNotExist(err) {
-		t.Errorf("Expected file %s to be created", filename)
+	for _, f := range filenames {
+    if _, err := os.Stat(f); os.IsNotExist(err) {
+      t.Errorf("Expected file %s to be created", f)
+    }
 	}
 
 	cleanUpNamespacesFolder("foobar")
