@@ -45,9 +45,12 @@ func TestCreateNamespace(t *testing.T) {
 	createNamespaceFiles(templates, &ns)
 
 	dir := namespaceBaseFolder + "/foobar/"
+	namespaceFile := dir + "00-namespace.yaml"
+	rbacFile := dir + "00-rbac.yaml"
+
 	filenames := []string{
-		dir + "00-namespace.yaml",
-		dir + "01-rbac.yaml",
+		namespaceFile,
+		rbacFile,
 		dir + "02-limitrange.yaml",
 		dir + "03-resourcequota.yaml",
 		dir + "04-networkpolicy.yaml",
@@ -63,23 +66,25 @@ func TestCreateNamespace(t *testing.T) {
 	}
 
 	// test value interpolation
-	filename := dir + "00-namespace.yaml"
 
-	testStrings := []string{
-		"name: foobar",
-		"cloud-platform.justice.gov.uk/business-unit: \"My Biz Unit\"",
-		"cloud-platform.justice.gov.uk/environment-name: \"envname\"",
-		"cloud-platform.justice.gov.uk/application: \"My App\"",
-		"cloud-platform.justice.gov.uk/owner: \"Some Team: some-team@digital.justice.gov.uk\"",
-		"cloud-platform.justice.gov.uk/source-code: \"https://github.com/ministryofjustice/somerepo\"",
-	}
-	for _, s := range testStrings {
-		fileContainsString(t, filename, s)
+	type testValueInterpolation struct {
+		filename string
+		want     string
 	}
 
-	filename = dir + "01-rbac.yaml"
-	str := "name: \"github:my-github-team\""
-	fileContainsString(t, filename, str)
+	tests := []testValueInterpolation{
+		{filename: namespaceFile, want: "name: foobar"},
+		{filename: namespaceFile, want: "cloud-platform.justice.gov.uk/business-unit: \"My Biz Unit\""},
+		{filename: namespaceFile, want: "cloud-platform.justice.gov.uk/environment-name: \"envname\""},
+		{filename: namespaceFile, want: "cloud-platform.justice.gov.uk/application: \"My App\""},
+		{filename: namespaceFile, want: "cloud-platform.justice.gov.uk/owner: \"Some Team: some-team@digital.justice.gov.uk\""},
+		{filename: namespaceFile, want: "cloud-platform.justice.gov.uk/source-code: \"https://github.com/ministryofjustice/somerepo\""},
+		{filename: rbacFile, want: "name: \"github:my-github-team\""},
+	}
+
+	for _, tc := range tests {
+		fileContainsString(t, tc.filename, tc.want)
+	}
 
 	cleanUpNamespacesFolder("foobar")
 }
