@@ -26,9 +26,8 @@ jobs:
         uses: goreleaser/goreleaser-action@master
         with:
           version: latest
-          args: release --rm-dist --binary cloud-platform
+          args: release --rm-dist
           workdir: ./cmd/cloud-platform
-          binary: cloud-platform
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
