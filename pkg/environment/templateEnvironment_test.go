@@ -46,7 +46,7 @@ func TestCreateNamespace(t *testing.T) {
 
 	dir := namespaceBaseFolder + "/foobar/"
 	namespaceFile := dir + "00-namespace.yaml"
-	rbacFile := dir + "00-rbac.yaml"
+	rbacFile := dir + "01-rbac.yaml"
 
 	filenames := []string{
 		namespaceFile,
