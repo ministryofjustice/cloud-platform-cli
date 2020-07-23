@@ -12,7 +12,6 @@ import (
 // all yaml and terraform templates will be pulled from URL endpoints below here
 const templatesBaseUrl = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template"
 
-// CreateTemplateNamespace creates the terraform files from environment's template folder
 func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 	re := RepoEnvironment{}
 	err := re.mustBeInCloudPlatformEnvironments()
