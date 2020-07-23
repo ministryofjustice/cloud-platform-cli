@@ -1,6 +1,7 @@
 package environment
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -14,6 +15,17 @@ func cleanUpNamespacesFolder(namespace string) {
 	os.Remove(namespaceFolder)
 	os.Remove(namespaceBaseFolder)
 	os.Remove("namespaces")
+}
+
+func fileContainsString(t *testing.T, filename string, searchString string) {
+	contents, err := ioutil.ReadFile(filename)
+	if err != nil {
+		t.Errorf("Unexpected error: %s", err)
+	}
+
+	if !(strings.Contains(string(contents), searchString)) {
+		t.Errorf(fmt.Sprintf("Didn't find %s in contents of %s", searchString, filename))
+	}
 }
 
 func TestCreateNamespace(t *testing.T) {
@@ -51,10 +63,6 @@ func TestCreateNamespace(t *testing.T) {
 
 	// test value interpolation
 	filename := dir + "00-namespace.yaml"
-	contents, err := ioutil.ReadFile(filename)
-	if err != nil {
-		t.Errorf("Unexpected error: %s", err)
-	}
 
 	testStrings := []string{
 		"name: foobar",
@@ -65,9 +73,7 @@ func TestCreateNamespace(t *testing.T) {
 		"cloud-platform.justice.gov.uk/source-code: \"https://github.com/ministryofjustice/somerepo\"",
 	}
 	for _, s := range testStrings {
-		if !(strings.Contains(string(contents), s)) {
-			t.Errorf("Didn't find %s in contents of %s", s, filename)
-		}
+		fileContainsString(t, filename, s)
 	}
 
 	cleanUpNamespacesFolder("foobar")
