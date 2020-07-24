@@ -1,7 +1,11 @@
-name: Tests
-on: [push, pull_request]
+name: Run Tests
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
 jobs:
-  build:
+  run-tests:
     strategy:
       fail-fast: false
       matrix:
@@ -22,7 +26,3 @@ jobs:
 
       - name: Run tests
         run: go test -race ./...
-
-      - name: Build
-        run: go build -v ./cmd/cloud-platform
-
