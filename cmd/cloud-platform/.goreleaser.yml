@@ -1,7 +1,6 @@
 builds:
   - <<: &build_defaults
       binary: cloud-platform
-      main: ./cmd/cloud-platform
     id: macos
     goos: [darwin]
     goarch: [amd64]
