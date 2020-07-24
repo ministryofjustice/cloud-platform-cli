@@ -1,11 +1,8 @@
 package environment
 
 import (
-	"errors"
 	"fmt"
 	"os"
-	"os/exec"
-	"strings"
 	"text/template"
 
 	"github.com/gookit/color"
@@ -15,117 +12,41 @@ import (
 // all yaml and terraform templates will be pulled from URL endpoints below here
 const templatesBaseUrl = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template"
 
-type templateEnvironment struct {
-	IsProduction          bool
-	Namespace             string
-	Environment           string
-	GithubTeam            string
-	SlackChannel          string
-	BusinessUnit          string
-	Application           string
-	InfrastructureSupport string
-	SourceCode            string
-	Owner                 string
-	validPath             bool
-}
-
-type templateEnvironmentFile struct {
-	outputPath string
-	content    string
-	name       string
-	url        string
-}
-
-// CreateTemplateNamespace creates the terraform files from environment's template folder
 func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
-
-	templates := []*templateEnvironmentFile{
-		{
-			name: "00-namespace.yaml",
-			url:  templatesBaseUrl + "/" + "00-namespace.yaml",
-		},
-		{
-			name: "01-rbac.yaml",
-			url:  templatesBaseUrl + "/" + "01-rbac.yaml",
-		},
-		{
-			name: "02-limitrange.yaml",
-			url:  templatesBaseUrl + "/" + "02-limitrange.yaml",
-		},
-		{
-			name: "03-resourcequota.yaml",
-			url:  templatesBaseUrl + "/" + "03-resourcequota.yaml",
-		},
-		{
-			name: "04-networkpolicy.yaml",
-			url:  templatesBaseUrl + "/" + "04-networkpolicy.yaml",
-		},
-		{
-			name: "resources/main.tf",
-			url:  templatesBaseUrl + "/" + "resources/main.tf",
-		},
-		{
-			name: "resources/versions.tf",
-			url:  templatesBaseUrl + "/" + "resources/versions.tf",
-		},
-		{
-			name: "resources/variables.tf",
-			url:  templatesBaseUrl + "/" + "resources/variables.tf",
-		},
+	re := RepoEnvironment{}
+	err := re.mustBeInCloudPlatformEnvironments()
+	if err != nil {
+		return err
 	}
 
-	err := initTemplateNamespace(templates)
+	nsValues, err := promptUserForNamespaceValues()
 	if err != nil {
 		return (err)
 	}
 
-	namespaceValues, err := templateNamespaceSetValues()
+	err = createNamespaceFiles(nsValues)
 	if err != nil {
-		return (err)
+		return err
 	}
 
-	err = setupPaths(templates, namespaceValues.Namespace)
-	if err != nil {
-		return (err)
-	}
-
-	for _, i := range templates {
-		t, err := template.New("namespaceTemplates").Parse(i.content)
-		if err != nil {
-			return err
-		}
-
-		f, err := os.Create(i.outputPath)
-		if err != nil {
-			return err
-		}
-
-		err = t.Execute(f, namespaceValues)
-		if err != nil {
-			return err
-		}
-	}
-
-	fmt.Printf("Namespace files generated under %s/%s\n", namespaceBaseFolder, namespaceValues.Namespace)
+	fmt.Printf("Namespace files generated under %s/%s\n", namespaceBaseFolder, nsValues.Namespace)
 	color.Info.Tips("Please review before raising PR")
 
 	return nil
 }
 
-func templateNamespaceSetValues() (*templateEnvironment, error) {
-	values := templateEnvironment{}
+//------------------------------------------------------------------------------
 
-	GithubTeams, err := getGitHubTeams()
-	if err != nil {
-		return nil, err
-	}
+func promptUserForNamespaceValues() (*Namespace, error) {
+
+	values := Namespace{}
 
 	Namespace := promptString{
 		label:        "What is the name of your namespace? This should be of the form: <application>-<environment>. e.g. myapp-dev (lower-case letters and dashes only)",
 		defaultValue: "",
 		validation:   "no-spaces-and-no-uppercase",
 	}
-	err = Namespace.promptString()
+	err := Namespace.promptString()
 	if err != nil {
 		return nil, err
 	}
@@ -140,11 +61,11 @@ func templateNamespaceSetValues() (*templateEnvironment, error) {
 		return nil, err
 	}
 
-	IsProduction := promptYesNo{
-		label:        "Is this a production namespace? (choose Yes or No)",
-		defaultValue: 0,
+	IsProduction := promptTrueFalse{
+		label:        "Is this a production namespace? (choose 'true' or 'false')",
+		defaultValue: "false",
 	}
-	err = IsProduction.promptyesNo()
+	err = IsProduction.prompttrueFalse()
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +79,14 @@ func templateNamespaceSetValues() (*templateEnvironment, error) {
 		return nil, err
 	}
 
-	GithubTeam, err := promptSelectGithubTeam(GithubTeams)
+	GithubTeam := promptString{
+		label:        "What is the name of your Github team? (this must be an exact match, or you will not have access to your namespace)",
+		defaultValue: "",
+	}
+	err = GithubTeam.promptString()
+	if err != nil {
+		return nil, err
+	}
 
 	businessUnit := promptString{
 		label:        "Which part of the MoJ is responsible for this service? (e.g HMPPS, Legal Aid Agency)",
@@ -210,7 +138,7 @@ func templateNamespaceSetValues() (*templateEnvironment, error) {
 	values.Application = Application.value
 	values.BusinessUnit = businessUnit.value
 	values.Namespace = Namespace.value
-	values.GithubTeam = GithubTeam
+	values.GithubTeam = GithubTeam.value
 	values.Environment = Environment.value
 	values.IsProduction = IsProduction.value
 	values.SlackChannel = SlackChannel.value
@@ -221,36 +149,79 @@ func templateNamespaceSetValues() (*templateEnvironment, error) {
 	return &values, nil
 }
 
-func initTemplateNamespace(t []*templateEnvironmentFile) error {
-	for _, s := range t {
-		content, err := downloadTemplate(s.url)
+func downloadAndInitialiseTemplates(namespace string) (error, []*templateFromUrl) {
+	templates := []*templateFromUrl{
+		{
+			name: "00-namespace.yaml",
+			url:  templatesBaseUrl + "/" + "00-namespace.yaml",
+		},
+		{
+			name: "01-rbac.yaml",
+			url:  templatesBaseUrl + "/" + "01-rbac.yaml",
+		},
+		{
+			name: "02-limitrange.yaml",
+			url:  templatesBaseUrl + "/" + "02-limitrange.yaml",
+		},
+		{
+			name: "03-resourcequota.yaml",
+			url:  templatesBaseUrl + "/" + "03-resourcequota.yaml",
+		},
+		{
+			name: "04-networkpolicy.yaml",
+			url:  templatesBaseUrl + "/" + "04-networkpolicy.yaml",
+		},
+		{
+			name: "resources/main.tf",
+			url:  templatesBaseUrl + "/" + "resources/main.tf",
+		},
+		{
+			name: "resources/versions.tf",
+			url:  templatesBaseUrl + "/" + "resources/versions.tf",
+		},
+		{
+			name: "resources/variables.tf",
+			url:  templatesBaseUrl + "/" + "resources/variables.tf",
+		},
+	}
+
+	err := downloadTemplateContents(templates)
+	if err != nil {
+		return err, nil
+	}
+
+	for _, s := range templates {
+		s.outputPath = fmt.Sprintf("%s/%s/", namespaceBaseFolder, namespace) + s.name
+	}
+	return nil, templates
+}
+
+func createNamespaceFiles(nsValues *Namespace) error {
+	err := os.MkdirAll(fmt.Sprintf("%s/%s/resources", namespaceBaseFolder, nsValues.Namespace), 0755)
+	if err != nil {
+		return err
+	}
+
+	err, templates := downloadAndInitialiseTemplates(nsValues.Namespace)
+	if err != nil {
+		return err
+	}
+
+	for _, i := range templates {
+		t, err := template.New("").Parse(i.content)
 		if err != nil {
 			return err
 		}
-		s.content = content
-	}
 
-	return nil
-}
+		f, err := os.Create(i.outputPath)
+		if err != nil {
+			return err
+		}
 
-func setupPaths(t []*templateEnvironmentFile, namespace string) error {
-	path, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
-	if err != nil {
-		return errors.New("You are outside cloud-platform-environment repo")
+		err = t.Execute(f, nsValues)
+		if err != nil {
+			return err
+		}
 	}
-	fullPath := strings.TrimSpace(string(path))
-	for _, s := range t {
-		s.outputPath = fullPath + fmt.Sprintf("/%s/%s/", namespaceBaseFolder, namespace) + s.name
-	}
-
-	err = os.Mkdir(fullPath+fmt.Sprintf("/%s/%s/", namespaceBaseFolder, namespace), 0755)
-	if err != nil {
-		return err
-	}
-	err = os.Mkdir(fullPath+fmt.Sprintf("/%s/%s/resources", namespaceBaseFolder, namespace), 0755)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }

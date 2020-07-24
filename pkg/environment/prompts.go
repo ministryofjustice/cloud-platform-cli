@@ -9,10 +9,10 @@ import (
 	"github.com/manifoldco/promptui"
 )
 
-type promptYesNo struct {
+type promptTrueFalse struct {
 	label        string
-	defaultValue int
-	value        bool
+	defaultValue string
+	value        string
 }
 
 type promptString struct {
@@ -52,51 +52,17 @@ func (s *promptString) promptString() error {
 	return nil
 }
 
-func (s *promptYesNo) promptyesNo() error {
+func (s *promptTrueFalse) prompttrueFalse() error {
 	prompt := promptui.Select{
-		Label:     s.label,
-		Items:     []string{"Yes", "No"},
-		CursorPos: s.defaultValue,
+		Label: s.label,
+		Items: []string{"true", "false"},
 	}
 	_, result, err := prompt.Run()
 	if err != nil {
 		return err
 	}
-	s.value = result == "Yes"
+	s.value = result
 	return nil
-}
-
-func promptSelectGithubTeam(t []string) (string, error) {
-
-	templates := &promptui.SelectTemplates{
-		Label:    "{{ . }}?",
-		Active:   "\U0001F336 {{ . | cyan }}",
-		Inactive: "  {{ . | cyan }}",
-		Selected: "\U0001F336 {{ . | red | cyan }}",
-	}
-
-	searcher := func(input string, index int) bool {
-		team := t[index]
-		name := strings.Replace(strings.ToLower(team), " ", "", -1)
-		input = strings.Replace(strings.ToLower(input), " ", "", -1)
-
-		return strings.Contains(name, input)
-	}
-
-	prompt := promptui.Select{
-		Label:     "What is the name of your Github team? (this must be an exact match, or you will not have access to your namespace)",
-		Items:     t,
-		Templates: templates,
-		Size:      8,
-		Searcher:  searcher,
-	}
-
-	i, _, err := prompt.Run()
-	if err != nil {
-		return "", err
-	}
-
-	return t[i], nil
 }
 
 /////////////////

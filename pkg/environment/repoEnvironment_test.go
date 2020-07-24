@@ -1,12 +1,32 @@
 package environment
 
 import (
+	"os"
 	"testing"
 )
 
+func TestRequireNamespaceFolder(t *testing.T) {
+	// Pretend we're in the right repository
+	re := RepoEnvironment{currentRepository: cloudPlatformEnvRepo}
+
+	// Without a 00-namespace.yaml file, should fail
+	err := re.mustBeInANamespaceFolder()
+	if err == nil {
+		t.Errorf("This should have failed")
+	}
+
+	os.Create("00-namespace.yaml")
+
+	if re.mustBeInANamespaceFolder() != nil {
+		t.Errorf("This should have passed")
+	}
+
+	os.Remove("00-namespace.yaml")
+}
+
 func TestRequireCpEnvRepo(t *testing.T) {
 	// Pass if we're in the right repository
-	re := RepoEnvironment{repository: cloudPlatformEnvRepo}
+	re := RepoEnvironment{currentRepository: cloudPlatformEnvRepo}
 	if re.mustBeInCloudPlatformEnvironments() != nil {
 		t.Errorf("This should have passed")
 	}
@@ -21,8 +41,8 @@ func TestRequireCpEnvRepo(t *testing.T) {
 
 // If we assign a string value to 'repository', we get it back
 func TestRepoEnvironmentRepository(t *testing.T) {
-	re := RepoEnvironment{repository: "foobar"}
-	_, str := re.Repository()
+	re := RepoEnvironment{currentRepository: "foobar"}
+	_, str := re.repository()
 	if str != "foobar" {
 		t.Errorf("Something went wrong: %s", str)
 	}
@@ -32,7 +52,7 @@ func TestRepoEnvironmentRepository(t *testing.T) {
 // current git repository is called
 func TestRepoEnvironmentDefaultRepository(t *testing.T) {
 	re := RepoEnvironment{}
-	_, str := re.Repository()
+	_, str := re.repository()
 	if str != "cloud-platform-cli" {
 		t.Errorf("Expected cloud-platform-cli, got: x%sx", str)
 	}

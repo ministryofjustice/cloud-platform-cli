@@ -30,7 +30,7 @@ var environmentCreateCmd = &cobra.Command{
 
 var environmentRdsCmd = &cobra.Command{
 	Use:   "rds",
-	Short: `RDS instances operations, create, list, remove`,
+	Short: `Add an RDS instance to a namespace`,
 	Example: heredoc.Doc(`
 	$ cloud-platform environment rds create
 	`),
@@ -38,6 +38,6 @@ var environmentRdsCmd = &cobra.Command{
 
 var environmentRdsCreateCmd = &cobra.Command{
 	Use:   "create",
-	Short: `Create terraform files for RDS instance and its related AWS resources`,
+	Short: `Create "resources/rds.tf" terraform file for an RDS instance`,
 	RunE:  environment.CreateTemplateRds,
 }

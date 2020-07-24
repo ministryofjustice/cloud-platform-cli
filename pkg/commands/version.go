@@ -14,7 +14,7 @@ var Version string
 func addVersion(topLevel *cobra.Command) {
 	topLevel.AddCommand(&cobra.Command{
 		Use:   "version",
-		Short: `Print ko version.`,
+		Short: `Print version`,
 		Run: func(cmd *cobra.Command, args []string) {
 			v := version()
 			if v == "" {
