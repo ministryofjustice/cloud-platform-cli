@@ -23,10 +23,10 @@ jobs:
         id: go
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@master
+        uses: goreleaser/goreleaser-action@v1
         with:
           version: latest
-          args: release --rm-dist
+          args: release --rm-dist --release-notes=CHANGELOG.md
           workdir: ./cmd/cloud-platform
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
