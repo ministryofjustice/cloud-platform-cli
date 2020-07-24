@@ -25,6 +25,7 @@ func TestCreateNamespace(t *testing.T) {
 		SourceCode:            "https://github.com/ministryofjustice/somerepo",
 		GithubTeam:            "my-github-team",
 		SlackChannel:          "my-team-slack-channel",
+		IsProduction:          "false",
 	}
 
 	createNamespaceFiles(&ns)
@@ -58,6 +59,7 @@ func TestCreateNamespace(t *testing.T) {
 		namespaceFile:   "cloud-platform.justice.gov.uk/application: \"My App\"",
 		namespaceFile:   "cloud-platform.justice.gov.uk/owner: \"Some Team: some-team@digital.justice.gov.uk\"",
 		namespaceFile:   "cloud-platform.justice.gov.uk/source-code: \"https://github.com/ministryofjustice/somerepo\"",
+		namespaceFile:   "cloud-platform.justice.gov.uk/is-production: \"false\"",
 		rbacFile:        "name: \"github:my-github-team\"",
 		variablesTfFile: "my-team-slack-channel",
 	}
