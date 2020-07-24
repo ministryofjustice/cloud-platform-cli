@@ -25,6 +25,11 @@ tar xzvf cloud-platform-cli_${RELEASE}_darwin_amd64.tar.gz
 mv cloud-platform /usr/local/bin/
 ```
 
+NB: You may need to manually open the file to override OSX restrictions against
+executing binaries downloaded from the internet. To do this, locate the file in
+the Finder, right-click it and choose "Open". After doing this once, you should
+be able to run the command as normal.
+
 ## Usage
 
 `cloud-platform` has different subcommands. Execute: `cloud-platform --help` in order to check them out. Remember some of the subcommands requires `AWS_*` keys.
