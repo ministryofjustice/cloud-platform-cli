@@ -26,7 +26,3 @@ jobs:
 
       - name: Run tests
         run: go test -race ./...
-
-      - name: Build
-        run: go build -v ./cmd/cloud-platform
-
