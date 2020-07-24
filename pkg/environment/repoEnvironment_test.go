@@ -6,22 +6,22 @@ import (
 )
 
 func TestRequireNamespaceFolder(t *testing.T) {
-  // Pretend we're in the right repository
+	// Pretend we're in the right repository
 	re := RepoEnvironment{currentRepository: cloudPlatformEnvRepo}
 
-  // Without a 00-namespace.yaml file, should fail
+	// Without a 00-namespace.yaml file, should fail
 	err := re.mustBeInANamespaceFolder()
 	if err == nil {
 		t.Errorf("This should have failed")
 	}
 
-  os.Create("00-namespace.yaml")
+	os.Create("00-namespace.yaml")
 
 	if re.mustBeInANamespaceFolder() != nil {
 		t.Errorf("This should have passed")
 	}
 
-  os.Remove("00-namespace.yaml")
+	os.Remove("00-namespace.yaml")
 }
 
 func TestRequireCpEnvRepo(t *testing.T) {

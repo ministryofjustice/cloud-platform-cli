@@ -24,16 +24,16 @@ func (re *RepoEnvironment) mustBeInCloudPlatformEnvironments() error {
 }
 
 func (re *RepoEnvironment) mustBeInANamespaceFolder() error {
-  err := re.mustBeInCloudPlatformEnvironments()
+	err := re.mustBeInCloudPlatformEnvironments()
 	if err != nil {
 		return err
 	}
 
-  if _, err := os.Stat("00-namespace.yaml"); os.IsNotExist(err) {
+	if _, err := os.Stat("00-namespace.yaml"); os.IsNotExist(err) {
 		return errors.New(fmt.Sprintf("This command may only be run from within a namespace folder in the the %s repository\n", cloudPlatformEnvRepo))
 	}
 
-  return nil
+	return nil
 }
 
 // set and return the name of the git repository which the current working
