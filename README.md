@@ -1,5 +1,7 @@
 # Cloud Platform Tool CLI
 
+[![Releases](https://img.shields.io/github/release/ministryofjustice/cloud-platform-cli/all.svg?style=flat-square)](https://github.com/ministryofjustice/cloud-platform-cli/releases)
+
 `cloud-platform` is a command-line tool used by the cloud-platform team to achieve common repetitive tasks against the platform. The resulting binary checks things like:
 
    - Create templates for the environments repo
@@ -9,11 +11,24 @@
 
 ## Install
 
-`cloud-platform` can be installed and upgraded by running:
+These installation instructions are for a Mac. If you have a different kind of
+computer, please amend the steps appropriately.
 
-```shell
-GO111MODULE=on go get github.com/ministryofjustice/cloud-platform-cli/cmd/cloud-platform
+Please substitute the latest release number. You can see the latest release
+number in the badge near the top of this page, and all available releases on
+[this page][github ui].
+
 ```
+RELEASE=1.4.3
+wget https://github.com/ministryofjustice/cloud-platform-cli/releases/download/${RELEASE}/cloud-platform-cli_${RELEASE}_darwin_amd64.tar.gz
+tar xzvf cloud-platform-cli_${RELEASE}_darwin_amd64.tar.gz
+mv cloud-platform /usr/local/bin/
+```
+
+NB: You may need to manually open the file to override OSX restrictions against
+executing binaries downloaded from the internet. To do this, locate the file in
+the Finder, right-click it and choose "Open". After doing this once, you should
+be able to run the command as normal.
 
 ## Usage
 
