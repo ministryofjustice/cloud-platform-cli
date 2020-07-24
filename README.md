@@ -11,10 +11,18 @@
 
 ## Install
 
-`cloud-platform` can be installed and upgraded by running:
+These installation instructions are for a Mac. If you have a different kind of
+computer, please amend the steps appropriately.
 
-```shell
-GO111MODULE=on go get github.com/ministryofjustice/cloud-platform-cli/cmd/cloud-platform
+Please substitute the latest release number. You can see the latest release
+number in the badge near the top of this page, and all available releases on
+[this page][github ui].
+
+```
+RELEASE=1.4.3
+wget https://github.com/ministryofjustice/cloud-platform-cli/releases/download/${RELEASE}/cloud-platform-cli_${RELEASE}_darwin_amd64.tar.gz
+tar xzvf cloud-platform-cli_${RELEASE}_darwin_amd64.tar.gz
+mv cloud-platform /usr/local/bin/
 ```
 
 ## Usage
