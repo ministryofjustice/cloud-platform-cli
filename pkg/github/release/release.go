@@ -82,10 +82,13 @@ func (r *Release) selfUpgrade() error {
 
 	// move unpacked binary into place
 	filename, _ := os.Executable()
+  downloaded := fmt.Sprintf("/tmp/%s", r.BinaryName)
+
 	fmt.Printf("Replacing %s\n\n", filename)
-	cmd = exec.Command("mv", fmt.Sprintf("/tmp/%s", r.BinaryName), filename)
+	cmd = exec.Command("mv", downloaded, filename)
 	err = cmd.Run()
 	if err != nil {
+    fmt.Printf("Failed to replace %s with %s.\nPlease execute:\n  sudo mv %s %s\n\n", filename, downloaded, downloaded, filename)
 		return err
 	}
 
