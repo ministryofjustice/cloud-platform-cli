@@ -30,8 +30,8 @@ func addTerraformCmd(topLevel *cobra.Command) {
 	}
 
 	checkDivergence := &cobra.Command{
-		Use:   "check-divergence",
-		Short: `Terraform check-divergence check if there are drifts in the state.`,
+		Use:    "check-divergence",
+		Short:  `Terraform check-divergence check if there are drifts in the state.`,
 		PreRun: upgradeIfNotLatest,
 		Run: func(cmd *cobra.Command, args []string) {
 			terraformCheckDivergence(&options)
