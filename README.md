@@ -117,5 +117,15 @@ git push --tags
 
 The value of this tag **must** be the same as the string value of `Version` in the file `pkg/commands/version.go`
 
+#### Self-upgrade `PreRun` hook
+
+**Every** new command should have a PreRun hook as follows, to ensure the "self-upgrading" behaviour of the cli tool is consistent:
+
+```
+PreRun: upgradeIfNotLatest,
+```
+
+See the existing commands for examples.
+
 [docker hub]: https://hub.docker.com/repository/docker/ministryofjustice/cloud-platform-cli
 [github ui]: https://github.com/ministryofjustice/cloud-platform-cli/releases
