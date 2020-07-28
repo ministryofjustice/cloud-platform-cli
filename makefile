@@ -7,9 +7,9 @@ cloud-platform: $(SOURCE_FILES)
 	go build -o cloud-platform ./cmd/cloud-platform/main.go
 
 test:
-	for dir in $(DIRS_WITH_TESTS); do (cd $${dir}; go test); done
+	go test ./...
 
 fmt:
-	for dir in $(DIRS_WITH_GOFILES); do (cd $${dir}; go fmt); done
+	go fmt ./...
 
 .PHONY: test
