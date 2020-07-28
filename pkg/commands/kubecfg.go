@@ -25,10 +25,10 @@ var kubecfgCmd = &cobra.Command{
 }
 
 var kubecfgShowGithubTeamsCmd = &cobra.Command{
-	Use:   "show-github-teams",
-	Short: `Checking the GitHub groups in your ID token`,
+	Use:   "id-token-claims",
+	Short: `Printing kubeconfig's ID token claims`,
 	Example: heredoc.Doc(`
-	$ cloud-platform kubecfg show-github-teams
+	$ cloud-platform kubecfg id-token-claims
 	`),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		kubeconfig, err := cmd.Flags().GetString("kubeconfig")
