@@ -55,7 +55,7 @@ func (r *Release) UpgradeIfNotLatest() {
 // -------------------------------------------------------------
 
 func (r *Release) isLatestVersion() (error, bool) {
-	err := r.innerStruct.getLatestReleaseInfo() // TODO: memoize this
+	err := r.innerStruct.getLatestReleaseInfo()
 	if err != nil {
 		return err, false
 	}
