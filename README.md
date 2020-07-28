@@ -115,5 +115,7 @@ git tag [my new version]
 git push --tags
 ```
 
+The value of this tag **must** be the same as the string value of `Version` in the file `pkg/commands/version.go`
+
 [docker hub]: https://hub.docker.com/repository/docker/ministryofjustice/cloud-platform-cli
 [github ui]: https://github.com/ministryofjustice/cloud-platform-cli/releases
