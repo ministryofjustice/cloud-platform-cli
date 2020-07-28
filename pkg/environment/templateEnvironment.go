@@ -89,7 +89,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 	}
 
 	businessUnit := promptString{
-    label:        "Which part of the MoJ is responsible for this service? (valid answers: HQ, HMPPS, OPG, LAA, HMCTS, CICA, Platforms)",
+		label:        "Which part of the MoJ is responsible for this service? (valid answers: HQ, HMPPS, OPG, LAA, HMCTS, CICA, Platforms)",
 		defaultValue: "",
 	}
 	err = businessUnit.promptString()

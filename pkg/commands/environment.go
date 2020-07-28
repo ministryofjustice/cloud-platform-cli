@@ -9,8 +9,10 @@ import (
 
 func addEnvironmentCmd(topLevel *cobra.Command) {
 	topLevel.AddCommand(environmentCmd)
+	environmentCmd.AddCommand(environmentEcrCmd)
 	environmentCmd.AddCommand(environmentRdsCmd)
 	environmentCmd.AddCommand(environmentCreateCmd)
+	environmentEcrCmd.AddCommand(environmentEcrCreateCmd)
 	environmentRdsCmd.AddCommand(environmentRdsCreateCmd)
 }
 
@@ -28,6 +30,22 @@ var environmentCreateCmd = &cobra.Command{
 	`),
 	PreRun: upgradeIfNotLatest,
 	RunE:   environment.CreateTemplateNamespace,
+}
+
+var environmentEcrCmd = &cobra.Command{
+	Use:   "ecr",
+	Short: `Add an ECR to a namespace`,
+	Example: heredoc.Doc(`
+	$ cloud-platform environment ecr create
+	`),
+	PreRun: upgradeIfNotLatest,
+}
+
+var environmentEcrCreateCmd = &cobra.Command{
+	Use:    "create",
+	Short:  `Create "resources/ecr.tf" terraform file for an ECR`,
+	PreRun: upgradeIfNotLatest,
+	RunE:   environment.CreateTemplateEcr,
 }
 
 var environmentRdsCmd = &cobra.Command{
