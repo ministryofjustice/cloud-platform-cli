@@ -30,6 +30,7 @@ var kubecfgShowGithubTeamsCmd = &cobra.Command{
 	Example: heredoc.Doc(`
 	$ cloud-platform kubecfg id-token-claims
 	`),
+  PreRun: upgradeIfNotLatest,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		kubeconfig, err := cmd.Flags().GetString("kubeconfig")
 		if err != nil {
