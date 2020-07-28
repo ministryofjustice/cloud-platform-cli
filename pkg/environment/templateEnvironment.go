@@ -89,7 +89,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 	}
 
 	businessUnit := promptString{
-		label:        "Which part of the MoJ is responsible for this service? (e.g HMPPS, Legal Aid Agency)",
+    label:        "Which part of the MoJ is responsible for this service? (valid answers: HQ, HMPPS, OPG, LAA, HMCTS, CICA, Platforms)",
 		defaultValue: "",
 	}
 	err = businessUnit.promptString()
@@ -98,7 +98,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 	}
 
 	SlackChannel := promptString{
-		label:        "What is the best slack channel (without the '#') to use if we need to contact your team?\n(If you don't have a team slack channel, please create one)",
+		label:        "What is the best slack channel (without the '#') to use if we need to contact your team? (If you don't have a team slack channel, please create one)",
 		defaultValue: "",
 	}
 	err = SlackChannel.promptString()
