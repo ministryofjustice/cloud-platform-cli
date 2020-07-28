@@ -15,8 +15,9 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 }
 
 var environmentCmd = &cobra.Command{
-	Use:   "environment",
-	Short: `Cloud Platform Environment actions`,
+	Use:    "environment",
+	Short:  `Cloud Platform Environment actions`,
+	PreRun: upgradeIfNotLatest,
 }
 
 var environmentCreateCmd = &cobra.Command{
@@ -25,7 +26,8 @@ var environmentCreateCmd = &cobra.Command{
 	Example: heredoc.Doc(`
 	$ cloud-platform environment create
 	`),
-	RunE: environment.CreateTemplateNamespace,
+	PreRun: upgradeIfNotLatest,
+	RunE:   environment.CreateTemplateNamespace,
 }
 
 var environmentRdsCmd = &cobra.Command{
@@ -34,10 +36,12 @@ var environmentRdsCmd = &cobra.Command{
 	Example: heredoc.Doc(`
 	$ cloud-platform environment rds create
 	`),
+	PreRun: upgradeIfNotLatest,
 }
 
 var environmentRdsCreateCmd = &cobra.Command{
-	Use:   "create",
-	Short: `Create "resources/rds.tf" terraform file for an RDS instance`,
-	RunE:  environment.CreateTemplateRds,
+	Use:    "create",
+	Short:  `Create "resources/rds.tf" terraform file for an RDS instance`,
+	PreRun: upgradeIfNotLatest,
+	RunE:   environment.CreateTemplateRds,
 }
