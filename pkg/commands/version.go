@@ -4,17 +4,24 @@ package commands
 
 import (
 	"fmt"
+	release "github.com/ministryofjustice/cloud-platform-cli/pkg/github/release"
 	"runtime/debug"
 
 	"github.com/spf13/cobra"
 )
 
-var Version string
+// This MUST match the number of the latest release on github
+var Version = "1.4.4"
+
+const owner = "ministryofjustice"
+const repoName = "cloud-platform-cli"
+const binaryName = "cloud-platform"
 
 func addVersion(topLevel *cobra.Command) {
 	topLevel.AddCommand(&cobra.Command{
-		Use:   "version",
-		Short: `Print version`,
+		Use:    "version",
+		Short:  `Print version`,
+		PreRun: upgradeIfNotLatest,
 		Run: func(cmd *cobra.Command, args []string) {
 			v := version()
 			if v == "" {
@@ -35,4 +42,9 @@ func version() string {
 		Version = i.Main.Version
 	}
 	return Version
+}
+
+func upgradeIfNotLatest(cmd *cobra.Command, args []string) {
+	r := release.New(owner, repoName, Version, binaryName)
+	r.UpgradeIfNotLatest()
 }
