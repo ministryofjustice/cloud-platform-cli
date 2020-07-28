@@ -2,6 +2,7 @@ package release
 
 import (
 	"io/ioutil"
+	"runtime"
 	"testing"
 )
 
@@ -23,7 +24,15 @@ func TestTarballFilename(t *testing.T) {
 	r.innerStruct.getLatestReleaseInfo()
 
 	tarball := r.innerStruct.tarballFilename()
-	expected := "reponame_9.10.11_darwin_amd64.tar.gz"
+
+	var expected string
+
+	if runtime.GOOS == "darwin" {
+		expected = "reponame_9.10.11_darwin_amd64.tar.gz"
+	} else {
+		expected = "reponame_9.10.11_linux_amd64.tar.gz"
+	}
+
 	if tarball != expected {
 		t.Errorf("Expected: %s, got: %s", expected, tarball)
 	}
@@ -36,7 +45,14 @@ func TestLatestTarballUrl(t *testing.T) {
 	r.innerStruct.getLatestReleaseInfo()
 
 	url := r.innerStruct.latestTarballUrl()
-	expected := "https://github.com/owner/reponame/releases/download/9.10.11/reponame_9.10.11_darwin_amd64.tar.gz"
+
+	var expected string
+
+	if runtime.GOOS == "darwin" {
+		expected = "https://github.com/owner/reponame/releases/download/9.10.11/reponame_9.10.11_darwin_amd64.tar.gz"
+	} else {
+		expected = "https://github.com/owner/reponame/releases/download/9.10.11/reponame_9.10.11_linux_amd64.tar.gz"
+	}
 
 	if url != expected {
 		t.Errorf("Expected: %s, got: %s", expected, url)
