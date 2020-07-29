@@ -2,15 +2,16 @@ package environment
 
 import (
 	"fmt"
-	"os"
 	"text/template"
 
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 )
 
+// TODO: Change cli-svc back to main
 const fileName = "05-serviceaccount.yaml"
 const templateLocation = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/cli-svc/namespace-resources-cli-template/05-serviceaccount.yaml"
+
 type ServiceAccount struct {
 	Name      string
 	Namespace string
@@ -31,7 +32,7 @@ func CreateTemplateServiceAccount(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	err = createServiceAccountFiles(values)
+	err = createFile(values)
 	if err != nil {
 		return err
 	}
@@ -57,52 +58,21 @@ func setValues() (*ServiceAccount, error) {
 	return &values, nil
 }
 
-func downloadAndInitialiseTemplate(namespace string) (error, []*templateFromUrl) {
-// initialiseTemplate creates a templateFromUrl object and downloads the contents of the
-// templateLocation variable, returning a slice of templateFromUrl objects. The downloadTemplateContents
-// function requires a slice, so even though we're only passing one template it needs to be added to a slice.
-	template := []*templateFromUrl{
-		{
-			name:       "05-serviceaccount.yaml",
-			url:        "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/cli-svc/namespace-resources-cli-template/05-serviceaccount.yaml",
-			outputPath: "05-serviceaccount.yaml",
-		},
-	}
-
-	err := downloadTemplateContents(template)
+// createFile uses the values of a ServiceAccount object to interpolate the serviceaccount
+// template and creates a file in the current working directory.
+func createFile(values *ServiceAccount) error {
+	templateFile, err := downloadTemplate(templateLocation)
 	if err != nil {
-		return err, nil
+		return (err)
 	}
 
-	return nil, template
-}
+	tpl := template.Must(template.New("").Parse(templateFile))
 
-func createServiceAccountFiles(values *ServiceAccount) error {
-	if _, err := os.Stat(namespaceBaseFolder + values.Namespace); os.IsNotExist(err) {
-		os.Mkdir(namespaceBaseFolder+values.Namespace, 0755)
-	}
-
-	err, templates := downloadAndInitialiseTemplate(values.Namespace)
-// createFile creates the template file in the current directory. As the initialiseTemplate function
-// returns a slice of templateFromUrl objects, it has to be iterated over in a for loop.
+	f, _ := outputFileWriter(fileName)
+	err = tpl.Execute(f, values)
 	if err != nil {
-		return err
+		return nil
 	}
 
-	for _, i := range templates {
-		t, err := template.New("").Parse(i.content)
-		if err != nil {
-			return err
-		}
-		f, err := os.Create(i.outputPath)
-		if err != nil {
-			return err
-		}
-
-		err = t.Execute(f, values)
-		if err != nil {
-			return err
-		}
-	}
 	return nil
 }
