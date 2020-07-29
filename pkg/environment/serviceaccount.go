@@ -26,7 +26,7 @@ func CreateTemplateServiceAccount(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	values, err := promptForValues()
+	values, err := setValues()
 	if err != nil {
 		return err
 	}
@@ -42,34 +42,17 @@ func CreateTemplateServiceAccount(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func promptForValues() (*ServiceAccount, error) {
 // setValues creates a ServiceAccount object and sets its namespace value to those inside
 // a Namespace object. It will also set the object name to "randomString" unless
 // specified otherwise.
+func setValues() (*ServiceAccount, error) {
 	values := ServiceAccount{}
 
-	ServiceAccountName := promptString{
-		label:        "What name would you like to call your serviceaccount? This should be lowercase e.g. circleci",
-		defaultValue: "",
-		validation:   "no-spaces-and-no-uppercase",
-	}
-	err := ServiceAccountName.promptString()
-	if err != nil {
-		return nil, err
-	}
+	ns := Namespace{}
+	ns.ReadYaml()
 
-	Namespace := promptString{
-		label:        "What is the name of your namespace? This should be of the form: <application>-<environment>. e.g. myapp-dev (lower-case letters and dashes only)",
-		defaultValue: "",
-		validation:   "no-spaces-and-no-uppercase",
-	}
-	err = Namespace.promptString()
-	if err != nil {
-		return nil, err
-	}
-
-	values.Namespace = Namespace.value
-	values.Name = ServiceAccountName.value
+	values.Name = "randomString"
+	values.Namespace = ns.Namespace
 
 	return &values, nil
 }
