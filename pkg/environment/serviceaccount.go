@@ -9,18 +9,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// TODO: Change to main
-const templateYaml = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/cli-svc/namespace-resources-cli-template"
-
 type ServiceAccount struct {
-	ServiceAccountName string
-	Namespace          string
+	Name      string
+	Namespace string
 }
 
 func CreateTemplateServiceAccount(cmd *cobra.Command, args []string) error {
 	re := RepoEnvironment{}
-	err := re.mustBeInCloudPlatformEnvironments()
-
+	err := re.mustBeInANamespaceFolder()
 	if err != nil {
 		return err
 	}
@@ -65,7 +61,7 @@ func promptForValues() (*ServiceAccount, error) {
 	}
 
 	values.Namespace = Namespace.value
-	values.ServiceAccountName = ServiceAccountName.value
+	values.Name = ServiceAccountName.value
 
 	return &values, nil
 }
@@ -74,8 +70,8 @@ func downloadAndInitialiseTemplate(namespace string) (error, []*templateFromUrl)
 	template := []*templateFromUrl{
 		{
 			name:       "05-serviceaccount.yaml",
-			url:        templatesBaseUrl + "/" + "05-serviceaccount.yaml",
-			outputPath: namespaceBaseFolder + "/" + namespace + "/" + "05-serviceaccount.yaml",
+			url:        "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/cli-svc/namespace-resources-cli-template/05-serviceaccount.yaml",
+			outputPath: "05-serviceaccount.yaml",
 		},
 	}
 
@@ -92,21 +88,25 @@ func createServiceAccountFiles(values *ServiceAccount) error {
 		os.Mkdir(namespaceBaseFolder+values.Namespace, 0755)
 	}
 
-	err, tem := downloadAndInitialiseTemplate(values.Namespace)
+	err, templates := downloadAndInitialiseTemplate(values.Namespace)
 	if err != nil {
 		return err
 	}
 
-	t, err := template.New("").Parse(tem.content)
+	for _, i := range templates {
+		t, err := template.New("").Parse(i.content)
+		if err != nil {
+			return err
+		}
+		f, err := os.Create(i.outputPath)
+		if err != nil {
+			return err
+		}
 
-	f, err := os.Create(tem.outputPath)
-	if err != nil {
-		return err
-	}
-
-	err = t.Execute(f, values)
-	if err != nil {
-		return err
+		err = t.Execute(f, values)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
