@@ -9,11 +9,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const fileName = "05-serviceaccount.yaml"
+const templateLocation = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/cli-svc/namespace-resources-cli-template/05-serviceaccount.yaml"
 type ServiceAccount struct {
 	Name      string
 	Namespace string
 }
 
+// CreateTemplateServiceAccount sets and creates a template file containing all
+// the necessary values to create a serviceaccount resource in Kubernetes. It
+// will only execute in a directory with a namespace resource i.e. 00-namespace.yaml.
 func CreateTemplateServiceAccount(cmd *cobra.Command, args []string) error {
 	re := RepoEnvironment{}
 	err := re.mustBeInANamespaceFolder()
@@ -38,6 +43,9 @@ func CreateTemplateServiceAccount(cmd *cobra.Command, args []string) error {
 }
 
 func promptForValues() (*ServiceAccount, error) {
+// setValues creates a ServiceAccount object and sets its namespace value to those inside
+// a Namespace object. It will also set the object name to "randomString" unless
+// specified otherwise.
 	values := ServiceAccount{}
 
 	ServiceAccountName := promptString{
@@ -67,6 +75,9 @@ func promptForValues() (*ServiceAccount, error) {
 }
 
 func downloadAndInitialiseTemplate(namespace string) (error, []*templateFromUrl) {
+// initialiseTemplate creates a templateFromUrl object and downloads the contents of the
+// templateLocation variable, returning a slice of templateFromUrl objects. The downloadTemplateContents
+// function requires a slice, so even though we're only passing one template it needs to be added to a slice.
 	template := []*templateFromUrl{
 		{
 			name:       "05-serviceaccount.yaml",
@@ -89,6 +100,8 @@ func createServiceAccountFiles(values *ServiceAccount) error {
 	}
 
 	err, templates := downloadAndInitialiseTemplate(values.Namespace)
+// createFile creates the template file in the current directory. As the initialiseTemplate function
+// returns a slice of templateFromUrl objects, it has to be iterated over in a for loop.
 	if err != nil {
 		return err
 	}
