@@ -5,7 +5,6 @@ import (
 	"text/template"
 
 	"github.com/gookit/color"
-	"github.com/spf13/cobra"
 )
 
 // TODO: Change cli-svc back to main
@@ -20,14 +19,14 @@ type ServiceAccount struct {
 // CreateTemplateServiceAccount sets and creates a template file containing all
 // the necessary values to create a serviceaccount resource in Kubernetes. It
 // will only execute in a directory with a namespace resource i.e. 00-namespace.yaml.
-func CreateTemplateServiceAccount(cmd *cobra.Command, args []string) error {
+func CreateTemplateServiceAccount(name string) error {
 	re := RepoEnvironment{}
 	err := re.mustBeInANamespaceFolder()
 	if err != nil {
 		return err
 	}
 
-	values, err := setValues()
+	values, err := setValues(name)
 	if err != nil {
 		return err
 	}
@@ -44,15 +43,14 @@ func CreateTemplateServiceAccount(cmd *cobra.Command, args []string) error {
 }
 
 // setValues creates a ServiceAccount object and sets its namespace value to those inside
-// a Namespace object. It will also set the object name to "randomString" unless
-// specified otherwise.
-func setValues() (*ServiceAccount, error) {
+// a Namespace object. The name variable is passed as an argument.
+func setValues(name string) (*ServiceAccount, error) {
 	values := ServiceAccount{}
 
 	ns := Namespace{}
 	ns.ReadYaml()
 
-	values.Name = "randomString"
+	values.Name = name
 	values.Namespace = ns.Namespace
 
 	return &values, nil
