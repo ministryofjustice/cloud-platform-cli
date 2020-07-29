@@ -7,9 +7,8 @@ import (
 	"github.com/gookit/color"
 )
 
-// TODO: Change cli-svc back to main
 const fileName = "05-serviceaccount.yaml"
-const templateLocation = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/cli-svc/namespace-resources-cli-template/05-serviceaccount.yaml"
+const templateLocation = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template/05-serviceaccount.yaml"
 
 type ServiceAccount struct {
 	Name      string
@@ -36,7 +35,7 @@ func CreateTemplateServiceAccount(name string) error {
 		return err
 	}
 
-	fmt.Printf("Serviceaccount generated under %s/%s\n", namespaceBaseFolder, values.Namespace)
+	fmt.Println("Service account resource created")
 	color.Info.Tips("Please review before raising PR")
 
 	return nil
@@ -57,7 +56,7 @@ func setValues(name string) (*ServiceAccount, error) {
 }
 
 // createFile uses the values of a ServiceAccount object to interpolate the serviceaccount
-// template and creates a file in the current working directory.
+// template, it then creates a file in the current working directory.
 func createFile(values *ServiceAccount) error {
 	templateFile, err := downloadTemplate(templateLocation)
 	if err != nil {
