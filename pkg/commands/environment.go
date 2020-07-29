@@ -12,6 +12,8 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentCmd.AddCommand(environmentRdsCmd)
 	environmentCmd.AddCommand(environmentCreateCmd)
 	environmentRdsCmd.AddCommand(environmentRdsCreateCmd)
+	environmentCmd.AddCommand(environmentSvcCmd)
+	environmentSvcCmd.AddCommand(environmentSvcCreateCmd)
 }
 
 var environmentCmd = &cobra.Command{
@@ -44,4 +46,23 @@ var environmentRdsCreateCmd = &cobra.Command{
 	Short:  `Create "resources/rds.tf" terraform file for an RDS instance`,
 	PreRun: upgradeIfNotLatest,
 	RunE:   environment.CreateTemplateRds,
+}
+
+var environmentSvcCmd = &cobra.Command{
+	Use:   "serviceaccount",
+	Short: `Creates a serviceaccount`,
+	Example: heredoc.Doc(`
+	$ cloud-platform environment serviceaccount 
+	`),
+	// PreRun: upgradeIfNotLatest,
+}
+
+var environmentSvcCreateCmd = &cobra.Command{
+	Use:   "create",
+	Short: `Create serviceaccount to a namespace dir`,
+	Example: heredoc.Doc(`
+	$ cloud-platform environment serviceaccount create
+	`),
+	// PreRun: upgradeIfNotLatest,
+	RunE: environment.CreateTemplateServiceAccount,
 }
