@@ -9,9 +9,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// all yaml and terraform templates will be pulled from URL endpoints below here
-const templatesBaseUrl = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template"
-
 func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 	re := RepoEnvironment{}
 	err := re.mustBeInCloudPlatformEnvironments()
@@ -153,35 +150,35 @@ func downloadAndInitialiseTemplates(namespace string) (error, []*templateFromUrl
 	templates := []*templateFromUrl{
 		{
 			name: "00-namespace.yaml",
-			url:  templatesBaseUrl + "/" + "00-namespace.yaml",
+			url:  envTemplateLocation + "/" + "00-namespace.yaml",
 		},
 		{
 			name: "01-rbac.yaml",
-			url:  templatesBaseUrl + "/" + "01-rbac.yaml",
+			url:  envTemplateLocation + "/" + "01-rbac.yaml",
 		},
 		{
 			name: "02-limitrange.yaml",
-			url:  templatesBaseUrl + "/" + "02-limitrange.yaml",
+			url:  envTemplateLocation + "/" + "02-limitrange.yaml",
 		},
 		{
 			name: "03-resourcequota.yaml",
-			url:  templatesBaseUrl + "/" + "03-resourcequota.yaml",
+			url:  envTemplateLocation + "/" + "03-resourcequota.yaml",
 		},
 		{
 			name: "04-networkpolicy.yaml",
-			url:  templatesBaseUrl + "/" + "04-networkpolicy.yaml",
+			url:  envTemplateLocation + "/" + "04-networkpolicy.yaml",
 		},
 		{
 			name: "resources/main.tf",
-			url:  templatesBaseUrl + "/" + "resources/main.tf",
+			url:  envTemplateLocation + "/" + "resources/main.tf",
 		},
 		{
 			name: "resources/versions.tf",
-			url:  templatesBaseUrl + "/" + "resources/versions.tf",
+			url:  envTemplateLocation + "/" + "resources/versions.tf",
 		},
 		{
 			name: "resources/variables.tf",
-			url:  templatesBaseUrl + "/" + "resources/variables.tf",
+			url:  envTemplateLocation + "/" + "resources/variables.tf",
 		},
 	}
 

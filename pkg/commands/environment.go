@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"strings"
+
 	environment "github.com/ministryofjustice/cloud-platform-cli/pkg/environment"
 
 	"github.com/MakeNowJust/heredoc"
@@ -11,9 +13,13 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	topLevel.AddCommand(environmentCmd)
 	environmentCmd.AddCommand(environmentEcrCmd)
 	environmentCmd.AddCommand(environmentRdsCmd)
+	environmentCmd.AddCommand(environmentSvcCmd)
 	environmentCmd.AddCommand(environmentCreateCmd)
 	environmentEcrCmd.AddCommand(environmentEcrCreateCmd)
 	environmentRdsCmd.AddCommand(environmentRdsCreateCmd)
+	environmentSvcCmd.AddCommand(environmentSvcCreateCmd)
+	environmentSvcCreateCmd.Flags().StringP("name", "n", "cloud-platform-user", "The name of the ServiceAccount resource")
+
 }
 
 var environmentCmd = &cobra.Command{
@@ -62,4 +68,34 @@ var environmentRdsCreateCmd = &cobra.Command{
 	Short:  `Create "resources/rds.tf" terraform file for an RDS instance`,
 	PreRun: upgradeIfNotLatest,
 	RunE:   environment.CreateTemplateRds,
+}
+
+var environmentSvcCmd = &cobra.Command{
+	Use:   "serviceaccount",
+	Short: `Add a serviceaccount to a namespace`,
+	Example: heredoc.Doc(`
+	$ cloud-platform environment serviceaccount 
+	`),
+	PreRun: upgradeIfNotLatest,
+}
+
+var environmentSvcCreateCmd = &cobra.Command{
+	Use:   "create",
+	Short: `Creates a serviceaccount in your chosen namespace`,
+	Example: heredoc.Doc(`
+	$ cloud-platform environment serviceaccount create -n circleci
+	`),
+	PreRun: upgradeIfNotLatest,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		nameFlag, err := cmd.Flags().GetString("name")
+		if err != nil {
+			return err
+		}
+
+		if err = environment.CreateTemplateServiceAccount(strings.ToLower(nameFlag)); err != nil {
+			return err
+		}
+
+		return nil
+	},
 }

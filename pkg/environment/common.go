@@ -8,6 +8,7 @@ import (
 
 const cloudPlatformEnvRepo = "cloud-platform-environments"
 const namespaceBaseFolder = "namespaces/live-1.cloud-platform.service.justice.gov.uk"
+const envTemplateLocation = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template"
 
 type templateFromUrl struct {
 	outputPath string

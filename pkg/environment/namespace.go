@@ -24,7 +24,7 @@ type Namespace struct {
 	SourceCode            string
 }
 
-func (ns *Namespace) readYaml() error {
+func (ns *Namespace) ReadYaml() error {
 	return ns.readYamlFile(NamespaceYamlFile)
 }
 
