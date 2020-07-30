@@ -8,7 +8,6 @@ import (
 )
 
 const fileName = "05-serviceaccount.yaml"
-const templateLocation = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template/05-serviceaccount.yaml"
 
 type ServiceAccount struct {
 	Name      string
