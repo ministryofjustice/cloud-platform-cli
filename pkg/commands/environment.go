@@ -65,7 +65,7 @@ var environmentSvcCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: `Creates a serviceaccount in your chosen namespace`,
 	Example: heredoc.Doc(`
-	$ cloud-platform environment serviceaccount create [-n <name>]
+	$ cloud-platform environment serviceaccount create -n circleci
 	`),
 	PreRun: upgradeIfNotLatest,
 	RunE: func(cmd *cobra.Command, args []string) error {
