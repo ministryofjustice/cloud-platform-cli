@@ -4,14 +4,15 @@ package commands
 
 import (
 	"fmt"
-	release "github.com/ministryofjustice/cloud-platform-cli/pkg/github/release"
 	"runtime/debug"
+
+	release "github.com/ministryofjustice/cloud-platform-cli/pkg/github/release"
 
 	"github.com/spf13/cobra"
 )
 
 // This MUST match the number of the latest release on github
-var Version = "1.4.5"
+var Version = "1.4.6"
 
 const owner = "ministryofjustice"
 const repoName = "cloud-platform-cli"
