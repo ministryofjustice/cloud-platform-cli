@@ -24,15 +24,9 @@ func CreateTemplateServiceAccount(name string) error {
 	if err != nil {
 		return err
 	}
-
 	v := ServiceAccount{}
 
-	_, err = v.setSvcValues(name)
-	if err != nil {
-		return err
-	}
-
-	err = v.createSvcFile()
+	err = v.createSvcFile(name)
 	if err != nil {
 		return err
 	}
@@ -43,21 +37,15 @@ func CreateTemplateServiceAccount(name string) error {
 	return nil
 }
 
-// setValues creates a ServiceAccount object and sets its namespace value to those inside
-// a Namespace object. The name variable is passed as an argument.
-func (v *ServiceAccount) setSvcValues(name string) (*ServiceAccount, error) {
+// createFile uses the values of a ServiceAccount object to interpolate the serviceaccount
+// template, it then creates a file in the current working directory.
+func (v *ServiceAccount) createSvcFile(name string) error {
 	ns := Namespace{}
 	ns.ReadYaml()
 
 	v.Name = name
 	v.Namespace = ns.Namespace
 
-	return v, nil
-}
-
-// createFile uses the values of a ServiceAccount object to interpolate the serviceaccount
-// template, it then creates a file in the current working directory.
-func (v *ServiceAccount) createSvcFile() error {
 	templateFile, err := downloadTemplate(templateLocation)
 	if err != nil {
 		return (err)
