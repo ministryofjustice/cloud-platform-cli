@@ -7,7 +7,7 @@ import (
 	"github.com/gookit/color"
 )
 
-const fileName = "05-serviceaccount.yaml"
+const svcAccFileName = "05-serviceaccount.yaml"
 
 type ServiceAccount struct {
 	Name      string
@@ -25,12 +25,12 @@ func CreateTemplateServiceAccount(name string) error {
 	}
 	v := ServiceAccount{}
 
-	err = v.createSvcFile(name)
+	err = v.createSvcAccFile(name)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("Service account resource created")
+	fmt.Println(svcAccFileName, "created")
 	color.Info.Tips("Please review before raising PR")
 
 	return nil
@@ -39,6 +39,7 @@ func CreateTemplateServiceAccount(name string) error {
 // createFile uses the values of a ServiceAccount object to interpolate the serviceaccount
 // template, it then creates a file in the current working directory.
 func (v *ServiceAccount) createSvcFile(name string) error {
+func (v *ServiceAccount) createSvcAccFile(name string) error {
 	ns := Namespace{}
 	ns.ReadYaml()
 
