@@ -13,7 +13,7 @@ func TestCreateServiceAccountFiles(t *testing.T) {
 
 	fileName := "05-serviceaccount.yaml"
 
-	err := createFile(&svc)
+	err := svc.createSvcFile()
 	if err != nil {
 		t.Errorf("Unexpected error: %s", err)
 	}
