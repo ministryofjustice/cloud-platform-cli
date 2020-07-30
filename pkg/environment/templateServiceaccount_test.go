@@ -19,6 +19,7 @@ func TestCreateServiceAccountFiles(t *testing.T) {
 	}
 
 	fileContainsString(t, fileName, svc.Name)
+	fileContainsString(t, fileName, svc.Namespace)
 
 	os.Remove(fileName)
 }
