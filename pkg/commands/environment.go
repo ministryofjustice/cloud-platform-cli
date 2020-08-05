@@ -13,10 +13,12 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	topLevel.AddCommand(environmentCmd)
 	environmentCmd.AddCommand(environmentEcrCmd)
 	environmentCmd.AddCommand(environmentRdsCmd)
+	environmentCmd.AddCommand(environmentS3Cmd)
 	environmentCmd.AddCommand(environmentSvcCmd)
 	environmentCmd.AddCommand(environmentCreateCmd)
 	environmentEcrCmd.AddCommand(environmentEcrCreateCmd)
 	environmentRdsCmd.AddCommand(environmentRdsCreateCmd)
+	environmentS3Cmd.AddCommand(environmentS3CreateCmd)
 	environmentSvcCmd.AddCommand(environmentSvcCreateCmd)
 	environmentSvcCreateCmd.Flags().StringP("name", "n", "cloud-platform-user", "The name of the ServiceAccount resource")
 
@@ -68,6 +70,22 @@ var environmentRdsCreateCmd = &cobra.Command{
 	Short:  `Create "resources/rds.tf" terraform file for an RDS instance`,
 	PreRun: upgradeIfNotLatest,
 	RunE:   environment.CreateTemplateRds,
+}
+
+var environmentS3Cmd = &cobra.Command{
+	Use:   "s3",
+	Short: `Add a S3 bucket to a namespace`,
+	Example: heredoc.Doc(`
+	$ cloud-platform environment s3 create
+	`),
+	PreRun: upgradeIfNotLatest,
+}
+
+var environmentS3CreateCmd = &cobra.Command{
+	Use:    "create",
+	Short:  `Create "resources/s3.tf" terraform file for a S3 bucket`,
+	PreRun: upgradeIfNotLatest,
+	RunE:   environment.CreateTemplateS3,
 }
 
 var environmentSvcCmd = &cobra.Command{
