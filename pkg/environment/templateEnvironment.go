@@ -1,8 +1,12 @@
 package environment
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
+	"io"
 	"os"
+	"path/filepath"
 	"text/template"
 
 	"github.com/gookit/color"
@@ -22,6 +26,12 @@ func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 	}
 
 	err = createNamespaceFiles(nsValues)
+	if err != nil {
+		return err
+	}
+
+	// Create a sha1 hash the namespace dir for PR auto-approval.
+	err = createHash(nsValues)
 	if err != nil {
 		return err
 	}
@@ -220,5 +230,49 @@ func createNamespaceFiles(nsValues *Namespace) error {
 			return err
 		}
 	}
+	return nil
+}
+
+// createHash accepts namespace values as an argument and will create a hidden file
+// in a namespace directory called .autoApprove. This file contains the namespace name and
+// a hash of the namespace directory.
+func createHash(nsValues *Namespace) error {
+	hash := sha1.New()
+	nsDir := namespaceBaseFolder + "/" + nsValues.Namespace
+
+	f, err := os.Create(nsDir + "/" + ".autoApprove")
+	if err != nil {
+		return nil
+	}
+
+	_, err = f.WriteString(nsValues.Namespace + "\n")
+	if err != nil {
+		return nil
+	}
+
+	err = filepath.Walk(nsDir, func(nsDir string, info os.FileInfo, err error) error {
+		if err != nil {
+			return nil
+		}
+
+		io.WriteString(hash, nsDir)
+
+		return nil
+	})
+	if err != nil {
+		return nil
+	}
+
+	// Converts the bytes to a string
+	hashInBytes := hash.Sum(nil)
+	shaString := hex.EncodeToString(hashInBytes)
+
+	_, err = f.WriteString(shaString + "\n")
+	if err != nil {
+		return nil
+	}
+
+	defer f.Close()
+
 	return nil
 }
