@@ -62,6 +62,7 @@ func TestCreateNamespace(t *testing.T) {
 		namespaceFile:   "cloud-platform.justice.gov.uk/is-production: \"false\"",
 		rbacFile:        "name: \"github:my-github-team\"",
 		variablesTfFile: "my-team-slack-channel",
+		variablesTfFile: "my-github-team",
 	}
 
 	for filename, searchString := range stringsInFiles {

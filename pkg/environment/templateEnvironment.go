@@ -3,6 +3,7 @@ package environment
 import (
 	"fmt"
 	"os"
+	"strings"
 	"text/template"
 
 	"github.com/gookit/color"
@@ -135,7 +136,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 	values.Application = Application.value
 	values.BusinessUnit = businessUnit.value
 	values.Namespace = Namespace.value
-	values.GithubTeam = GithubTeam.value
+	values.GithubTeam = strings.ToLower(GithubTeam.value)
 	values.Environment = Environment.value
 	values.IsProduction = IsProduction.value
 	values.SlackChannel = SlackChannel.value
