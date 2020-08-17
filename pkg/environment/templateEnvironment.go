@@ -1,16 +1,13 @@
 package environment
 
 import (
-	"crypto/sha1"
-	"encoding/hex"
 	"fmt"
-	"io"
 	"os"
-	"path/filepath"
 	"text/template"
 
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
+	dir "golang.org/x/mod/sumdb/dirhash"
 )
 
 func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
@@ -30,10 +27,9 @@ func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Create a sha1 hash the namespace dir for PR auto-approval.
-	err = createHash(nsValues)
+	err = createDirHash(nsValues)
 	if err != nil {
-		return err
+		return nil
 	}
 
 	fmt.Printf("Namespace files generated under %s/%s\n", namespaceBaseFolder, nsValues.Namespace)
@@ -233,46 +229,36 @@ func createNamespaceFiles(nsValues *Namespace) error {
 	return nil
 }
 
-// createHash accepts namespace values as an argument and will create a hidden file
-// in a namespace directory called .autoApprove. This file contains the namespace name and
-// a hash of the namespace directory.
-func createHash(nsValues *Namespace) error {
-	hash := sha1.New()
+// createDirHash calls the dirhash package to create a sha256 hash of the users
+// namespace directory. This value is written to a file at the root of the
+// cloud-platform-environments repository.
+func createDirHash(nsValues *Namespace) error {
+	// A DefaultHash is a required argument in the dirhash package
+	var DefaultHash dir.Hash = dir.Hash1
+
+	fileName := ".checksum"
 	nsDir := namespaceBaseFolder + "/" + nsValues.Namespace
 
-	f, err := os.Create(nsDir + "/" + ".autoApprove")
+	hashDir, err := dir.HashDir(nsDir, nsValues.Namespace, DefaultHash)
 	if err != nil {
-		return nil
+		return err
 	}
 
-	_, err = f.WriteString(nsValues.Namespace + "\n")
+	f, err := os.Create(fileName)
 	if err != nil {
-		return nil
+		return err
 	}
-
-	err = filepath.Walk(nsDir, func(nsDir string, info os.FileInfo, err error) error {
-		if err != nil {
-			return nil
-		}
-
-		io.WriteString(hash, nsDir)
-
-		return nil
-	})
-	if err != nil {
-		return nil
-	}
-
-	// Converts the bytes to a string
-	hashInBytes := hash.Sum(nil)
-	shaString := hex.EncodeToString(hashInBytes)
-
-	_, err = f.WriteString(shaString + "\n")
-	if err != nil {
-		return nil
-	}
-
 	defer f.Close()
+
+	_, err = f.WriteString("#This file is used by the auto pr github action. Please commit" + "\n")
+	if err != nil {
+		return err
+	}
+
+	_, err = f.WriteString(nsValues.Namespace + "\n" + hashDir + "\n")
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
