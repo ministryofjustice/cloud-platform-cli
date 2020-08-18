@@ -7,7 +7,6 @@ on:
   # and the target with some regex to match our specific  branch names
     branches:
       - main
-        - 
 # We can now build our job
 jobs:
   build:
