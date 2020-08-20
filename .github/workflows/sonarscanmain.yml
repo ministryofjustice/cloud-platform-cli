@@ -1,0 +1,28 @@
+name: sonarqube test
+
+on:
+  push:
+    branches-ignore:
+      - 'master'
+      - 'main'
+
+jobs:
+  build:
+    name: sonarqube scan test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup sonarqube
+        uses: warchant/setup-sonar-scanner@v1
+
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Run sonar scanner
+        env:
+          # to get access to secrets.SONAR_TOKEN, provide GITHUB_TOKEN
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: sonar-scanner
+          -Dsonar.host.url=https://sonarqube.cloud-platform.service.justice.gov.uk/
+          -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+          -Dsonar.projectKey=cloud-platform-cli
+          -Dsonar.pullrequest.github.repository=${{ github.repository }}
