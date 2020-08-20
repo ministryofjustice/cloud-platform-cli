@@ -3,7 +3,6 @@ name: sonarqube test
 on:
   push:
     branches-ignore:
-      - 'master'
       - 'main'
 
 jobs:
@@ -24,5 +23,5 @@ jobs:
         run: sonar-scanner
           -Dsonar.host.url=https://sonarqube.cloud-platform.service.justice.gov.uk/
           -Dsonar.login=${{ secrets.SONAR_TOKEN }}
-          -Dsonar.projectKey=${{ github.repository }}/BRANCH=${GITHUB_REF:11}
+          -Dsonar.projectKey=${{ github.repository }}:${GITHUB_REF:11}
           -Dsonar.pullrequest.github.repository=${{ github.repository }}
