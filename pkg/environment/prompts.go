@@ -24,7 +24,7 @@ type promptString struct {
 
 //////////////
 // PromptUI //
-//////////////
+///////////////
 
 func (s *promptString) promptString() error {
 	prompt := promptui.Prompt{
