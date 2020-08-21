@@ -14,9 +14,10 @@ func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 	q := userQuestion{
 		description: "this is\na question\nplease answer it",
 		prompt:      "Answer",
+		validator:   new(trueFalseValidator),
 	}
 	q.getAnswer()
-	fmt.Printf("You answered: %s\n", q.value)
+	fmt.Printf("You answered: x%sy\n", q.value)
 	os.Exit(0)
 
 	re := RepoEnvironment{}
