@@ -1,6 +1,9 @@
 package environment
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type inListValidator struct {
 	list []string
@@ -13,6 +16,6 @@ func (v *inListValidator) isValid(s string) bool {
 		}
 	}
 	// TODO: output the list
-	fmt.Println("Value must be in the list")
+	fmt.Printf("Value must be in the list: %s\n", strings.Join(v.list, ", "))
 	return false
 }
