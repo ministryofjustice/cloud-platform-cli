@@ -11,10 +11,13 @@ import (
 )
 
 func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
+	val := regexValidator{
+		regex: `foo`,
+	}
 	q := userQuestion{
 		description: "this is\na question\nplease answer it",
 		prompt:      "Answer",
-		validator:   new(trueFalseValidator),
+		validator:   &val,
 	}
 	q.getAnswer()
 	fmt.Printf("You answered: x%sy\n", q.value)
