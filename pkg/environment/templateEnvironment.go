@@ -3,7 +3,6 @@ package environment
 import (
 	"fmt"
 	"os"
-	"strings"
 	"text/template"
 
 	"github.com/MakeNowJust/heredoc"
@@ -89,23 +88,29 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 	q.getAnswer()
 	values.IsProduction = q.value
 
-	Application := promptString{
-		label:        "What is the name of your application/service? (e.g. Send money to a prisoner)",
-		defaultValue: "",
+	q = userQuestion{
+		description: heredoc.Doc(`
+		    What is the name of your application/service?
+			(e.g. Send money to a prisoner)
+			 `),
+		prompt:    "Application",
+		validator: new(notEmptyValidator),
 	}
-	err := Application.promptString()
-	if err != nil {
-		return nil, err
-	}
+	q.getAnswer()
+	values.Application = q.value
 
-	GithubTeam := promptString{
-		label:        "What is the name of your Github team? (this must be an exact match, or you will not have access to your namespace)",
-		defaultValue: "",
+	q = userQuestion{
+		description: heredoc.Doc(`
+		    What is the name of your Github team?
+			Please enter the name in lower-case, with hyphens instead of spaces
+			i.e. "Check My Diary" -> "check-my-diary"
+			(this must be an exact match, or you will not have access to your namespace)",
+			 `),
+		prompt:    "Github Team",
+		validator: new(githubTeamNameValidator),
 	}
-	err = GithubTeam.promptString()
-	if err != nil {
-		return nil, err
-	}
+	q.getAnswer()
+	values.GithubTeam = q.value
 
 	businessUnit := promptString{
 		label:        "Which part of the MoJ is responsible for this service? (valid answers: HQ, HMPPS, OPG, LAA, HMCTS, CICA, Platforms)",
@@ -154,9 +159,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 		return nil, err
 	}
 
-	values.Application = Application.value
 	values.BusinessUnit = businessUnit.value
-	values.GithubTeam = strings.ToLower(GithubTeam.value)
 	values.SlackChannel = SlackChannel.value
 	values.InfrastructureSupport = InfrastructureSupport.value
 	values.SourceCode = SourceCode.value
