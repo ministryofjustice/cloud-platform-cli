@@ -6,20 +6,26 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/MakeNowJust/heredoc"
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 )
 
 func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
-	val := new(regexValidator)
-	val.regex = `foo`
+	r := new(regexValidator)
+	r.regex = `^[a-z\-]+$`
 
 	q := userQuestion{
-		description: "this is\na question\nplease answer it",
-		prompt:      "Answer",
-		validator:   val,
+		description: heredoc.Doc(`
+			 What is the name of your namespace?
+			 This should be of the form: <application>-<environment>.
+			 e.g. myapp-dev (lower-case letters and dashes only)
+			 `),
+		prompt:    "Name",
+		validator: r,
 	}
 	q.getAnswer()
+
 	fmt.Printf("You answered: x%sy\n", q.value)
 	os.Exit(0)
 
@@ -51,22 +57,27 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 
 	values := Namespace{}
 
-	Namespace := promptString{
-		label:        "What is the name of your namespace? This should be of the form: <application>-<environment>. e.g. myapp-dev (lower-case letters and dashes only)",
-		defaultValue: "",
-		validation:   "no-spaces-and-no-uppercase",
+	r := new(regexValidator)
+	r.regex = `^[a-z\-]+$`
+
+	q := userQuestion{
+		description: heredoc.Doc(`
+			 What is the name of your namespace?
+			 This should be of the form: <application>-<environment>.
+			 e.g. myapp-dev (lower-case letters and dashes only)
+			 `),
+		prompt:    "Name",
+		validator: r,
 	}
-	err := Namespace.promptString()
-	if err != nil {
-		return nil, err
-	}
+	q.getAnswer()
+	values.Namespace = q.value
 
 	Environment := promptString{
 		label:        "What type of application environment is this namespace for? e.g. development, staging, production",
 		defaultValue: "",
 		validation:   "no-spaces-and-no-uppercase",
 	}
-	err = Environment.promptString()
+	err := Environment.promptString()
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +158,6 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 
 	values.Application = Application.value
 	values.BusinessUnit = businessUnit.value
-	values.Namespace = Namespace.value
 	values.GithubTeam = strings.ToLower(GithubTeam.value)
 	values.Environment = Environment.value
 	values.IsProduction = IsProduction.value

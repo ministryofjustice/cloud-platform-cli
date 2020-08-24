@@ -15,9 +15,7 @@ type userQuestion struct {
 }
 
 func (q *userQuestion) getAnswer() error {
-	// TODO: Automatically format the description, restricting line-length
 	fmt.Println(q.description)
-	fmt.Print("\n")
 
 	for {
 		if q.validator.isValid(q.value) {
