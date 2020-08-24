@@ -14,12 +14,11 @@ import (
 func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 	q := userQuestion{
 		description: heredoc.Doc(`
-			 What is the name of your namespace?
-			 This should be of the form: <application>-<environment>.
-			 e.g. myapp-dev (lower-case letters and dashes only)
+			Is this a production namespace?
+			Please enter "true" or "false"
 			 `),
-		prompt:    "Name",
-		validator: new(namespaceNameValidator),
+		prompt:    "Prouduction?",
+		validator: new(trueFalseValidator),
 	}
 	q.getAnswer()
 
@@ -79,20 +78,22 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 	q.getAnswer()
 	values.Environment = q.value
 
-	IsProduction := promptTrueFalse{
-		label:        "Is this a production namespace? (choose 'true' or 'false')",
-		defaultValue: "false",
+	q = userQuestion{
+		description: heredoc.Doc(`
+			Is this a production namespace?
+			Please enter "true" or "false"
+			 `),
+		prompt:    "Prouduction?",
+		validator: new(trueFalseValidator),
 	}
-	err := IsProduction.prompttrueFalse()
-	if err != nil {
-		return nil, err
-	}
+	q.getAnswer()
+	values.IsProduction = q.value
 
 	Application := promptString{
 		label:        "What is the name of your application/service? (e.g. Send money to a prisoner)",
 		defaultValue: "",
 	}
-	err = Application.promptString()
+	err := Application.promptString()
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +157,6 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 	values.Application = Application.value
 	values.BusinessUnit = businessUnit.value
 	values.GithubTeam = strings.ToLower(GithubTeam.value)
-	values.IsProduction = IsProduction.value
 	values.SlackChannel = SlackChannel.value
 	values.InfrastructureSupport = InfrastructureSupport.value
 	values.SourceCode = SourceCode.value
