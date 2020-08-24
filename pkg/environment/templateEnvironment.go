@@ -12,9 +12,6 @@ import (
 )
 
 func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
-	r := new(regexValidator)
-	r.regex = `^[a-z\-]+$`
-
 	q := userQuestion{
 		description: heredoc.Doc(`
 			 What is the name of your namespace?
@@ -22,7 +19,7 @@ func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 			 e.g. myapp-dev (lower-case letters and dashes only)
 			 `),
 		prompt:    "Name",
-		validator: r,
+		validator: new(namespaceNameValidator),
 	}
 	q.getAnswer()
 
@@ -57,9 +54,6 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 
 	values := Namespace{}
 
-	r := new(regexValidator)
-	r.regex = `^[a-z\-]+$`
-
 	q := userQuestion{
 		description: heredoc.Doc(`
 			 What is the name of your namespace?
@@ -67,26 +61,29 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 			 e.g. myapp-dev (lower-case letters and dashes only)
 			 `),
 		prompt:    "Name",
-		validator: r,
+		validator: new(namespaceNameValidator),
 	}
 	q.getAnswer()
 	values.Namespace = q.value
 
-	Environment := promptString{
-		label:        "What type of application environment is this namespace for? e.g. development, staging, production",
-		defaultValue: "",
-		validation:   "no-spaces-and-no-uppercase",
+	r := new(regexValidator)
+	r.regex = `^[a-z]+$`
+	q = userQuestion{
+		description: heredoc.Doc(`
+		     What type of application environment is this namespace for?
+			 e.g. development, staging, production
+			 `),
+		prompt:    "Environment",
+		validator: r,
 	}
-	err := Environment.promptString()
-	if err != nil {
-		return nil, err
-	}
+	q.getAnswer()
+	values.Environment = q.value
 
 	IsProduction := promptTrueFalse{
 		label:        "Is this a production namespace? (choose 'true' or 'false')",
 		defaultValue: "false",
 	}
-	err = IsProduction.prompttrueFalse()
+	err := IsProduction.prompttrueFalse()
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +156,6 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 	values.Application = Application.value
 	values.BusinessUnit = businessUnit.value
 	values.GithubTeam = strings.ToLower(GithubTeam.value)
-	values.Environment = Environment.value
 	values.IsProduction = IsProduction.value
 	values.SlackChannel = SlackChannel.value
 	values.InfrastructureSupport = InfrastructureSupport.value
