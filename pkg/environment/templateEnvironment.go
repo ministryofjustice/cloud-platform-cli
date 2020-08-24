@@ -157,16 +157,16 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 	q.getAnswer()
 	values.SourceCode = q.value
 
-	Owner := promptString{
-		label:        "Which team in your organisation is responsible for this application? (e.g. Sentence Planning)",
-		defaultValue: "",
+	q = userQuestion{
+		description: heredoc.Doc(`
+            Which team in your organisation is responsible
+			for this application? (e.g. Sentence Planning)
+			 `),
+		prompt:    "Team",
+		validator: new(notEmptyValidator),
 	}
-	err = Owner.promptString()
-	if err != nil {
-		return nil, err
-	}
-
-	values.Owner = Owner.value
+	q.getAnswer()
+	values.Owner = q.value
 
 	return &values, nil
 }
