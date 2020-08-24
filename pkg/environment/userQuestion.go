@@ -15,6 +15,7 @@ type userQuestion struct {
 }
 
 func (q *userQuestion) getAnswer() error {
+	fmt.Println("")
 	fmt.Println(q.description)
 
 	for {
