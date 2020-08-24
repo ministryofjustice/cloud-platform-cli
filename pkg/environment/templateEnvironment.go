@@ -11,19 +11,6 @@ import (
 )
 
 func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
-	q := userQuestion{
-		description: heredoc.Doc(`
-			Is this a production namespace?
-			Please enter "true" or "false"
-			 `),
-		prompt:    "Prouduction?",
-		validator: new(trueFalseValidator),
-	}
-	q.getAnswer()
-
-	fmt.Printf("You answered: x%sy\n", q.value)
-	os.Exit(0)
-
 	re := RepoEnvironment{}
 	err := re.mustBeInCloudPlatformEnvironments()
 	if err != nil {
@@ -68,8 +55,8 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 	r.regex = `^[a-z]+$`
 	q = userQuestion{
 		description: heredoc.Doc(`
-		     What type of application environment is this namespace for?
-			 e.g. development, staging, production
+			What type of application environment is this namespace for?
+			e.g. development, staging, production
 			 `),
 		prompt:    "Environment",
 		validator: r,
@@ -90,7 +77,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 
 	q = userQuestion{
 		description: heredoc.Doc(`
-		    What is the name of your application/service?
+			What is the name of your application/service?
 			(e.g. Send money to a prisoner)
 			 `),
 		prompt:    "Application",
@@ -101,7 +88,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 
 	q = userQuestion{
 		description: heredoc.Doc(`
-		    What is the name of your Github team?
+			What is the name of your Github team?
 			Please enter the name in lower-case, with hyphens instead of spaces
 			i.e. "Check My Diary" -> "check-my-diary"
 			(this must be an exact match, or you will not have access to your namespace)",
@@ -114,7 +101,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 
 	q = userQuestion{
 		description: heredoc.Doc(`
-            Which part of the MoJ is responsible for this service?
+			Which part of the MoJ is responsible for this service?
 			 `),
 		prompt:    "Business Unit",
 		validator: new(businessUnitValidator),
@@ -124,7 +111,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 
 	q = userQuestion{
 		description: heredoc.Doc(`
-		    What is the best slack channel (without the '#')
+			What is the best slack channel (without the '#')
 			to use if we need to contact your team?
 			(If you don't have a team slack channel, please create one)",
 			 `),
@@ -136,19 +123,19 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 
 	q = userQuestion{
 		description: heredoc.Doc(`
-            What is the email address for the team
+			What is the email address for the team
 			which owns the application?
 			(this should not be a named individual's email address)
 			 `),
 		prompt:    "Team Email",
-		validator: new(slackChannelValidator),
+		validator: new(teamEmailValidator),
 	}
 	q.getAnswer()
 	values.InfrastructureSupport = q.value
 
 	q = userQuestion{
 		description: heredoc.Doc(`
-            What is the Github repository URL of
+			What is the Github repository URL of
 			the source code for this application?
 			 `),
 		prompt:    "Github Repo",
