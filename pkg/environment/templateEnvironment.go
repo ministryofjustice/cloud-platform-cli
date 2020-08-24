@@ -51,15 +51,13 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 	q.getAnswer()
 	values.Namespace = q.value
 
-	r := new(regexValidator)
-	r.regex = `^[a-z]+$`
 	q = userQuestion{
 		description: heredoc.Doc(`
 			What type of application environment is this namespace for?
 			e.g. development, staging, production
 			 `),
 		prompt:    "Environment",
-		validator: r,
+		validator: new(lowercaseStringValidator),
 	}
 	q.getAnswer()
 	values.Environment = q.value
