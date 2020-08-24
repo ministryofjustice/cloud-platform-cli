@@ -146,7 +146,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 
 	q = userQuestion{
 		description: heredoc.Doc(`
-            Which team in your organisation is responsible
+			Which team in your organisation is responsible
 			for this application? (e.g. Sentence Planning)
 			 `),
 		prompt:    "Team",
