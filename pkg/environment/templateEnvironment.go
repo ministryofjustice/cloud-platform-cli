@@ -122,14 +122,17 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 	q.getAnswer()
 	values.BusinessUnit = q.value
 
-	SlackChannel := promptString{
-		label:        "What is the best slack channel (without the '#') to use if we need to contact your team? (If you don't have a team slack channel, please create one)",
-		defaultValue: "",
+	q = userQuestion{
+		description: heredoc.Doc(`
+		    What is the best slack channel (without the '#')
+			to use if we need to contact your team?
+			(If you don't have a team slack channel, please create one)",
+			 `),
+		prompt:    "Team Slack Channel",
+		validator: new(slackChannelValidator),
 	}
-	err = SlackChannel.promptString()
-	if err != nil {
-		return nil, err
-	}
+	q.getAnswer()
+	values.SlackChannel = q.value
 
 	InfrastructureSupport := promptString{
 		label:        "What is the email address for the team which owns the application? (this should not be a named individual's email address)",
@@ -160,7 +163,6 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 		return nil, err
 	}
 
-	values.SlackChannel = SlackChannel.value
 	values.InfrastructureSupport = InfrastructureSupport.value
 	values.SourceCode = SourceCode.value
 	values.Owner = Owner.value
