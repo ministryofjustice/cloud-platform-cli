@@ -134,25 +134,28 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 	q.getAnswer()
 	values.SlackChannel = q.value
 
-	InfrastructureSupport := promptString{
-		label:        "What is the email address for the team which owns the application? (this should not be a named individual's email address)",
-		defaultValue: "",
-		validation:   "email",
+	q = userQuestion{
+		description: heredoc.Doc(`
+            What is the email address for the team
+			which owns the application?
+			(this should not be a named individual's email address)
+			 `),
+		prompt:    "Team Email",
+		validator: new(slackChannelValidator),
 	}
-	err = InfrastructureSupport.promptString()
-	if err != nil {
-		return nil, err
-	}
+	q.getAnswer()
+	values.InfrastructureSupport = q.value
 
-	SourceCode := promptString{
-		label:        "What is the Github repository URL of the source code for this application?",
-		defaultValue: "",
-		validation:   "url",
+	q = userQuestion{
+		description: heredoc.Doc(`
+            What is the Github repository URL of
+			the source code for this application?
+			 `),
+		prompt:    "Github Repo",
+		validator: new(githubUrlValidator),
 	}
-	err = SourceCode.promptString()
-	if err != nil {
-		return nil, err
-	}
+	q.getAnswer()
+	values.SourceCode = q.value
 
 	Owner := promptString{
 		label:        "Which team in your organisation is responsible for this application? (e.g. Sentence Planning)",
@@ -163,8 +166,6 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 		return nil, err
 	}
 
-	values.InfrastructureSupport = InfrastructureSupport.value
-	values.SourceCode = SourceCode.value
 	values.Owner = Owner.value
 
 	return &values, nil
