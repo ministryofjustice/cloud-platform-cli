@@ -112,14 +112,15 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 	q.getAnswer()
 	values.GithubTeam = q.value
 
-	businessUnit := promptString{
-		label:        "Which part of the MoJ is responsible for this service? (valid answers: HQ, HMPPS, OPG, LAA, HMCTS, CICA, Platforms)",
-		defaultValue: "",
+	q = userQuestion{
+		description: heredoc.Doc(`
+            Which part of the MoJ is responsible for this service?
+			 `),
+		prompt:    "Business Unit",
+		validator: new(businessUnitValidator),
 	}
-	err = businessUnit.promptString()
-	if err != nil {
-		return nil, err
-	}
+	q.getAnswer()
+	values.BusinessUnit = q.value
 
 	SlackChannel := promptString{
 		label:        "What is the best slack channel (without the '#') to use if we need to contact your team? (If you don't have a team slack channel, please create one)",
@@ -159,7 +160,6 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 		return nil, err
 	}
 
-	values.BusinessUnit = businessUnit.value
 	values.SlackChannel = SlackChannel.value
 	values.InfrastructureSupport = InfrastructureSupport.value
 	values.SourceCode = SourceCode.value
