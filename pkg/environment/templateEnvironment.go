@@ -190,6 +190,10 @@ func downloadAndInitialiseTemplates(namespace string) (error, []*templateFromUrl
 			name: "resources/variables.tf",
 			url:  envTemplateLocation + "/" + "resources/variables.tf",
 		},
+		{
+			name: "resources/ingress.tf",
+			url:  envTemplateLocation + "/" + "resources/ingress.tf",
+		},
 	}
 
 	err := downloadTemplateContents(templates)
