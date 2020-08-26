@@ -5,6 +5,7 @@ import (
 	"os"
 	"text/template"
 
+	"github.com/MakeNowJust/heredoc"
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 	dir "golang.org/x/mod/sumdb/dirhash"
@@ -44,110 +45,119 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 
 	values := Namespace{}
 
-	Namespace := promptString{
-		label:        "What is the name of your namespace? This should be of the form: <application>-<environment>. e.g. myapp-dev (lower-case letters and dashes only)",
-		defaultValue: "",
-		validation:   "no-spaces-and-no-uppercase",
+	q := userQuestion{
+		description: heredoc.Doc(`
+			 What is the name of your namespace?
+			 This should be of the form: <application>-<environment>.
+			 e.g. myapp-dev (lower-case letters and dashes only)
+			 `),
+		prompt:    "Name",
+		validator: new(namespaceNameValidator),
 	}
-	err := Namespace.promptString()
-	if err != nil {
-		return nil, err
-	}
+	q.getAnswer()
+	values.Namespace = q.value
 
-	Environment := promptString{
-		label:        "What type of application environment is this namespace for? e.g. development, staging, production",
-		defaultValue: "",
-		validation:   "no-spaces-and-no-uppercase",
+	q = userQuestion{
+		description: heredoc.Doc(`
+			What type of application environment is this namespace for?
+			e.g. development, staging, production
+			 `),
+		prompt:    "Environment",
+		validator: new(lowercaseStringValidator),
 	}
-	err = Environment.promptString()
-	if err != nil {
-		return nil, err
-	}
+	q.getAnswer()
+	values.Environment = q.value
 
-	IsProduction := promptTrueFalse{
-		label:        "Is this a production namespace? (choose 'true' or 'false')",
-		defaultValue: "false",
+	q = userQuestion{
+		description: heredoc.Doc(`
+			Is this a production namespace?
+			Please enter "true" or "false"
+			 `),
+		prompt:    "Prouduction?",
+		validator: new(trueFalseValidator),
 	}
-	err = IsProduction.prompttrueFalse()
-	if err != nil {
-		return nil, err
-	}
+	q.getAnswer()
+	values.IsProduction = q.value
 
-	Application := promptString{
-		label:        "What is the name of your application/service? (e.g. Send money to a prisoner)",
-		defaultValue: "",
+	q = userQuestion{
+		description: heredoc.Doc(`
+			What is the name of your application/service?
+			(e.g. Send money to a prisoner)
+			 `),
+		prompt:    "Application",
+		validator: new(notEmptyValidator),
 	}
-	err = Application.promptString()
-	if err != nil {
-		return nil, err
-	}
+	q.getAnswer()
+	values.Application = q.value
 
-	GithubTeam := promptString{
-		label:        "What is the name of your Github team? (this must be an exact match, or you will not have access to your namespace)",
-		defaultValue: "",
+	q = userQuestion{
+		description: heredoc.Doc(`
+			What is the name of your Github team?
+			Please enter the name in lower-case, with hyphens instead of spaces
+			i.e. "Check My Diary" -> "check-my-diary"
+			(this must be an exact match, or you will not have access to your namespace)",
+			 `),
+		prompt:    "Github Team",
+		validator: new(githubTeamNameValidator),
 	}
-	err = GithubTeam.promptString()
-	if err != nil {
-		return nil, err
-	}
+	q.getAnswer()
+	values.GithubTeam = q.value
 
-	businessUnit := promptString{
-		label:        "Which part of the MoJ is responsible for this service? (valid answers: HQ, HMPPS, OPG, LAA, HMCTS, CICA, Platforms)",
-		defaultValue: "",
+	q = userQuestion{
+		description: heredoc.Doc(`
+			Which part of the MoJ is responsible for this service?
+			 `),
+		prompt:    "Business Unit",
+		validator: new(businessUnitValidator),
 	}
-	err = businessUnit.promptString()
-	if err != nil {
-		return nil, err
-	}
+	q.getAnswer()
+	values.BusinessUnit = q.value
 
-	SlackChannel := promptString{
-		label:        "What is the best slack channel (without the '#') to use if we need to contact your team? (If you don't have a team slack channel, please create one)",
-		defaultValue: "",
+	q = userQuestion{
+		description: heredoc.Doc(`
+			What is the best slack channel (without the '#')
+			to use if we need to contact your team?
+			(If you don't have a team slack channel, please create one)",
+			 `),
+		prompt:    "Team Slack Channel",
+		validator: new(slackChannelValidator),
 	}
-	err = SlackChannel.promptString()
-	if err != nil {
-		return nil, err
-	}
+	q.getAnswer()
+	values.SlackChannel = q.value
 
-	InfrastructureSupport := promptString{
-		label:        "What is the email address for the team which owns the application? (this should not be a named individual's email address)",
-		defaultValue: "",
-		validation:   "email",
+	q = userQuestion{
+		description: heredoc.Doc(`
+			What is the email address for the team
+			which owns the application?
+			(this should not be a named individual's email address)
+			 `),
+		prompt:    "Team Email",
+		validator: new(teamEmailValidator),
 	}
-	err = InfrastructureSupport.promptString()
-	if err != nil {
-		return nil, err
-	}
+	q.getAnswer()
+	values.InfrastructureSupport = q.value
 
-	SourceCode := promptString{
-		label:        "What is the Github repository URL of the source code for this application?",
-		defaultValue: "",
-		validation:   "url",
+	q = userQuestion{
+		description: heredoc.Doc(`
+			What is the Github repository URL of
+			the source code for this application?
+			 `),
+		prompt:    "Github Repo",
+		validator: new(githubUrlValidator),
 	}
-	err = SourceCode.promptString()
-	if err != nil {
-		return nil, err
-	}
+	q.getAnswer()
+	values.SourceCode = q.value
 
-	Owner := promptString{
-		label:        "Which team in your organisation is responsible for this application? (e.g. Sentence Planning)",
-		defaultValue: "",
+	q = userQuestion{
+		description: heredoc.Doc(`
+			Which team in your organisation is responsible
+			for this application? (e.g. Sentence Planning)
+			 `),
+		prompt:    "Team",
+		validator: new(notEmptyValidator),
 	}
-	err = Owner.promptString()
-	if err != nil {
-		return nil, err
-	}
-
-	values.Application = Application.value
-	values.BusinessUnit = businessUnit.value
-	values.Namespace = Namespace.value
-	values.GithubTeam = GithubTeam.value
-	values.Environment = Environment.value
-	values.IsProduction = IsProduction.value
-	values.SlackChannel = SlackChannel.value
-	values.InfrastructureSupport = InfrastructureSupport.value
-	values.SourceCode = SourceCode.value
-	values.Owner = Owner.value
+	q.getAnswer()
+	values.Owner = q.value
 
 	return &values, nil
 }
@@ -185,6 +195,10 @@ func downloadAndInitialiseTemplates(namespace string) (error, []*templateFromUrl
 		{
 			name: "resources/variables.tf",
 			url:  envTemplateLocation + "/" + "resources/variables.tf",
+		},
+		{
+			name: "resources/ingress.tf",
+			url:  envTemplateLocation + "/" + "resources/ingress.tf",
 		},
 	}
 
