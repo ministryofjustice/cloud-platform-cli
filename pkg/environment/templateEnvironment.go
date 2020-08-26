@@ -8,6 +8,7 @@ import (
 	"github.com/MakeNowJust/heredoc"
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
+	dir "golang.org/x/mod/sumdb/dirhash"
 )
 
 func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
@@ -25,6 +26,11 @@ func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 	err = createNamespaceFiles(nsValues)
 	if err != nil {
 		return err
+	}
+
+	err = createDirHash(nsValues)
+	if err != nil {
+		return nil
 	}
 
 	fmt.Printf("Namespace files generated under %s/%s\n", namespaceBaseFolder, nsValues.Namespace)
@@ -234,5 +240,39 @@ func createNamespaceFiles(nsValues *Namespace) error {
 			return err
 		}
 	}
+	return nil
+}
+
+// createDirHash calls the dirhash package to create a sha256 hash of the users
+// namespace directory. This value is written to a file at the root of the
+// cloud-platform-environments repository.
+func createDirHash(nsValues *Namespace) error {
+	// A DefaultHash is a required argument in the dirhash package
+	var DefaultHash dir.Hash = dir.Hash1
+
+	fileName := ".checksum"
+	nsDir := namespaceBaseFolder + "/" + nsValues.Namespace
+
+	hashDir, err := dir.HashDir(nsDir, nsValues.Namespace, DefaultHash)
+	if err != nil {
+		return err
+	}
+
+	f, err := os.Create(fileName)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	_, err = f.WriteString("#This file is used by the auto pr github action. Please commit" + "\n")
+	if err != nil {
+		return err
+	}
+
+	_, err = f.WriteString(nsValues.Namespace + "\n" + hashDir + "\n")
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
