@@ -92,12 +92,13 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 
 	q = userQuestion{
 		description: heredoc.Doc(`
-			What is the name of your Github team?
+			What is the name of your GitHub team?
+			The users in this GitHub team will be assigned administator permission for this Cloud Platform environment.
 			Please enter the name in lower-case, with hyphens instead of spaces
 			i.e. "Check My Diary" -> "check-my-diary"
 			(this must be an exact match, or you will not have access to your namespace)",
 			 `),
-		prompt:    "Github Team",
+		prompt:    "GitHub Team",
 		validator: new(githubTeamNameValidator),
 	}
 	q.getAnswer()
