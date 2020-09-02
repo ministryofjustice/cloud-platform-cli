@@ -23,4 +23,4 @@ jobs:
         run: sonar-scanner
           -Dsonar.host.url=${{ secrets.SONAR_URL }}
           -Dsonar.login=${{ secrets.SONAR_TOKEN }}
-          -Dsonar.projectKey=${{ github.repository }}:${GITHUB_REF:11}
+          -Dsonar.projectKey=${{ github.repository }}:${GITHUB_REF##*/}
