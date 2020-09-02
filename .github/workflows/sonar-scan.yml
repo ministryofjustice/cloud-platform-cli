@@ -1,13 +1,14 @@
-name: Analyse Branch
+name: Run sonar scanner
+
 on:
-  push:
-    branches-ignore:
-      - 'master'
-      - 'main'
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
 jobs:
-  build:
+  run-scan:
     name: Sonarqube Scan 
     runs-on: ubuntu-latest
+
     steps:
       - name: Setup sonarqube
         uses: warchant/setup-sonar-scanner@v1
@@ -23,4 +24,3 @@ jobs:
           -Dsonar.host.url=${{ secrets.SONAR_URL }}
           -Dsonar.login=${{ secrets.SONAR_TOKEN }}
           -Dsonar.projectKey=${{ github.repository }}:${GITHUB_REF:11}
-          -Dsonar.pullrequest.github.repository=${{ github.repository }}
