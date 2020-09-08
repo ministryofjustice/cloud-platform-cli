@@ -34,7 +34,6 @@ func TestCreateNamespace(t *testing.T) {
 	namespaceFile := dir + "00-namespace.yaml"
 	rbacFile := dir + "01-rbac.yaml"
 	variablesTfFile := dir + "resources/variables.tf"
-	ingressTfFile := dir + "resources/ingress.tf"
 
 	filenames := []string{
 		namespaceFile,
@@ -45,7 +44,6 @@ func TestCreateNamespace(t *testing.T) {
 		dir + "resources/main.tf",
 		variablesTfFile,
 		dir + "resources/versions.tf",
-		ingressTfFile,
 	}
 
 	for _, f := range filenames {
@@ -65,7 +63,6 @@ func TestCreateNamespace(t *testing.T) {
 		rbacFile:        "name: \"github:my-github-team\"",
 		variablesTfFile: "my-team-slack-channel",
 		variablesTfFile: "my-github-team",
-		ingressTfFile:   `namespace = "foobar"`,
 	}
 
 	for filename, searchString := range stringsInFiles {
