@@ -3,6 +3,7 @@ DIRS_WITH_TESTS := $(shell find * -type f -name '*_test.go' | xargs -n 1 dirname
 DIRS_WITH_GOFILES := $(shell find * -type f -name '*.go' | xargs -n 1 dirname | sort | uniq)
 
 cloud-platform: $(SOURCE_FILES)
+	export GO111MODULE=on
 	go mod download
 	go build -o cloud-platform ./cmd/cloud-platform/main.go
 
