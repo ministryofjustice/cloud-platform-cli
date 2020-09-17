@@ -24,7 +24,7 @@ func TestCreateNamespace(t *testing.T) {
 		InfrastructureSupport: "some-team@digital.justice.gov.uk",
 		SourceCode:            "https://github.com/ministryofjustice/somerepo",
 		GithubTeam:            "my-github-team",
-		SlackChannel:          "my-team-slack-channel",
+		SlackChannel:          "my-team-slack_channel",
 		IsProduction:          "false",
 	}
 
@@ -61,7 +61,7 @@ func TestCreateNamespace(t *testing.T) {
 		namespaceFile:   "cloud-platform.justice.gov.uk/source-code: \"https://github.com/ministryofjustice/somerepo\"",
 		namespaceFile:   "cloud-platform.justice.gov.uk/is-production: \"false\"",
 		rbacFile:        "name: \"github:my-github-team\"",
-		variablesTfFile: "my-team-slack-channel",
+		variablesTfFile: "my-team-slack_channel",
 		variablesTfFile: "my-github-team",
 	}
 
