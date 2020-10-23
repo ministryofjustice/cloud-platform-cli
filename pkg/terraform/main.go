@@ -2,6 +2,7 @@ package terraform
 
 import (
 	"bytes"
+	"fmt"
 	"os/exec"
 	"syscall"
 
@@ -10,9 +11,13 @@ import (
 
 // Commander empty struct which methods to execute terraform
 type Commander struct {
-	action        string
-	DisplayOutput bool
-	cmd           []string
+	action          string
+	cmd             []string
+	AccessKeyID     string
+	SecretAccessKey string
+	Workspace       string
+	VarFile         string
+	DisplayTfOutput bool
 }
 
 // CmdOutput has the Stout and Stderr
@@ -93,16 +98,22 @@ func (s *Commander) SelectWs(ws string) error {
 }
 
 // CheckDivergence is used to select certain workspace
-func (s *Commander) CheckDivergence(ws string, cmd ...string) error {
-
+func (s *Commander) CheckDivergence() error {
 	err := s.Init()
 	if err != nil {
 		return err
 	}
 
-	err = s.SelectWs(ws)
+	err = s.SelectWs(s.Workspace)
 	if err != nil {
 		return err
+	}
+
+	var cmd []string
+
+	// Check if user provided a terraform var-file
+	if s.VarFile != "" {
+		cmd = append([]string{fmt.Sprintf("-var-file=%s", s.VarFile)})
 	}
 
 	arg := append(
@@ -116,8 +127,13 @@ func (s *Commander) CheckDivergence(ws string, cmd ...string) error {
 
 	output, err := s.Terraform(arg...)
 
-	if s.DisplayOutput {
-		log.Info(output.Stdout)
+	if err != nil {
+		log.Error(err)
+		log.Error(output.Stderr)
+	}
+
+	if s.DisplayTfOutput {
+		fmt.Println(output.Stdout)
 	}
 
 	if output.ExitCode == 0 {
@@ -125,4 +141,51 @@ func (s *Commander) CheckDivergence(ws string, cmd ...string) error {
 	}
 
 	return err
+}
+
+// Apply just execute terraform apply
+func (s *Commander) Apply() error {
+	err := s.Init()
+	if err != nil {
+		return err
+	}
+
+	err = s.SelectWs(s.Workspace)
+	if err != nil {
+		return err
+	}
+
+	var cmd []string
+
+	// Check if user provided a terraform var-file
+	if s.VarFile != "" {
+		cmd = append([]string{fmt.Sprintf("-var-file=%s", s.VarFile)})
+	}
+
+	arg := append(
+		[]string{
+			"apply",
+			"-no-color",
+			"-auto-approve",
+		},
+		cmd...,
+	)
+
+	output, err := s.Terraform(arg...)
+
+	if err != nil {
+		log.Error(err)
+		log.Error(output.Stderr)
+	}
+
+	if s.DisplayTfOutput {
+		fmt.Println(output.Stdout)
+	}
+
+	if output.ExitCode == 0 {
+		return nil
+	}
+
+	return err
+
 }
