@@ -47,13 +47,31 @@ func addTerraformCmd(topLevel *cobra.Command) {
 			err := options.Apply()
 
 			if err != nil {
-				contextLogger.Fatal("Error executing plan, either an error or a divergence")
+				contextLogger.Fatal("Error executing terraform apply - check the outputs")
+			}
+		},
+	}
+
+	plan := &cobra.Command{
+		Use:    "plan",
+		Short:  `Execute terraform plan.`,
+		PreRun: upgradeIfNotLatest,
+		Run: func(cmd *cobra.Command, args []string) {
+			contextLogger := log.WithFields(log.Fields{"subcommand": "plan"})
+
+			contextLogger.Info("Executing terraform plan")
+			err := options.Plan()
+
+			if err != nil {
+				contextLogger.Fatal("Error executing terraform plan - check the outputs")
 			}
 		},
 	}
 
 	addCommonFlags(checkDivergence, &options)
 	addCommonFlags(apply, &options)
+	addCommonFlags(plan, &options)
+	rootCmd.AddCommand(plan)
 	rootCmd.AddCommand(apply)
 	rootCmd.AddCommand(checkDivergence)
 	topLevel.AddCommand(rootCmd)

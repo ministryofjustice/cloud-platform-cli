@@ -143,7 +143,7 @@ func (s *Commander) CheckDivergence() error {
 	return err
 }
 
-// Apply just execute terraform apply
+// Apply executes terraform apply
 func (s *Commander) Apply() error {
 	err := s.Init()
 	if err != nil {
@@ -167,6 +167,52 @@ func (s *Commander) Apply() error {
 			"apply",
 			"-no-color",
 			"-auto-approve",
+		},
+		cmd...,
+	)
+
+	output, err := s.Terraform(arg...)
+
+	if err != nil {
+		log.Error(err)
+		log.Error(output.Stderr)
+	}
+
+	if s.DisplayTfOutput {
+		fmt.Println(output.Stdout)
+	}
+
+	if output.ExitCode == 0 {
+		return nil
+	}
+
+	return err
+
+}
+
+// Plan executes terraform apply
+func (s *Commander) Plan() error {
+	err := s.Init()
+	if err != nil {
+		return err
+	}
+
+	err = s.SelectWs(s.Workspace)
+	if err != nil {
+		return err
+	}
+
+	var cmd []string
+
+	// Check if user provided a terraform var-file
+	if s.VarFile != "" {
+		cmd = append([]string{fmt.Sprintf("-var-file=%s", s.VarFile)})
+	}
+
+	arg := append(
+		[]string{
+			"plan",
+			"-no-color",
 		},
 		cmd...,
 	)
