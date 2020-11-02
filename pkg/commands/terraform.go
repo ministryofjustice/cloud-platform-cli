@@ -71,7 +71,7 @@ func addTerraformCmd(topLevel *cobra.Command) {
 				spew.Dump("User specified bulk plan")
 				bulkPlan := terraform.BulkActions{ChangedFilesPath: options.BulkTfPlanPaths}
 
-				err := bulkPlan.Plan()
+				err := bulkPlan.Plan(&options)
 
 				if err != nil {
 					contextLogger.Fatal(err)

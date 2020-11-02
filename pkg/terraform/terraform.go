@@ -45,6 +45,10 @@ func (s *Commander) Terraform(args ...string) (*CmdOutput, error) {
 
 	cmd := exec.Command("terraform", args...)
 
+	if s.cmdDir != "" {
+		cmd.Dir = s.cmdDir
+	}
+
 	cmd.Stdout = &stdoutBuf
 	cmd.Stderr = &stderrBuf
 
