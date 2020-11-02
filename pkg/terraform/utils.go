@@ -15,12 +15,26 @@ func (b *BulkActions) Plan(c *Commander) error {
 	dirs, _ := b.targetDirs()
 
 	kops := []string{"terraform/cloud-platform-components", "terraform/cloud-platform"}
-	// eks := []string{"terraform/cloud-platform-eks/components", "terraform/cloud-platform-eks"}
+	eks := []string{"terraform/cloud-platform-eks/components", "terraform/cloud-platform-eks"}
 
-	dirsToPlan, found := Find(dirs, kops)
+	dirsToPlanKops, foundKops := Find(dirs, kops)
+	err := TestPlan(c, "kops", foundKops, dirsToPlanKops)
+	if err != nil {
+		return err
+	}
 
-	if found {
-		for _, dir := range dirsToPlan {
+	dirsToPlanEks, foundEks := Find(dirs, eks)
+	err = TestPlan(c, "eks", foundEks, dirsToPlanEks)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func TestPlan(c *Commander, eks_or_kops string, f bool, d []string) error {
+	if c.Environment == eks_or_kops && f {
+		for _, dir := range d {
 			fmt.Println(dir)
 			c.cmdDir = dir
 			err := c.Plan()
@@ -28,12 +42,8 @@ func (b *BulkActions) Plan(c *Commander) error {
 				fmt.Println(err)
 				return err
 			}
-
 		}
 	}
-
-	// spew.Dump(Find(dirs, kops))
-
 	return nil
 }
 
@@ -43,10 +53,10 @@ func Find(slice []string, val []string) ([]string, bool) {
 	var dirs []string
 
 	for _, item := range slice {
-		if item == val[0] {
-			dirs = append(dirs, val[0])
-		} else if item == val[1] {
-			dirs = append(dirs, val[1])
+		for _, d := range val {
+			if item == d {
+				dirs = append(dirs, d)
+			}
 		}
 	}
 

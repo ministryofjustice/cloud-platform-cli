@@ -16,7 +16,8 @@ RUN pwd && ls
 FROM alpine:3.11.0
 
 ENV \
-  TERRAFORM_VERSION=0.12.17
+  TERRAFORM_VERSION=0.12.17 \
+  KUBECTL_VERSION=1.17.12
 
 RUN \
   apk add \
@@ -45,6 +46,9 @@ COPY --from=cloud_platform_cli_builder /build/cloud-platform /usr/local/bin/clou
 
 # Install terraform
 RUN curl -sL https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip | unzip -d /usr/local/bin -
+
+# Install kubectl
+RUN curl -sLo /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl
 
 # Install aws-iam-authenticator (required for EKS)
 RUN curl -sLo /usr/local/bin/aws-iam-authenticator https://amazon-eks.s3-us-west-2.amazonaws.com/1.14.6/2019-08-22/bin/linux/amd64/aws-iam-authenticator
