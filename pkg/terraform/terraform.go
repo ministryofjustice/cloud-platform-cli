@@ -20,7 +20,7 @@ type Commander struct {
 	VarFile         string
 	DisplayTfOutput bool
 	BulkTfPlanPaths string
-	Environment     string
+	Context         string
 }
 
 // CmdOutput has the Stout and Stderr
@@ -241,4 +241,43 @@ func (s *Commander) Plan() error {
 
 	return err
 
+}
+
+func (c *Commander) BulkPlan() error {
+	dirs, err := targetDirs(c.BulkTfPlanPaths)
+	if err != nil {
+		return err
+	}
+
+	kops := []string{"terraform/cloud-platform-components", "terraform/cloud-platform"}
+	eks := []string{"terraform/cloud-platform-eks/components", "terraform/cloud-platform-eks"}
+
+	dirsToPlanKops, foundKops := find(dirs, kops)
+	err = c.contextPlan("kops", foundKops, dirsToPlanKops)
+	if err != nil {
+		return err
+	}
+
+	dirsToPlanEks, foundEks := find(dirs, eks)
+	err = c.contextPlan("eks", foundEks, dirsToPlanEks)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Commander) contextPlan(eks_or_kops string, f bool, d []string) error {
+	if c.Context == eks_or_kops && f {
+		for _, dir := range d {
+			fmt.Println(dir)
+			c.cmdDir = dir
+			err := c.Plan()
+			if err != nil {
+				fmt.Println(err)
+				return err
+			}
+		}
+	}
+	return nil
 }

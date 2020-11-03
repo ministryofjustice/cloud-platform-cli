@@ -3,7 +3,6 @@ package commands
 import (
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
 	terraform "github.com/ministryofjustice/cloud-platform-cli/pkg/terraform"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -68,10 +67,7 @@ func addTerraformCmd(topLevel *cobra.Command) {
 					contextLogger.Fatal("Error executing terraform plan - check the outputs")
 				}
 			} else {
-				spew.Dump("User specified bulk plan")
-				bulkPlan := terraform.BulkActions{ChangedFilesPath: options.BulkTfPlanPaths}
-
-				err := bulkPlan.Plan(&options)
+				err := options.BulkPlan()
 
 				if err != nil {
 					contextLogger.Fatal(err)
@@ -101,7 +97,7 @@ func addCommonFlags(cmd *cobra.Command, o *terraform.Commander) {
 	cmd.PersistentFlags().BoolVarP(&o.DisplayTfOutput, "display-tf-output", "d", true, "Display or not terraform plan output")
 	cmd.PersistentFlags().StringVarP(&o.VarFile, "var-file", "v", "", "tfvar to be used by terraform")
 	cmd.PersistentFlags().StringVar(&o.BulkTfPlanPaths, "dirs-file", "", "Required for bulk-plans, file path which holds directories where terraform plan is going to be executed")
-	cmd.PersistentFlags().StringVar(&o.Environment, "environment", "", "kops or eks?")
+	cmd.PersistentFlags().StringVar(&o.Context, "context", "", "kops or eks?")
 
 	cmd.MarkPersistentFlagRequired("aws-access-key-id")
 	cmd.MarkPersistentFlagRequired("aws-secret-access-key")
