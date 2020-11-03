@@ -20,13 +20,6 @@ type Commander struct {
 	DisplayTfOutput bool
 }
 
-// CmdOutput has the Stout and Stderr
-type CmdOutput struct {
-	Stdout   string
-	Stderr   string
-	ExitCode int
-}
-
 // Terraform creates terraform command to be executed
 func (s *Commander) Terraform(args ...string) (*CmdOutput, error) {
 
@@ -76,7 +69,8 @@ func (s *Commander) Init() error {
 
 	output, err := s.Terraform("init")
 	if err != nil {
-		log.Fatal("Error running terraform init")
+		log.Error(output.Stderr)
+		return err
 	}
 
 	log.Info(output.Stdout)
@@ -225,7 +219,7 @@ func (s *Commander) Plan() error {
 	}
 
 	if s.DisplayTfOutput {
-		fmt.Println(output.Stdout)
+		output.redacted()
 	}
 
 	if output.ExitCode == 0 {
