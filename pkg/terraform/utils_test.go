@@ -38,8 +38,8 @@ func TestFind(t *testing.T) {
 	}
 }
 
-// TestTargetDirs tests that confirms given a file directory
-// in a text file, the targetDirs function will extract the directory path successfully.
+// TestTargetDirs confirms given a file directory (string) in a text file,
+// the targetDirs function will extract the directory path successfully.
 func TestTargetDirs(t *testing.T) {
 	fileName := "changedFiles"
 	fileString := "/this/is/a/test/dir"
