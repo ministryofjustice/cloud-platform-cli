@@ -11,7 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Commander empty struct which methods to execute terraform
+// Commander struct which holds all data required to execute terraform
 type Commander struct {
 	action          string
 	cmd             []string
@@ -32,7 +32,8 @@ type CmdOutput struct {
 	ExitCode int
 }
 
-// Terraform creates terraform command to be executed
+// Terraform creates terraform command to be executed, the function accepts multiple commands
+// arguments
 func (s *Commander) Terraform(args ...string) (*CmdOutput, error) {
 
 	var stdoutBuf bytes.Buffer
@@ -86,7 +87,7 @@ func (s *Commander) Terraform(args ...string) (*CmdOutput, error) {
 	}
 }
 
-// Init is mandatory almost always before doing anything with terraform
+// Init executes terraform init
 func (s *Commander) Init(p bool) error {
 
 	output, err := s.Terraform("init")
@@ -114,7 +115,8 @@ func (s *Commander) SelectWs(ws string) error {
 	return nil
 }
 
-// CheckDivergence is used to select certain workspace
+// CheckDivergence check that there are not changes within certain state, if there are
+// it will return non-zero and pipeline will fail
 func (s *Commander) CheckDivergence() error {
 	err := s.Init(true)
 	if err != nil {
@@ -207,7 +209,7 @@ func (s *Commander) Apply() error {
 
 }
 
-// Plan executes terraform apply
+// Plan executes terraform plan
 func (s *Commander) Plan() error {
 	err := s.Init(false)
 	if err != nil {
@@ -253,6 +255,7 @@ func (s *Commander) Plan() error {
 
 }
 
+// workspaces return the workspaces within the state
 func (c *Commander) workspaces() ([]string, error) {
 	arg := []string{
 		"workspace",
@@ -270,6 +273,7 @@ func (c *Commander) workspaces() ([]string, error) {
 	return ws, nil
 }
 
+// BulkPlan executes plan against all directories that changed in the PR
 func (c *Commander) BulkPlan() error {
 	dirs, err := targetDirs(c.BulkTfPlanPaths)
 	if err != nil {
@@ -277,6 +281,11 @@ func (c *Commander) BulkPlan() error {
 	}
 
 	for _, dir := range dirs {
+		fmt.Printf("\n")
+		fmt.Println("#########################################################################")
+		fmt.Printf("PLAN FOR DIRECTORY: %v\n", dir)
+		fmt.Println("#########################################################################")
+		fmt.Printf("\n")
 		c.cmdDir = dir
 		err := c.Init(false)
 		if err != nil {
