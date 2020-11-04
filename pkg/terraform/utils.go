@@ -24,8 +24,16 @@ func find(slice []string, val []string) ([]string, bool) {
 	return nil, false
 }
 
+// targetDirs return the directories where terraform plan is going to be executed
 func targetDirs(file string) ([]string, error) {
 	var dirs []string // Directories where tf plan is going to be executed
+
+	dirsWhitelist := []string{
+		"terraform/cloud-platform-components",
+		"terraform/cloud-platform",
+		"terraform/cloud-platform-eks/components",
+		"terraform/cloud-platform-eks",
+	}
 
 	f, err := os.Open(file)
 	if err != nil {
@@ -36,7 +44,11 @@ func targetDirs(file string) ([]string, error) {
 
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
-		if contains(dirs, filepath.Dir(scanner.Text())) != true {
+		// The first condition evaluates if the element already exists in the slice (why to execute
+		// plan twice against the same dir?). The second condition evaluates if the element is in
+		// the desired list to execute Plan (we don't want to execute Plan against everything)
+		if contains(dirs, filepath.Dir(scanner.Text())) != true &&
+			contains(dirsWhitelist, filepath.Dir(scanner.Text())) == true {
 			dirs = append(dirs, filepath.Dir(scanner.Text()))
 		}
 	}
