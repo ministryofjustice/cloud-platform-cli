@@ -7,37 +7,6 @@ import (
 	"testing"
 )
 
-// TestFind tests an element within slice of string is found in another slice of string
-func TestFind(t *testing.T) {
-	dirsWithChanges := []string{
-		"terraform/cloud-platform",
-		"terraform/cloud-platform-components",
-		"smoke-tests/spec",
-		"terraform/cloud-platform-eks/components/",
-		"terraform/cloud-platform-eks",
-	}
-
-	targetDir := []string{
-		"terraform/cloud-platform-eks",
-	}
-
-	_, found := find(dirsWithChanges, targetDir)
-
-	if found != true {
-		t.Errorf("find() failed. Couldn't find desided directories inside list")
-	}
-
-	targetDir = []string{
-		"dir/that/doesnt/exist",
-	}
-
-	_, found = find(dirsWithChanges, targetDir)
-
-	if found {
-		t.Errorf("find() failed. Couldn't find desided directories inside list")
-	}
-}
-
 // TestTargetDirs confirms given a file directory (string) in a text file,
 // the targetDirs function will extract the directory path successfully.
 func TestTargetDirs(t *testing.T) {
