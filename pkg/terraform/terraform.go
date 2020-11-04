@@ -3,9 +3,12 @@ package terraform
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"os/exec"
+	"strings"
 	"syscall"
 
+	"github.com/davecgh/go-spew/spew"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -14,6 +17,7 @@ type Commander struct {
 	action          string
 	cmd             []string
 	cmdDir          string
+	cmdEnv          []string
 	AccessKeyID     string
 	SecretAccessKey string
 	Workspace       string
@@ -39,15 +43,20 @@ func (s *Commander) Terraform(args ...string) (*CmdOutput, error) {
 	var err error
 
 	contextLogger := log.WithFields(log.Fields{
-		"err":    err,
-		"stdout": stdoutBuf.String(),
-		"stderr": stderrBuf.String(),
+		"err":       err,
+		"stdout":    stdoutBuf.String(),
+		"stderr":    stderrBuf.String(),
+		"directory": s.cmdDir,
 	})
 
 	cmd := exec.Command("terraform", args...)
 
 	if s.cmdDir != "" {
 		cmd.Dir = s.cmdDir
+	}
+
+	if s.cmdEnv != nil {
+		cmd.Env = s.cmdEnv
 	}
 
 	cmd.Stdout = &stdoutBuf
@@ -243,41 +252,52 @@ func (s *Commander) Plan() error {
 
 }
 
+func (c *Commander) workspaces() ([]string, error) {
+	arg := []string{
+		"workspace",
+		"list",
+	}
+
+	output, err := c.Terraform(arg...)
+	if err != nil {
+		log.Error(output.Stderr)
+		return nil, err
+	}
+
+	ws := strings.Split(output.Stdout, "\n")
+
+	return ws, nil
+
+}
+
 func (c *Commander) BulkPlan() error {
 	dirs, err := targetDirs(c.BulkTfPlanPaths)
 	if err != nil {
 		return err
 	}
 
-	kops := []string{"terraform/cloud-platform-components", "terraform/cloud-platform"}
-	eks := []string{"terraform/cloud-platform-eks/components", "terraform/cloud-platform-eks"}
+	for _, dir := range dirs {
+		spew.Dump(dir)
+		c.cmdDir = dir
 
-	dirsToPlanKops, foundKops := find(dirs, kops)
-	err = c.contextPlan("kops", foundKops, dirsToPlanKops)
-	if err != nil {
-		return err
-	}
+		err := c.Init()
+		if err != nil {
+			return err
+		}
 
-	dirsToPlanEks, foundEks := find(dirs, eks)
-	err = c.contextPlan("eks", foundEks, dirsToPlanEks)
-	if err != nil {
-		return err
-	}
+		ws, err := c.workspaces()
+		spew.Dump(ws)
 
-	return nil
-}
-
-func (c *Commander) contextPlan(eks_or_kops string, f bool, d []string) error {
-	if c.Context == eks_or_kops && f {
-		for _, dir := range d {
-			fmt.Println(dir)
-			c.cmdDir = dir
-			err := c.Plan()
-			if err != nil {
-				fmt.Println(err)
-				return err
-			}
+		if contains(ws, "  live-1") {
+			fmt.Println("Using live-1 context with: KUBECONFIG=/tmp/kubeconfig-live-1")
+			c.cmdEnv = append(os.Environ(), "KUBECONFIG=/tmp/kubeconfig-live-1")
+		} else if contains(ws, "  manager") {
+			fmt.Println("Using EKS context with: KUBECONFIG=/tmp/kubeconfig-eks")
+			c.cmdEnv = append(os.Environ(), "KUBECONFIG=/tmp/kubeconfig-eks")
+		} else {
+			fmt.Println("No context, normal terraform plan")
 		}
 	}
+
 	return nil
 }
