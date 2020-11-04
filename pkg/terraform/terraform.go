@@ -87,14 +87,16 @@ func (s *Commander) Terraform(args ...string) (*CmdOutput, error) {
 }
 
 // Init is mandatory almost always before doing anything with terraform
-func (s *Commander) Init() error {
+func (s *Commander) Init(p bool) error {
 
 	output, err := s.Terraform("init")
 	if err != nil {
 		log.Fatal("Error running terraform init")
 	}
 
-	log.Info(output.Stdout)
+	if p {
+		log.Info(output.Stdout)
+	}
 
 	return nil
 }
@@ -114,7 +116,7 @@ func (s *Commander) SelectWs(ws string) error {
 
 // CheckDivergence is used to select certain workspace
 func (s *Commander) CheckDivergence() error {
-	err := s.Init()
+	err := s.Init(true)
 	if err != nil {
 		return err
 	}
@@ -160,7 +162,7 @@ func (s *Commander) CheckDivergence() error {
 
 // Apply executes terraform apply
 func (s *Commander) Apply() error {
-	err := s.Init()
+	err := s.Init(true)
 	if err != nil {
 		return err
 	}
@@ -207,7 +209,7 @@ func (s *Commander) Apply() error {
 
 // Plan executes terraform apply
 func (s *Commander) Plan() error {
-	err := s.Init()
+	err := s.Init(false)
 	if err != nil {
 		return err
 	}
@@ -276,7 +278,7 @@ func (c *Commander) BulkPlan() error {
 
 	for _, dir := range dirs {
 		c.cmdDir = dir
-		err := c.Init()
+		err := c.Init(false)
 		if err != nil {
 			return err
 		}
