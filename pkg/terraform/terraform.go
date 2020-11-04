@@ -8,7 +8,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/davecgh/go-spew/spew"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -43,10 +42,10 @@ func (s *Commander) Terraform(args ...string) (*CmdOutput, error) {
 	var err error
 
 	contextLogger := log.WithFields(log.Fields{
-		"err":       err,
-		"stdout":    stdoutBuf.String(),
-		"stderr":    stderrBuf.String(),
-		"directory": s.cmdDir,
+		"err":    err,
+		"stdout": stdoutBuf.String(),
+		"stderr": stderrBuf.String(),
+		"dir":    s.cmdDir,
 	})
 
 	cmd := exec.Command("terraform", args...)
@@ -69,6 +68,7 @@ func (s *Commander) Terraform(args ...string) (*CmdOutput, error) {
 			exitCode = ws.ExitStatus()
 		}
 		contextLogger.Error("cmd.Run() failed")
+		return nil, err
 	} else {
 		ws := cmd.ProcessState.Sys().(syscall.WaitStatus)
 		exitCode = ws.ExitStatus()
@@ -276,30 +276,43 @@ func (c *Commander) BulkPlan() error {
 	}
 
 	for _, dir := range dirs {
-		spew.Dump(dir)
 		c.cmdDir = dir
-
 		err := c.Init()
 		if err != nil {
 			return err
 		}
 
 		ws, err := c.workspaces()
-		spew.Dump(ws)
+		if err != nil {
+			return err
+		}
 
 		if contains(ws, "  live-1") {
-			fmt.Println("Using live-1 context with: KUBECONFIG=/tmp/kubeconfig-live-1")
+			log.WithFields(log.Fields{"dir": dir}).Info("Using live-1 context with: KUBE_CTX=live-1.cloud-platform.service.justice.gov.uk")
+
 			c.cmdEnv = append(os.Environ(), "KUBE_CTX=live-1.cloud-platform.service.justice.gov.uk")
 			c.Workspace = "live-1"
-			err = c.Plan()
+
+			err := c.Plan()
+			if err != nil {
+				return err
+			}
 		} else if contains(ws, "  manager") {
-			fmt.Println("Using EKS context with: KUBECONFIG=/tmp/kubeconfig-eks")
+			log.WithFields(log.Fields{"dir": dir}).Info("Using manager context with: KUBE_CTX=manager.cloud-platform.service.justice.gov.uk")
+
 			c.cmdEnv = append(os.Environ(), "KUBE_CTX=manager.cloud-platform.service.justice.gov.uk")
 			c.Workspace = "manager"
-			err = c.Plan()
+
+			err := c.Plan()
+			if err != nil {
+				return err
+			}
 		} else {
-			fmt.Println("No context, normal terraform plan")
-			err = c.Plan()
+			log.WithFields(log.Fields{"dir": dir}).Info("No context, normal terraform plan")
+			err := c.Plan()
+			if err != nil {
+				return err
+			}
 		}
 	}
 
