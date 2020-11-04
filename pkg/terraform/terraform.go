@@ -267,7 +267,6 @@ func (c *Commander) workspaces() ([]string, error) {
 	ws := strings.Split(output.Stdout, "\n")
 
 	return ws, nil
-
 }
 
 func (c *Commander) BulkPlan() error {
@@ -290,12 +289,17 @@ func (c *Commander) BulkPlan() error {
 
 		if contains(ws, "  live-1") {
 			fmt.Println("Using live-1 context with: KUBECONFIG=/tmp/kubeconfig-live-1")
-			c.cmdEnv = append(os.Environ(), "KUBECONFIG=/tmp/kubeconfig-live-1")
+			c.cmdEnv = append(os.Environ(), "KUBE_CTX=live-1.cloud-platform.service.justice.gov.uk")
+			c.Workspace = "live-1"
+			err = c.Plan()
 		} else if contains(ws, "  manager") {
 			fmt.Println("Using EKS context with: KUBECONFIG=/tmp/kubeconfig-eks")
-			c.cmdEnv = append(os.Environ(), "KUBECONFIG=/tmp/kubeconfig-eks")
+			c.cmdEnv = append(os.Environ(), "KUBE_CTX=manager.cloud-platform.service.justice.gov.uk")
+			c.Workspace = "manager"
+			err = c.Plan()
 		} else {
 			fmt.Println("No context, normal terraform plan")
+			err = c.Plan()
 		}
 	}
 
