@@ -97,7 +97,6 @@ func addCommonFlags(cmd *cobra.Command, o *terraform.Commander) {
 	cmd.PersistentFlags().BoolVarP(&o.DisplayTfOutput, "display-tf-output", "d", true, "Display or not terraform plan output")
 	cmd.PersistentFlags().StringVarP(&o.VarFile, "var-file", "v", "", "tfvar to be used by terraform")
 	cmd.PersistentFlags().StringVar(&o.BulkTfPlanPaths, "dirs-file", "", "Required for bulk-plans, file path which holds directories where terraform plan is going to be executed")
-	cmd.PersistentFlags().StringVar(&o.Context, "context", "", "kops or eks?")
 
 	cmd.MarkPersistentFlagRequired("aws-access-key-id")
 	cmd.MarkPersistentFlagRequired("aws-secret-access-key")

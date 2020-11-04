@@ -23,7 +23,6 @@ type Commander struct {
 	VarFile         string
 	DisplayTfOutput bool
 	BulkTfPlanPaths string
-	Context         string
 }
 
 // CmdOutput has the Stout and Stderr
