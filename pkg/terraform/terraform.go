@@ -30,15 +30,7 @@ type Commander struct {
 	BulkTfPlanPaths string
 }
 
-// CmdOutput is used to manage Stdout and Sterr.
-type CmdOutput struct {
-	Stdout   string
-	Stderr   string
-	ExitCode int
-}
-
-// Terraform creates a terraform command to be executed, the function accepts multiple commands
-// arguments.
+// Terraform creates terraform command to be executed
 func (s *Commander) Terraform(args ...string) (*CmdOutput, error) {
 
 	var stdoutBuf bytes.Buffer
@@ -97,7 +89,8 @@ func (s *Commander) Init(p bool) error {
 
 	output, err := s.Terraform("init")
 	if err != nil {
-		log.Fatal("Error running terraform init")
+		log.Error(output.Stderr)
+		return err
 	}
 
 	if p {
@@ -249,7 +242,7 @@ func (s *Commander) Plan() error {
 	}
 
 	if s.DisplayTfOutput {
-		fmt.Println(output.Stdout)
+		output.redacted()
 	}
 
 	if output.ExitCode == 0 {
