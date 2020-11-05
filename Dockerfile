@@ -30,8 +30,8 @@ RUN \
     coreutils \
     curl \
     findutils \
-    git \
     git-crypt \
+    git \
     gnupg \
     grep \
     openssl \
@@ -57,4 +57,3 @@ RUN curl -sLo /usr/local/bin/aws-iam-authenticator https://amazon-eks.s3-us-west
 RUN chmod +x /usr/local/bin/*
 
 CMD /bin/bash
-

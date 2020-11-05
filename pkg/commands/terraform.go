@@ -59,12 +59,22 @@ func addTerraformCmd(topLevel *cobra.Command) {
 		Run: func(cmd *cobra.Command, args []string) {
 			contextLogger := log.WithFields(log.Fields{"subcommand": "plan"})
 
-			contextLogger.Info("Executing terraform plan")
-			err := options.Plan()
+			if options.BulkTfPlanPaths == "" {
+				contextLogger.Info("Executing terraform plan")
+				err := options.Plan()
 
-			if err != nil {
-				contextLogger.Fatal("Error executing terraform plan - check the outputs")
+				if err != nil {
+					contextLogger.Fatal("Error executing terraform plan - check the outputs")
+				}
+			} else {
+				err := options.BulkPlan()
+
+				if err != nil {
+					contextLogger.Fatal(err)
+				}
+
 			}
+
 		},
 	}
 
@@ -86,6 +96,7 @@ func addCommonFlags(cmd *cobra.Command, o *terraform.Commander) {
 	cmd.PersistentFlags().StringVarP(&o.Workspace, "workspace", "w", "default", "Default workspace where terraform is going to be executed")
 	cmd.PersistentFlags().BoolVarP(&o.DisplayTfOutput, "display-tf-output", "d", true, "Display or not terraform plan output")
 	cmd.PersistentFlags().StringVarP(&o.VarFile, "var-file", "v", "", "tfvar to be used by terraform")
+	cmd.PersistentFlags().StringVar(&o.BulkTfPlanPaths, "dirs-file", "", "Required for bulk-plans, file path which holds directories where terraform plan is going to be executed")
 
 	cmd.MarkPersistentFlagRequired("aws-access-key-id")
 	cmd.MarkPersistentFlagRequired("aws-secret-access-key")

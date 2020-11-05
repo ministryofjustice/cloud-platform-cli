@@ -1,23 +1,33 @@
+// Package terraform implements methods and functions for running
+// Terraform commands, such as terraform init/plan/apply.
+//
+// The intention of this package is to call and run inside a CI/CD
+// pipeline.
 package terraform
 
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"os/exec"
+	"strings"
 	"syscall"
 
 	log "github.com/sirupsen/logrus"
 )
 
-// Commander empty struct which methods to execute terraform
+// Commander struct holds all data required to execute terraform.
 type Commander struct {
 	action          string
 	cmd             []string
+	cmdDir          string
+	cmdEnv          []string
 	AccessKeyID     string
 	SecretAccessKey string
 	Workspace       string
 	VarFile         string
 	DisplayTfOutput bool
+	BulkTfPlanPaths string
 }
 
 // Terraform creates terraform command to be executed
@@ -32,9 +42,18 @@ func (s *Commander) Terraform(args ...string) (*CmdOutput, error) {
 		"err":    err,
 		"stdout": stdoutBuf.String(),
 		"stderr": stderrBuf.String(),
+		"dir":    s.cmdDir,
 	})
 
 	cmd := exec.Command("terraform", args...)
+
+	if s.cmdDir != "" {
+		cmd.Dir = s.cmdDir
+	}
+
+	if s.cmdEnv != nil {
+		cmd.Env = s.cmdEnv
+	}
 
 	cmd.Stdout = &stdoutBuf
 	cmd.Stderr = &stderrBuf
@@ -46,6 +65,7 @@ func (s *Commander) Terraform(args ...string) (*CmdOutput, error) {
 			exitCode = ws.ExitStatus()
 		}
 		contextLogger.Error("cmd.Run() failed")
+		return nil, err
 	} else {
 		ws := cmd.ProcessState.Sys().(syscall.WaitStatus)
 		exitCode = ws.ExitStatus()
@@ -64,8 +84,8 @@ func (s *Commander) Terraform(args ...string) (*CmdOutput, error) {
 	}
 }
 
-// Init is mandatory almost always before doing anything with terraform
-func (s *Commander) Init() error {
+// Init executes terraform init.
+func (s *Commander) Init(p bool) error {
 
 	output, err := s.Terraform("init")
 	if err != nil {
@@ -73,12 +93,14 @@ func (s *Commander) Init() error {
 		return err
 	}
 
-	log.Info(output.Stdout)
+	if p {
+		log.Info(output.Stdout)
+	}
 
 	return nil
 }
 
-// SelectWs is used to select certain workspace
+// SelectWs is used to select certain workspace.
 func (s *Commander) SelectWs(ws string) error {
 
 	output, err := s.Terraform("workspace", "select", ws)
@@ -91,9 +113,10 @@ func (s *Commander) SelectWs(ws string) error {
 	return nil
 }
 
-// CheckDivergence is used to select certain workspace
+// CheckDivergence check that there are not changes within certain state, if there are
+// it will return non-zero and pipeline will fail.
 func (s *Commander) CheckDivergence() error {
-	err := s.Init()
+	err := s.Init(true)
 	if err != nil {
 		return err
 	}
@@ -105,7 +128,7 @@ func (s *Commander) CheckDivergence() error {
 
 	var cmd []string
 
-	// Check if user provided a terraform var-file
+	// Check if user provided a terraform var-file.
 	if s.VarFile != "" {
 		cmd = append([]string{fmt.Sprintf("-var-file=%s", s.VarFile)})
 	}
@@ -137,9 +160,9 @@ func (s *Commander) CheckDivergence() error {
 	return err
 }
 
-// Apply executes terraform apply
+// Apply executes terraform apply.
 func (s *Commander) Apply() error {
-	err := s.Init()
+	err := s.Init(true)
 	if err != nil {
 		return err
 	}
@@ -184,9 +207,9 @@ func (s *Commander) Apply() error {
 
 }
 
-// Plan executes terraform apply
+// Plan executes terraform plan
 func (s *Commander) Plan() error {
-	err := s.Init()
+	err := s.Init(false)
 	if err != nil {
 		return err
 	}
@@ -228,4 +251,78 @@ func (s *Commander) Plan() error {
 
 	return err
 
+}
+
+// Workspaces return the workspaces within the state.
+func (c *Commander) workspaces() ([]string, error) {
+	arg := []string{
+		"workspace",
+		"list",
+	}
+
+	output, err := c.Terraform(arg...)
+	if err != nil {
+		log.Error(output.Stderr)
+		return nil, err
+	}
+
+	ws := strings.Split(output.Stdout, "\n")
+
+	return ws, nil
+}
+
+// BulkPlan executes plan against all directories that changed in the PR.
+func (c *Commander) BulkPlan() error {
+	dirs, err := targetDirs(c.BulkTfPlanPaths)
+	if err != nil {
+		return err
+	}
+
+	for _, dir := range dirs {
+		fmt.Printf("\n")
+		fmt.Println("#########################################################################")
+		fmt.Printf("PLAN FOR DIRECTORY: %v\n", dir)
+		fmt.Println("#########################################################################")
+		fmt.Printf("\n")
+		c.cmdDir = dir
+		err := c.Init(false)
+		if err != nil {
+			return err
+		}
+
+		ws, err := c.workspaces()
+		if err != nil {
+			return err
+		}
+
+		if contains(ws, "  live-1") {
+			log.WithFields(log.Fields{"dir": dir}).Info("Using live-1 context with: KUBE_CTX=live-1.cloud-platform.service.justice.gov.uk")
+
+			c.cmdEnv = append(os.Environ(), "KUBE_CTX=live-1.cloud-platform.service.justice.gov.uk")
+			c.Workspace = "live-1"
+
+			err := c.Plan()
+			if err != nil {
+				return err
+			}
+		} else if contains(ws, "  manager") {
+			log.WithFields(log.Fields{"dir": dir}).Info("Using manager context with: KUBE_CTX=manager.cloud-platform.service.justice.gov.uk")
+
+			c.cmdEnv = append(os.Environ(), "KUBE_CTX=manager.cloud-platform.service.justice.gov.uk")
+			c.Workspace = "manager"
+
+			err := c.Plan()
+			if err != nil {
+				return err
+			}
+		} else {
+			log.WithFields(log.Fields{"dir": dir}).Info("No context, normal terraform plan")
+			err := c.Plan()
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
