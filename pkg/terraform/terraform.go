@@ -1,3 +1,8 @@
+// Package terraform implements methods and functions for running
+// Terraform commands, such as terraform init/plan/apply.
+//
+// The intention of this package is to call and run inside a CI/CD
+// pipeline.
 package terraform
 
 import (
@@ -11,7 +16,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Commander struct which holds all data required to execute terraform
+// Commander struct holds all data required to execute terraform.
 type Commander struct {
 	action          string
 	cmd             []string
@@ -25,15 +30,15 @@ type Commander struct {
 	BulkTfPlanPaths string
 }
 
-// CmdOutput has the Stout and Stderr
+// CmdOutput is used to manage Stdout and Sterr.
 type CmdOutput struct {
 	Stdout   string
 	Stderr   string
 	ExitCode int
 }
 
-// Terraform creates terraform command to be executed, the function accepts multiple commands
-// arguments
+// Terraform creates a terraform command to be executed, the function accepts multiple commands
+// arguments.
 func (s *Commander) Terraform(args ...string) (*CmdOutput, error) {
 
 	var stdoutBuf bytes.Buffer
@@ -87,7 +92,7 @@ func (s *Commander) Terraform(args ...string) (*CmdOutput, error) {
 	}
 }
 
-// Init executes terraform init
+// Init executes terraform init.
 func (s *Commander) Init(p bool) error {
 
 	output, err := s.Terraform("init")
@@ -102,7 +107,7 @@ func (s *Commander) Init(p bool) error {
 	return nil
 }
 
-// SelectWs is used to select certain workspace
+// SelectWs is used to select certain workspace.
 func (s *Commander) SelectWs(ws string) error {
 
 	output, err := s.Terraform("workspace", "select", ws)
@@ -116,7 +121,7 @@ func (s *Commander) SelectWs(ws string) error {
 }
 
 // CheckDivergence check that there are not changes within certain state, if there are
-// it will return non-zero and pipeline will fail
+// it will return non-zero and pipeline will fail.
 func (s *Commander) CheckDivergence() error {
 	err := s.Init(true)
 	if err != nil {
@@ -130,7 +135,7 @@ func (s *Commander) CheckDivergence() error {
 
 	var cmd []string
 
-	// Check if user provided a terraform var-file
+	// Check if user provided a terraform var-file.
 	if s.VarFile != "" {
 		cmd = append([]string{fmt.Sprintf("-var-file=%s", s.VarFile)})
 	}
@@ -162,7 +167,7 @@ func (s *Commander) CheckDivergence() error {
 	return err
 }
 
-// Apply executes terraform apply
+// Apply executes terraform apply.
 func (s *Commander) Apply() error {
 	err := s.Init(true)
 	if err != nil {
@@ -255,7 +260,7 @@ func (s *Commander) Plan() error {
 
 }
 
-// workspaces return the workspaces within the state
+// Workspaces return the workspaces within the state.
 func (c *Commander) workspaces() ([]string, error) {
 	arg := []string{
 		"workspace",
@@ -273,7 +278,7 @@ func (c *Commander) workspaces() ([]string, error) {
 	return ws, nil
 }
 
-// BulkPlan executes plan against all directories that changed in the PR
+// BulkPlan executes plan against all directories that changed in the PR.
 func (c *Commander) BulkPlan() error {
 	dirs, err := targetDirs(c.BulkTfPlanPaths)
 	if err != nil {
