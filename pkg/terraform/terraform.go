@@ -27,7 +27,7 @@ type Commander struct {
 	Workspace       string
 	VarFile         string
 	DisplayTfOutput bool
-	BulkTfPlanPaths string
+	BulkTfPaths     string
 }
 
 // Terraform creates terraform command to be executed
@@ -273,7 +273,7 @@ func (c *Commander) workspaces() ([]string, error) {
 
 // BulkPlan executes plan against all directories that changed in the PR.
 func (c *Commander) BulkPlan() error {
-	dirs, err := targetDirs(c.BulkTfPlanPaths)
+	dirs, err := targetDirs(c.BulkTfPaths)
 	if err != nil {
 		return err
 	}
@@ -318,6 +318,62 @@ func (c *Commander) BulkPlan() error {
 		} else {
 			log.WithFields(log.Fields{"dir": dir}).Info("No context, normal terraform plan")
 			err := c.Plan()
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+// BulkApply executes teraform apply against all directories that changed in the PR.
+func (c *Commander) BulkApply() error {
+	dirs, err := targetDirs(c.BulkTfPaths)
+	if err != nil {
+		return err
+	}
+
+	for _, dir := range dirs {
+		fmt.Printf("\n")
+		fmt.Println("#########################################################################")
+		fmt.Printf("APPLY FOR DIRECTORY: %v\n", dir)
+		fmt.Println("#########################################################################")
+		fmt.Printf("\n")
+		c.cmdDir = dir
+		err := c.Init(false)
+		if err != nil {
+			return err
+		}
+
+		ws, err := c.workspaces()
+		if err != nil {
+			return err
+		}
+
+		if contains(ws, "  live-1") {
+			log.WithFields(log.Fields{"dir": dir}).Info("Using live-1 context with: KUBE_CTX=live-1.cloud-platform.service.justice.gov.uk")
+
+			c.cmdEnv = append(os.Environ(), "KUBE_CTX=live-1.cloud-platform.service.justice.gov.uk")
+			c.Workspace = "live-1"
+
+			err := c.Apply()
+			if err != nil {
+				return err
+			}
+		} else if contains(ws, "  manager") {
+			log.WithFields(log.Fields{"dir": dir}).Info("Using manager context with: KUBE_CTX=manager.cloud-platform.service.justice.gov.uk")
+
+			c.cmdEnv = append(os.Environ(), "KUBE_CTX=manager.cloud-platform.service.justice.gov.uk")
+			c.Workspace = "manager"
+
+			err := c.Apply()
+			if err != nil {
+				return err
+			}
+		} else {
+			log.WithFields(log.Fields{"dir": dir}).Info("No context, normal terraform plan")
+			err := c.Apply()
 			if err != nil {
 				return err
 			}
