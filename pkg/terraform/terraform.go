@@ -196,7 +196,7 @@ func (s *Commander) Apply() error {
 	}
 
 	if s.DisplayTfOutput {
-		fmt.Println(output.Stdout)
+		output.redacted()
 	}
 
 	if output.ExitCode == 0 {
