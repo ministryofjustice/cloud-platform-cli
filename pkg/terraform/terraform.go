@@ -64,7 +64,8 @@ func (s *Commander) Terraform(args ...string) (*CmdOutput, error) {
 			ws := exitError.Sys().(syscall.WaitStatus)
 			exitCode = ws.ExitStatus()
 		}
-		contextLogger.Error("cmd.Run() failed")
+		contextLogger.Error("cmd.Run() failed with:")
+		contextLogger.Error(cmd.Stderr)
 		return nil, err
 	} else {
 		ws := cmd.ProcessState.Sys().(syscall.WaitStatus)
@@ -189,13 +190,11 @@ func (s *Commander) Apply() error {
 	)
 
 	output, err := s.Terraform(arg...)
-
 	if err != nil {
-		log.Error(err)
-		log.Error(output.Stderr)
+		return err
 	}
 
-	if s.DisplayTfOutput {
+	if s.DisplayTfOutput && output != nil {
 		output.redacted()
 	}
 
@@ -235,13 +234,11 @@ func (s *Commander) Plan() error {
 	)
 
 	output, err := s.Terraform(arg...)
-
 	if err != nil {
-		log.Error(err)
-		log.Error(output.Stderr)
+		return err
 	}
 
-	if s.DisplayTfOutput {
+	if s.DisplayTfOutput && output != nil {
 		output.redacted()
 	}
 
@@ -262,11 +259,13 @@ func (c *Commander) workspaces() ([]string, error) {
 
 	output, err := c.Terraform(arg...)
 	if err != nil {
-		log.Error(output.Stderr)
 		return nil, err
 	}
 
 	ws := strings.Split(output.Stdout, "\n")
+	for i := range ws {
+		ws[i] = strings.TrimSpace(ws[i])
+	}
 
 	return ws, nil
 }
@@ -295,7 +294,7 @@ func (c *Commander) BulkPlan() error {
 			return err
 		}
 
-		if contains(ws, "  live-1") {
+		if contains(ws, "live-1") {
 			log.WithFields(log.Fields{"dir": dir}).Info("Using live-1 context with: KUBE_CTX=live-1.cloud-platform.service.justice.gov.uk")
 
 			c.cmdEnv = append(os.Environ(), "KUBE_CTX=live-1.cloud-platform.service.justice.gov.uk")
@@ -305,7 +304,7 @@ func (c *Commander) BulkPlan() error {
 			if err != nil {
 				return err
 			}
-		} else if contains(ws, "  manager") {
+		} else if contains(ws, "manager") {
 			log.WithFields(log.Fields{"dir": dir}).Info("Using manager context with: KUBE_CTX=manager.cloud-platform.service.justice.gov.uk")
 
 			c.cmdEnv = append(os.Environ(), "KUBE_CTX=manager.cloud-platform.service.justice.gov.uk")
@@ -351,7 +350,7 @@ func (c *Commander) BulkApply() error {
 			return err
 		}
 
-		if contains(ws, "  live-1") {
+		if contains(ws, "live-1") {
 			log.WithFields(log.Fields{"dir": dir}).Info("Using live-1 context with: KUBE_CTX=live-1.cloud-platform.service.justice.gov.uk")
 
 			c.cmdEnv = append(os.Environ(), "KUBE_CTX=live-1.cloud-platform.service.justice.gov.uk")
@@ -361,7 +360,7 @@ func (c *Commander) BulkApply() error {
 			if err != nil {
 				return err
 			}
-		} else if contains(ws, "  manager") {
+		} else if contains(ws, "manager") {
 			log.WithFields(log.Fields{"dir": dir}).Info("Using manager context with: KUBE_CTX=manager.cloud-platform.service.justice.gov.uk")
 
 			c.cmdEnv = append(os.Environ(), "KUBE_CTX=manager.cloud-platform.service.justice.gov.uk")
