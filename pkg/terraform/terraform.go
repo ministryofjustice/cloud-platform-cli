@@ -144,10 +144,8 @@ func (s *Commander) CheckDivergence() error {
 	)
 
 	output, err := s.Terraform(arg...)
-
 	if err != nil {
-		log.Error(err)
-		log.Error(output.Stderr)
+		return err
 	}
 
 	if s.DisplayTfOutput {
