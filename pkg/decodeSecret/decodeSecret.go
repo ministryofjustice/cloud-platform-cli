@@ -30,6 +30,21 @@ func DecodeSecret(opts *DecodeSecretOptions) error {
 	return nil
 }
 
+func retrieveSecret(namespace, secret string) string {
+	cmd := exec.Command("kubectl", "--namespace", namespace, "get", "secret", secret, "-o", "json")
+
+	var out bytes.Buffer
+	cmd.Stdout = &out
+
+	err := cmd.Run()
+	if err != nil {
+		fmt.Println("Error: ", err)
+		return ""
+	}
+
+	return out.String()
+}
+
 func (sd *secretDecoder) processJson(jsn string) (error, string) {
 	if jsn == "" {
 		return errors.New("failed to retrieve secret from namespace"), ""
@@ -51,21 +66,6 @@ func (sd *secretDecoder) processJson(jsn string) (error, string) {
 	}
 
 	return nil, str
-}
-
-func retrieveSecret(namespace, secret string) string {
-	cmd := exec.Command("kubectl", "--namespace", namespace, "get", "secret", secret, "-o", "json")
-
-	var out bytes.Buffer
-	cmd.Stdout = &out
-
-	err := cmd.Run()
-	if err != nil {
-		fmt.Println("Error: ", err)
-		return ""
-	}
-
-	return out.String()
 }
 
 func decodeKeys(data map[string]interface{}) error {
