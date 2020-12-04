@@ -10,4 +10,5 @@ func AddCommands(topLevel *cobra.Command) {
 	addKubecfgCmd(topLevel)
 	addVersion(topLevel)
 	addEnvironmentCmd(topLevel)
+	addDecodeSecret(topLevel)
 }
