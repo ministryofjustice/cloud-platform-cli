@@ -13,11 +13,6 @@ type DecodeSecretOptions struct {
 	Namespace string
 }
 
-type SecretData struct {
-	Key   string
-	Value string
-}
-
 func DecodeSecret(opts *DecodeSecretOptions) error {
 	jsn := retrieveSecret(opts.Namespace, opts.Secret)
 
