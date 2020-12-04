@@ -21,6 +21,17 @@ type SecretData struct {
 func DecodeSecret(opts *DecodeSecretOptions) error {
 	jsn := retrieveSecret(opts.Namespace, opts.Secret)
 
+	err, str := processJson(jsn)
+	if err != nil {
+		fmt.Println("Error: ", err)
+		return err
+	}
+
+	fmt.Printf(str)
+	return nil
+}
+
+func processJson(jsn string) (error, string) {
 	var result map[string]interface{}
 	json.Unmarshal([]byte(jsn), &result)
 
@@ -28,12 +39,15 @@ func DecodeSecret(opts *DecodeSecretOptions) error {
 
 	err := decodeKeys(data)
 	if err != nil {
-		fmt.Println("Error: ", err)
-		return err
+		return err, ""
 	}
 
-	prettyPrint(result)
-	return nil
+	err, str := formatJson(result)
+	if err != nil {
+		return err, ""
+	}
+
+	return nil, str
 }
 
 func retrieveSecret(namespace, secret string) string {
@@ -67,18 +81,16 @@ func base64decode(i interface{}) string {
 	str, e := base64.StdEncoding.DecodeString(i.(string))
 	if e != nil {
 		fmt.Println(e)
-		return ""
+		return "ERROR: base64 decode failed"
 	}
 	return fmt.Sprintf("%s", str)
 }
 
-func prettyPrint(result map[string]interface{}) error {
+func formatJson(result map[string]interface{}) (error, string) {
 	str, err := json.MarshalIndent(result, "", "    ")
 	if err != nil {
-		fmt.Println("Error: ", err)
-		return err
+		return err, ""
 	}
 
-	fmt.Printf("%s\n", str)
-	return nil
+	return nil, fmt.Sprintf("%s\n", str)
 }
