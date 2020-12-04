@@ -4,9 +4,12 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os/exec"
 )
+
+type secretDecoder struct{}
 
 type DecodeSecretOptions struct {
 	Secret    string
@@ -16,9 +19,10 @@ type DecodeSecretOptions struct {
 func DecodeSecret(opts *DecodeSecretOptions) error {
 	jsn := retrieveSecret(opts.Namespace, opts.Secret)
 
-	err, str := processJson(jsn)
+	sd := secretDecoder{}
+
+	err, str := sd.processJson(jsn)
 	if err != nil {
-		fmt.Println("Error: ", err)
 		return err
 	}
 
@@ -26,7 +30,11 @@ func DecodeSecret(opts *DecodeSecretOptions) error {
 	return nil
 }
 
-func processJson(jsn string) (error, string) {
+func (sd *secretDecoder) processJson(jsn string) (error, string) {
+	if jsn == "" {
+		return errors.New("failed to retrieve secret from namespace"), ""
+	}
+
 	var result map[string]interface{}
 	json.Unmarshal([]byte(jsn), &result)
 
@@ -75,7 +83,6 @@ func decodeKeys(data map[string]interface{}) error {
 func base64decode(i interface{}) string {
 	str, e := base64.StdEncoding.DecodeString(i.(string))
 	if e != nil {
-		fmt.Println(e)
 		return "ERROR: base64 decode failed"
 	}
 	return fmt.Sprintf("%s", str)
