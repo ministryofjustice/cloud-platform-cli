@@ -10,11 +10,13 @@ import (
 func targetDirs(file string) ([]string, error) {
 	var dirs []string // Directories where tf plan is going to be executed
 
-	dirsWhitelist := []string{
+	dirsAllowed := []string{
 		"terraform/cloud-platform-components",
 		"terraform/cloud-platform",
 		"terraform/cloud-platform-eks/components",
 		"terraform/cloud-platform-eks",
+		"terraform/cloud-platform-account",
+		"terraform/cloud-platform-network",
 	}
 
 	f, err := os.Open(file)
@@ -30,7 +32,7 @@ func targetDirs(file string) ([]string, error) {
 		// plan twice against the same dir?). The second condition evaluates if the element is in
 		// the desired list to execute Plan (we don't want to execute Plan against everything)
 		if contains(dirs, filepath.Dir(scanner.Text())) != true &&
-			contains(dirsWhitelist, filepath.Dir(scanner.Text())) == true {
+			contains(dirsAllowed, filepath.Dir(scanner.Text())) == true {
 			dirs = append(dirs, filepath.Dir(scanner.Text()))
 		}
 	}
