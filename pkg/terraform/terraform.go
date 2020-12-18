@@ -148,8 +148,8 @@ func (s *Commander) CheckDivergence() error {
 		return err
 	}
 
-	if s.DisplayTfOutput {
-		fmt.Println(output.Stdout)
+	if s.DisplayTfOutput && output != nil {
+		output.redacted()
 	}
 
 	if output.ExitCode == 0 {
