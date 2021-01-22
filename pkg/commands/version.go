@@ -12,7 +12,7 @@ import (
 )
 
 // This MUST match the number of the latest release on github
-var Version = "1.6.7"
+var Version = "1.7.0"
 
 const owner = "ministryofjustice"
 const repoName = "cloud-platform-cli"
