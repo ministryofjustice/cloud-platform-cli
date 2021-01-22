@@ -9,11 +9,15 @@ import (
 	"os/exec"
 )
 
-type secretDecoder struct{}
+type secretDecoder struct {
+	AccessKeyID     string
+	SecretAccessKey string
+}
 
 type DecodeSecretOptions struct {
-	Secret    string
-	Namespace string
+	Secret         string
+	Namespace      string
+	ExportAwsCreds bool
 }
 
 func DecodeSecret(opts *DecodeSecretOptions) error {
@@ -26,7 +30,13 @@ func DecodeSecret(opts *DecodeSecretOptions) error {
 		return err
 	}
 
-	fmt.Printf(str)
+	if opts.ExportAwsCreds {
+		fmt.Println("export AWS_REGION=\"eu-west-2\"")
+		fmt.Println("export AWS_ACCESS_KEY_ID=\"" + sd.AccessKeyID + "\"")
+		fmt.Println("export AWS_SECRET_ACCESS_KEY=\"" + sd.SecretAccessKey + "\"")
+	} else {
+		fmt.Printf(str)
+	}
 	return nil
 }
 
@@ -60,12 +70,26 @@ func (sd *secretDecoder) processJson(jsn string) (error, string) {
 		return err, ""
 	}
 
+	sd.stashAwsCredentials(data)
+
 	err, str := formatJson(result)
 	if err != nil {
 		return err, ""
 	}
 
 	return nil, str
+}
+
+// Stash AWS creds, if present, in case we need to output commands to set them
+// as shell variables
+func (sd *secretDecoder) stashAwsCredentials(data map[string]interface{}) {
+	if val, ok := data["access_key_id"].(string); ok {
+		sd.AccessKeyID = val
+	}
+
+	if val, ok := data["secret_access_key"].(string); ok {
+		sd.SecretAccessKey = val
+	}
 }
 
 func decodeKeys(data map[string]interface{}) error {

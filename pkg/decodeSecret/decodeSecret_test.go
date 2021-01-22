@@ -43,3 +43,16 @@ func TestNoSuchSecret(t *testing.T) {
 		t.Errorf("Expected an error")
 	}
 }
+
+func TestRecordsAwsSecrets(t *testing.T) {
+	// jsn := `{ "data": { "access_key_id": "myaccesskey", "secret_access_key": "mysecretkey" } }`
+	jsn := `{ "data": { "access_key_id": "bXlhY2Nlc3NrZXk=", "secret_access_key": "bXlzZWNyZXRrZXk=" } }`
+	sd := secretDecoder{}
+	err, _ := sd.processJson(jsn)
+	if err != nil || sd.AccessKeyID != "myaccesskey" {
+		t.Errorf("Expected:\n%s\nGot:\n%s\n", "myaccesskey", sd.AccessKeyID)
+	}
+	if err != nil || sd.SecretAccessKey != "mysecretkey" {
+		t.Errorf("Expected:\n%s\nGot:\n%s\n", "mysecretkey", sd.SecretAccessKey)
+	}
+}
