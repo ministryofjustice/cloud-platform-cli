@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	commands "github.com/ministryofjustice/cloud-platform-cli/pkg/commands"
 )
@@ -17,6 +18,15 @@ func main() {
 			cmd.Help()
 		},
 	}
+
+	// We need the option to bypass the automatic update process, so that new
+	// releases of the cloud-platform tool don't break any pipelines which use
+	// the tool. This allows us to add `--skip-version-check` to any command
+	// which runs in a pipeline.
+	var SkipVersionCheck bool
+	cmds.PersistentFlags().BoolVarP(&SkipVersionCheck, "skip-version-check", "", false, "don't check for updates")
+	viper.BindPFlag("skip-version-check", cmds.PersistentFlags().Lookup("skip-version-check"))
+
 	commands.AddCommands(cmds)
 
 	if err := cmds.Execute(); err != nil {
