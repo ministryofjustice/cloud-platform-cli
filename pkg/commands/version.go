@@ -9,10 +9,11 @@ import (
 	release "github.com/ministryofjustice/cloud-platform-cli/pkg/github/release"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // This MUST match the number of the latest release on github
-var Version = "1.7.0"
+var Version = "1.7.1"
 
 const owner = "ministryofjustice"
 const repoName = "cloud-platform-cli"
@@ -46,6 +47,9 @@ func version() string {
 }
 
 func upgradeIfNotLatest(cmd *cobra.Command, args []string) {
+	if viper.GetBool("skip-version-check") {
+		return
+	}
 	r := release.New(owner, repoName, Version, binaryName)
 	r.UpgradeIfNotLatest()
 }
