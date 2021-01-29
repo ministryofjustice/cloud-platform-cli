@@ -92,7 +92,7 @@ var environmentSvcCmd = &cobra.Command{
 	Use:   "serviceaccount",
 	Short: `Add a serviceaccount to a namespace`,
 	Example: heredoc.Doc(`
-	$ cloud-platform environment serviceaccount 
+	$ cloud-platform environment serviceaccount
 	`),
 	PreRun: upgradeIfNotLatest,
 }
