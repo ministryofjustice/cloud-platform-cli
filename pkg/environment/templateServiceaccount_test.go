@@ -11,7 +11,6 @@ import (
 // called 00-namespace.yaml
 func TestCreateServiceAccountFiles(t *testing.T) {
 	svc := ServiceAccount{
-		Name:      "testName",
 		Namespace: "foobar",
 	}
 
@@ -22,12 +21,12 @@ func TestCreateServiceAccountFiles(t *testing.T) {
 	if err != nil {
 		t.Error("Error copying file:", err)
 	}
-	err = svc.createSvcAccFile(svc.Name)
+	err = svc.createSvcAccFile()
 	if err != nil {
 		t.Errorf("Unexpected error: %s", err)
 	}
 
-	fileContainsString(t, svcAccFileName, svc.Name)
+	fileContainsString(t, svcAccFileName, "cloud-platform-user")
 	fileContainsString(t, svcAccFileName, svc.Namespace)
 
 	os.Remove(svcAccFileName)
