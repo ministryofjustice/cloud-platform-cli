@@ -2,17 +2,13 @@ package environment
 
 import (
 	"fmt"
-	"text/template"
+	"os"
 
 	"github.com/gookit/color"
 )
 
-const svcAccFileName = "05-serviceaccount.yaml"
-
-type ServiceAccount struct {
-	Name      string
-	Namespace string
-}
+const svcAccTemplateFile = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-serviceaccount/main/template/serviceaccount.tmpl"
+const svcAccTfFile = "resources/serviceaccount.tf"
 
 // CreateTemplateServiceAccount sets and creates a template file containing all
 // the necessary values to create a serviceaccount resource in Kubernetes. It
@@ -23,58 +19,35 @@ func CreateTemplateServiceAccount() error {
 	if err != nil {
 		return err
 	}
-	v := ServiceAccount{}
 
-	err = v.createSvcAccFile()
+	err = createSvcAccTfFile()
 	if err != nil {
 		return err
 	}
 
-	fmt.Println(svcAccFileName, "created")
+	fmt.Println(svcAccTfFile, "created")
+	fmt.Printf("Serviceaccount File generated in %s\n", svcAccTfFile)
 	color.Info.Tips("Please review before raising PR")
 
 	return nil
 }
 
-// createSvcAccountFile uses the values of a ServiceAccount object to interpolate the serviceaccount
-// template, it then creates a file in the current working directory.
-func (v *ServiceAccount) createSvcAccFile() error {
-	tmpl, err := setSvcAccTemplate()
+//------------------------------------------------------------------------------
+
+func createSvcAccTfFile() error {
+	// The serviceaccount "template" is actually an example file that we can just save
+	// as is into the user's resources/ directory as `serviceaccount.tf`
+	svcAccTemplate, err := downloadTemplate(svcAccTemplateFile)
 	if err != nil {
 		return err
 	}
 
-	v.Name = "cloud-platform-user"
-
-	err = v.writeSvcAccFile(tmpl)
+	f, err := os.Create(svcAccTfFile)
 	if err != nil {
 		return err
 	}
-
-	return nil
-}
-
-// setSvcTemplate downloads the required template from the environments repository
-// and returns it.
-func setSvcAccTemplate() (string, error) {
-	templateFile, err := downloadTemplate(envTemplateLocation + "/" + svcAccFileName)
-	if err != nil {
-		return "An error occurred", err
-	}
-
-	return templateFile, nil
-}
-
-// writeSvcAccFile uses the template returned by setSvcTemplate and writes a
-// file to the current working directory.
-func (v *ServiceAccount) writeSvcAccFile(tmpl string) error {
-	tpl := template.Must(template.New("").Parse(tmpl))
-
-	f, _ := outputFileWriter(svcAccFileName)
-	err := tpl.Execute(f, v)
-	if err != nil {
-		return err
-	}
+	f.WriteString(svcAccTemplate)
+	f.Close()
 
 	return nil
 }
