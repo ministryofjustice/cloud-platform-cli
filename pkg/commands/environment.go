@@ -1,8 +1,6 @@
 package commands
 
 import (
-	"strings"
-
 	environment "github.com/ministryofjustice/cloud-platform-cli/pkg/environment"
 
 	"github.com/MakeNowJust/heredoc"
@@ -20,8 +18,6 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentRdsCmd.AddCommand(environmentRdsCreateCmd)
 	environmentS3Cmd.AddCommand(environmentS3CreateCmd)
 	environmentSvcCmd.AddCommand(environmentSvcCreateCmd)
-	environmentSvcCreateCmd.Flags().StringP("name", "n", "cloud-platform-user", "The name of the ServiceAccount resource")
-
 }
 
 var environmentCmd = &cobra.Command{
@@ -92,7 +88,7 @@ var environmentSvcCmd = &cobra.Command{
 	Use:   "serviceaccount",
 	Short: `Add a serviceaccount to a namespace`,
 	Example: heredoc.Doc(`
-	$ cloud-platform environment serviceaccount 
+	$ cloud-platform environment serviceaccount
 	`),
 	PreRun: upgradeIfNotLatest,
 }
@@ -105,12 +101,7 @@ var environmentSvcCreateCmd = &cobra.Command{
 	`),
 	PreRun: upgradeIfNotLatest,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		nameFlag, err := cmd.Flags().GetString("name")
-		if err != nil {
-			return err
-		}
-
-		if err = environment.CreateTemplateServiceAccount(strings.ToLower(nameFlag)); err != nil {
+		if err := environment.CreateTemplateServiceAccount(); err != nil {
 			return err
 		}
 
