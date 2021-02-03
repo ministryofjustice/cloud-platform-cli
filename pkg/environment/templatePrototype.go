@@ -14,24 +14,24 @@ func CreateTemplatePrototype() error {
 	// 	return err
 	// }
 
-	nsValues, err := promptUserForPrototypeValues()
+	proto, err := promptUserForPrototypeValues()
 	if err != nil {
 		return (err)
 	}
 
-	err = createNamespaceFiles(nsValues)
+	err = createNamespaceFiles(&proto.Namespace)
 	if err != nil {
 		return err
 	}
 
 	fmt.Println("CreateTemplatePrototype...")
-	fmt.Println("Name: " + nsValues.Namespace)
+	fmt.Println("Name: " + proto.Namespace.Namespace)
 	return nil
 }
 
 //------------------------------------------------------------------------------
 
-func promptUserForPrototypeValues() (*Namespace, error) {
+func promptUserForPrototypeValues() (*Prototype, error) {
 	values := Namespace{}
 
 	q := userQuestion{
@@ -122,5 +122,7 @@ func promptUserForPrototypeValues() (*Namespace, error) {
 	values.Application = "Gov.UK Prototype Kit"
 	values.SourceCode = "https://github.com/ministryofjustice/" + values.Namespace
 
-	return &values, nil
+	proto := Prototype{Namespace: values}
+
+	return &proto, nil
 }
