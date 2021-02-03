@@ -57,3 +57,19 @@ func directoryExists(path string) bool {
 		return false
 	}
 }
+
+func copyUrlToFile(url string, targetFilename string) error {
+	str, err := downloadTemplate(url)
+	if err != nil {
+		return err
+	}
+
+	f, err := os.Create(targetFilename)
+	if err != nil {
+		return err
+	}
+	f.WriteString(str)
+	f.Close()
+
+	return nil
+}
