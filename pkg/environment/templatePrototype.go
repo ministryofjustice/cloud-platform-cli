@@ -7,6 +7,14 @@ import (
 	"github.com/MakeNowJust/heredoc"
 )
 
+// TODO: change to "main" branch
+const prototypeEcrTemplate = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/moj-prototype/namespace-resources-cli-template/resources/prototype/ecr.tf"
+const prototypeEcrFile = "resources/ecr.tf"
+
+// TODO: change to "main" branch
+const prototypeServiceAccountTemplate = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/moj-prototype/namespace-resources-cli-template/resources/prototype/serviceaccount.tf"
+const prototypeServiceAccountFile = "resources/serviceaccount.tf"
+
 func CreateTemplatePrototype() error {
 	// TODO - uncomment this block
 	// re := RepoEnvironment{}
@@ -31,21 +39,6 @@ func CreateTemplatePrototype() error {
 }
 
 //------------------------------------------------------------------------------
-
-func createPrototypeFiles(p *Prototype) error {
-	err := createNamespaceFiles(&p.Namespace)
-	if err != nil {
-		return err
-	}
-
-	p.appendBasicAuthVariables()
-
-	nsdir := namespaceBaseFolder + "/" + p.Namespace.Namespace
-	createEcrTfFileInNamespaceDirectory(nsdir)
-	createSvcAccTfFileInNamespaceDirectory(nsdir)
-
-	return nil
-}
 
 func promptUserForPrototypeValues() (*Prototype, error) {
 	proto := Prototype{}
@@ -170,6 +163,22 @@ sensitive values here.`)
 	proto.Namespace = values
 
 	return &proto, nil
+}
+
+func createPrototypeFiles(p *Prototype) error {
+	err := createNamespaceFiles(&p.Namespace)
+	if err != nil {
+		return err
+	}
+
+	p.appendBasicAuthVariables()
+
+	nsdir := namespaceBaseFolder + "/" + p.Namespace.Namespace
+
+	copyUrlToFile(prototypeEcrTemplate, nsdir+"/"+prototypeEcrFile)
+	copyUrlToFile(prototypeServiceAccountTemplate, nsdir+"/"+prototypeServiceAccountFile)
+
+	return nil
 }
 
 // Append the extra terraform variables required by a prototype site
