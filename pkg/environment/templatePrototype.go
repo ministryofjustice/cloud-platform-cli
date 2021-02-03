@@ -40,6 +40,10 @@ func createPrototypeFiles(p *Prototype) error {
 
 	p.appendBasicAuthVariables()
 
+	nsdir := namespaceBaseFolder + "/" + p.Namespace.Namespace
+	createEcrTfFileInNamespaceDirectory(nsdir)
+	createSvcAccTfFileInNamespaceDirectory(nsdir)
+
 	return nil
 }
 
