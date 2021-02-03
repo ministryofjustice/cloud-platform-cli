@@ -2,7 +2,6 @@ package environment
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/gookit/color"
 )
@@ -37,17 +36,5 @@ func CreateTemplateServiceAccount() error {
 func createSvcAccTfFile() error {
 	// The serviceaccount "template" is actually an example file that we can just save
 	// as is into the user's resources/ directory as `serviceaccount.tf`
-	svcAccTemplate, err := downloadTemplate(svcAccTemplateFile)
-	if err != nil {
-		return err
-	}
-
-	f, err := os.Create(svcAccTfFile)
-	if err != nil {
-		return err
-	}
-	f.WriteString(svcAccTemplate)
-	f.Close()
-
-	return nil
+	return copyUrlToFile(svcAccTemplateFile, svcAccTfFile)
 }
