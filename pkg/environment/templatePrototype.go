@@ -7,8 +7,7 @@ import (
 	"github.com/MakeNowJust/heredoc"
 )
 
-// TODO: change to "main" branch
-const prototypeTemplateUrl = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/moj-prototype/namespace-resources-cli-template/resources/prototype"
+const prototypeTemplateUrl = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template/resources/prototype"
 
 func CreateTemplatePrototype() error {
 	re := RepoEnvironment{}
