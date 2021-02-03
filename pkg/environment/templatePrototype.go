@@ -28,8 +28,36 @@ func CreateTemplatePrototype() error {
 		return err
 	}
 
-	fmt.Println("CreateTemplatePrototype...")
-	fmt.Println("Name: " + proto.Namespace.Namespace)
+	s := proto.Namespace.Namespace
+
+	fmt.Printf(`
+Please run:
+
+    git add %s
+
+...and raise a pull request.
+
+Shortly after your pull request is merged, you should have access to a new
+github repository:
+
+	https://github.com/ministryofjustice/%s
+
+This is a normal gov.uk prototype kit repository, which you can checkout and
+work on in the usual way.
+
+Changes merged and pushed to the 'main' branch of this repository will be
+automatically deployed to your gov.uk prototype kit website. This usually takes
+around 5 minutes.
+
+Your prototype kit website will be served at the URL:
+
+    https://%s.apps.live-1.cloud-platform.service.justice.gov.uk/
+
+If you have any questions or feedback, please post them in #ask-cloud-platform
+on slack.
+
+	`, namespaceBaseFolder+"/"+s, s, s)
+
 	return nil
 }
 
