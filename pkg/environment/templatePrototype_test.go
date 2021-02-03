@@ -31,6 +31,7 @@ func TestCreatePrototype(t *testing.T) {
 	rbacFile := dir + "01-rbac.yaml"
 	variablesTfFile := dir + "resources/variables.tf"
 	githubRepoTfFile := dir + "resources/github-repo.tf"
+	ecrTfFile := dir + "resources/ecr.tf"
 
 	filenames := []string{
 		namespaceFile,
@@ -40,7 +41,7 @@ func TestCreatePrototype(t *testing.T) {
 		dir + "04-networkpolicy.yaml",
 		dir + "resources/main.tf",
 		variablesTfFile,
-		dir + "resources/ecr.tf",
+		ecrTfFile,
 		dir + "resources/serviceaccount.tf",
 		dir + "resources/basic-auth.tf",
 		dir + "resources/versions.tf",
@@ -54,16 +55,18 @@ func TestCreatePrototype(t *testing.T) {
 	}
 
 	stringsInFiles := map[string]string{
-		namespaceFile:   "name: foobar",
-		namespaceFile:   "cloud-platform.justice.gov.uk/business-unit: \"My Biz Unit\"",
-		namespaceFile:   "cloud-platform.justice.gov.uk/environment-name: \"envname\"",
-		namespaceFile:   "cloud-platform.justice.gov.uk/application: \"My App\"",
-		namespaceFile:   "cloud-platform.justice.gov.uk/owner: \"Some Team: some-team@digital.justice.gov.uk\"",
-		namespaceFile:   "cloud-platform.justice.gov.uk/source-code: \"https://github.com/ministryofjustice/somerepo\"",
-		namespaceFile:   "cloud-platform.justice.gov.uk/is-production: \"false\"",
-		rbacFile:        "name: \"github:my-github-team\"",
-		variablesTfFile: "my-team-slack_channel",
-		variablesTfFile: "my-github-team",
+		namespaceFile:    "name: foobar",
+		namespaceFile:    "cloud-platform.justice.gov.uk/business-unit: \"My Biz Unit\"",
+		namespaceFile:    "cloud-platform.justice.gov.uk/environment-name: \"envname\"",
+		namespaceFile:    "cloud-platform.justice.gov.uk/application: \"My App\"",
+		namespaceFile:    "cloud-platform.justice.gov.uk/owner: \"Some Team: some-team@digital.justice.gov.uk\"",
+		namespaceFile:    "cloud-platform.justice.gov.uk/source-code: \"https://github.com/ministryofjustice/somerepo\"",
+		namespaceFile:    "cloud-platform.justice.gov.uk/is-production: \"false\"",
+		rbacFile:         "name: \"github:my-github-team\"",
+		variablesTfFile:  "my-team-slack_channel",
+		variablesTfFile:  "my-github-team",
+		githubRepoTfFile: "slug = \"my-github-team\"",
+		ecrTfFile:        "github_repositories = [var.namespace]",
 	}
 
 	for filename, searchString := range stringsInFiles {
