@@ -3,7 +3,6 @@ package environment
 import (
 	"fmt"
 	"os"
-	"text/template"
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/gookit/color"
@@ -221,22 +220,11 @@ func createNamespaceFiles(nsValues *Namespace) error {
 		return err
 	}
 
-	for _, i := range templates {
-		t, err := template.New("").Parse(i.content)
-		if err != nil {
-			return err
-		}
-
-		f, err := os.Create(i.outputPath)
-		if err != nil {
-			return err
-		}
-
-		err = t.Execute(f, nsValues)
-		if err != nil {
-			return err
-		}
+	err = createFilesFromTemplates(templates, *nsValues)
+	if err != nil {
+		return err
 	}
+
 	return nil
 }
 

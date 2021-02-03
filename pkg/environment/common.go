@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"text/template"
 )
 
 const cloudPlatformEnvRepo = "cloud-platform-environments"
@@ -71,5 +72,25 @@ func copyUrlToFile(url string, targetFilename string) error {
 	f.WriteString(str)
 	f.Close()
 
+	return nil
+}
+
+func createFilesFromTemplates(templates []*templateFromUrl, values Namespace) error {
+	for _, i := range templates {
+		t, err := template.New("").Parse(i.content)
+		if err != nil {
+			return err
+		}
+
+		f, err := os.Create(i.outputPath)
+		if err != nil {
+			return err
+		}
+
+		err = t.Execute(f, values)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }

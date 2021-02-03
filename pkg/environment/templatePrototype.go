@@ -3,7 +3,6 @@ package environment
 import (
 	"fmt"
 	"os"
-	"text/template"
 
 	"github.com/MakeNowJust/heredoc"
 )
@@ -186,23 +185,11 @@ func createPrototypeFiles(p *Prototype) error {
 		return err
 	}
 
-	// TODO: refactor this - it's used in templateEnvironment.go as well
-	for _, i := range templates {
-		t, err := template.New("").Parse(i.content)
-		if err != nil {
-			return err
-		}
-
-		f, err := os.Create(i.outputPath)
-		if err != nil {
-			return err
-		}
-
-		err = t.Execute(f, p.Namespace)
-		if err != nil {
-			return err
-		}
+	err = createFilesFromTemplates(templates, p.Namespace)
+	if err != nil {
+		return err
 	}
+
 	return nil
 }
 
