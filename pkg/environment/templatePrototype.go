@@ -3,17 +3,13 @@ package environment
 import (
 	"fmt"
 	"os"
+	"text/template"
 
 	"github.com/MakeNowJust/heredoc"
 )
 
 // TODO: change to "main" branch
-const prototypeEcrTemplate = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/moj-prototype/namespace-resources-cli-template/resources/prototype/ecr.tf"
-const prototypeEcrFile = "resources/ecr.tf"
-
-// TODO: change to "main" branch
-const prototypeServiceAccountTemplate = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/moj-prototype/namespace-resources-cli-template/resources/prototype/serviceaccount.tf"
-const prototypeServiceAccountFile = "resources/serviceaccount.tf"
+const prototypeTemplateUrl = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/moj-prototype/namespace-resources-cli-template/resources/prototype"
 
 func CreateTemplatePrototype() error {
 	// TODO - uncomment this block
@@ -175,9 +171,38 @@ func createPrototypeFiles(p *Prototype) error {
 
 	nsdir := namespaceBaseFolder + "/" + p.Namespace.Namespace
 
-	copyUrlToFile(prototypeEcrTemplate, nsdir+"/"+prototypeEcrFile)
-	copyUrlToFile(prototypeServiceAccountTemplate, nsdir+"/"+prototypeServiceAccountFile)
+	copyUrlToFile(prototypeTemplateUrl+"/ecr.tf", nsdir+"/resources/ecr.tf")
+	copyUrlToFile(prototypeTemplateUrl+"/serviceaccount.tf", nsdir+"/resources/serviceaccount.tf")
+	copyUrlToFile(prototypeTemplateUrl+"/basic-auth.tf", nsdir+"/resources/basic-auth.tf")
 
+	templates := []*templateFromUrl{
+		{
+			url:        prototypeTemplateUrl + "/github-repo.tf",
+			outputPath: nsdir + "/resources/github-repo.tf",
+		},
+	}
+	err = downloadTemplateContents(templates)
+	if err != nil {
+		return err
+	}
+
+	// TODO: refactor this - it's used in templateEnvironment.go as well
+	for _, i := range templates {
+		t, err := template.New("").Parse(i.content)
+		if err != nil {
+			return err
+		}
+
+		f, err := os.Create(i.outputPath)
+		if err != nil {
+			return err
+		}
+
+		err = t.Execute(f, p.Namespace)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

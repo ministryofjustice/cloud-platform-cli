@@ -30,6 +30,7 @@ func TestCreatePrototype(t *testing.T) {
 	namespaceFile := dir + "00-namespace.yaml"
 	rbacFile := dir + "01-rbac.yaml"
 	variablesTfFile := dir + "resources/variables.tf"
+	githubRepoTfFile := dir + "resources/github-repo.tf"
 
 	filenames := []string{
 		namespaceFile,
@@ -41,7 +42,9 @@ func TestCreatePrototype(t *testing.T) {
 		variablesTfFile,
 		dir + "resources/ecr.tf",
 		dir + "resources/serviceaccount.tf",
+		dir + "resources/basic-auth.tf",
 		dir + "resources/versions.tf",
+		githubRepoTfFile,
 	}
 
 	for _, f := range filenames {
