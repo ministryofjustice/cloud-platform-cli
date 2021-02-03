@@ -75,3 +75,10 @@ func TestCreatePrototype(t *testing.T) {
 
 	cleanUpNamespacesFolder("foobar")
 }
+
+func TestOutsideEnvironmentsWorkingCopy(t *testing.T) {
+	err := CreateTemplatePrototype()
+	if err.Error() != "This command may only be run from within a working copy of the cloud-platform-environments repository\n" {
+		t.Errorf("Unexpected error: %s", err)
+	}
+}

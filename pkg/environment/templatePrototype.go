@@ -11,12 +11,11 @@ import (
 const prototypeTemplateUrl = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/moj-prototype/namespace-resources-cli-template/resources/prototype"
 
 func CreateTemplatePrototype() error {
-	// TODO - uncomment this block
-	// re := RepoEnvironment{}
-	// err := re.mustBeInCloudPlatformEnvironments()
-	// if err != nil {
-	// 	return err
-	// }
+	re := RepoEnvironment{}
+	err := re.mustBeInCloudPlatformEnvironments()
+	if err != nil {
+		return err
+	}
 
 	proto, err := promptUserForPrototypeValues()
 	if err != nil {
