@@ -6,5 +6,9 @@ package environment
 // github actions secrets containing the namespace details, ecr &
 // serviceaccount credentials.
 type Prototype struct {
-	Namespace Namespace
+	Namespace         Namespace
+	BasicAuthUsername string
+	BasicAuthPassword string
+}
+
 }

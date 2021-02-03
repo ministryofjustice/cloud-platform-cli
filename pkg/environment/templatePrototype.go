@@ -32,6 +32,7 @@ func CreateTemplatePrototype() error {
 //------------------------------------------------------------------------------
 
 func promptUserForPrototypeValues() (*Prototype, error) {
+	proto := Prototype{}
 	values := Namespace{}
 
 	q := userQuestion{
@@ -122,7 +123,35 @@ func promptUserForPrototypeValues() (*Prototype, error) {
 	values.Application = "Gov.UK Prototype Kit"
 	values.SourceCode = "https://github.com/ministryofjustice/" + values.Namespace
 
-	proto := Prototype{Namespace: values}
+	fmt.Println(`
+Prototype kit websites must be protected by HTTP basic
+authentication, so that citizens don't mistake them for
+real government services.
+You need to choose a username and password for your site.
+
+NB: The username and password you choose will be stored in
+plaintext in a public github repository, so do not choose any
+sensitive values here.`)
+
+	q = userQuestion{
+		description: heredoc.Doc(`Please choose a username for your site:
+		`),
+		prompt:    "Username",
+		validator: new(notEmptyValidator),
+	}
+	q.getAnswer()
+	proto.BasicAuthUsername = q.value
+
+	q = userQuestion{
+		description: heredoc.Doc(`Please choose a password for your site:
+		`),
+		prompt:    "Password",
+		validator: new(notEmptyValidator),
+	}
+	q.getAnswer()
+	proto.BasicAuthPassword = q.value
+
+	proto.Namespace = values
 
 	return &proto, nil
 }
