@@ -22,7 +22,7 @@ func CreateTemplatePrototype() error {
 		return (err)
 	}
 
-	err = createPrototypeFiles(&proto)
+	err = createPrototypeFiles(proto)
 	if err != nil {
 		return err
 	}
