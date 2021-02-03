@@ -15,7 +15,7 @@ func (v *inListValidator) isValid(s string) bool {
 			return true
 		}
 	}
-	// TODO: output the list
+
 	fmt.Printf("Value must be in the list: %s\n", strings.Join(v.list, ", "))
 	return false
 }
