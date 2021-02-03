@@ -2,6 +2,7 @@ package environment
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/MakeNowJust/heredoc"
 )
@@ -19,7 +20,7 @@ func CreateTemplatePrototype() error {
 		return (err)
 	}
 
-	err = createNamespaceFiles(&proto.Namespace)
+	err = createPrototypeFiles(&proto)
 	if err != nil {
 		return err
 	}
@@ -30,6 +31,17 @@ func CreateTemplatePrototype() error {
 }
 
 //------------------------------------------------------------------------------
+
+func createPrototypeFiles(p *Prototype) error {
+	err := createNamespaceFiles(&p.Namespace)
+	if err != nil {
+		return err
+	}
+
+	p.appendBasicAuthVariables()
+
+	return nil
+}
 
 func promptUserForPrototypeValues() (*Prototype, error) {
 	proto := Prototype{}
@@ -154,4 +166,35 @@ sensitive values here.`)
 	proto.Namespace = values
 
 	return &proto, nil
+}
+
+// Append the extra terraform variables required by a prototype site
+// to the namespace's resources/variables.tf file
+func (p *Prototype) appendBasicAuthVariables() error {
+	str := `
+## Prototype kit variables
+
+variable "basic-auth-username" {
+  description = "Basic auth. username of the deployed prototype website"
+  default     = "` + p.BasicAuthUsername + `"
+}
+
+variable "basic-auth-password" {
+  description = "Basic auth. password of the deployed prototype website"
+  default     = "` + p.BasicAuthPassword + `"
+}
+`
+	varTf := fmt.Sprintf("%s/%s/resources/variables.tf", namespaceBaseFolder, p.Namespace.Namespace)
+
+	file, err := os.OpenFile(varTf, os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	if _, err := file.WriteString(str); err != nil {
+		return err
+	}
+
+	return nil
 }

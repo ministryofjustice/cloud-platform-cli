@@ -10,5 +10,3 @@ type Prototype struct {
 	BasicAuthUsername string
 	BasicAuthPassword string
 }
-
-}
