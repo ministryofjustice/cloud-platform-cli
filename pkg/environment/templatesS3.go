@@ -2,7 +2,6 @@ package environment
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
@@ -35,17 +34,5 @@ func CreateTemplateS3(cmd *cobra.Command, args []string) error {
 func createS3TfFile() error {
 	// The s3 "template" is actually an example file that we can just save
 	// "as is" into the user's resources/ directory as `s3.tf`
-	s3Template, err := downloadTemplate(s3TemplateFile)
-	if err != nil {
-		return err
-	}
-
-	f, err := os.Create(s3TfFile)
-	if err != nil {
-		return err
-	}
-	f.WriteString(s3Template)
-	f.Close()
-
-	return nil
+	return copyUrlToFile(s3TemplateFile, s3TfFile)
 }

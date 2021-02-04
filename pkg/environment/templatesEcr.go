@@ -2,7 +2,6 @@ package environment
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
@@ -34,17 +33,5 @@ func CreateTemplateEcr(cmd *cobra.Command, args []string) error {
 func createEcrTfFile() error {
 	// The ecr "template" is actually an example file that we can just save
 	// "as is" into the user's resources/ directory as `ecr.tf`
-	ecrTemplate, err := downloadTemplate(ecrTemplateFile)
-	if err != nil {
-		return err
-	}
-
-	f, err := os.Create(ecrTfFile)
-	if err != nil {
-		return err
-	}
-	f.WriteString(ecrTemplate)
-	f.Close()
-
-	return nil
+	return copyUrlToFile(ecrTemplateFile, ecrTfFile)
 }

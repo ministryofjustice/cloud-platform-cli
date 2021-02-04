@@ -24,11 +24,11 @@ type Namespace struct {
 	SourceCode            string
 }
 
+// This is a public function so that we can use it in our tests
 func (ns *Namespace) ReadYaml() error {
 	return ns.readYamlFile(NamespaceYamlFile)
 }
 
-// This is a public function so that we can use it in our tests
 func (ns *Namespace) readYamlFile(filename string) error {
 	contents, err := ioutil.ReadFile(filename)
 	if err != nil {

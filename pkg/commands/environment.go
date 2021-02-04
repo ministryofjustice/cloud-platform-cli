@@ -18,6 +18,8 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentRdsCmd.AddCommand(environmentRdsCreateCmd)
 	environmentS3Cmd.AddCommand(environmentS3CreateCmd)
 	environmentSvcCmd.AddCommand(environmentSvcCreateCmd)
+	environmentCmd.AddCommand(environmentPrototypeCmd)
+	environmentPrototypeCmd.AddCommand(environmentPrototypeCreateCmd)
 }
 
 var environmentCmd = &cobra.Command{
@@ -97,11 +99,51 @@ var environmentSvcCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: `Creates a serviceaccount in your chosen namespace`,
 	Example: heredoc.Doc(`
-	$ cloud-platform environment serviceaccount create -n circleci
+	$ cloud-platform environment serviceaccount create
 	`),
 	PreRun: upgradeIfNotLatest,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := environment.CreateTemplateServiceAccount(); err != nil {
+			return err
+		}
+
+		return nil
+	},
+}
+
+var environmentPrototypeCmd = &cobra.Command{
+	Use:   "prototype",
+	Short: `Create a gov.uk prototype kit site on the cloud platform`,
+	Example: heredoc.Doc(`
+	$ cloud-platform environment prototype
+	`),
+	PreRun: upgradeIfNotLatest,
+}
+
+var environmentPrototypeCreateCmd = &cobra.Command{
+	Use:   "create",
+	Short: `Create a gov.uk prototype kit site on the cloud platform`,
+	Long: `
+Create a namespace folder and a github repository to host a Gov.UK
+Prototype Kit website on the Cloud Platform.
+
+The github repository will be:
+
+  https://github.com/ministryofjustice/[namespace name]
+
+The prototype site will be hosted at:
+
+  https://[namespace name].apps.live-1.cloud-platform.service.justice.gov.uk
+
+A continuous deployment workflow will be created in the github repository such
+that any changes to the 'main' branch are deployed to the cloud platform.
+	`,
+	Example: heredoc.Doc(`
+	$ cloud-platform environment prototype create
+	`),
+	PreRun: upgradeIfNotLatest,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if err := environment.CreateTemplatePrototype(); err != nil {
 			return err
 		}
 
