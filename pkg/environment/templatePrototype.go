@@ -54,7 +54,7 @@ Your prototype kit website will be served at the URL:
 If you have any questions or feedback, please post them in #ask-cloud-platform
 on slack.
 
-	`, namespaceBaseFolder+"/"+s, s, s)
+`, namespaceBaseFolder+"/"+s, s, s)
 
 	return nil
 }
