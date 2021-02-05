@@ -145,9 +145,8 @@ func promptUserForPrototypeValues() (*Prototype, error) {
 	q.getAnswer()
 	values.Owner = q.value
 
-	values.InfrastructureSupport = q.value
-
 	// We can infer all the following, for a prototype
+	values.InfrastructureSupport = "platforms@digital.justice.gov.uk"
 	values.Environment = "development"
 	values.IsProduction = "false"
 	values.Application = "Gov.UK Prototype Kit"
