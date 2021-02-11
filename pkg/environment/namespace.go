@@ -22,6 +22,7 @@ type Namespace struct {
 	OwnerEmail            string
 	SlackChannel          string
 	SourceCode            string
+	ReviewAfter           string
 }
 
 // This is a public function so that we can use it in our tests
@@ -54,6 +55,7 @@ func (ns *Namespace) parseYaml(yamlData []byte) error {
 				Application  string `yaml:"cloud-platform.justice.gov.uk/application"`
 				Owner        string `yaml:"cloud-platform.justice.gov.uk/owner"`
 				SourceCode   string `yaml:"cloud-platform.justice.gov.uk/source-code"`
+				ReviewAfter  string `yaml:"cloud-platform.justice.gov.uk/review-after"`
 			} `yaml:"annotations"`
 		} `yaml:"metadata"`
 	}
@@ -74,6 +76,7 @@ func (ns *Namespace) parseYaml(yamlData []byte) error {
 	ns.Owner = t.Metadata.Annotations.Owner
 	ns.OwnerEmail = strings.Split(t.Metadata.Annotations.Owner, ": ")[1]
 	ns.SourceCode = t.Metadata.Annotations.SourceCode
+	ns.ReviewAfter = t.Metadata.Annotations.ReviewAfter
 
 	return nil
 }
