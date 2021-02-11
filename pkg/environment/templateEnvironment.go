@@ -67,16 +67,20 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 	q.getAnswer()
 	values.Environment = q.value
 
-	q = userQuestion{
-		description: heredoc.Doc(`
+	if q.value == "development" {
+		values.IsProduction = "false"
+	} else {
+		q = userQuestion{
+			description: heredoc.Doc(`
 			Is this a production namespace?
 			Please enter "true" or "false"
 			 `),
-		prompt:    "Prouduction?",
-		validator: new(trueFalseValidator),
+			prompt:    "Production?",
+			validator: new(trueFalseValidator),
+		}
+		q.getAnswer()
+		values.IsProduction = q.value
 	}
-	q.getAnswer()
-	values.IsProduction = q.value
 
 	q = userQuestion{
 		description: heredoc.Doc(`
