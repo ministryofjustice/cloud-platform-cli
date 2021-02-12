@@ -3,6 +3,7 @@ package environment
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/gookit/color"
@@ -67,16 +68,37 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 	q.getAnswer()
 	values.Environment = q.value
 
-	q = userQuestion{
-		description: heredoc.Doc(`
-			Is this a production namespace?
-			Please enter "true" or "false"
+	if q.value == "development" || q.value == "dev" {
+		values.IsProduction = "false"
+
+		q = userQuestion{
+			description: heredoc.Doc(`
+			Is this a sandbox/scratch namespace (e.g. for experimentation, or working through a tutorial)?
+			Please enter "yes" or "no"
 			 `),
-		prompt:    "Prouduction?",
-		validator: new(trueFalseValidator),
+			prompt:    "Sandbox?",
+			validator: new(yesNoValidator),
+		}
+		q.getAnswer()
+		if q.value == "yes" {
+			values.ReviewAfter = reviewAfter()
+		}
+	} else {
+		q = userQuestion{
+			description: heredoc.Doc(`
+			Is this a production namespace?
+			Please enter "yes" or "no"
+			 `),
+			prompt:    "Production?",
+			validator: new(yesNoValidator),
+		}
+		q.getAnswer()
+		if q.value == "yes" {
+			values.IsProduction = "true"
+		} else {
+			values.IsProduction = "false"
+		}
 	}
-	q.getAnswer()
-	values.IsProduction = q.value
 
 	q = userQuestion{
 		description: heredoc.Doc(`
@@ -260,4 +282,8 @@ func createDirHash(nsValues *Namespace) error {
 	}
 
 	return nil
+}
+
+func reviewAfter() string {
+	return fmt.Sprintf(time.Now().AddDate(0, 3, 0).Format("2006-01-02"))
 }
