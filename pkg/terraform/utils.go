@@ -13,6 +13,7 @@ func targetDirs(file string) ([]string, error) {
 	dirsAllowed := []string{
 		"terraform/cloud-platform-components",
 		"terraform/cloud-platform",
+		"terraform/global-resources",
 		"terraform/cloud-platform-eks/components",
 		"terraform/cloud-platform-eks",
 		"terraform/cloud-platform-account",
