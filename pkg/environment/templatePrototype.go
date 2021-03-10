@@ -126,16 +126,6 @@ func promptUserForPrototypeValues() (*Prototype, error) {
 	values.SlackChannel = q.value
 
 	q = userQuestion{
-		description: heredoc.Doc(`What is the email address for the team
-			which owns the application?
-			(this should not be a named individual's email address)
-			 `),
-		prompt:    "Team Email",
-		validator: new(teamEmailValidator),
-	}
-	q.getAnswer()
-
-	q = userQuestion{
 		description: heredoc.Doc(`Which team in your organisation is responsible
 			for this application? (e.g. Sentence Planning)
 			 `),
