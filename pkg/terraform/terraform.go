@@ -66,7 +66,13 @@ func (s *Commander) Terraform(args ...string) (*CmdOutput, error) {
 		}
 		contextLogger.Error("cmd.Run() failed with:")
 		contextLogger.Error(cmd.Stderr)
-		return nil, err
+
+		cmdOutput := CmdOutput{
+			Stdout:   stdoutBuf.String(),
+			Stderr:   stderrBuf.String(),
+			ExitCode: exitCode,
+		}
+		return &cmdOutput, err
 	} else {
 		ws := cmd.ProcessState.Sys().(syscall.WaitStatus)
 		exitCode = ws.ExitStatus()
@@ -145,6 +151,12 @@ func (s *Commander) CheckDivergence() error {
 
 	output, err := s.Terraform(arg...)
 	if err != nil {
+		// there is a drift and hence the cmd returns err with exitcode 2
+		if output.ExitCode == 2 {
+			if s.DisplayTfOutput && output != nil {
+				output.redacted()
+			}
+		}
 		return err
 	}
 
@@ -155,7 +167,6 @@ func (s *Commander) CheckDivergence() error {
 	if output.ExitCode == 0 {
 		return nil
 	}
-
 	return err
 }
 
