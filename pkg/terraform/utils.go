@@ -14,8 +14,8 @@ func targetDirs(file string) ([]string, error) {
 		"terraform/cloud-platform-components",
 		"terraform/cloud-platform",
 		"terraform/global-resources",
-		"terraform/cloud-platform-eks/components",
-		"terraform/cloud-platform-eks",
+		"terraform/aws-accounts/cloud-platform-aws/vpc/eks/components",
+		"terraform/aws-accounts/cloud-platform-aws/vpc/eks",
 		"terraform/cloud-platform-account",
 		"terraform/cloud-platform-network",
 	}
