@@ -32,7 +32,7 @@ changelog:
 brews:
   - tap:
       owner: ministryofjustice
-      name: homebrew-cloud-platform-cli
+      name: homebrew-cloud-platform-tap
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     folder: Formula
     homepage: https://user-guide.cloud-platform.service.justice.gov.uk/#cloud-platform-user-guide
