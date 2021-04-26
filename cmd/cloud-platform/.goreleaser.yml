@@ -38,5 +38,7 @@ brews:
     homepage: https://user-guide.cloud-platform.service.justice.gov.uk/#cloud-platform-user-guide
     description: Multi-purpose CLI for Ministry of Justice Cloud Platform.
     license: MIT
+    install: |
+      bin.install "cloud-platform"
     dependencies:
     - name: go
