@@ -1,3 +1,9 @@
+env:
+  - GO111MODULE=on
+  - GOPROXY=https://gocenter.io
+before:
+  hooks:
+    - go mod download
 builds:
 - env:
     - CGO_ENABLED=0
@@ -23,3 +29,14 @@ changelog:
     - Merge pull request
     - Merge branch
     - go mod tidy
+brews:
+  - tap:
+      owner: ministryofjustice
+      name: homebrew-cloud-platform-cli
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    folder: Formula
+    homepage: https://user-guide.cloud-platform.service.justice.gov.uk/#cloud-platform-user-guide
+    description: Multi-purpose CLI for Ministry of Justice Cloud Platform.
+    license: MIT
+    dependencies:
+    - name: go
