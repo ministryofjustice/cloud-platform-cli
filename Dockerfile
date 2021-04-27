@@ -16,7 +16,7 @@ RUN pwd && ls
 FROM alpine:3.11.0
 
 ENV \
-  KUBECTL_VERSION=1.17.12 
+  KUBECTL_VERSION=1.18.16
 
 RUN \
   apk add \
