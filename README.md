@@ -2,7 +2,7 @@
 
 [![Releases](https://img.shields.io/github/release/ministryofjustice/cloud-platform-cli/all.svg?style=flat-square)](https://github.com/ministryofjustice/cloud-platform-cli/releases)
 
-`cloud-platform` is a command-line tool used by the cloud-platform team to achieve common repetitive tasks against the platform. The resulting binary checks things like:
+`cloud-platform` is a command-line tool used by the cloud-platform team and tenants to perform actions on the platform, for example:
 
    - Create templates for the environments repo
    - Divergences in terraform states
