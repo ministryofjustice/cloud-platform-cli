@@ -11,8 +11,8 @@ func targetDirs(file string) ([]string, error) {
 	var dirs []string // Directories where tf plan is going to be executed
 
 	dirsAllowed := []string{
-		"terraform/cloud-platform-components",
-		"terraform/cloud-platform",
+		"terraform/aws-accounts/cloud-platform-aws/vpc/kops/components",
+		"terraform/aws-accounts/cloud-platform-aws/vpc/kops",
 		"terraform/global-resources",
 		"terraform/aws-accounts/cloud-platform-aws/vpc/eks/components",
 		"terraform/aws-accounts/cloud-platform-aws/vpc/eks",
