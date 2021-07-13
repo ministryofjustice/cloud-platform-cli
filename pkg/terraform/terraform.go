@@ -336,6 +336,24 @@ func (c *Commander) workspaces() ([]string, error) {
 	return ws, nil
 }
 
+// kubectlCurContext return the cluster name of current context set in kubectl.
+func (c *Commander) kubectlCurContext() (string, error) {
+	arg := []string{
+		"config",
+		"current-context",
+	}
+
+	output, err := c.Kubectl(arg...)
+	if err != nil {
+		return "", err
+	}
+
+	cluster := strings.Split(output.Stdout, ".")
+
+	fmt.Printf("Plan for cluster: %v\n", cluster[0])
+	return cluster[0], nil
+}
+
 // kubectlUseContext use the context passed as input arg.
 func (c *Commander) kubectlUseContext(contextName string) error {
 	arg := []string{
@@ -388,6 +406,18 @@ func (c *Commander) BulkPlan() error {
 			if err != nil {
 				return err
 			}
+			cluster, err := c.kubectlCurContext()
+			if err != nil {
+				return err
+			}
+			if cluster == c.Workspace {
+				err := c.Plan()
+				if err != nil {
+					return err
+				}
+			} else {
+				log.WithFields(log.Fields{"dir": dir}).Fatal("No matching Workspace and kubectl context")
+			}
 			err = c.Plan()
 			if err != nil {
 				return err
@@ -406,9 +436,18 @@ func (c *Commander) BulkPlan() error {
 				return err
 			}
 
-			err = c.Plan()
+			cluster, err := c.kubectlCurContext()
 			if err != nil {
 				return err
+			}
+			fmt.Printf("Plan for cluster: %v\n", cluster)
+			if cluster == c.Workspace {
+				err := c.Plan()
+				if err != nil {
+					return err
+				}
+			} else {
+				log.WithFields(log.Fields{"dir": dir}).Fatal("No matching Workspace and kubectl context")
 			}
 
 		} else {
