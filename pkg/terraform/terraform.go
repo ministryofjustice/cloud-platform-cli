@@ -328,7 +328,7 @@ func (c *Commander) workspaces() ([]string, error) {
 		return nil, err
 	}
 
-	ws := strings.Split(output.Stdout, "\n")
+	ws := strings.Split(output.Stdout, " ")
 	for i := range ws {
 		ws[i] = strings.TrimSpace(ws[i])
 	}
@@ -349,8 +349,6 @@ func (c *Commander) kubectlCurContext() (string, error) {
 	}
 
 	cluster := strings.Split(output.Stdout, ".")
-
-	fmt.Printf("Plan for cluster: %v\n", cluster[0])
 	return cluster[0], nil
 }
 
@@ -410,7 +408,9 @@ func (c *Commander) BulkPlan() error {
 			if err != nil {
 				return err
 			}
+
 			if cluster == c.Workspace {
+				log.WithFields(log.Fields{"cluster": cluster, "workspace": c.Workspace}).Info("Doing Terraform Plan")
 				err := c.Plan()
 				if err != nil {
 					return err
@@ -440,8 +440,8 @@ func (c *Commander) BulkPlan() error {
 			if err != nil {
 				return err
 			}
-			fmt.Printf("Plan for cluster: %v\n", cluster)
 			if cluster == c.Workspace {
+				log.WithFields(log.Fields{"cluster": cluster, "workspace": c.Workspace}).Info("Doing Terraform Plan")
 				err := c.Plan()
 				if err != nil {
 					return err
@@ -492,9 +492,23 @@ func (c *Commander) BulkApply() error {
 			c.cmdEnv = append(os.Environ(), "KUBE_CTX=live-1.cloud-platform.service.justice.gov.uk")
 			c.Workspace = "live-1"
 
-			err := c.Apply()
+			err := c.kubectlUseContext("live-1.cloud-platform.service.justice.gov.uk")
 			if err != nil {
 				return err
+			}
+			cluster, err := c.kubectlCurContext()
+			if err != nil {
+				return err
+			}
+
+			if cluster == c.Workspace {
+				log.WithFields(log.Fields{"cluster": cluster, "workspace": c.Workspace}).Info("Doing Terraform Apply")
+				err := c.Apply()
+				if err != nil {
+					return err
+				}
+			} else {
+				log.WithFields(log.Fields{"dir": dir}).Fatal("No matching Workspace and kubectl context")
 			}
 		} else if contains(ws, "manager") {
 			log.WithFields(log.Fields{"dir": dir}).Info("Using manager context with: KUBE_CTX=manager.cloud-platform.service.justice.gov.uk")
@@ -502,9 +516,24 @@ func (c *Commander) BulkApply() error {
 			c.cmdEnv = append(os.Environ(), "KUBE_CTX=manager.cloud-platform.service.justice.gov.uk")
 			c.Workspace = "manager"
 
-			err := c.Apply()
+			err := c.kubectlUseContext("manager.cloud-platform.service.justice.gov.uk")
 			if err != nil {
 				return err
+			}
+
+			cluster, err := c.kubectlCurContext()
+			if err != nil {
+				return err
+			}
+
+			if cluster == c.Workspace {
+				log.WithFields(log.Fields{"cluster": cluster, "workspace": c.Workspace}).Info("Doing Terraform Apply")
+				err := c.Apply()
+				if err != nil {
+					return err
+				}
+			} else {
+				log.WithFields(log.Fields{"dir": dir}).Fatal("No matching Workspace and kubectl context")
 			}
 		} else {
 			log.WithFields(log.Fields{"dir": dir}).Info("No context, normal terraform plan")
