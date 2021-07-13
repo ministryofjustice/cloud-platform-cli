@@ -91,6 +91,63 @@ func (s *Commander) Terraform(args ...string) (*CmdOutput, error) {
 	}
 }
 
+// Kubectl creates kubectl command to be executed
+func (s *Commander) Kubectl(args ...string) (*CmdOutput, error) {
+
+	var stdoutBuf bytes.Buffer
+	var stderrBuf bytes.Buffer
+	var exitCode int
+	var err error
+
+	contextLogger := log.WithFields(log.Fields{
+		"err":    err,
+		"stdout": stdoutBuf.String(),
+		"stderr": stderrBuf.String(),
+		"dir":    s.cmdDir,
+	})
+
+	cmd := exec.Command("kubectl", args...)
+
+	if s.cmdDir != "" {
+		cmd.Dir = s.cmdDir
+	}
+
+	cmd.Stdout = &stdoutBuf
+	cmd.Stderr = &stderrBuf
+
+	err = cmd.Run()
+	if err != nil {
+		if exitError, ok := err.(*exec.ExitError); ok {
+			ws := exitError.Sys().(syscall.WaitStatus)
+			exitCode = ws.ExitStatus()
+		}
+		contextLogger.Error("cmd.Run() failed with:")
+		contextLogger.Error(cmd.Stderr)
+
+		cmdOutput := CmdOutput{
+			Stdout:   stdoutBuf.String(),
+			Stderr:   stderrBuf.String(),
+			ExitCode: exitCode,
+		}
+		return &cmdOutput, err
+	} else {
+		ws := cmd.ProcessState.Sys().(syscall.WaitStatus)
+		exitCode = ws.ExitStatus()
+	}
+
+	cmdOutput := CmdOutput{
+		Stdout:   stdoutBuf.String(),
+		Stderr:   stderrBuf.String(),
+		ExitCode: exitCode,
+	}
+
+	if cmdOutput.ExitCode != 0 {
+		return &cmdOutput, err
+	} else {
+		return &cmdOutput, nil
+	}
+}
+
 // Init executes terraform init.
 func (s *Commander) Init(p bool) error {
 
@@ -279,6 +336,22 @@ func (c *Commander) workspaces() ([]string, error) {
 	return ws, nil
 }
 
+// kubectlUseContext use the context passed as input arg.
+func (c *Commander) kubectlUseContext(contextName string) error {
+	arg := []string{
+		"config",
+		"use-context",
+		contextName,
+	}
+
+	_, err := c.Kubectl(arg...)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // BulkPlan executes plan against all directories that changed in the PR.
 func (c *Commander) BulkPlan() error {
 	dirs, err := targetDirs(c.BulkTfPaths)
@@ -309,20 +382,35 @@ func (c *Commander) BulkPlan() error {
 			c.cmdEnv = append(os.Environ(), "KUBE_CTX=live-1.cloud-platform.service.justice.gov.uk")
 			c.Workspace = "live-1"
 
-			err := c.Plan()
+			log.WithFields(log.Fields{"dir": dir}).Info("Setting kubectl current-context with: kubectl config use-context live-1.cloud-platform.service.justice.gov.uk")
+
+			err := c.kubectlUseContext("live-1.cloud-platform.service.justice.gov.uk")
 			if err != nil {
 				return err
 			}
+			err = c.Plan()
+			if err != nil {
+				return err
+			}
+
 		} else if contains(ws, "manager") {
 			log.WithFields(log.Fields{"dir": dir}).Info("Using manager context with: KUBE_CTX=manager.cloud-platform.service.justice.gov.uk")
 
 			c.cmdEnv = append(os.Environ(), "KUBE_CTX=manager.cloud-platform.service.justice.gov.uk")
 			c.Workspace = "manager"
 
-			err := c.Plan()
+			log.WithFields(log.Fields{"dir": dir}).Info("Setting kubectl current-context with: kubectl config use-context manager.cloud-platform.service.justice.gov.uk")
+
+			err := c.kubectlUseContext("manager.cloud-platform.service.justice.gov.uk")
 			if err != nil {
 				return err
 			}
+
+			err = c.Plan()
+			if err != nil {
+				return err
+			}
+
 		} else {
 			log.WithFields(log.Fields{"dir": dir}).Info("No context, normal terraform plan")
 			err := c.Plan()
