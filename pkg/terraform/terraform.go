@@ -336,8 +336,10 @@ func (c *Commander) workspaces() ([]string, error) {
 	return ws, nil
 }
 
-// kubectlCurContext return the cluster name of current context set in kubectl.
-func (c *Commander) kubectlCurContext() (string, error) {
+// kubectlContext return the cluster name of current context set in kubectl.
+// PS: It is assumed the context is stored in format <cluster-name>.cloud-platform.service.justice.gov.uk
+// in kubeconfig file from where kubectl fetches the context.
+func (c *Commander) kubectlContext() (string, error) {
 	arg := []string{
 		"config",
 		"current-context",
@@ -404,7 +406,7 @@ func (c *Commander) BulkPlan() error {
 			if err != nil {
 				return err
 			}
-			cluster, err := c.kubectlCurContext()
+			cluster, err := c.kubectlContext()
 			if err != nil {
 				return err
 			}
@@ -436,7 +438,7 @@ func (c *Commander) BulkPlan() error {
 				return err
 			}
 
-			cluster, err := c.kubectlCurContext()
+			cluster, err := c.kubectlContext()
 			if err != nil {
 				return err
 			}
@@ -496,7 +498,7 @@ func (c *Commander) BulkApply() error {
 			if err != nil {
 				return err
 			}
-			cluster, err := c.kubectlCurContext()
+			cluster, err := c.kubectlContext()
 			if err != nil {
 				return err
 			}
@@ -521,7 +523,7 @@ func (c *Commander) BulkApply() error {
 				return err
 			}
 
-			cluster, err := c.kubectlCurContext()
+			cluster, err := c.kubectlContext()
 			if err != nil {
 				return err
 			}
