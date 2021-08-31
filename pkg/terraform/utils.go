@@ -2,6 +2,7 @@ package terraform
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -52,4 +53,13 @@ func contains(s []string, e string) bool {
 		}
 	}
 	return false
+}
+
+// prettyPrint prints nice and big headers
+func prettyPrint(msg string) {
+	fmt.Printf("\n")
+	fmt.Println("#########################################################################")
+	fmt.Print(msg)
+	fmt.Println("#########################################################################")
+	fmt.Printf("\n")
 }
