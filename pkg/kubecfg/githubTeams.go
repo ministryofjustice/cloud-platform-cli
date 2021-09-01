@@ -8,7 +8,7 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 )
 
 // ShowGithubTeams prints tokens claims that are useful (among other things) for cloud platform

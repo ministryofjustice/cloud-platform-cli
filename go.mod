@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/MakeNowJust/heredoc v1.0.0
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/gookit/color v1.2.5
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/sirupsen/logrus v1.4.2
