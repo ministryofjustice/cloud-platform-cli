@@ -8,7 +8,7 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 )
 
 // ShowGithubTeams prints tokens claims that are useful (among other things) for cloud platform
@@ -74,7 +74,7 @@ func getTokenClaims(t string) (*jwt.MapClaims, error) {
 		return nil, err
 	}
 
-	if _, ok := token.Claims.(jwt.MapClaims); ok != true {
+	if _, ok := token.Claims.(jwt.MapClaims); !ok {
 		return nil, err
 	}
 
