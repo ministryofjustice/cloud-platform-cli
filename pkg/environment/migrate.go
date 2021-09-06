@@ -17,7 +17,7 @@ func Migrate(cmd *cobra.Command, args []string) error {
 	src := fmt.Sprintf("../%s", nsName)
 	dst := fmt.Sprintf("../../live.cloud-platform.service.justice.gov.uk/%s", nsName)
 
-	err = otiai10.Copy(src, dst, opt)
+	err = otiai10.Copy(src, dst)
 	if err != nil {
 		return err
 	}
