@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
@@ -34,6 +35,27 @@ func (re *RepoEnvironment) mustBeInANamespaceFolder() error {
 	}
 
 	return nil
+}
+
+// getNamespaceName ensure we are inside namespace folder and also returns the
+// namespace name
+func (re *RepoEnvironment) getNamespaceName() (string, error) {
+	err := re.mustBeInCloudPlatformEnvironments()
+	if err != nil {
+		return "", err
+	}
+
+	err = re.mustBeInANamespaceFolder()
+	if err != nil {
+		return "", err
+	}
+
+	nsFullPath, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Base(nsFullPath), nil
 }
 
 // set and return the name of the git repository which the current working
