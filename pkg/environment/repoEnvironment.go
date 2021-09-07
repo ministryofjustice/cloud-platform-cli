@@ -40,11 +40,6 @@ func (re *RepoEnvironment) mustBeInANamespaceFolder() error {
 // getNamespaceName ensure we are inside namespace folder and also returns the
 // namespace name
 func (re *RepoEnvironment) getNamespaceName() (string, error) {
-	err := re.mustBeInCloudPlatformEnvironments()
-	if err != nil {
-		return "", err
-	}
-
 	err = re.mustBeInANamespaceFolder()
 	if err != nil {
 		return "", err
