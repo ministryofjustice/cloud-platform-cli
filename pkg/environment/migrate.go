@@ -9,6 +9,13 @@ import (
 
 func Migrate(cmd *cobra.Command, args []string) error {
 	re := RepoEnvironment{}
+
+	// this already checks we are within the environment repo.
+	err := re.mustBeInANamespaceFolder()
+	if err != nil {
+		return err
+	}
+
 	nsName, err := re.getNamespaceName()
 	if err != nil {
 		return err
