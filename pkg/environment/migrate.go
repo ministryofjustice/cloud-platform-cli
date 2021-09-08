@@ -1,12 +1,21 @@
 package environment
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
+	"log"
+	"os"
+	"path/filepath"
 
+	"github.com/gookit/color"
 	otiai10 "github.com/otiai10/copy"
 	"github.com/spf13/cobra"
 )
 
+// Migrate subcommand copy a namespace folder from live-1 -> live directory.
+// It also performs some basic checks (IAM roles & and ElasticSearch) to ensure
+// the namespace will not have problem during the migration
 func Migrate(cmd *cobra.Command, args []string) error {
 	re := RepoEnvironment{}
 
@@ -29,7 +38,43 @@ func Migrate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Printf("Namespace %s was succesffully migrated to live folder", nsName)
+	color.Info.Printf("Namespace %s was succesffully migrated to live folder\n", nsName)
+
+	// recursive grep in Golang
+	filepath.Walk(".", func(path string, file os.FileInfo, err error) error {
+		if !file.IsDir() {
+			envHasIAMannotation := grepFile(path, []byte("iam.amazonaws.com/permitted"))
+			envHasElasticSearch := grepFile(path, []byte("github.com/ministryofjustice/cloud-platform-terraform-elasticsearch"))
+
+			if envHasIAMannotation >= 1 {
+				color.Error.Println("\nThis namespace uses IAM policies - please contact Cloud-Platform team before proceeding")
+			}
+
+			if envHasElasticSearch >= 1 {
+				color.Error.Println("\nThis namespace uses ElasticSearch module - please contact Cloud-Platform team before proceeding")
+			}
+		}
+		return nil
+	})
 
 	return nil
+}
+
+func grepFile(file string, pat []byte) int64 {
+	patCount := int64(0)
+	f, err := os.Open(file)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		if bytes.Contains(scanner.Bytes(), pat) {
+			patCount++
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+	}
+	return patCount
 }
