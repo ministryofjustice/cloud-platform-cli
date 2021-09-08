@@ -24,6 +24,15 @@ func TestRequireNamespaceFolder(t *testing.T) {
 	os.Remove("00-namespace.yaml")
 }
 
+func TestGetNamespaceName(t *testing.T) {
+	re := RepoEnvironment{currentRepository: cloudPlatformEnvRepo}
+	currentDirName, _ := re.getNamespaceName()
+
+	if currentDirName != "environment" {
+		t.Errorf("Expected \"environment\" as current folder, got: %s", currentDirName)
+	}
+}
+
 func TestRequireCpEnvRepo(t *testing.T) {
 	// Pass if we're in the right repository
 	re := RepoEnvironment{currentRepository: cloudPlatformEnvRepo}

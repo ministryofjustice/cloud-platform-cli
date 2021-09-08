@@ -14,6 +14,7 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentCmd.AddCommand(environmentS3Cmd)
 	environmentCmd.AddCommand(environmentSvcCmd)
 	environmentCmd.AddCommand(environmentCreateCmd)
+	environmentCmd.AddCommand(environmentMigrateCmd)
 	environmentEcrCmd.AddCommand(environmentEcrCreateCmd)
 	environmentRdsCmd.AddCommand(environmentRdsCreateCmd)
 	environmentS3Cmd.AddCommand(environmentS3CreateCmd)
@@ -45,6 +46,16 @@ var environmentEcrCmd = &cobra.Command{
 	$ cloud-platform environment ecr create
 	`),
 	PreRun: upgradeIfNotLatest,
+}
+
+var environmentMigrateCmd = &cobra.Command{
+	Use:   "migrate",
+	Short: `Migrate command to help with live migration`,
+	Example: heredoc.Doc(`
+	$ cloud-platform environment migrate
+	`),
+	PreRun: upgradeIfNotLatest,
+	RunE:   environment.Migrate,
 }
 
 var environmentEcrCreateCmd = &cobra.Command{
