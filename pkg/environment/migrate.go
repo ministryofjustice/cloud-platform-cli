@@ -4,12 +4,16 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 
 	"github.com/gookit/color"
+	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/hclwrite"
 	otiai10 "github.com/otiai10/copy"
+	"github.com/zclconf/go-cty/cty"
 )
 
 // Migrate subcommand copy a namespace folder from live-1 -> live directory.
@@ -61,11 +65,46 @@ func Migrate(skipWarning bool) error {
 			}
 
 			if envHasElasticSearch >= 1 {
-				color.Error.Println("\nIMPORTANT: This namespace uses ElasticSearch module - please contact Cloud-Platform team before proceeding")
+				// color.Error.Println("\nIMPORTANT: This namespace uses ElasticSearch module - please contact Cloud-Platform team before proceeding")
+				err = changeElasticSearch(path)
+				if err != nil {
+					log.Println(err)
+				}
 			}
 		}
 		return nil
 	})
+
+	return nil
+}
+
+func changeElasticSearch(file string) error {
+	data, err := ioutil.ReadFile(file)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	f, diags := hclwrite.ParseConfig(data, file, hcl.Pos{
+		Line:   1,
+		Column: 1,
+	})
+
+	if diags.HasErrors() {
+		return fmt.Errorf("Error getting TF resource: %s", diags)
+	}
+
+	blocks := f.Body().Blocks()
+
+	f.Body().RemoveBlock(blocks[0])
+
+	block := f.Body().AppendBlock(blocks[0])
+
+	blockBody := block.Body()
+
+	blockBody.SetAttributeValue("irsa_enabled", cty.StringVal("true"))
+	blockBody.SetAttributeValue("assume_enabled", cty.StringVal("false"))
+
+	fmt.Println(string(f.Bytes()))
 
 	return nil
 }
