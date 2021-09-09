@@ -10,13 +10,12 @@ import (
 
 	"github.com/gookit/color"
 	otiai10 "github.com/otiai10/copy"
-	"github.com/spf13/cobra"
 )
 
 // Migrate subcommand copy a namespace folder from live-1 -> live directory.
 // It also performs some basic checks (IAM roles & and ElasticSearch) to ensure
 // the namespace will not have problem during the migration
-func Migrate(cmd *cobra.Command, args []string) error {
+func Migrate(skipWarning bool) error {
 	re := RepoEnvironment{}
 
 	// this already checks we are within the environment repo.
@@ -30,6 +29,17 @@ func Migrate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	if skipWarning == false {
+		ann, err := hasExternalDNSAnnotations(nsName)
+		if err != nil {
+			return err
+		}
+
+		if ann == false {
+			color.Error.Printf("Namespace: %s doesn't have the correct ingress annotation.", nsName)
+		}
+	}
+
 	src := fmt.Sprintf("../%s", nsName)
 	dst := fmt.Sprintf("../../live.cloud-platform.service.justice.gov.uk/%s", nsName)
 
@@ -38,7 +48,7 @@ func Migrate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	color.Info.Printf("Namespace %s was succesffully migrated to live folder\n", nsName)
+	color.Info.Printf("\nNamespace %s was succesffully migrated to live folder\n", nsName)
 
 	// recursive grep in Golang
 	filepath.Walk(".", func(path string, file os.FileInfo, err error) error {
@@ -47,11 +57,11 @@ func Migrate(cmd *cobra.Command, args []string) error {
 			envHasElasticSearch := grepFile(path, []byte("github.com/ministryofjustice/cloud-platform-terraform-elasticsearch"))
 
 			if envHasIAMannotation >= 1 {
-				color.Error.Println("\nThis namespace uses IAM policies - please contact Cloud-Platform team before proceeding")
+				color.Error.Println("\nIMPORTANT: This namespace uses IAM policies - please contact Cloud-Platform team before proceeding")
 			}
 
 			if envHasElasticSearch >= 1 {
-				color.Error.Println("\nThis namespace uses ElasticSearch module - please contact Cloud-Platform team before proceeding")
+				color.Error.Println("\nIMPORTANT: This namespace uses ElasticSearch module - please contact Cloud-Platform team before proceeding")
 			}
 		}
 		return nil
