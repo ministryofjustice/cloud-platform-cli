@@ -104,7 +104,10 @@ func changeElasticSearch(file string) error {
 	blockBody.SetAttributeValue("irsa_enabled", cty.StringVal("true"))
 	blockBody.SetAttributeValue("assume_enabled", cty.StringVal("false"))
 
-	fmt.Println(string(f.Bytes()))
+	err = os.WriteFile(file, f.Bytes(), 0644)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
