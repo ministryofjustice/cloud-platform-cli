@@ -78,10 +78,13 @@ func Migrate(skipWarning bool) error {
 	return nil
 }
 
+// changeElasticSearch takes the location of a Terraform HCL file (as a string)
+// parses, then locates the ElasticSearch block. To add two additional attributes
+// the block is removed and reacreated at the bottom of the file.
 func changeElasticSearch(file string) error {
 	data, err := ioutil.ReadFile(file)
 	if err != nil {
-		fmt.Println(err)
+		return fmt.Errorf("Error reading file %s", err)
 	}
 
 	f, diags := hclwrite.ParseConfig(data, file, hcl.Pos{
@@ -93,14 +96,21 @@ func changeElasticSearch(file string) error {
 		return fmt.Errorf("Error getting TF resource: %s", diags)
 	}
 
+	// Grab slice of blocks in HCL file.
 	blocks := f.Body().Blocks()
 
+	// We assume the first block will always be the
+	// ElasticSearch module. This is a fair assumption
+	// due to how the user document was written.
 	f.Body().RemoveBlock(blocks[0])
 
+	// Create the new ElasticSearch module at the bottom
+	// of the page i.e. append.
 	block := f.Body().AppendBlock(blocks[0])
 
 	blockBody := block.Body()
 
+	// Set the required attributes for migration to live.
 	blockBody.SetAttributeValue("irsa_enabled", cty.StringVal("true"))
 	blockBody.SetAttributeValue("assume_enabled", cty.StringVal("false"))
 
