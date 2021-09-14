@@ -65,10 +65,9 @@ func Migrate(skipWarning bool) error {
 			}
 
 			if envHasElasticSearch >= 1 {
-				// color.Error.Println("\nIMPORTANT: This namespace uses ElasticSearch module - please contact Cloud-Platform team before proceeding")
 				err = changeElasticSearch(path)
 				if err != nil {
-					log.Println(err)
+					color.Error.Println("\nIMPORTANT: This namespace uses ElasticSearch module - please contact Cloud-Platform team before proceeding", err)
 				}
 			}
 		}
@@ -80,7 +79,7 @@ func Migrate(skipWarning bool) error {
 
 // changeElasticSearch takes the location of a Terraform HCL file (as a string)
 // parses, then locates the ElasticSearch block. To add two additional attributes
-// the block is removed and reacreated at the bottom of the file.
+// the block is removed and recreated at the bottom of the file.
 func changeElasticSearch(file string) error {
 	data, err := ioutil.ReadFile(file)
 	if err != nil {
