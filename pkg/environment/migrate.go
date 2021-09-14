@@ -119,8 +119,8 @@ func changeElasticSearch(file string) error {
 	blockBody := block.Body()
 
 	// Set the required attributes for migration to live.
-	blockBody.SetAttributeValue("irsa_enabled", cty.StringVal("true"))
-	blockBody.SetAttributeValue("assume_enabled", cty.StringVal("false"))
+	blockBody.SetAttributeValue("irsa_enabled", cty.BoolVal(true))
+	blockBody.SetAttributeValue("assume_enabled", cty.BoolVal(false))
 
 	err = os.WriteFile(file, f.Bytes(), 0644)
 	if err != nil {
