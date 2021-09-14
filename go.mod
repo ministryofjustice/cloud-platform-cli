@@ -4,10 +4,9 @@ go 1.16
 
 require (
 	github.com/MakeNowJust/heredoc v1.0.0
-	github.com/davecgh/go-spew v1.1.1
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/golang-jwt/jwt v3.2.2+incompatible
-	github.com/google/go-github/v35 v35.3.0
+	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/gookit/color v1.2.5
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/ministryofjustice/cloud-platform-environments/pkg/ingress v0.0.0-20210908132824-5b6c5cd38c92
