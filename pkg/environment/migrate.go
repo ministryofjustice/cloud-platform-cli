@@ -46,6 +46,25 @@ func Migrate(skipWarning bool) error {
 		}
 	}
 
+	// Required to skip the live-1 pipeline
+	emptyFile, err := os.Create("APPLY_PIPELINE_SKIP_THIS_NAMESPACE")
+	if err != nil {
+		return err
+	}
+	emptyFile.Close()
+
+	src := fmt.Sprintf("../%s", nsName)
+	dst := fmt.Sprintf("../../live.cloud-platform.service.justice.gov.uk/%s", nsName)
+
+	err = otiai10.Copy(src, dst)
+	if err != nil {
+		return err
+	}
+
+	if err := os.Chdir(dst); err != nil {
+		return err
+	}
+
 	// recursive grep in Golang
 	filepath.Walk(".", func(path string, file os.FileInfo, err error) error {
 		if !file.IsDir() {
@@ -70,21 +89,6 @@ func Migrate(skipWarning bool) error {
 		}
 		return nil
 	})
-
-	src := fmt.Sprintf("../%s", nsName)
-	dst := fmt.Sprintf("../../live.cloud-platform.service.justice.gov.uk/%s", nsName)
-
-	err = otiai10.Copy(src, dst)
-	if err != nil {
-		return err
-	}
-
-	// Required to skip the live-1 pipeline
-	emptyFile, err := os.Create("APPLY_PIPELINE_SKIP_THIS_NAMESPACE")
-	if err != nil {
-		return err
-	}
-	emptyFile.Close()
 
 	color.Info.Printf("\nNamespace %s was succesffully migrated to live folder\n", nsName)
 
