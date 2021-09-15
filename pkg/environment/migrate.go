@@ -65,7 +65,6 @@ func Migrate(skipWarning bool) error {
 			}
 
 			if envHasElasticSearch >= 1 {
-
 				err = changeElasticSearch(path)
 				if err != nil {
 					color.Error.Println("\nIMPORTANT: There was an error changing your ElasticSearch module - please contact Cloud-Platform team before proceeding", err)

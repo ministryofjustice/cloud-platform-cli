@@ -2,12 +2,11 @@ package environment
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
-	"runtime"
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
+	"runtime"
 	"testing"
 )
 
