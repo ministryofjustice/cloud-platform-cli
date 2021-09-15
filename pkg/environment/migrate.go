@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -11,6 +12,10 @@ import (
 
 	"github.com/gookit/color"
 	otiai10 "github.com/otiai10/copy"
+
+	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/hclwrite"
+	"github.com/zclconf/go-cty/cty"
 )
 
 // Migrate subcommand copy a namespace folder from live-1 -> live directory.
@@ -57,7 +62,10 @@ func Migrate(skipWarning bool) error {
 			}
 
 			if envHasElasticSearch >= 1 {
-				color.Error.Println("\nIMPORTANT: This namespace uses ElasticSearch module - please contact Cloud-Platform team before proceeding")
+				err = changeElasticSearch(path)
+				if err != nil {
+					color.Error.Println("\nIMPORTANT: There was an error changing your ElasticSearch module - please contact Cloud-Platform team before proceeding", err)
+				}
 			}
 		}
 		return nil
@@ -125,7 +133,9 @@ func changeElasticSearch(file string) error {
 
 	for _, block := range blocks {
 		blockBody := block.Body()
-		if blockBody.Attributes()["source"] == nil { continue }
+		if blockBody.Attributes()["source"] == nil {
+			continue
+		}
 		expr := blockBody.Attributes()["source"].Expr()
 		exprTokens := expr.BuildTokens(nil)
 		var valueTokens hclwrite.Tokens
