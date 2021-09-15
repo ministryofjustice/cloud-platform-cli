@@ -111,7 +111,6 @@ func changeElasticSearch(file string) error {
 	for _, block := range blocks {
 		blockBody := block.Body()
 		if blockBody.Attributes()["source"] == nil { continue }
-		// blockSource := "github.com/ministryofjustice/cloud-platform-terraform-elasticsearch"
 		expr := blockBody.Attributes()["source"].Expr()
 		exprTokens := expr.BuildTokens(nil)
 		var valueTokens hclwrite.Tokens
