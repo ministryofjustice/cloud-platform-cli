@@ -9,8 +9,8 @@ require (
 	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/gookit/color v1.2.5
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
-	github.com/ministryofjustice/cloud-platform-environments/pkg/ingress v0.0.0-20210908132824-5b6c5cd38c92
 	github.com/hashicorp/hcl/v2 v2.10.1
+	github.com/ministryofjustice/cloud-platform-environments/pkg/ingress v0.0.0-20210908132824-5b6c5cd38c92
 	github.com/otiai10/copy v1.6.0
 	github.com/sirupsen/logrus v1.4.2
 	github.com/smartystreets/assertions v1.1.0 // indirect
