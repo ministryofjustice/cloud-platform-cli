@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/gookit/color"
 	"github.com/hashicorp/hcl/v2"
@@ -107,20 +108,21 @@ func changeElasticSearch(file string) error {
 	// Grab slice of blocks in HCL file.
 	blocks := f.Body().Blocks()
 
-	// We assume the first block will always be the
-	// ElasticSearch module. This is a fair assumption
-	// due to how the user document was written.
-	f.Body().RemoveBlock(blocks[0])
-
-	// Create the new ElasticSearch module at the bottom
-	// of the page i.e. append.
-	block := f.Body().AppendBlock(blocks[0])
-
-	blockBody := block.Body()
-
-	// Set the required attributes for migration to live.
-	blockBody.SetAttributeValue("irsa_enabled", cty.BoolVal(true))
-	blockBody.SetAttributeValue("assume_enabled", cty.BoolVal(false))
+	for _, block := range blocks {
+		blockBody := block.Body()
+		if blockBody.Attributes()["source"] == nil { continue }
+		expr := blockBody.Attributes()["source"].Expr()
+		exprTokens := expr.BuildTokens(nil)
+		var valueTokens hclwrite.Tokens
+		for _, t := range exprTokens {
+			valueTokens = append(valueTokens, t)
+		}
+		blockSource := strings.TrimSpace(string(valueTokens.Bytes()))
+		if strings.HasPrefix(blockSource, "\"github.com/ministryofjustice/cloud-platform-terraform-elasticsearch") {
+			blockBody.SetAttributeValue("irsa_enabled", cty.BoolVal(true))
+			blockBody.SetAttributeValue("assume_enabled", cty.BoolVal(false))
+		}
+	}
 
 	err = os.WriteFile(file, f.Bytes(), 0644)
 	if err != nil {
