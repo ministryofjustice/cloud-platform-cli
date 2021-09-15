@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/gookit/color"
 	otiai10 "github.com/otiai10/copy"
@@ -99,4 +100,49 @@ func grepFile(file string, pat []byte) int64 {
 		fmt.Fprintln(os.Stderr, err)
 	}
 	return patCount
+}
+
+// changeElasticSearch takes the location of a Terraform HCL file (as a string)
+// parses, then locates the ElasticSearch block. To add two additional attributes
+// the block is removed and recreated at the bottom of the file.
+func changeElasticSearch(file string) error {
+	data, err := ioutil.ReadFile(file)
+	if err != nil {
+		return fmt.Errorf("Error reading file %s", err)
+	}
+
+	f, diags := hclwrite.ParseConfig(data, file, hcl.Pos{
+		Line:   1,
+		Column: 1,
+	})
+
+	if diags.HasErrors() {
+		return fmt.Errorf("Error getting TF resource: %s", diags)
+	}
+
+	// Grab slice of blocks in HCL file.
+	blocks := f.Body().Blocks()
+
+	for _, block := range blocks {
+		blockBody := block.Body()
+		if blockBody.Attributes()["source"] == nil { continue }
+		expr := blockBody.Attributes()["source"].Expr()
+		exprTokens := expr.BuildTokens(nil)
+		var valueTokens hclwrite.Tokens
+		for _, t := range exprTokens {
+			valueTokens = append(valueTokens, t)
+		}
+		blockSource := strings.TrimSpace(string(valueTokens.Bytes()))
+		if strings.HasPrefix(blockSource, "\"github.com/ministryofjustice/cloud-platform-terraform-elasticsearch") {
+			blockBody.SetAttributeValue("irsa_enabled", cty.BoolVal(true))
+			blockBody.SetAttributeValue("assume_enabled", cty.BoolVal(false))
+		}
+	}
+
+	err = os.WriteFile(file, f.Bytes(), 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
