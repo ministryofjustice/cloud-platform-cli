@@ -7,6 +7,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	MigrateSkipWarning    bool
+	MigrateCheckNamespace string
+)
+
 func addEnvironmentCmd(topLevel *cobra.Command) {
 	topLevel.AddCommand(environmentCmd)
 	environmentCmd.AddCommand(environmentEcrCmd)
@@ -15,12 +20,17 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentCmd.AddCommand(environmentSvcCmd)
 	environmentCmd.AddCommand(environmentCreateCmd)
 	environmentCmd.AddCommand(environmentMigrateCmd)
+	environmentCmd.AddCommand(environmentMigrateCheckCmd)
 	environmentEcrCmd.AddCommand(environmentEcrCreateCmd)
 	environmentRdsCmd.AddCommand(environmentRdsCreateCmd)
 	environmentS3Cmd.AddCommand(environmentS3CreateCmd)
 	environmentSvcCmd.AddCommand(environmentSvcCreateCmd)
 	environmentCmd.AddCommand(environmentPrototypeCmd)
 	environmentPrototypeCmd.AddCommand(environmentPrototypeCreateCmd)
+
+	// flags
+	environmentMigrateCmd.Flags().BoolVarP(&MigrateSkipWarning, "skip-warnings", "s", false, "Whether to skip the check")
+	environmentMigrateCheckCmd.Flags().StringVarP(&MigrateCheckNamespace, "namespace", "n", "", "Namespace which you want to perform the checks")
 }
 
 var environmentCmd = &cobra.Command{
@@ -55,7 +65,29 @@ var environmentMigrateCmd = &cobra.Command{
 	$ cloud-platform environment migrate
 	`),
 	PreRun: upgradeIfNotLatest,
-	RunE:   environment.Migrate,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if err := environment.Migrate(MigrateSkipWarning); err != nil {
+			return err
+		}
+
+		return nil
+	},
+}
+
+var environmentMigrateCheckCmd = &cobra.Command{
+	Use:   "migrate-check",
+	Short: `migrate-check command to help with live migration`,
+	Example: heredoc.Doc(`
+	$ cloud-platform environment migrate-check -n <namespace>
+	`),
+	PreRun: upgradeIfNotLatest,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if err := environment.MigrateCheck(MigrateCheckNamespace); err != nil {
+			return err
+		}
+
+		return nil
+	},
 }
 
 var environmentEcrCreateCmd = &cobra.Command{
