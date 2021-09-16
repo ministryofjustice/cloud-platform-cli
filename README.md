@@ -17,6 +17,7 @@
 brew install ministryofjustice/cloud-platform-tap/cloud-platform-cli
 ```
 
+small change
 ### Manual
 
 These installation instructions are for a Mac. If you have a different kind of
