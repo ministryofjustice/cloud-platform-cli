@@ -90,7 +90,7 @@ func Migrate(skipWarning bool) error {
 		return nil
 	})
 
-	color.Info.Printf("\nNamespace %s was succesffully migrated to live folder\n", nsName)
+	color.Info.Printf("\nNamespace %s was successfully migrated to live folder\n", nsName)
 
 	return nil
 }
