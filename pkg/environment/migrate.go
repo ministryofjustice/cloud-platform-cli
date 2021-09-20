@@ -46,13 +46,6 @@ func Migrate(skipWarning bool) error {
 		}
 	}
 
-	// Required to skip the live-1 pipeline
-	emptyFile, err := os.Create("APPLY_PIPELINE_SKIP_THIS_NAMESPACE")
-	if err != nil {
-		return err
-	}
-	emptyFile.Close()
-
 	src := fmt.Sprintf("../%s", nsName)
 	dst := fmt.Sprintf("../../live.cloud-platform.service.justice.gov.uk/%s", nsName)
 
@@ -60,6 +53,13 @@ func Migrate(skipWarning bool) error {
 	if err != nil {
 		return err
 	}
+
+	// Required to skip the live-1 pipeline
+	emptyFile, err := os.Create("APPLY_PIPELINE_SKIP_THIS_NAMESPACE")
+	if err != nil {
+		return err
+	}
+	emptyFile.Close()
 
 	if err := os.Chdir(dst); err != nil {
 		return err
