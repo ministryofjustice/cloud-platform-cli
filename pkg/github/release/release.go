@@ -2,14 +2,10 @@ package release
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
-	"os/exec"
-	"runtime"
 )
 
 type Release struct {
@@ -45,7 +41,7 @@ func (r *Release) UpgradeIfNotLatest() {
 	if err == nil && latest {
 		return
 	} else if err == nil {
-		err = r.selfUpgrade()
+		err = r.informUserToUpgrade()
 	}
 
 	fmt.Printf(err.Error())
@@ -63,39 +59,10 @@ func (r *Release) isLatestVersion() (error, bool) {
 	return nil, r.innerStruct.LatestTag == r.innerStruct.CurrentVersion
 }
 
-func (r *Release) selfUpgrade() error {
+func (r *Release) informUserToUpgrade() error {
 	fmt.Printf("Update required. Current version: %s, Latest version: %s\n\n", r.innerStruct.CurrentVersion, r.innerStruct.LatestTag)
-
-	// download tarball of latest release
-	tempFilePath := "/tmp/" + r.innerStruct.tarballFilename()
-
-	fmt.Printf("Downloading latest tarball...\n  %s\n", r.innerStruct.latestTarballUrl())
-	r.innerStruct.downloadFile(tempFilePath, r.innerStruct.latestTarballUrl())
-
-	fmt.Println("Unpacking...")
-	cmd := exec.Command("tar", "xzf", tempFilePath, "--cd", "/tmp/")
-	err := cmd.Run()
-	if err != nil {
-		fmt.Println("Error: ", err)
-		return err
-	}
-
-	// move unpacked binary into place
-	filename, _ := os.Executable()
-	downloaded := fmt.Sprintf("/tmp/%s", r.BinaryName)
-
-	fmt.Printf("Replacing %s\n\n", filename)
-	cmd = exec.Command("mv", downloaded, filename)
-	err = cmd.Run()
-	if err != nil {
-		fmt.Printf("Failed to replace %s with %s.\nPlease execute:\n  sudo mv %s %s\n\n", filename, downloaded, downloaded, filename)
-		return err
-	}
-
-	return errors.New("Upgrade successful. Please repeat your previous command.\n")
+	return fmt.Errorf("To upgrade the cloud platform cli, run brew update/upgrade or grab the latest version from %v", r.innerStruct.latestReleaseUrl())
 }
-
-// -------------------------------------------------------------
 
 func (r *myRelease) getLatestReleaseInfo() error {
 	err, body := r.getLatestReleaseJson()
@@ -125,36 +92,6 @@ func (r *myRelease) getLatestReleaseJson() (error, []byte) {
 	}
 
 	return nil, r.releaseJson
-}
-
-// DownloadFile will download a url to a local file. It's efficient because it will
-// write as it downloads and not load the whole file into memory.
-func (r *myRelease) downloadFile(filepath string, url string) error {
-	// Get the data
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	// Create the file
-	out, err := os.Create(filepath)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	// Write the body to file
-	_, err = io.Copy(out, resp.Body)
-	return err
-}
-
-func (r *myRelease) tarballFilename() string {
-	return r.RepoName + "_" + r.LatestTag + "_" + runtime.GOOS + "_" + runtime.GOARCH + ".tar.gz"
-}
-
-func (r *myRelease) latestTarballUrl() string {
-	return fmt.Sprintf("https://github.com/%s/%s/releases/download/%s/%s", r.Owner, r.RepoName, r.LatestTag, r.tarballFilename())
 }
 
 func (r *myRelease) latestReleaseUrl() string {
