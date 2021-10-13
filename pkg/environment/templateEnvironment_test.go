@@ -28,6 +28,7 @@ func TestCreateNamespace(t *testing.T) {
 		IsProduction:          "false",
 	}
 
+	setNamespaceBaseFolder(ns.IsProduction)
 	createNamespaceFiles(&ns)
 
 	dir := namespaceBaseFolder + "/foobar/"
