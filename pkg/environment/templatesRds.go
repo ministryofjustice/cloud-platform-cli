@@ -2,7 +2,6 @@ package environment
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
