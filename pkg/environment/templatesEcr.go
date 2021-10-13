@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const ecrTemplateFile = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-ecr-credentials/main/template/ecr.tmpl"
+const ecrTemplateFile = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-ecr-credentials/main/examples/ecr.tf"
 const ecrTfFile = "resources/ecr.tf"
 
 func CreateTemplateEcr(cmd *cobra.Command, args []string) error {

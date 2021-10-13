@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const s3TemplateFile = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-s3-bucket/main/template/s3.tmpl"
+const s3TemplateFile = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-s3-bucket/main/example/s3.tf"
 const s3TfFile = "resources/s3.tf"
 
 // CreateTemplateRds creates the terraform files from environment's template folder
