@@ -29,7 +29,7 @@ func MigrateCheck(ns string) error {
 		return err
 	}
 
-	if hasAnn == false {
+	if !hasAnn {
 		color.Error.Printf("Namespace: %s doesn't have the correct ingress annotation.\n", ns)
 	}
 
@@ -39,7 +39,7 @@ func MigrateCheck(ns string) error {
 func hasExternalDNSAnnotations(ns string) (bool, error) {
 	var host string = "https://reports.cloud-platform.service.justice.gov.uk/ingress_weighting"
 
-	data, err := ingress.CheckAnnotation(&host)
+	data, err := ingress.CheckAnnotation(host)
 	if err != nil {
 		return false, err
 	}
