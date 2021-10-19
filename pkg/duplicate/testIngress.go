@@ -2,9 +2,9 @@ package duplicate
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	networkingv1beta1 "k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -69,24 +69,20 @@ func getIngressResource(clientset *kubernetes.Clientset, namespace, resourceName
 }
 
 // copyAndChangeIngress gets an ingress, do a deep copy and change the values to the one needed for duplicating
+// copyAndChangeIngress gets an ingress, do a deep copy and change the values to the one needed for duplicating
 func copyAndChangeIngress(inIngress *networkingv1beta1.Ingress) (*networkingv1beta1.Ingress, error) {
 	outIngress := inIngress.DeepCopy()
 	outIngress.ObjectMeta.Name = inIngress.ObjectMeta.Name + "-second"
-	outIngress.Annotations["external-dns.alpha.kubernetes.io/set-identifier"] = outIngress.ObjectMeta.Name + "-" + outIngress.ObjectMeta.Namespace + "-blue"
-	if inIngress.Spec.Rules != nil {
-		outIngress.Spec.Rules[0].Host = outIngress.ObjectMeta.Name + "-" + outIngress.ObjectMeta.Namespace + ".apps.live.cloud-platform.service.justice.gov.uk"
+	outIngress.Annotations["external-dns.alpha.kubernetes.io/set-identifier"] = outIngress.ObjectMeta.Name + "-" + outIngress.ObjectMeta.Namespace + "-green"
 
-	} else {
-		return nil, fmt.Errorf("no Ingress Rules to duplicate for ingress %s", outIngress.ObjectMeta.Name)
+	for i := 0; i < len(inIngress.Spec.Rules); i++ {
+		subDomain := strings.SplitN(inIngress.Spec.Rules[i].Host, ".", 2)
+		outIngress.Spec.Rules[i].Host = subDomain[0] + "-second." + subDomain[1]
 	}
 
-	// TODO Need to null other Rules
-
-	if inIngress.Spec.TLS != nil {
-		outIngress.Spec.TLS[0].Hosts[0] = outIngress.ObjectMeta.Name + "-" + outIngress.ObjectMeta.Namespace + ".apps.live.cloud-platform.service.justice.gov.uk"
-
-	} else {
-		return nil, fmt.Errorf("no Ingress TLS Hosts to duplicate for ingress %s", outIngress.ObjectMeta.Name)
+	for i := 0; i < len(inIngress.Spec.TLS[0].Hosts); i++ {
+		subDomain := strings.SplitN(inIngress.Spec.TLS[0].Hosts[i], ".", 2)
+		outIngress.Spec.TLS[0].Hosts[i] = subDomain[0] + "-second." + subDomain[1]
 	}
 	return outIngress, nil
 }
