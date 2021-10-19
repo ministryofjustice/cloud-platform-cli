@@ -3,13 +3,20 @@ package duplicate
 import (
 	"fmt"
 
+	"github.com/ministryofjustice/cloud-platform-environments/pkg/authenticate"
 	networkingv1beta1 "k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/kubernetes"
 )
 
-func DuplicateTestIngress() error {
-	inIngress, _ := getIngressJson()
+func DuplicateTestIngress(configFile, kubeCtx string) error {
+	clientset, err := authenticate.KubeClientFromConfig(configFile, kubeCtx)
+	if err != nil {
+		return err
+	}
+
+	inIngress, _ := getIngressJson(clientset)
 	fmt.Printf("****In Ingress\n %s", inIngress)
 
 	copyIngress, err := copyAndChangeIngress(inIngress)
@@ -22,8 +29,7 @@ func DuplicateTestIngress() error {
 }
 
 // getIngressJson takes a Kubernetes clientset, ingress name and a namespace and ingress resource of type *networkingv1beta1.Ingress.
-func getIngressJson() (*networkingv1beta1.Ingress, error) {
-
+func getIngressJson(clientset *kubernetes.Clientset) (*networkingv1beta1.Ingress, error) {
 	inIngress := &networkingv1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "helloworld-rubyapp-ingress",
