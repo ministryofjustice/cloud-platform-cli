@@ -4,10 +4,12 @@
 
 `cloud-platform` is a command-line tool used by the cloud-platform team and tenants to perform actions on the platform, for example:
 
-   - Create templates for the environments repo
+   - Create environment configuration using a template
    - Divergences in terraform states
    - Terraform apply
    - Others
+
+User documentation is here: https://user-guide.cloud-platform.service.justice.gov.uk/documentation/getting-started/cloud-platform-cli.html
 
 ## Install
 
