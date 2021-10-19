@@ -2,6 +2,7 @@ package duplicate
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -47,12 +48,20 @@ func DuplicateTestIngress(namespace, resourceName string) error {
 		return err
 	}
 
+	fmt.Println(ing)
+
 	// Copy the ingress resource and iterate, ready for apply
-	_, err = copyAndChangeIngress(ing)
+	duplicateIngress, err := copyAndChangeIngress(ing)
 	if err != nil {
 		return err
 	}
+	fmt.Println(duplicateIngress)
 
+	err = applyIngress(clientset, duplicateIngress)
+
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -72,17 +81,42 @@ func getIngressResource(clientset *kubernetes.Clientset, namespace, resourceName
 // copyAndChangeIngress gets an ingress, do a deep copy and change the values to the one needed for duplicating
 func copyAndChangeIngress(inIngress *networkingv1beta1.Ingress) (*networkingv1beta1.Ingress, error) {
 	outIngress := inIngress.DeepCopy()
-	outIngress.ObjectMeta.Name = inIngress.ObjectMeta.Name + "-second"
-	outIngress.Annotations["external-dns.alpha.kubernetes.io/set-identifier"] = outIngress.ObjectMeta.Name + "-" + outIngress.ObjectMeta.Namespace + "-green"
 
-	for i := 0; i < len(inIngress.Spec.Rules); i++ {
+	for i := 0; i < len(inIngress.Spec.Rules) && len(inIngress.Spec.Rules) > 0; i++ {
 		subDomain := strings.SplitN(inIngress.Spec.Rules[i].Host, ".", 2)
 		outIngress.Spec.Rules[i].Host = subDomain[0] + "-second." + subDomain[1]
 	}
 
-	for i := 0; i < len(inIngress.Spec.TLS[0].Hosts); i++ {
-		subDomain := strings.SplitN(inIngress.Spec.TLS[0].Hosts[i], ".", 2)
-		outIngress.Spec.TLS[0].Hosts[i] = subDomain[0] + "-second." + subDomain[1]
+	if len(inIngress.Spec.TLS) > 0 {
+		for i := 0; i < len(inIngress.Spec.TLS[0].Hosts) && len(inIngress.Spec.TLS) > 0; i++ {
+			subDomain := strings.SplitN(inIngress.Spec.TLS[0].Hosts[i], ".", 2)
+			outIngress.Spec.TLS[0].Hosts[i] = subDomain[0] + "-second." + subDomain[1]
+		}
 	}
+
+	// Discard the extra data returned by the k8s API which we don't need in the copy
+	outIngress.Status = networkingv1beta1.IngressStatus{}
+	// TODO Should we nulify all metadata or specific ones?
+	outIngress.ObjectMeta = metav1.ObjectMeta{}
+	outIngress.Annotations = map[string]string{}
+
+	outIngress.ObjectMeta.Name = inIngress.ObjectMeta.Name + "-second"
+	outIngress.ObjectMeta.Namespace = inIngress.ObjectMeta.Namespace
+	outIngress.Annotations["external-dns.alpha.kubernetes.io/set-identifier"] = outIngress.ObjectMeta.Name + "-" + outIngress.ObjectMeta.Namespace + "-green"
+	outIngress.Annotations["external-dns.alpha.kubernetes.io/aws-weight"] = "100"
+
+	// m = ingress.fetch("metadata")
+	// %w[creationTimestamp generation resourceVersion selfLink uid].each { |key| m.delete(key) }
+	// m.fetch("annotations").delete("kubectl.kubernetes.io/last-applied-configuration") if m.has_key?("annotations")
+
 	return outIngress, nil
+}
+
+func applyIngress(clientset *kubernetes.Clientset, duplicateIngress *networkingv1beta1.Ingress) error {
+	ingress, err := clientset.NetworkingV1beta1().Ingresses(duplicateIngress.Namespace).Create(context.TODO(), duplicateIngress, metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+	fmt.Println(ingress)
+	return nil
 }

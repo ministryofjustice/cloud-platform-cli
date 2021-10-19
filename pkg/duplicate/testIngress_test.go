@@ -4,33 +4,11 @@ import (
 	"reflect"
 	"testing"
 
-	"k8s.io/api/networking/v1beta1"
 	networkingv1beta1 "k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/kubernetes"
 )
-
-func Test_getIngressJson(t *testing.T) {
-	tests := []struct {
-		name    string
-		want    *v1beta1.Ingress
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := getIngressJson()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("getIngressJson() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("getIngressJson() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
 
 func Test_copyAndChangeIngress(t *testing.T) {
 	type args struct {
@@ -51,7 +29,7 @@ func Test_copyAndChangeIngress(t *testing.T) {
 						Namespace: "ns-01",
 						Annotations: map[string]string{
 							"external-dns.alpha.kubernetes.io/aws-weight":     "100",
-							"external-dns.alpha.kubernetes.io/set-identifier": "ing-01-ns-01-blue",
+							"external-dns.alpha.kubernetes.io/set-identifier": "ing-01-ns-01-green",
 						},
 					},
 					Spec: networkingv1beta1.IngressSpec{
@@ -99,7 +77,7 @@ func Test_copyAndChangeIngress(t *testing.T) {
 					Namespace: "ns-01",
 					Annotations: map[string]string{
 						"external-dns.alpha.kubernetes.io/aws-weight":     "100",
-						"external-dns.alpha.kubernetes.io/set-identifier": "ing-01-second-ns-01-blue",
+						"external-dns.alpha.kubernetes.io/set-identifier": "ing-01-second-ns-01-green",
 					},
 				},
 				Spec: networkingv1beta1.IngressSpec{
@@ -112,7 +90,7 @@ func Test_copyAndChangeIngress(t *testing.T) {
 					},
 					Rules: []networkingv1beta1.IngressRule{
 						{
-							Host: "ing-01-second-ns-01.apps.live.cloud-platform.service.justice.gov.uk",
+							Host: "example-ingress-second.domain.com",
 							IngressRuleValue: networkingv1beta1.IngressRuleValue{
 								HTTP: &networkingv1beta1.HTTPIngressRuleValue{
 									Paths: []networkingv1beta1.HTTPIngressPath{
@@ -134,7 +112,7 @@ func Test_copyAndChangeIngress(t *testing.T) {
 					},
 					TLS: []networkingv1beta1.IngressTLS{
 						{
-							Hosts: []string{"ing-01-second-ns-01.apps.live.cloud-platform.service.justice.gov.uk"},
+							Hosts: []string{"example-ingress-second.domain.com"},
 						},
 					},
 				},
@@ -152,6 +130,34 @@ func Test_copyAndChangeIngress(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("copyAndChangeIngress() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getIngressResource(t *testing.T) {
+	type args struct {
+		clientset    *kubernetes.Clientset
+		namespace    string
+		resourceName string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *networkingv1beta1.Ingress
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := getIngressResource(tt.args.clientset, tt.args.namespace, tt.args.resourceName)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("getIngressResource() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("getIngressResource() = %v, want %v", got, tt.want)
 			}
 		})
 	}
