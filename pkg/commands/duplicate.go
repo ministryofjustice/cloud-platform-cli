@@ -41,6 +41,6 @@ var duplicateIngressCmd = &cobra.Command{
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 
-		return duplicate.DuplicateTestIngress()
+		return duplicate.DuplicateTestIngress(DuplicateIngressNamespace, args[0])
 	},
 }
