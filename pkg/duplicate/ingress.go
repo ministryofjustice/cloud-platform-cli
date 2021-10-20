@@ -63,8 +63,8 @@ func DuplicateIngress(namespace, resourceName string) error {
 }
 
 // getIngressResource takes a Kubernetes clientset, the name of the users namespace and ingress resource and inspect the
-// cluster, returning a v1 ingress resource only. At this point there is no need to search for v1Ingress as the majority
-// of Cloud Platform users don't have the API set. This may change.
+// cluster, returning a v1 ingress resource. There is no need to search for v1beta1 Ingress as the v1 API is backward
+// compatible and would also fetch ingress resource with API version v1beta1.
 func getIngressResource(clientset *kubernetes.Clientset, namespace, resourceName string) (*v1.Ingress, error) {
 	ingress, err := clientset.NetworkingV1().Ingresses(namespace).Get(context.TODO(), resourceName, metav1.GetOptions{})
 	if err != nil {
