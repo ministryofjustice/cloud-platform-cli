@@ -63,7 +63,7 @@ func DuplicateIngress(namespace, resourceName string) error {
 }
 
 // getIngressResource takes a Kubernetes clientset, the name of the users namespace and ingress resource and inspect the
-// cluster, returning a v1beta ingress resource only. At this point there is no need to search for v1Ingress as the majority
+// cluster, returning a v1 ingress resource only. At this point there is no need to search for v1Ingress as the majority
 // of Cloud Platform users don't have the API set. This may change.
 func getIngressResource(clientset *kubernetes.Clientset, namespace, resourceName string) (*v1.Ingress, error) {
 	ingress, err := clientset.NetworkingV1().Ingresses(namespace).Get(context.TODO(), resourceName, metav1.GetOptions{})
@@ -78,15 +78,16 @@ func getIngressResource(clientset *kubernetes.Clientset, namespace, resourceName
 func copyAndChangeIngress(inIngress *v1.Ingress) (*v1.Ingress, error) {
 	duplicateIngress := inIngress.DeepCopy()
 
-	// loop over the list of host Rules from the original ingress, add -duplicate to the sub-domain i.e first part of domain
+	// loop over Spec.Rules from the original ingress, add -duplicate string to the sub-domain i.e first part of domain
 	// and set that as the host rule for the duplicate ingress
 	for i := 0; i < len(inIngress.Spec.Rules) && len(inIngress.Spec.Rules) > 0; i++ {
 		subDomain := strings.SplitN(inIngress.Spec.Rules[i].Host, ".", 2)
 		duplicateIngress.Spec.Rules[i].Host = subDomain[0] + "-duplicate." + subDomain[1]
 	}
 
-	// loop over the list of hosts from the original ingress, add -duplicate to the sub-domain i.e first part of the domain
-	// and set that as the host domain for the duplicate ingress
+	// Check if there is any TLS configuration, loop over the list of hosts from Spec.TLS of the original ingress,
+	// add -duplicate string to the sub-domain i.e first part of the domain
+	// and set that as the TLS host for the duplicate ingress
 	if len(inIngress.Spec.TLS) > 0 {
 		for i := 0; i < len(inIngress.Spec.TLS[0].Hosts) && len(inIngress.Spec.TLS) > 0; i++ {
 			subDomain := strings.SplitN(inIngress.Spec.TLS[0].Hosts[i], ".", 2)
