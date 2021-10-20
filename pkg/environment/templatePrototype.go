@@ -49,7 +49,7 @@ around 5 minutes.
 
 Your prototype kit website will be served at the URL:
 
-    https://%s.apps.live-1.cloud-platform.service.justice.gov.uk/
+    https://%s.apps.live.cloud-platform.service.justice.gov.uk/
 
 If you have any questions or feedback, please post them in #ask-cloud-platform
 on slack.
@@ -78,7 +78,7 @@ func promptUserForPrototypeValues() (*Prototype, error) {
 			 e.g. if you choose "my-awesome-prototype", then the eventual
 			 URL of the prototype will be:
 
-			 https://my-awesome-prototype.apps.live-1.cloud-platform.service.justice.gov.uk/
+			 https://my-awesome-prototype.apps.live.cloud-platform.service.justice.gov.uk/
 
 			 `),
 		prompt:    "Name",
