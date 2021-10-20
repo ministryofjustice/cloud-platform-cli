@@ -2,12 +2,11 @@ package duplicate
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
-	networkingv1beta1 "k8s.io/api/networking/v1beta1"
+	v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -42,34 +41,32 @@ func DuplicateTestIngress(namespace, resourceName string) error {
 		return err
 	}
 
-	// Get the ingress resource
+	// Get the specified ingress resource
 	ing, err := getIngressResource(clientset, namespace, resourceName)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println(ing)
-
-	// Copy the ingress resource and iterate, ready for apply
+	// Duplicate the specified ingress resource
 	duplicateIngress, err := copyAndChangeIngress(ing)
 	if err != nil {
 		return err
 	}
-	fmt.Println(duplicateIngress)
 
+	// Apply the duplicate ingress resource to the same namespace
 	err = applyIngress(clientset, duplicateIngress)
-
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
 // getIngressResource takes a Kubernetes clientset, the name of the users namespace and ingress resource and inspect the
 // cluster, returning a v1beta ingress resource only. At this point there is no need to search for v1Ingress as the majority
 // of Cloud Platform users don't have the API set. This may change.
-func getIngressResource(clientset *kubernetes.Clientset, namespace, resourceName string) (*networkingv1beta1.Ingress, error) {
-	ingress, err := clientset.NetworkingV1beta1().Ingresses(namespace).Get(context.TODO(), resourceName, metav1.GetOptions{})
+func getIngressResource(clientset *kubernetes.Clientset, namespace, resourceName string) (*v1.Ingress, error) {
+	ingress, err := clientset.NetworkingV1().Ingresses(namespace).Get(context.TODO(), resourceName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -78,8 +75,7 @@ func getIngressResource(clientset *kubernetes.Clientset, namespace, resourceName
 }
 
 // copyAndChangeIngress gets an ingress, do a deep copy and change the values to the one needed for duplicating
-// copyAndChangeIngress gets an ingress, do a deep copy and change the values to the one needed for duplicating
-func copyAndChangeIngress(inIngress *networkingv1beta1.Ingress) (*networkingv1beta1.Ingress, error) {
+func copyAndChangeIngress(inIngress *v1.Ingress) (*v1.Ingress, error) {
 	outIngress := inIngress.DeepCopy()
 
 	for i := 0; i < len(inIngress.Spec.Rules) && len(inIngress.Spec.Rules) > 0; i++ {
@@ -95,7 +91,7 @@ func copyAndChangeIngress(inIngress *networkingv1beta1.Ingress) (*networkingv1be
 	}
 
 	// Discard the extra data returned by the k8s API which we don't need in the copy
-	outIngress.Status = networkingv1beta1.IngressStatus{}
+	outIngress.Status = v1.IngressStatus{}
 	// TODO Should we nulify all metadata or specific ones?
 	outIngress.ObjectMeta = metav1.ObjectMeta{}
 	outIngress.Annotations = map[string]string{}
@@ -105,18 +101,16 @@ func copyAndChangeIngress(inIngress *networkingv1beta1.Ingress) (*networkingv1be
 	outIngress.Annotations["external-dns.alpha.kubernetes.io/set-identifier"] = outIngress.ObjectMeta.Name + "-" + outIngress.ObjectMeta.Namespace + "-green"
 	outIngress.Annotations["external-dns.alpha.kubernetes.io/aws-weight"] = "100"
 
-	// m = ingress.fetch("metadata")
-	// %w[creationTimestamp generation resourceVersion selfLink uid].each { |key| m.delete(key) }
-	// m.fetch("annotations").delete("kubectl.kubernetes.io/last-applied-configuration") if m.has_key?("annotations")
-
 	return outIngress, nil
 }
 
-func applyIngress(clientset *kubernetes.Clientset, duplicateIngress *networkingv1beta1.Ingress) error {
-	ingress, err := clientset.NetworkingV1beta1().Ingresses(duplicateIngress.Namespace).Create(context.TODO(), duplicateIngress, metav1.CreateOptions{})
+// applyIngress takes a clientset and an ingress resource (which has been duplicated) and applies
+// to the current cluster and namespace.
+func applyIngress(clientset *kubernetes.Clientset, duplicateIngress *v1.Ingress) error {
+	_, err := clientset.NetworkingV1().Ingresses(duplicateIngress.Namespace).Create(context.TODO(), duplicateIngress, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
-	fmt.Println(ingress)
+
 	return nil
 }
