@@ -21,7 +21,7 @@ import (
 //   - copy the ingress rule defined
 //   - make relevant changes
 //   - create a new rule
-func DuplicateTestIngress(namespace, resourceName string) error {
+func DuplicateIngress(namespace, resourceName string) error {
 	// Set the filepath of the kubeconfig file. This assumes
 	// the user has either the envname set or stores their config file
 	// in the default location.
@@ -76,32 +76,44 @@ func getIngressResource(clientset *kubernetes.Clientset, namespace, resourceName
 
 // copyAndChangeIngress gets an ingress, do a deep copy and change the values to the one needed for duplicating
 func copyAndChangeIngress(inIngress *v1.Ingress) (*v1.Ingress, error) {
-	outIngress := inIngress.DeepCopy()
+	duplicateIngress := inIngress.DeepCopy()
 
+	// loop over the list of host Rules from the original ingress, add -duplicate to the sub-domain i.e first part of domain
+	// and set that as the host rule for the duplicate ingress
 	for i := 0; i < len(inIngress.Spec.Rules) && len(inIngress.Spec.Rules) > 0; i++ {
 		subDomain := strings.SplitN(inIngress.Spec.Rules[i].Host, ".", 2)
-		outIngress.Spec.Rules[i].Host = subDomain[0] + "-second." + subDomain[1]
+		duplicateIngress.Spec.Rules[i].Host = subDomain[0] + "-duplicate." + subDomain[1]
 	}
 
+	// loop over the list of hosts from the original ingress, add -duplicate to the sub-domain i.e first part of the domain
+	// and set that as the host domain for the duplicate ingress
 	if len(inIngress.Spec.TLS) > 0 {
 		for i := 0; i < len(inIngress.Spec.TLS[0].Hosts) && len(inIngress.Spec.TLS) > 0; i++ {
 			subDomain := strings.SplitN(inIngress.Spec.TLS[0].Hosts[i], ".", 2)
-			outIngress.Spec.TLS[0].Hosts[i] = subDomain[0] + "-second." + subDomain[1]
+			duplicateIngress.Spec.TLS[0].Hosts[i] = subDomain[0] + "-duplicate." + subDomain[1]
 		}
 	}
 
-	// Discard the extra data returned by the k8s API which we don't need in the copy
-	outIngress.Status = v1.IngressStatus{}
-	// TODO Should we nulify all metadata or specific ones?
-	outIngress.ObjectMeta = metav1.ObjectMeta{}
-	outIngress.Annotations = map[string]string{}
+	// Discard the extra data returned by the k8s API which we don't need in the duplicate
+	duplicateIngress.Status = v1.IngressStatus{}
+	duplicateIngress.ObjectMeta.ResourceVersion = ""
+	duplicateIngress.ObjectMeta.SelfLink = ""
+	duplicateIngress.ObjectMeta.UID = ""
 
-	outIngress.ObjectMeta.Name = inIngress.ObjectMeta.Name + "-second"
-	outIngress.ObjectMeta.Namespace = inIngress.ObjectMeta.Namespace
-	outIngress.Annotations["external-dns.alpha.kubernetes.io/set-identifier"] = outIngress.ObjectMeta.Name + "-" + outIngress.ObjectMeta.Namespace + "-green"
-	outIngress.Annotations["external-dns.alpha.kubernetes.io/aws-weight"] = "100"
+	// Discard unwanted annotations that are copied from original ingress that are not needs in the duplicate
+	for k := range duplicateIngress.ObjectMeta.Annotations {
+		if strings.Contains(k, "meta.helm.sh") || strings.Contains(k, "kubectl.kubernetes.io/last-applied-configuration") {
+			delete(duplicateIngress.Annotations, k)
+		}
 
-	return outIngress, nil
+	}
+
+	duplicateIngress.ObjectMeta.Name = inIngress.ObjectMeta.Name + "-duplicate"
+	duplicateIngress.ObjectMeta.Namespace = inIngress.ObjectMeta.Namespace
+	duplicateIngress.ObjectMeta.Annotations["external-dns.alpha.kubernetes.io/set-identifier"] = duplicateIngress.ObjectMeta.Name + "-" + duplicateIngress.ObjectMeta.Namespace + "-green"
+	duplicateIngress.ObjectMeta.Annotations["external-dns.alpha.kubernetes.io/aws-weight"] = "100"
+
+	return duplicateIngress, nil
 }
 
 // applyIngress takes a clientset and an ingress resource (which has been duplicated) and applies
