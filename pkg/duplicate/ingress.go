@@ -2,6 +2,7 @@ package duplicate
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -124,6 +125,7 @@ func applyIngress(clientset *kubernetes.Clientset, duplicateIngress *v1.Ingress)
 	if err != nil {
 		return err
 	}
+	fmt.Printf("ingress \"%v\" created\n", duplicateIngress.Name)
 
 	return nil
 }
