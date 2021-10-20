@@ -1,6 +1,8 @@
 package environment
 
 import (
+	"fmt"
+
 	"github.com/gookit/color"
 
 	"github.com/ministryofjustice/cloud-platform-environments/pkg/ingress"
@@ -37,11 +39,11 @@ func MigrateCheck(ns string) error {
 }
 
 func hasExternalDNSAnnotations(ns string) (bool, error) {
-	var host string = "https://reports.cloud-platform.service.justice.gov.uk/ingress_weighting"
+	var host string = "ingress_weighting"
 
 	data, err := ingress.CheckAnnotation(host)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed to check ingress annotation - the host may be incorrect: %e", err)
 	}
 
 	for _, ingress := range data.WeightingIngress {
