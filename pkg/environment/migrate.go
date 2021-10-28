@@ -56,10 +56,10 @@ func Migrate(skipWarning bool) error {
 
 	// In case the user runs migrate command twice.
 	// We don't care about errors because if the file doesn't exist it will be raise as an error.
-	_ = os.Remove(fmt.Sprintf("%s/APPLY_PIPELINE_SKIP_THIS_NAMESPACE", dst))
+	_ = os.Remove(fmt.Sprintf("%s/MIGRATED_SKIP_APPLY_THIS_NAMESPACE", dst))
 
 	// Required to skip the live-1 pipeline
-	emptyFile, err := os.Create("APPLY_PIPELINE_SKIP_THIS_NAMESPACE")
+	emptyFile, err := os.Create("MIGRATED_SKIP_APPLY_THIS_NAMESPACE")
 	if err != nil {
 		return err
 	}
