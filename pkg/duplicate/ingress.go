@@ -12,6 +12,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
+
+	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 )
 
 // DuplicateTestIngress is the function run when a user performs
