@@ -122,7 +122,7 @@ In order to trigger this action, push a new tag version like this:
 
 ```
 git tag [my new version]
-git push --tags
+git push origin [my new version]
 ```
 
 The value of this tag **must** be the same as the string value of `Version` in the file `pkg/commands/version.go`
