@@ -61,7 +61,7 @@ func (r *Release) isLatestVersion() (error, bool) {
 
 func (r *Release) informUserToUpgrade() error {
 	fmt.Printf("Update required. Current version: %s, Latest version: %s\n\n", r.innerStruct.CurrentVersion, r.innerStruct.LatestTag)
-	return fmt.Errorf("To upgrade the cloud platform cli, run `brew update && brew upgrade cloud-platform-cli` or grab the latest version from %v", r.innerStruct.latestReleaseUrl())
+	return fmt.Errorf("To upgrade the cloud platform cli, run `brew update && brew upgrade cloud-platform-cli` or grab the latest version from https://github.com/ministryofjustice/cloud-platform-cli/releases")
 }
 
 func (r *myRelease) getLatestReleaseInfo() error {
