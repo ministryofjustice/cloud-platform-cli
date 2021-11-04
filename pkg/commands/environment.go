@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"errors"
+
 	environment "github.com/ministryofjustice/cloud-platform-cli/pkg/environment"
 
 	"github.com/MakeNowJust/heredoc"
@@ -10,6 +12,9 @@ import (
 var (
 	MigrateSkipWarning    bool
 	MigrateCheckNamespace string
+
+	module        string
+	moduleVersion string
 )
 
 func addEnvironmentCmd(topLevel *cobra.Command) {
@@ -27,10 +32,14 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentSvcCmd.AddCommand(environmentSvcCreateCmd)
 	environmentCmd.AddCommand(environmentPrototypeCmd)
 	environmentPrototypeCmd.AddCommand(environmentPrototypeCreateCmd)
+	environmentCmd.AddCommand(environmentBumpModuleCmd)
 
 	// flags
 	environmentMigrateCmd.Flags().BoolVarP(&MigrateSkipWarning, "skip-warnings", "s", false, "Whether to skip the check")
 	environmentMigrateCheckCmd.Flags().StringVarP(&MigrateCheckNamespace, "namespace", "n", "", "Namespace which you want to perform the checks")
+
+	environmentBumpModuleCmd.Flags().StringVarP(&module, "module", "m", "", "Module to upgrade the version")
+	environmentBumpModuleCmd.Flags().StringVarP(&moduleVersion, "module-version", "v", "", "Semantic version to bump a module to")
 }
 
 var environmentCmd = &cobra.Command{
@@ -190,6 +199,27 @@ that any changes to the 'main' branch are deployed to the cloud platform.
 			return err
 		}
 
+		return nil
+	},
+}
+
+var environmentBumpModuleCmd = &cobra.Command{
+	Use:   "bump-module",
+	Short: `Bump all specified module versions`,
+	Example: heredoc.Doc(`
+cloud-platform environments bump-module --module serviceaccount --module-version 1.1.1
+
+Would bump all users serviceaccount modules in the environments repository to the specified version.
+	`),
+	PreRun: upgradeIfNotLatest,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if moduleVersion == "" || module == "" {
+			return errors.New("--module and --module-version are required")
+		}
+
+		if err := environment.BumpModule(module, moduleVersion); err != nil {
+			return err
+		}
 		return nil
 	},
 }

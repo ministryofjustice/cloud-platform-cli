@@ -12,5 +12,4 @@ func AddCommands(topLevel *cobra.Command) {
 	addEnvironmentCmd(topLevel)
 	addDecodeSecret(topLevel)
 	addDuplicateCmd(topLevel)
-	bumpCmd(topLevel)
 }
