@@ -3,28 +3,24 @@ package commands
 import (
 	"github.com/MakeNowJust/heredoc"
 	"github.com/spf13/cobra"
+
+	"github.com/ministryofjustice/cloud-platform-cli/pkg/cluster"
 )
 
-type clusterDrainCmd struct {
-	Node    string // name of the node to drain
-	Force   bool   // force drain and ignore customer uptime requests
-	DryRun  bool   // don't actually drain the node
-	TimeOut int    // draining a node usually takes around two minutes. If it takes longer than this, it will be cancelled.
-}
-
-var c clusterDrainCmd
+var c cluster.RecycleNodeOpt
 
 func addClusterCmd(topLevel *cobra.Command) {
 	topLevel.AddCommand(clusterCmd)
 
 	// sub cobra commands
-	clusterCmd.AddCommand(clusterDrainNodeCmd)
+	clusterCmd.AddCommand(clusterRecycleNodeCmd)
 
 	// flags
-	clusterDrainNodeCmd.Flags().StringVarP(&c.Node, "node", "n", "", "node to drain")
-	clusterDrainNodeCmd.Flags().BoolVarP(&c.Force, "force", "f", false, "force drain and ignore customer uptime requests")
-	clusterDrainNodeCmd.Flags().BoolVar(&c.DryRun, "dry-run", false, "don't actually drain the node")
-	clusterDrainNodeCmd.Flags().IntVarP(&c.TimeOut, "timeout", "t", 360, "draining a node usually takes around two minutes. If it takes longer than this, it will be cancelled.")
+	clusterRecycleNodeCmd.Flags().StringVarP(&c.Node, "node", "n", "", "node to recycle")
+	clusterRecycleNodeCmd.Flags().BoolVarP(&c.Force, "force", "f", false, "force drain and ignore customer uptime requests")
+	clusterRecycleNodeCmd.Flags().BoolVar(&c.DryRun, "dry-run", false, "don't actually recycle the node")
+	clusterRecycleNodeCmd.Flags().IntVarP(&c.TimeOut, "timeout", "t", 360, "draining a node usually takes around two minutes. If it takes longer than this, it will be cancelled.")
+	clusterRecycleNodeCmd.Flags().BoolVar(&c.Oldest, "oldest", false, "whether to recycle the oldest node")
 }
 
 var clusterCmd = &cobra.Command{
@@ -33,14 +29,18 @@ var clusterCmd = &cobra.Command{
 	PreRun: upgradeIfNotLatest,
 }
 
-var clusterDrainNodeCmd = &cobra.Command{
-	Use:   "drain-node",
-	Short: `Drain the oldest node from the cluster`,
+var clusterRecycleNodeCmd = &cobra.Command{
+	Use:   "recycle-node",
+	Short: `choose a node to recycle`,
 	Example: heredoc.Doc(`
-	$ cloud-platform cluster drain-node
+	$ cloud-platform cluster recycle-node
 	`),
 	PreRun: upgradeIfNotLatest,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		err := cluster.RecycleNode(&c)
+		if err != nil {
+			return err
+		}
 
 		return nil
 	},
