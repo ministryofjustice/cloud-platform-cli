@@ -24,7 +24,6 @@ RUN \
     --no-cache \
     --no-progress \
     --update \
-    --virtual \
     bash \
     ca-certificates \
     coreutils \
@@ -48,7 +47,7 @@ COPY --from=cloud_platform_cli_builder /build/cloud-platform /usr/local/bin/clou
 RUN curl -sLo /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl
 
 # Install terraform
-COPY --from=hashicorp/terraform:${TERRAFORM_VERSION} /bin/terraform /usr/local/bin/terraform
+RUN curl -sLo terraform.zip https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip && unzip terraform.zip && mv terraform /usr/local/bin && rm -f terraform.zip
 
 # Ensure everything is executable
 RUN chmod +x /usr/local/bin/*
