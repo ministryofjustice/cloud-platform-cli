@@ -6,27 +6,21 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ec2"
+
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 	"k8s.io/kubectl/pkg/drain"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	// _ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
-
-	// Uncomment to load all auth plugins
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
-
-	// Uncomment to load all auth plugins
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
-
-	_ "k8s.io/client-go/plugin/pkg/client/auth/azure"
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
-	_ "k8s.io/client-go/plugin/pkg/client/auth/openstack"
 )
 
 type RecycleNodeOpt struct {
@@ -64,11 +58,6 @@ func RecycleNode(opt *RecycleNodeOpt) error {
 		return fmt.Errorf("error building kubernetes client: %s", err)
 	}
 
-	// opt.c, err = kubernetes.NewForConfig(config)
-	// if err != nil {
-	// 	return fmt.Errorf("error building clientset: %s", err)
-	// }
-
 	// ensure all nodes are in a ready state
 	err = workerNodesRunning(opt.c)
 	if err != nil {
@@ -79,7 +68,7 @@ func RecycleNode(opt *RecycleNodeOpt) error {
 	if opt.Oldest {
 		err = opt.getOldestNode(opt.c)
 		if err != nil {
-			return err
+			return fmt.Errorf("error getting oldest node: %s", err)
 		}
 	}
 
@@ -156,64 +145,162 @@ func deleteStuckPods(client *kubernetes.Clientset, n *v1.Node) error {
 
 func RecycleNodeByName(opt *RecycleNodeOpt) error {
 	// check the node exists
-	fmt.Println("checking node exists")
 	nodes := opt.c.CoreV1().Nodes()
 
-	fmt.Println("attempting to get nodes")
 	node, err := nodes.Get(context.Background(), opt.Node.Name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
 	// delete any stuck pods
-	fmt.Println("attempting to delete stuck pods")
 	err = deleteStuckPods(opt.c, node)
 	if err != nil {
 		return err
 	}
 
-	// cordon the node
-	fmt.Println("attempting to drain node: ", node.Name)
-	err = drainNode(opt.c, node)
+	err = drainNode(*opt, node)
 	if err != nil {
 		return err
+	}
+
+	err = deleteNode(opt.c, node)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func deleteNode(client *kubernetes.Clientset, node *v1.Node) error {
+	// Delete the node from the cluster
+	err := client.CoreV1().Nodes().Delete(context.Background(), node.Name, metav1.DeleteOptions{})
+	if err != nil {
+		return err
+	}
+
+	// Wait for the node to be deleted
+	err = waitForNodeDeletion(client, node.Name, 10, 120)
+	if err != nil {
+		return err
+	}
+
+	err = terminateNode(client, node)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// terminateNode will terminate the Ec2 instance associated with the node
+func terminateNode(client *kubernetes.Clientset, node *v1.Node) error {
+	// Get the node's ec2 instance id
+	ec2InstanceId, err := getEc2InstanceId(node)
+	if err != nil {
+		return err
+	}
+
+	// Terminate the ec2 instance
+	err = terminateEc2Instance(ec2InstanceId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// terminateEc2Instance will terminate the ec2 instance
+func terminateEc2Instance(instanceId string) error {
+	// Create a new ec2 client
+	sess, err := session.NewSessionWithOptions(session.Options{
+		Profile: "default",
+		Config: aws.Config{
+			Region: aws.String("eu-west-2"),
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	svc := ec2.New(sess)
+
+	// Terminate the ec2 instance
+	fmt.Println("terminating ec2 instance: ", instanceId)
+	_, err = svc.TerminateInstances(&ec2.TerminateInstancesInput{
+		InstanceIds: []*string{
+			aws.String(instanceId),
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// getEc2InstanceId will return the ec2 instance id associated with the node
+func getEc2InstanceId(node *v1.Node) (string, error) {
+	// Get the node's ec2 instance id
+	s := node.Spec.ProviderID
+	ec2InstanceId := strings.Split(s, "/")[4]
+
+	if ec2InstanceId == "" {
+		return "", errors.New("ec2 instance id not found")
+	}
+
+	return ec2InstanceId, nil
+}
+
+// waitForNodeDeletion waits for the node to be deleted
+func waitForNodeDeletion(client *kubernetes.Clientset, name string, interval, tries int) error {
+	// Wait for the node to be deleted
+	for i := 0; i < tries; i++ {
+		_, err := client.CoreV1().Nodes().Get(context.Background(), name, metav1.GetOptions{})
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				return nil
+			}
+			return err
+		}
+		time.Sleep(time.Duration(interval) * time.Second)
 	}
 	return nil
 }
 
 // drainNode takes a node and performs a cordon and drain.
 // If it succeeds, it returns nil.
-func drainNode(client *kubernetes.Clientset, node *v1.Node) error {
+func drainNode(opt RecycleNodeOpt, node *v1.Node) error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(opt.TimeOut)*time.Second)
+	defer cancel()
 
-	// config, err := clientcmd.BuildConfigFromFlags("", getKubeConfigPath())
-	// if err != nil {
-	// 	return fmt.Errorf("error building config: %s", err)
-	// }
-
-	// clientset, err := kubernetes.NewForConfig(config)
-	// if err != nil {
-	// 	return fmt.Errorf("error building clientset: %s", err)
-	// }
-
-	fmt.Println("setting helper")
-	helper := &drain.Helper{
-		Client: client,
-		Force:  true,
-		// GracePeriodSeconds:  -1,
-		IgnoreAllDaemonSets: true,
-		// Out:                 os.Stdout,
-		// ErrOut:              os.Stdout,
-		// We want to proceed even when pods are using emptyDir volumes
-		// DeleteEmptyDirData: true,
-		Timeout: time.Duration(120) * time.Second,
+	if node == nil {
+		return errors.New("node is nil and is not set")
 	}
 
-	fmt.Println("attempting to cordon node: ", node.Name)
+	helper := &drain.Helper{
+		Ctx:                 ctx,
+		Client:              opt.c,
+		Force:               true,
+		GracePeriodSeconds:  -1,
+		IgnoreAllDaemonSets: true,
+		Out:                 os.Stdout,
+		ErrOut:              os.Stdout,
+		// We want to proceed even when pods are using emptyDir volumes
+		DeleteEmptyDirData: true,
+		Timeout:            time.Duration(120) * time.Second,
+	}
+
 	if err := drain.RunCordonOrUncordon(helper, node, true); err != nil {
+		if apierrors.IsInvalid(err) {
+			return nil
+		}
 		return fmt.Errorf("error cordoning node: %v", err)
 	}
-	fmt.Println("attempting to drain node: ", node.Name)
+
 	if err := drain.RunNodeDrain(helper, node.Name); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
 		return fmt.Errorf("error draining node: %v", err)
 	}
 
