@@ -15,7 +15,7 @@ func addClusterCmd(topLevel *cobra.Command) {
 	// sub cobra commands
 	clusterCmd.AddCommand(clusterRecycleNodeCmd)
 
-	// flags
+	// recycle node flags
 	clusterRecycleNodeCmd.Flags().StringVarP(&c.Node.Name, "node", "n", "", "node to recycle")
 	clusterRecycleNodeCmd.Flags().BoolVarP(&c.Force, "force", "f", false, "force drain and ignore customer uptime requests")
 	clusterRecycleNodeCmd.Flags().BoolVar(&c.DryRun, "dry-run", false, "don't actually recycle the node")
@@ -38,7 +38,7 @@ var clusterRecycleNodeCmd = &cobra.Command{
 	`),
 	PreRun: upgradeIfNotLatest,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		err := cluster.RecycleNode(&c)
+		err := c.RecycleNode()
 		if err != nil {
 			return err
 		}

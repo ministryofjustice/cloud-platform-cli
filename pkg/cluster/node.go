@@ -18,66 +18,19 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
-	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 	"k8s.io/kubectl/pkg/drain"
 )
 
-type RecycleNodeOpt struct {
-	// Node is the name of the node to drain
-	Node v1.Node
-	// Age of the node to drain
-	Age metav1.Time
-	// Force drain and ignore customer uptime requests
-	Force bool
-	// DryRun specifies that no changes will be made to the cluster
-	DryRun bool
-	// Timout is the time to wait for pods to be drained
-	TimeOut int
-	// Oldest specifies that the oldest node should be drained
-	Oldest bool
-	// KubeConfigPath is the path to the kubeconfig file
-	KubeConfigPath string
-	// c is the kubernetes client
-	c *kubernetes.Clientset
-}
-
-func RecycleNode(opt *RecycleNodeOpt) error {
-	// auth to cluster
-	if opt.KubeConfigPath == "" {
-		opt.KubeConfigPath = getKubeConfigPath()
-	}
-	config, err := clientcmd.BuildConfigFromFlags("", opt.KubeConfigPath)
+// get the node name
+func GetNode(name string, client *kubernetes.Clientset) (v1.Node, error) {
+	var node *v1.Node
+	node, err := client.CoreV1().Nodes().Get(context.Background(), name, metav1.GetOptions{})
 	if err != nil {
-		return fmt.Errorf("error building config: %s", err)
+		return *node, fmt.Errorf("error getting node: %s", err)
 	}
 
-	// create a new kubernetes client interface
-	opt.c, err = kubernetes.NewForConfig(config)
-	if err != nil {
-		return fmt.Errorf("error building kubernetes client: %s", err)
-	}
-
-	// ensure all nodes are in a ready state
-	err = workerNodesRunning(opt.c)
-	if err != nil {
-		return fmt.Errorf("failed to ensure all nodes are running: %s", err)
-	}
-
-	// if oldest flag true, check the oldest node is the one we want to drain
-	if opt.Oldest {
-		err = opt.getOldestNode(opt.c)
-		if err != nil {
-			return fmt.Errorf("error getting oldest node: %s", err)
-		}
-	}
-
-	// Catch empty node name
-	if opt.Node.Name == "" {
-		return errors.New("node name is required")
-	}
-
-	return RecycleNodeByName(opt)
+	return *node, nil
 }
 
 // check for the existance of the node
@@ -88,87 +41,25 @@ func RecycleNode(opt *RecycleNodeOpt) error {
 // delete any stuck pods
 // drain the nodes
 
-func (o *RecycleNodeOpt) getOldestNode(client *kubernetes.Clientset) error {
+func GetOldestNode(client *kubernetes.Clientset) (v1.Node, error) {
+	var oldestNode v1.Node
 	nodes := client.CoreV1().Nodes()
 
 	// get the oldest node
 	list, err := nodes.List(context.Background(), metav1.ListOptions{})
 	if err != nil {
-		return err
+		return oldestNode, err
 	}
 
-	var oldestNodeAge metav1.Time = list.Items[0].CreationTimestamp
-	for node := range list.Items {
-		nodeAge := list.Items[node].CreationTimestamp
-
-		if nodeAge.Before(&oldestNodeAge) {
-			oldestNodeAge = nodeAge
-
-			o.Node = list.Items[node]
-			o.Age = nodeAge
+	// Starting node
+	oldestNode = list.Items[0]
+	for _, n := range list.Items {
+		if n.CreationTimestamp.Before(&oldestNode.CreationTimestamp) {
+			oldestNode = n
 		}
 	}
 
-	return nil
-}
-
-func deleteStuckPods(client *kubernetes.Clientset, n *v1.Node) error {
-	stuckStates := stuckStates()
-
-	// Get a collection of all pods on the node
-	pods, err := client.CoreV1().Pods(n.Namespace).List(context.Background(), metav1.ListOptions{
-		FieldSelector: "spec.nodeName=" + n.Name,
-	})
-	if err != nil {
-		return err
-	}
-
-	// If there are no stuck pods then return
-	if len(pods.Items) <= 0 {
-		return nil
-	}
-
-	// if there are any pods on the node that are stuck, delete them
-	for _, pod := range pods.Items {
-		for _, state := range stuckStates {
-			if pod.Status.Phase == state {
-				fmt.Println("deleting stuck pod: ", pod.Name)
-				err := client.CoreV1().Pods(pod.Namespace).Delete(context.Background(), pod.Name, metav1.DeleteOptions{})
-				if err != nil {
-					return fmt.Errorf("error deleting stuck pod: %s", err)
-				}
-			}
-		}
-	}
-	return nil
-}
-
-func RecycleNodeByName(opt *RecycleNodeOpt) error {
-	// check the node exists
-	nodes := opt.c.CoreV1().Nodes()
-
-	node, err := nodes.Get(context.Background(), opt.Node.Name, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-
-	// delete any stuck pods
-	err = deleteStuckPods(opt.c, node)
-	if err != nil {
-		return err
-	}
-
-	err = drainNode(*opt, node)
-	if err != nil {
-		return err
-	}
-
-	err = deleteNode(opt.c, node)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return oldestNode, nil
 }
 
 func deleteNode(client *kubernetes.Clientset, node *v1.Node) error {
@@ -225,7 +116,6 @@ func terminateEc2Instance(instanceId string) error {
 	svc := ec2.New(sess)
 
 	// Terminate the ec2 instance
-	fmt.Println("terminating ec2 instance: ", instanceId)
 	_, err = svc.TerminateInstances(&ec2.TerminateInstancesInput{
 		InstanceIds: []*string{
 			aws.String(instanceId),
@@ -269,8 +159,8 @@ func waitForNodeDeletion(client *kubernetes.Clientset, name string, interval, tr
 
 // drainNode takes a node and performs a cordon and drain.
 // If it succeeds, it returns nil.
-func drainNode(opt RecycleNodeOpt, node *v1.Node) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(opt.TimeOut)*time.Second)
+func drainNode(client *kubernetes.Clientset, node *v1.Node, timeout int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
 	defer cancel()
 
 	if node == nil {
@@ -279,7 +169,7 @@ func drainNode(opt RecycleNodeOpt, node *v1.Node) error {
 
 	helper := &drain.Helper{
 		Ctx:                 ctx,
-		Client:              opt.c,
+		Client:              client,
 		Force:               true,
 		GracePeriodSeconds:  -1,
 		IgnoreAllDaemonSets: true,
@@ -307,14 +197,14 @@ func drainNode(opt RecycleNodeOpt, node *v1.Node) error {
 	return nil
 }
 
-// workerNodesRunning takes a client-go argument and checks if all nodes reported by
+// CheckNodesRunning takes a client-go argument and checks if all nodes reported by
 // `kubectl get nodes` report in a "Ready" state. If a node reports anything
 // other than "Ready" the function will error. If all nodes
 // report "Ready" then it'll return a nil.
 //
 // This acts as a validation to ensure we can start recycling nodes.
 // You wouldn't want to start recycling on an unhealthy cluster.
-func workerNodesRunning(client *kubernetes.Clientset) error {
+func CheckNodesRunning(client *kubernetes.Clientset) error {
 	nodes := client.CoreV1().Nodes()
 
 	list, err := nodes.List(context.Background(), metav1.ListOptions{})
@@ -336,17 +226,6 @@ func workerNodesRunning(client *kubernetes.Clientset) error {
 	}
 
 	return nil
-}
-
-func stuckStates() []v1.PodPhase {
-	return []v1.PodPhase{
-		"Pending",
-		"Scheduling",
-		"Unschedulable",
-		"ImagePullBackOff",
-		"CrashLoopBackOff",
-		"Unknown",
-	}
 }
 
 func getKubeConfigPath() string {
