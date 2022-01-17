@@ -22,6 +22,15 @@ import (
 	"k8s.io/kubectl/pkg/drain"
 )
 
+type Node struct {
+	// Meta is the Kubernetes metadata for the node
+	Meta v1.Node
+	// Name is the name of the node
+	Name string
+	// Age of the node
+	Age metav1.Time
+}
+
 // get the node name
 func GetNode(name string, client *kubernetes.Clientset) (v1.Node, error) {
 	var node *v1.Node
@@ -33,13 +42,15 @@ func GetNode(name string, client *kubernetes.Clientset) (v1.Node, error) {
 	return *node, nil
 }
 
-// check for the existance of the node
-// ensure we have the correct number of nodes in the cluster
-// define stuck states
-// ensure the label cloud-platform-recycle-nodes exists on the node
-// cordon the node
-// delete any stuck pods
-// drain the nodes
+// GetAllNodes
+func GetAllNodes(client *kubernetes.Clientset) ([]v1.Node, error) {
+	nodes, err := client.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return nodes.Items, nil
+}
 
 func GetOldestNode(client *kubernetes.Clientset) (v1.Node, error) {
 	var oldestNode v1.Node
@@ -197,36 +208,72 @@ func drainNode(client *kubernetes.Clientset, node *v1.Node, timeout int) error {
 	return nil
 }
 
-// CheckNodesRunning takes a client-go argument and checks if all nodes reported by
+// Running Nodes takes a client-go argument and checks if all nodes reported by
 // `kubectl get nodes` report in a "Ready" state. If a node reports anything
 // other than "Ready" the function will error. If all nodes
 // report "Ready" then it'll return a nil.
 //
 // This acts as a validation to ensure we can start recycling nodes.
 // You wouldn't want to start recycling on an unhealthy cluster.
-func CheckNodesRunning(client *kubernetes.Clientset) error {
+func RunningNodes(client *kubernetes.Clientset) (*v1.NodeList, error) {
 	nodes := client.CoreV1().Nodes()
 
 	list, err := nodes.List(context.Background(), metav1.ListOptions{})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var workingNodes int
 	for _, node := range list.Items {
 		if node.Status.Conditions[0].Type == "Ready" && node.Status.Conditions[0].Status != "True" {
-			return fmt.Errorf("node %s is not ready", node.Name)
+			return nil, fmt.Errorf("node %s is not ready", node.Name)
 		}
 		workingNodes++
 	}
 
 	// if all nodes report a "Ready" state then approve
 	if workingNodes != len(list.Items) {
-		return fmt.Errorf("all nodes check failed to report a ready state. Please ensure all nodes are Ready")
+		return nil, fmt.Errorf("all nodes check failed to report a ready state. Please ensure all nodes are Ready")
 	}
+
+	return list, nil
+}
+
+func (c *Cluster) Snapshot(client *kubernetes.Clientset) error {
+	// Get the list of nodes
+	// _, _ = client.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
+	// if err != nil {
+	// 	return err
+	// }
+	// c.Nodes = nodes.Items
+
+	// Get the list of pods
+	// pods, err := client.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{})
+	// if err != nil {
+	// 	return err
+	// }
+	// c.Pods = append(c.Pods, pods.Items...)
 
 	return nil
 }
+
+// func numberOfNodes(client *kubernetes.Clientset) (int, error) {
+// 	_, err := GetAllNodes(client)
+// 	if err != nil {
+// 		return 0, err
+// 	}
+
+// 	return 0, nil
+// 	// var numberOfNodes int
+// 	// for _, node := range n {
+// 	// 	if node.Status.Conditions[0].Type == "Ready" && node.Status.Conditions[0].Status != "True" {
+// 	// 		numberOfNodes++
+// 	// 	}
+// 	// }
+
+// 	// return numberOfNodes, nil
+
+// }
 
 func getKubeConfigPath() string {
 	// Set the filepath of the kubeconfig file. This assumes
@@ -238,4 +285,12 @@ func getKubeConfigPath() string {
 	}
 
 	return configFile
+}
+
+func compareNumberOfNodes(cluster Cluster, nodes *v1.NodeList) error {
+	if len(nodes.Items) != len(cluster.Nodes) {
+		return fmt.Errorf("number of nodes in cluster (%v) does not match expected number (%v)", len(nodes.Items), cluster.Nodes)
+	}
+
+	return nil
 }
