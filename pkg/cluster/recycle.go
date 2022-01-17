@@ -2,20 +2,16 @@ package cluster
 
 import (
 	"fmt"
+	"os"
+	"time"
 
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"k8s.io/client-go/kubernetes"
 )
 
 // RecycleNodeOpt provides options for the recycle-node command
 type RecycleNodeOpt struct {
-	// Node is the node object to be recycled
-	Node v1.Node
-	// Name is passed by a user argument
-	Name string
-	// Age of the node to drain
-	Age metav1.Time
 	// Force drain and ignore customer uptime requests
 	Force bool
 	// DryRun specifies that no changes will be made to the cluster
@@ -26,52 +22,95 @@ type RecycleNodeOpt struct {
 	Oldest bool
 	// KubeConfigPath is the path to the kubeconfig file
 	KubeConfigPath string
-	// c is the kubernetes client
+	// Client is the kubernetes client used to authenticate
 	Client *kubernetes.Clientset
+	// Cluster is the cluster object the recycle-node command is being run against
+	Cluster Cluster
+	// Node is the node object to be recycled
+	Node Node
+	// Debug enables debug logging
+	Debug bool
 }
 
 func (opt *RecycleNodeOpt) RecycleNode() error {
-	fmt.Println("Recycling node: validating options")
-	// validate options
-	err := opt.validateRecycleOptions()
-	if err != nil {
-		return err
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	if opt.Debug {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
-	fmt.Println(opt)
+
+	if opt.DryRun {
+		log.Info().Msg("dry-run mode enabled")
+	}
+
+	// opt.Cluster.Nodes = getNumberOfNodes(opt.Client)
 
 	// validate cluster
-	fmt.Println("Recycling node: validating cluster")
-	err = validateCluster(opt.Client)
+
+	log.Debug().Msg("Taking a snapshot of the cluster")
+	err := opt.Cluster.Snapshot(opt.Client)
 	if err != nil {
 		return err
 	}
-	fmt.Println(opt)
+
+	log.Debug().Msg("Attempting to validating cluster: " + opt.Cluster.Name)
+	err = opt.Cluster.ValidateCluster(opt.Client)
+	if err != nil {
+		return fmt.Errorf("unable to validate cluster: %v", err)
+	}
+
+	// validate options
+	log.Debug().Msg("Attempting to validating recycle options: " + opt.Cluster.Name)
+	err = opt.validateRecycleOptions()
+	if err != nil {
+		return fmt.Errorf("unable to validate recycle options: %v", err)
+	}
 
 	return opt.Recycle()
 }
 
 func (opt *RecycleNodeOpt) Recycle() error {
 	// validate node exists
-	_, err := GetNode(opt.Name, opt.Client)
+	log.Debug().Msg("Attempting to validating node: " + opt.Node.Name)
+	_, err := GetNode(opt.Node.Name, opt.Client)
 	if err != nil {
 		return fmt.Errorf("unable to recycle node as it cannot be found: %v", err)
 	}
+	log.Debug().Msg("Finished validating node: " + opt.Node.Name)
 
 	// delete any pods that might be considered "stuck" i.e. Not "Ready"
-	err = deleteStuckPods(opt.Client, opt.Node)
+	// TODO(jasonBirchall): move to pod package
+	log.Debug().Msg("Attempting to delete pods on node: " + opt.Node.Name)
+	err = deleteStuckPods(opt.Client, opt.Node.Meta)
 	if err != nil {
 		return err
 	}
+	log.Debug().Msg("Finished deleting stuck pods on node: " + opt.Node.Name)
 
 	// Drain the node of all pods
-	err = drainNode(opt.Client, &opt.Node, opt.TimeOut)
+	log.Debug().Msg("Attempting to drain node: " + opt.Node.Name)
+	err = drainNode(opt.Client, &opt.Node.Meta, opt.TimeOut)
 	if err != nil {
 		return err
 	}
+	log.Debug().Msg("Finished draining node: " + opt.Node.Name)
 
-	err = deleteNode(opt.Client, &opt.Node)
+	log.Debug().Msg("Attempting to delete node: " + opt.Node.Name)
+	err = deleteNode(opt.Client, &opt.Node.Meta)
 	if err != nil {
 		return err
+	}
+	log.Debug().Msg("Finished deleting node:" + opt.Node.Name)
+
+	// Attempt to validate the cluster for 4 minutes
+	for i := 0; i < 4; i++ {
+		err = opt.Cluster.ValidateCluster(opt.Client)
+		if err == nil {
+			break
+		}
+		log.Debug().Msg("Cluster validation failed, retrying in 1 minute")
+		time.Sleep(time.Minute)
 	}
 
 	return nil

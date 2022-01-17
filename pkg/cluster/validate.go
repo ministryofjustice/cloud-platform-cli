@@ -24,37 +24,42 @@ func (opt *RecycleNodeOpt) validateRecycleOptions() error {
 		return fmt.Errorf("error building kubernetes client: %s", err)
 	}
 
-	if opt.Name != "" {
-		node, err := GetNode(opt.Name, opt.Client)
+	if opt.Node.Name != "" {
+		node, err := GetNode(opt.Node.Name, opt.Client)
 		if err != nil {
 			return err
 		}
 
-		opt.Node = node
+		opt.Node.Meta = node
 	}
 
 	// if oldest flag true, check the oldest node is the one we want to drain
 	if opt.Oldest {
-		opt.Node, err = GetOldestNode(opt.Client)
+		opt.Node.Meta, err = GetOldestNode(opt.Client)
 		if err != nil {
 			return err
 		}
 
-		opt.Name = opt.Node.Name
-		opt.Age = opt.Node.CreationTimestamp
+		opt.Node.Name = opt.Node.Meta.Name
+		opt.Node.Age = opt.Node.Meta.CreationTimestamp
 	}
 
-	if opt.Name == "" && !opt.Oldest {
+	if opt.Node.Name == "" && !opt.Oldest {
 		return errors.New("no node specified")
 	}
 
 	return nil
 }
 
-func validateCluster(client *kubernetes.Clientset) error {
-	err := CheckNodesRunning(client)
+func (cluster Cluster) ValidateCluster(client *kubernetes.Clientset) error {
+	nodes, err := RunningNodes(client)
 	if err != nil {
 		return fmt.Errorf("failed to ensure all nodes are running: %s", err)
+	}
+
+	err = compareNumberOfNodes(cluster, nodes)
+	if err != nil {
+		return err
 	}
 
 	return nil
