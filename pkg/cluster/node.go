@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/rs/zerolog/log"
 
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -34,6 +35,7 @@ type Node struct {
 // get the node name
 func GetNode(name string, client *kubernetes.Clientset) (v1.Node, error) {
 	var node *v1.Node
+	log.Debug().Msg("Gathering node information")
 	node, err := client.CoreV1().Nodes().Get(context.Background(), name, metav1.GetOptions{})
 	if err != nil {
 		return *node, fmt.Errorf("error getting node: %s", err)
@@ -184,13 +186,14 @@ func drainNode(client *kubernetes.Clientset, node *v1.Node, timeout int) error {
 		Force:               true,
 		GracePeriodSeconds:  -1,
 		IgnoreAllDaemonSets: true,
-		Out:                 os.Stdout,
-		ErrOut:              os.Stdout,
+		Out:                 log.Logger.With().Logger(),
+		ErrOut:              log.Logger.Level(2),
 		// We want to proceed even when pods are using emptyDir volumes
 		DeleteEmptyDirData: true,
 		Timeout:            time.Duration(120) * time.Second,
 	}
 
+	log.Debug().Msg("Cordoning node: " + node.Name)
 	if err := drain.RunCordonOrUncordon(helper, node, true); err != nil {
 		if apierrors.IsInvalid(err) {
 			return nil
@@ -198,6 +201,7 @@ func drainNode(client *kubernetes.Clientset, node *v1.Node, timeout int) error {
 		return fmt.Errorf("error cordoning node: %v", err)
 	}
 
+	log.Info().Msg("Draining node: " + node.Name)
 	if err := drain.RunNodeDrain(helper, node.Name); err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil
@@ -240,12 +244,14 @@ func RunningNodes(client *kubernetes.Clientset) (*v1.NodeList, error) {
 }
 
 func (c *Cluster) Snapshot(client *kubernetes.Clientset) error {
+	log.Debug().Msg("Taking a snapshot of the cluster's node state")
 	nodes, err := client.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
 	c.Nodes = nodes.Items
 
+	log.Debug().Msg("Taking a snapshot of the cluster's pod state")
 	pods, err := client.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return err
@@ -254,24 +260,6 @@ func (c *Cluster) Snapshot(client *kubernetes.Clientset) error {
 
 	return nil
 }
-
-// func numberOfNodes(client *kubernetes.Clientset) (int, error) {
-// 	_, err := GetAllNodes(client)
-// 	if err != nil {
-// 		return 0, err
-// 	}
-
-// 	return 0, nil
-// 	// var numberOfNodes int
-// 	// for _, node := range n {
-// 	// 	if node.Status.Conditions[0].Type == "Ready" && node.Status.Conditions[0].Status != "True" {
-// 	// 		numberOfNodes++
-// 	// 	}
-// 	// }
-
-// 	// return numberOfNodes, nil
-
-// }
 
 func getKubeConfigPath() string {
 	// Set the filepath of the kubeconfig file. This assumes

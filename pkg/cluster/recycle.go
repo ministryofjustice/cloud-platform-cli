@@ -33,8 +33,12 @@ type RecycleNodeOpt struct {
 }
 
 func (opt *RecycleNodeOpt) RecycleNode() error {
+	// Log options
+	log.Logger = log.Output(zerolog.ConsoleWriter{
+		Out:     os.Stderr,
+		NoColor: false,
+	})
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	if opt.Debug {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
@@ -44,19 +48,17 @@ func (opt *RecycleNodeOpt) RecycleNode() error {
 		log.Info().Msg("dry-run mode enabled")
 	}
 
-	log.Debug().Msg("Attempting to validating recycle options: " + opt.Cluster.Name)
 	err := opt.validateRecycleOptions()
 	if err != nil {
 		return fmt.Errorf("unable to validate recycle options: %v", err)
 	}
 
-	log.Debug().Msg("Taking a snapshot of the cluster")
 	err = opt.Cluster.Snapshot(opt.Client)
 	if err != nil {
 		return err
 	}
 
-	log.Debug().Msg("Attempting to validating the cluster " + opt.Cluster.Name)
+	log.Info().Msg("Validating the cluster before recycling node: " + opt.Node.Name)
 	working, err := opt.Cluster.ValidateCluster(opt.Client)
 	if err != nil {
 		return fmt.Errorf("unable to validate cluster: %v", err)
@@ -107,9 +109,10 @@ func (opt *RecycleNodeOpt) Recycle() error {
 		if err == nil {
 			break
 		}
-		log.Debug().Msg("Cluster validation failed, retrying in 1 minute")
+		log.Info().Msg("Cluster validation failed, retrying in 1 minute")
 		time.Sleep(time.Minute)
 	}
+	log.Info().Msg("Finished recycling node: " + opt.Node.Name)
 
 	return nil
 }
