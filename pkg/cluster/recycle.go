@@ -44,27 +44,25 @@ func (opt *RecycleNodeOpt) RecycleNode() error {
 		log.Info().Msg("dry-run mode enabled")
 	}
 
-	// opt.Cluster.Nodes = getNumberOfNodes(opt.Client)
-
-	// validate cluster
+	log.Debug().Msg("Attempting to validating recycle options: " + opt.Cluster.Name)
+	err := opt.validateRecycleOptions()
+	if err != nil {
+		return fmt.Errorf("unable to validate recycle options: %v", err)
+	}
 
 	log.Debug().Msg("Taking a snapshot of the cluster")
-	err := opt.Cluster.Snapshot(opt.Client)
+	err = opt.Cluster.Snapshot(opt.Client)
 	if err != nil {
 		return err
 	}
 
-	log.Debug().Msg("Attempting to validating cluster: " + opt.Cluster.Name)
-	err = opt.Cluster.ValidateCluster(opt.Client)
+	log.Debug().Msg("Attempting to validating the cluster " + opt.Cluster.Name)
+	working, err := opt.Cluster.ValidateCluster(opt.Client)
 	if err != nil {
 		return fmt.Errorf("unable to validate cluster: %v", err)
 	}
-
-	// validate options
-	log.Debug().Msg("Attempting to validating recycle options: " + opt.Cluster.Name)
-	err = opt.validateRecycleOptions()
-	if err != nil {
-		return fmt.Errorf("unable to validate recycle options: %v", err)
+	if working {
+		log.Debug().Msg("Cluster is valid")
 	}
 
 	return opt.Recycle()
@@ -101,11 +99,11 @@ func (opt *RecycleNodeOpt) Recycle() error {
 	if err != nil {
 		return err
 	}
-	log.Debug().Msg("Finished deleting node:" + opt.Node.Name)
+	log.Debug().Msg("Finished deleting node: " + opt.Node.Name)
 
 	// Attempt to validate the cluster for 4 minutes
 	for i := 0; i < 4; i++ {
-		err = opt.Cluster.ValidateCluster(opt.Client)
+		_, err = opt.Cluster.ValidateCluster(opt.Client)
 		if err == nil {
 			break
 		}

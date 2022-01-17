@@ -35,7 +35,6 @@ require (
 )
 
 require (
-	github.com/apex/log v1.3.0
 	github.com/aws/aws-sdk-go v1.42.1
 	github.com/ministryofjustice/cloud-platform-environments v1.1.2
 	github.com/rs/zerolog v1.26.1

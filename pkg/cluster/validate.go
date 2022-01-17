@@ -51,16 +51,16 @@ func (opt *RecycleNodeOpt) validateRecycleOptions() error {
 	return nil
 }
 
-func (cluster Cluster) ValidateCluster(client *kubernetes.Clientset) error {
+func (cluster Cluster) ValidateCluster(client *kubernetes.Clientset) (bool, error) {
 	nodes, err := RunningNodes(client)
 	if err != nil {
-		return fmt.Errorf("failed to ensure all nodes are running: %s", err)
+		return false, fmt.Errorf("failed to ensure all nodes are running: %s", err)
 	}
 
 	err = compareNumberOfNodes(cluster, nodes)
 	if err != nil {
-		return err
+		return false, fmt.Errorf("failed to compare all nodes in the cluster: %s", err)
 	}
 
-	return nil
+	return true, nil
 }

@@ -240,19 +240,17 @@ func RunningNodes(client *kubernetes.Clientset) (*v1.NodeList, error) {
 }
 
 func (c *Cluster) Snapshot(client *kubernetes.Clientset) error {
-	// Get the list of nodes
-	// _, _ = client.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
-	// if err != nil {
-	// 	return err
-	// }
-	// c.Nodes = nodes.Items
+	nodes, err := client.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	c.Nodes = nodes.Items
 
-	// Get the list of pods
-	// pods, err := client.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{})
-	// if err != nil {
-	// 	return err
-	// }
-	// c.Pods = append(c.Pods, pods.Items...)
+	pods, err := client.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	c.Pods = append(c.Pods, pods.Items...)
 
 	return nil
 }
