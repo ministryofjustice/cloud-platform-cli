@@ -75,7 +75,7 @@ func GetOldestNode(client *kubernetes.Clientset) (v1.Node, error) {
 	return oldestNode, nil
 }
 
-func deleteNode(client *kubernetes.Clientset, node *v1.Node) error {
+func deleteNode(client *kubernetes.Clientset, node *v1.Node, awsProfile string) error {
 	// Delete the node from the cluster
 	err := client.CoreV1().Nodes().Delete(context.Background(), node.Name, metav1.DeleteOptions{})
 	if err != nil {
@@ -88,7 +88,7 @@ func deleteNode(client *kubernetes.Clientset, node *v1.Node) error {
 		return err
 	}
 
-	err = terminateNode(client, node)
+	err = terminateNode(client, node, awsProfile)
 	if err != nil {
 		return err
 	}
@@ -97,7 +97,7 @@ func deleteNode(client *kubernetes.Clientset, node *v1.Node) error {
 }
 
 // terminateNode will terminate the Ec2 instance associated with the node
-func terminateNode(client *kubernetes.Clientset, node *v1.Node) error {
+func terminateNode(client *kubernetes.Clientset, node *v1.Node, awsProfile string) error {
 	// Get the node's ec2 instance id
 	ec2InstanceId, err := getEc2InstanceId(node)
 	if err != nil {
@@ -105,7 +105,7 @@ func terminateNode(client *kubernetes.Clientset, node *v1.Node) error {
 	}
 
 	// Terminate the ec2 instance
-	err = terminateEc2Instance(ec2InstanceId)
+	err = terminateEc2Instance(ec2InstanceId, awsProfile)
 	if err != nil {
 		return err
 	}
@@ -114,10 +114,10 @@ func terminateNode(client *kubernetes.Clientset, node *v1.Node) error {
 }
 
 // terminateEc2Instance will terminate the ec2 instance
-func terminateEc2Instance(instanceId string) error {
+func terminateEc2Instance(instanceId, awsProfile string) error {
 	// Create a new ec2 client
 	sess, err := session.NewSessionWithOptions(session.Options{
-		Profile: "default",
+		Profile: awsProfile,
 		Config: aws.Config{
 			Region: aws.String("eu-west-2"),
 		},

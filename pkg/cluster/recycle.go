@@ -14,8 +14,6 @@ import (
 type RecycleNodeOpt struct {
 	// Force drain and ignore customer uptime requests
 	Force bool
-	// DryRun specifies that no changes will be made to the cluster
-	DryRun bool
 	// Timout is the time to wait for pods to be drained
 	TimeOut int
 	// Oldest specifies that the oldest node should be drained
@@ -30,6 +28,8 @@ type RecycleNodeOpt struct {
 	Node Node
 	// Debug enables debug logging
 	Debug bool
+	// AwsProfile is the aws profile to use for the aws client
+	AwsProfile string
 }
 
 func (opt *RecycleNodeOpt) RecycleNode() error {
@@ -44,10 +44,6 @@ func (opt *RecycleNodeOpt) RecycleNode() error {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
 
-	if opt.DryRun {
-		log.Info().Msg("dry-run mode enabled")
-	}
-
 	err := opt.validateRecycleOptions()
 	if err != nil {
 		return fmt.Errorf("unable to validate recycle options: %v", err)
@@ -55,7 +51,7 @@ func (opt *RecycleNodeOpt) RecycleNode() error {
 
 	err = opt.Cluster.Snapshot(opt.Client)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to snapshot cluster: %v", err)
 	}
 
 	log.Info().Msg("Validating the cluster before recycling node: " + opt.Node.Name)
@@ -72,7 +68,7 @@ func (opt *RecycleNodeOpt) RecycleNode() error {
 
 func (opt *RecycleNodeOpt) Recycle() error {
 	// validate node exists
-	log.Debug().Msg("Attempting to validating node: " + opt.Node.Name)
+	log.Debug().Msg("Validating node: " + opt.Node.Name)
 	_, err := GetNode(opt.Node.Name, opt.Client)
 	if err != nil {
 		return fmt.Errorf("unable to recycle node as it cannot be found: %v", err)
@@ -81,7 +77,7 @@ func (opt *RecycleNodeOpt) Recycle() error {
 
 	// delete any pods that might be considered "stuck" i.e. Not "Ready"
 	// TODO(jasonBirchall): move to pod package
-	log.Debug().Msg("Attempting to delete pods on node: " + opt.Node.Name)
+	log.Debug().Msg("Deleting pods on node: " + opt.Node.Name)
 	err = deleteStuckPods(opt.Client, opt.Node.Meta)
 	if err != nil {
 		return err
@@ -89,15 +85,15 @@ func (opt *RecycleNodeOpt) Recycle() error {
 	log.Debug().Msg("Finished deleting stuck pods on node: " + opt.Node.Name)
 
 	// Drain the node of all pods
-	log.Debug().Msg("Attempting to drain node: " + opt.Node.Name)
+	log.Debug().Msg("Draining node: " + opt.Node.Name)
 	err = drainNode(opt.Client, &opt.Node.Meta, opt.TimeOut)
 	if err != nil {
 		return err
 	}
 	log.Debug().Msg("Finished draining node: " + opt.Node.Name)
 
-	log.Debug().Msg("Attempting to delete node: " + opt.Node.Name)
-	err = deleteNode(opt.Client, &opt.Node.Meta)
+	log.Debug().Msg("Deleting node: " + opt.Node.Name)
+	err = deleteNode(opt.Client, &opt.Node.Meta, opt.AwsProfile)
 	if err != nil {
 		return err
 	}
