@@ -10,10 +10,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-// RecycleNodeOpt provides options for the recycle-node command
+// RecycleNodeOpt provides options for recycling a Kubernetes Node.
 type RecycleNodeOpt struct {
-	// Force drain and ignore customer uptime requests
-	Force bool
 	// Timout is the time to wait for pods to be drained
 	TimeOut int
 	// Oldest specifies that the oldest node should be drained
@@ -32,6 +30,7 @@ type RecycleNodeOpt struct {
 	AwsProfile string
 }
 
+// RecycleNode is the main entry point for the recycle-node command
 func (opt *RecycleNodeOpt) RecycleNode() error {
 	// Log options
 	log.Logger = log.Output(zerolog.ConsoleWriter{
@@ -44,16 +43,19 @@ func (opt *RecycleNodeOpt) RecycleNode() error {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
 
+	// Parse options provided by user
 	err := opt.validateRecycleOptions()
 	if err != nil {
 		return fmt.Errorf("unable to validate recycle options: %v", err)
 	}
 
+	// Take a snapshot of the cluster before we make changes
 	err = opt.Cluster.Snapshot(opt.Client)
 	if err != nil {
 		return fmt.Errorf("unable to snapshot cluster: %v", err)
 	}
 
+	// Ensure the nodes are ready and not in a state of "unschedulable"
 	log.Info().Msg("Validating the cluster before recycling node: " + opt.Node.Name)
 	working, err := opt.Cluster.ValidateCluster(opt.Client)
 	if err != nil {
@@ -66,8 +68,10 @@ func (opt *RecycleNodeOpt) RecycleNode() error {
 	return opt.Recycle()
 }
 
+// Recycle performs the actual node recycling duties.
+// It uses the options data to determine the node to be recycled.
+// It returns an error if any of the steps fail.
 func (opt *RecycleNodeOpt) Recycle() error {
-	// validate node exists
 	log.Debug().Msg("Validating node: " + opt.Node.Name)
 	_, err := GetNode(opt.Node.Name, opt.Client)
 	if err != nil {
@@ -76,7 +80,6 @@ func (opt *RecycleNodeOpt) Recycle() error {
 	log.Debug().Msg("Finished validating node: " + opt.Node.Name)
 
 	// delete any pods that might be considered "stuck" i.e. Not "Ready"
-	// TODO(jasonBirchall): move to pod package
 	log.Debug().Msg("Deleting pods on node: " + opt.Node.Name)
 	err = deleteStuckPods(opt.Client, opt.Node.Meta)
 	if err != nil {

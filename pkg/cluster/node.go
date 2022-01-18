@@ -54,17 +54,16 @@ func GetAllNodes(client *kubernetes.Clientset) ([]v1.Node, error) {
 	return nodes.Items, nil
 }
 
+// GetOldestNode inspects the current context of the kubeconfig file and returns the oldest node object
 func GetOldestNode(client *kubernetes.Clientset) (v1.Node, error) {
 	var oldestNode v1.Node
 	nodes := client.CoreV1().Nodes()
 
-	// get the oldest node
 	list, err := nodes.List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return oldestNode, err
 	}
 
-	// Starting node
 	oldestNode = list.Items[0]
 	for _, n := range list.Items {
 		if n.CreationTimestamp.Before(&oldestNode.CreationTimestamp) {
@@ -75,14 +74,14 @@ func GetOldestNode(client *kubernetes.Clientset) (v1.Node, error) {
 	return oldestNode, nil
 }
 
+// deleteNode takes a node, deletes it from the Kubernetes cluster and terminates the ec2 instance.
+// This should trigger an autoscaling event to create a new node.
 func deleteNode(client *kubernetes.Clientset, node *v1.Node, awsProfile string) error {
-	// Delete the node from the cluster
 	err := client.CoreV1().Nodes().Delete(context.Background(), node.Name, metav1.DeleteOptions{})
 	if err != nil {
 		return err
 	}
 
-	// Wait for the node to be deleted
 	err = waitForNodeDeletion(client, node.Name, 10, 120)
 	if err != nil {
 		return err
@@ -186,11 +185,11 @@ func drainNode(client *kubernetes.Clientset, node *v1.Node, timeout int) error {
 		Force:               true,
 		GracePeriodSeconds:  -1,
 		IgnoreAllDaemonSets: true,
-		Out:                 log.Logger.With().Logger(),
-		ErrOut:              log.Logger.Level(2),
+		Out:                 log.Logger,
+		ErrOut:              log.Logger,
 		// We want to proceed even when pods are using emptyDir volumes
 		DeleteEmptyDirData: true,
-		Timeout:            time.Duration(120) * time.Second,
+		Timeout:            time.Duration(timeout) * time.Second,
 	}
 
 	log.Debug().Msg("Cordoning node: " + node.Name)
@@ -243,6 +242,8 @@ func RunningNodes(client *kubernetes.Clientset) (*v1.NodeList, error) {
 	return list, nil
 }
 
+// Snapshot takes a client-go argument and returns a list of all
+// nodes and pods in the cluster.
 func (c *Cluster) Snapshot(client *kubernetes.Clientset) error {
 	log.Debug().Msg("Taking a snapshot of the cluster's node state")
 	nodes, err := client.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
