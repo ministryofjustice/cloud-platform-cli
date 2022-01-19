@@ -312,3 +312,73 @@ func Test_getNodes(t *testing.T) {
 		})
 	}
 }
+
+func TestCluster_areNodesReady(t *testing.T) {
+	type fields struct {
+		Name       string
+		Nodes      []v1.Node
+		Node       v1.Node
+		Pods       []v1.Pod
+		OldestNode v1.Node
+		StuckPods  []v1.Pod
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+	}{
+		{
+			name: "nodesReady",
+			fields: fields{
+				Name:       "test",
+				Nodes:      []v1.Node{},
+				Node:       m.OldestNode,
+				Pods:       []v1.Pod{},
+				OldestNode: m.OldestNode,
+				StuckPods:  []v1.Pod{},
+			},
+			wantErr: false,
+		},
+		{
+			name: "nodesAreNotReady",
+			fields: fields{
+				Name: "test",
+				Nodes: []v1.Node{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "node1",
+						},
+						Status: v1.NodeStatus{
+							Conditions: []v1.NodeCondition{
+								{
+									Type:   v1.NodeMemoryPressure,
+									Status: v1.ConditionFalse,
+								},
+							},
+						},
+					},
+				},
+				Pods:       []v1.Pod{},
+				Node:       m.OldestNode,
+				OldestNode: m.OldestNode,
+				StuckPods:  []v1.Pod{},
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &Cluster{
+				Name:       tt.fields.Name,
+				Nodes:      tt.fields.Nodes,
+				Node:       tt.fields.Node,
+				Pods:       tt.fields.Pods,
+				OldestNode: tt.fields.OldestNode,
+				StuckPods:  tt.fields.StuckPods,
+			}
+			if err := c.areNodesReady(); (err != nil) != tt.wantErr {
+				t.Errorf("Cluster.areNodesReady() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}

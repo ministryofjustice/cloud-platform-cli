@@ -3,6 +3,7 @@ package cluster
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
 	v1 "k8s.io/api/core/v1"
@@ -196,4 +197,26 @@ func (c *Cluster) CordonNode(helper drain.Helper) error {
 // DrainNode takes a node and runs the popular drain package to drain the node
 func (c *Cluster) DrainNode(helper drain.Helper) error {
 	return drain.RunNodeDrain(&helper, c.Node.Name)
+}
+
+// HealthCheck ensures the cluster is in a healthy state
+// i.e. all nodes are running and ready
+func (c *Cluster) HealthCheck() error {
+	err := c.areNodesReady()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// areNodesReady checks if all nodes are in a ready state
+func (c *Cluster) areNodesReady() error {
+	for _, node := range c.Nodes {
+		if node.Status.Conditions[0].Type != "Ready" && node.Status.Conditions[0].Status != "True" {
+			return fmt.Errorf("node %s is not ready", node.Name)
+		}
+	}
+
+	return nil
 }
