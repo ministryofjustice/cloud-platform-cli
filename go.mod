@@ -25,7 +25,7 @@ require (
 	github.com/spf13/viper v1.9.0
 	github.com/xanzy/ssh-agent v0.3.1 // indirect
 	github.com/zclconf/go-cty v1.10.0
-	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
+	golang.org/x/crypto v0.0.0-20211215165025-cf75a172585e // indirect
 	golang.org/x/mod v0.5.1
 	golang.org/x/net v0.0.0-20211209124913-491a49abca63 // indirect
 	golang.org/x/sys v0.0.0-20211103235746-7861aae1554b // indirect
@@ -35,7 +35,9 @@ require (
 )
 
 require (
+	github.com/aws/aws-sdk-go v1.41.5
 	github.com/ministryofjustice/cloud-platform-environments v1.1.1
+	github.com/rs/zerolog v1.26.1
 	k8s.io/api v0.23.1
 	k8s.io/apimachinery v0.23.1
 	k8s.io/client-go v0.23.1
@@ -73,6 +75,7 @@ require (
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
+	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect

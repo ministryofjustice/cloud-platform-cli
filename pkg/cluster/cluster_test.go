@@ -276,7 +276,7 @@ func Test_getPods(t *testing.T) {
 	}
 }
 
-func Test_getNodes(t *testing.T) {
+func Test_GetAllNodes(t *testing.T) {
 	type args struct {
 		c *client.Client
 	}
@@ -287,7 +287,7 @@ func Test_getNodes(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "getNodes",
+			name: "getAllNodes",
 			args: args{
 				c: c,
 			},
@@ -297,13 +297,13 @@ func Test_getNodes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getNodes(tt.args.c)
+			got, err := getAllNodes(tt.args.c)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("getNodes() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("getAllNodes() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("getNodes() = %v, want %v", got, tt.want)
+				t.Errorf("getAllNodes() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -398,9 +398,38 @@ func TestCluster_CompareNodes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := m
-			if err := c.CompareNodes(tt.args.snap); (err != nil) != tt.wantErr {
+			if err := m.CompareNodes(tt.args.snap); (err != nil) != tt.wantErr {
 				t.Errorf("Cluster.CompareNodes() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestCluster_DeleteNode(t *testing.T) {
+	type args struct {
+		client     *client.Client
+		awsProfile string
+		awsRegion  string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "failDeleteNode",
+			args: args{
+				client:     c,
+				awsProfile: "",
+				awsRegion:  "",
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := m.DeleteNode(tt.args.client, tt.args.awsProfile, tt.args.awsRegion); (err != nil) != tt.wantErr {
+				t.Errorf("Cluster.DeleteNode() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

@@ -4,9 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/kubectl/pkg/drain"
 )
@@ -38,7 +44,7 @@ func New(c *client.Client) (*Cluster, error) {
 		return nil, err
 	}
 
-	nodes, err := getNodes(c)
+	nodes, err := getAllNodes(c)
 	if err != nil {
 		return nil, err
 	}
@@ -152,8 +158,8 @@ func getPods(c *client.Client) ([]v1.Pod, error) {
 	return p, nil
 }
 
-// getNodes returns a slice of all nodes in a cluster
-func getNodes(c *client.Client) ([]v1.Node, error) {
+// getAllNodes returns a slice of all nodes in a cluster
+func getAllNodes(c *client.Client) ([]v1.Node, error) {
 	n := make([]v1.Node, 0)
 	nodes, err := c.Clientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 	if err != nil {
@@ -165,7 +171,7 @@ func getNodes(c *client.Client) ([]v1.Node, error) {
 
 // getOldestNode returns the oldest node in a cluster
 func getOldestNode(c *client.Client) (v1.Node, error) {
-	nodes, err := getNodes(c)
+	nodes, err := getAllNodes(c)
 	if err != nil {
 		return v1.Node{}, err
 	}
@@ -223,10 +229,121 @@ func (c *Cluster) areNodesReady() error {
 
 // CompareNodes confirms if the number of nodes in a snapshot
 // is the same as the number of nodes in the cluster.
-func (c *Cluster) CompareNodes(snap *Snapshot) error {
+func (c *Cluster) CompareNodes(snap *Snapshot) (err error) {
 	if len(c.Nodes) != len(snap.Cluster.Nodes) {
 		return fmt.Errorf("number of nodes are different")
 	}
 
 	return nil
+}
+
+// RefreshStatus performs a value overwrite of the cluster status.
+// This is useful for when the cluster is being updated.
+func (c *Cluster) RefreshStatus(client *client.Client) (err error) {
+	c.Nodes, err = getAllNodes(client)
+	if err != nil {
+		return err
+	}
+
+	c.OldestNode, err = getOldestNode(client)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Cluster) DeleteNode(client *client.Client, awsProfile, awsRegion string) error {
+	err := client.Clientset.CoreV1().Nodes().Delete(context.Background(), c.Node.Name, metav1.DeleteOptions{})
+	if err != nil {
+		return err
+	}
+
+	err = waitForNodeDeletion(client, c.Node, 10, 120)
+	if err != nil {
+		return err
+	}
+
+	err = terminateNode(awsProfile, awsRegion, c.Node)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func waitForNodeDeletion(client *client.Client, node v1.Node, interval, retries int) error {
+	for i := 0; i < retries; i++ {
+		if _, err := getNode(client, node.Name); err != nil {
+			if apierrors.IsNotFound(err) {
+				return nil
+			}
+			return err
+		}
+		time.Sleep(time.Duration(interval) * time.Second)
+	}
+	return nil
+}
+
+func getNode(client *client.Client, name string) (v1.Node, error) {
+	node, err := client.Clientset.CoreV1().Nodes().Get(context.Background(), name, metav1.GetOptions{})
+	if err != nil {
+		return v1.Node{}, err
+	}
+	return *node, nil
+}
+
+func terminateNode(awsProfile, awsRegion string, node v1.Node) error {
+	instanceId, err := getEc2InstanceId(node)
+	if err != nil {
+		return err
+	}
+
+	err = terminateInstance(instanceId, awsProfile, awsRegion)
+	if err != nil {
+		return nil
+	}
+	return nil
+}
+
+func getEc2InstanceId(node v1.Node) (string, error) {
+	return strings.Split(node.Spec.ProviderID, "/")[4], errors.New("could not find instance id")
+}
+
+func terminateInstance(instanceId, awsProfile, awsRegion string) error {
+	sess, err := session.NewSessionWithOptions(session.Options{
+		Profile: awsProfile,
+		Config: aws.Config{
+			Region: aws.String(awsRegion),
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	svc := ec2.New(sess)
+	_, err = svc.TerminateInstances(&ec2.TerminateInstancesInput{
+		InstanceIds: []*string{
+			aws.String(instanceId),
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func ValidateNodeHealth(c *client.Client) bool {
+	nodes, err := getAllNodes(c)
+	if err != nil {
+		return false
+	}
+
+	for _, node := range nodes {
+		if node.Status.Conditions[0].Type != "Ready" && node.Status.Conditions[0].Status != "True" {
+			return false
+		}
+	}
+
+	return true
 }
