@@ -62,10 +62,10 @@ func NewWithValues(name string, pods []v1.Pod, nodes []v1.Node, oldest v1.Node) 
 }
 
 // NewSnapshot constructs a Snapshot cluster object
-func (c *Cluster) NewSnapshot() (*Snapshot, error) {
+func (c *Cluster) NewSnapshot() *Snapshot {
 	return &Snapshot{
 		Cluster: *c,
-	}, nil
+	}
 }
 
 // DeleteNode deletes a all pods on a node that are considered "stuck",
@@ -216,6 +216,16 @@ func (c *Cluster) areNodesReady() error {
 		if node.Status.Conditions[0].Type != "Ready" && node.Status.Conditions[0].Status != "True" {
 			return fmt.Errorf("node %s is not ready", node.Name)
 		}
+	}
+
+	return nil
+}
+
+// CompareNodes confirms if the number of nodes in a snapshot
+// is the same as the number of nodes in the cluster.
+func (c *Cluster) CompareNodes(snap *Snapshot) error {
+	if len(c.Nodes) != len(snap.Cluster.Nodes) {
+		return fmt.Errorf("number of nodes are different")
 	}
 
 	return nil

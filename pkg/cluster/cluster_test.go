@@ -17,6 +17,7 @@ var (
 	}
 
 	m = NewMock()
+	s = m.NewSnapshot()
 )
 
 func Test_oldestNode(t *testing.T) {
@@ -153,9 +154,8 @@ func TestCluster_FindNode(t *testing.T) {
 
 func TestCluster_NewSnapshot(t *testing.T) {
 	tests := []struct {
-		name    string
-		want    *Snapshot
-		wantErr bool
+		name string
+		want *Snapshot
 	}{
 		{
 			name: "NewSnapshot",
@@ -167,11 +167,7 @@ func TestCluster_NewSnapshot(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := m
-			got, err := c.NewSnapshot()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Cluster.NewSnapshot() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			got := c.NewSnapshot()
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Cluster.NewSnapshot() = %v, want %v", got, tt.want)
 			}
@@ -378,6 +374,33 @@ func TestCluster_areNodesReady(t *testing.T) {
 			}
 			if err := c.areNodesReady(); (err != nil) != tt.wantErr {
 				t.Errorf("Cluster.areNodesReady() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestCluster_CompareNodes(t *testing.T) {
+	type args struct {
+		snap *Snapshot
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "compareNodes",
+			args: args{
+				snap: s,
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := m
+			if err := c.CompareNodes(tt.args.snap); (err != nil) != tt.wantErr {
+				t.Errorf("Cluster.CompareNodes() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
