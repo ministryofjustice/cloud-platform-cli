@@ -314,8 +314,8 @@ func TestCluster_areNodesReady(t *testing.T) {
 						Status: v1.NodeStatus{
 							Conditions: []v1.NodeCondition{
 								{
-									Type:   v1.NodeMemoryPressure,
-									Status: v1.ConditionFalse,
+									Type:   v1.NodeDiskPressure,
+									Status: v1.ConditionTrue,
 								},
 							},
 						},
