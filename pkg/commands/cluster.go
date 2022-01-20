@@ -41,7 +41,9 @@ var clusterRecycleNodeCmd = &cobra.Command{
 	`),
 	PreRun: upgradeIfNotLatest,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		err := recycle.Node(opt)
+		var r = recycle.New()
+
+		err := r.Node(&opt)
 		if err != nil {
 			return err
 		}

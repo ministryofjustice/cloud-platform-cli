@@ -11,6 +11,7 @@ import (
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/cluster"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/kubectl/pkg/drain"
 )
@@ -27,9 +28,20 @@ type Options struct {
 	Kubecfg    string
 }
 
-// Node takes an options argument specified by the user and
-// starts the node recycle process.
-func Node(options Options) error {
+type Recycler struct {
+	client   *client.Client
+	cluster  *cluster.Cluster
+	snapshot *cluster.Snapshot
+
+	options       *Options
+	nodeToRecycle *v1.Node
+}
+
+func New() *Recycler {
+	return &Recycler{}
+}
+
+func (r *Recycler) Node(opt *Options) (err error) {
 	// Pretty print log output
 	log.Logger = log.Output(zerolog.ConsoleWriter{
 		Out:     os.Stderr,
@@ -38,81 +50,82 @@ func Node(options Options) error {
 	// Set default log level
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
-	if options.Debug {
+
+	if opt.Debug {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
 
-	clientset, err := client.GetClientset(options.Kubecfg)
+	r.options = opt
+	clientset, err := client.GetClientset(r.options.Kubecfg)
 	if err != nil {
 		return err
 	}
 
-	log.Debug().Msgf("Generating client using kubeconfig: %s", options.Kubecfg)
-	client := client.New()
-	client.Clientset = clientset
+	log.Debug().Msgf("Generating client using kubeconfig: %s", opt.Kubecfg)
+	r.client = client.New()
+	r.client.Clientset = clientset
 
-	log.Debug().Msg("Getting cluster information")
-	cluster, err := cluster.New(client)
+	log.Debug().Msg("Getting cluster information from kubeconfig")
+	r.cluster, err = cluster.New(r.client)
 	if err != nil {
 		return err
 	}
 
-	log.Info().Msg("Starting node recycler process")
-	return Recycle(options, cluster, client)
+	log.Debug().Msg("Generating cluster snapshot")
+	r.snapshot = r.cluster.NewSnapshot()
+
+	return r.RecycleNode()
 }
 
-// Recycle validates the cluster, takes a snapshot for later use and triggers the
-// drain and cordon process.
-func Recycle(options Options, c *cluster.Cluster, client *client.Client) (err error) {
-	log.Debug().Msg("Generating cluster snapshot")
-	snapshot := c.NewSnapshot()
-
-	if options.Oldest {
-		log.Debug().Msgf("Using oldest node: %s", c.Node.Name)
-		c.Node = c.OldestNode
+func (r *Recycler) RecycleNode() (err error) {
+	// Does the user want to recycle the oldest node?
+	if r.options.Oldest {
+		r.nodeToRecycle = &r.cluster.OldestNode
+		log.Debug().Msgf("Using oldest node: %s", r.nodeToRecycle.Name)
 	}
 
-	if options.NodeName != "" {
-		log.Debug().Msgf("Node name defined as: %s. Gathering node information", options.NodeName)
-		c.Node, err = c.FindNode(options.NodeName)
+	// Has the user specified a node to recycle?
+	if r.options.NodeName != "" {
+		log.Debug().Msgf("Node name defined as: %s. Gathering node information", r.options.NodeName)
+		r.nodeToRecycle, err = r.cluster.FindNode(r.options.NodeName)
 		if err != nil {
-			return err
+			return
 		}
 	}
 
-	if c.Node.Name == "" {
-		return errors.New("no node found")
+	// Fail if no node is provided
+	if r.nodeToRecycle.Name == "" {
+		return errors.New("please either choose a node to recycle or use the oldest node")
 	}
 
-	log.Info().Msgf("Checking cluster: %s is in a valid state to recycle node", c.Name)
-	err = c.HealthCheck()
+	log.Info().Msgf("Checking cluster: %s is in a valid state to recycle node", r.cluster.Name)
+	err = r.cluster.HealthCheck()
 	if err != nil {
 		return err
 	}
 
-	return drainAndCordon(options, c, snapshot, client)
+	return r.drainAndCordon()
 }
 
-// drainAndCordon performs the required node cordon and drain actions, it deletes the node and instance and then validates the cluster.
-func drainAndCordon(options Options, c *cluster.Cluster, snapshot *cluster.Snapshot, client *client.Client) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(options.TimeOut)*time.Second)
+func (r *Recycler) drainAndCordon() (err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(r.options.TimeOut)*time.Second)
 	defer cancel()
 
 	helper := &drain.Helper{
 		Ctx:                 ctx,
-		Client:              client.Clientset,
-		Force:               options.Force,
+		Client:              r.client.Clientset,
+		Force:               r.options.Force,
 		GracePeriodSeconds:  -1,
 		IgnoreAllDaemonSets: true,
 		Out:                 log.Logger,
 		ErrOut:              log.Logger,
 		// We want to proceed even when pods are using emptyDir volumes
 		DeleteEmptyDirData: true,
-		Timeout:            time.Duration(options.TimeOut) * time.Second,
+		Timeout:            time.Duration(r.options.TimeOut) * time.Second,
 	}
 
-	log.Info().Msgf("Cordoning node: %s", c.Node.Name)
-	err := c.CordonNode(*helper)
+	log.Info().Msgf("Cordoning node: %s", r.nodeToRecycle.Name)
+	err = drain.RunCordonOrUncordon(helper, r.nodeToRecycle, true)
 	if apierrors.IsInvalid(err) {
 		log.Debug().Msgf("An API error occurred: %s - will continue", err)
 		return nil
@@ -121,8 +134,8 @@ func drainAndCordon(options Options, c *cluster.Cluster, snapshot *cluster.Snaps
 		return err
 	}
 
-	log.Info().Msgf("Draining node: %s", c.Node.Name)
-	err = c.DrainNode(*helper)
+	log.Info().Msgf("Draining node: %s", r.nodeToRecycle.Name)
+	err = drain.RunNodeDrain(helper, r.nodeToRecycle.Name)
 	if apierrors.IsInvalid(err) {
 		log.Debug().Msgf("An API error occurred: %s - will continue", err)
 		return nil
@@ -131,20 +144,18 @@ func drainAndCordon(options Options, c *cluster.Cluster, snapshot *cluster.Snaps
 		return err
 	}
 
-	log.Info().Msgf("Deleting node: %s", c.Node.Name)
-	err = c.DeleteNode(client, options.AwsProfile, options.AwsRegion)
+	log.Info().Msgf("Deleting node: %s", r.nodeToRecycle.Name)
+	err = r.cluster.DeleteNode(r.client, r.options.AwsProfile, r.options.AwsRegion, r.nodeToRecycle)
 	if err != nil {
 		return err
 	}
-
-	return postDrainValidation(c, client, *snapshot)
+	return r.postRecycleValidation()
 }
 
-// postDrainValidation validates the cluster after the drain and cordon process.
-func postDrainValidation(c *cluster.Cluster, client *client.Client, snapshot cluster.Snapshot) error {
+func (r *Recycler) postRecycleValidation() (err error) {
 	log.Info().Msg("Validating cluster health")
 	for i := 0; i < 5; i++ {
-		err := validateSuccess(client, c, &snapshot)
+		err := r.validate()
 		if err == nil {
 			break
 		}
@@ -152,28 +163,27 @@ func postDrainValidation(c *cluster.Cluster, client *client.Client, snapshot clu
 		time.Sleep(time.Minute)
 	}
 
-	log.Info().Msgf("Finished recycling node %s", c.Node.Name)
+	log.Info().Msgf("Finished recycling node %s", r.nodeToRecycle.Name)
 	return nil
 }
 
-// validateSuccess returns an error if the cluster is not in a valid state.
-func validateSuccess(client *client.Client, c *cluster.Cluster, snapshot *cluster.Snapshot) error {
+func (r *Recycler) validate() error {
 	log.Debug().Msg("Refreshing cluster information")
-	err := c.RefreshStatus(client)
+	err := r.cluster.RefreshStatus(r.client)
 	if err != nil {
 		return fmt.Errorf("failed to refresh status: %s", err)
 	}
 
 	log.Debug().Msg("Performing new healther check")
-	err = c.HealthCheck()
+	err = r.cluster.HealthCheck()
 	if err != nil {
-		return fmt.Errorf("node %s is not healthy: %s", c.Node.Name, err)
+		return fmt.Errorf("node %s is not healthy: %s", r.nodeToRecycle, err)
 	}
 
 	log.Debug().Msg("Comparing old snapshot to new cluster information")
-	err = c.CompareNodes(snapshot)
+	err = r.cluster.CompareNodes(r.snapshot)
 	if err != nil {
-		return fmt.Errorf("node numbers are not in the same state as before: want %v, got %v", len(snapshot.Cluster.Nodes), len(c.Nodes))
+		return fmt.Errorf("node numbers are not in the same state as before: want %v, got %v", len(r.snapshot.Cluster.Nodes), len(r.cluster.Nodes))
 	}
 
 	return nil
