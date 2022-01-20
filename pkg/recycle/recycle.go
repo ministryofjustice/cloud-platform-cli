@@ -28,6 +28,7 @@ type Options struct {
 	Kubecfg    string
 }
 
+// Recycler represents a single node recycle session
 type Recycler struct {
 	client   *client.Client
 	cluster  *cluster.Cluster
@@ -37,10 +38,16 @@ type Recycler struct {
 	nodeToRecycle *v1.Node
 }
 
+// New will construct an empty Recycler struct
+// for use in a node or pod recycle
 func New() *Recycler {
 	return &Recycler{}
 }
 
+// Node is called by the cluster recycle-node command
+// which passes arguments as a struct.
+// It is used to populate the Recycler struct and instigates the
+// node recycle process.
 func (r *Recycler) Node(opt *Options) (err error) {
 	// Pretty print log output
 	log.Logger = log.Output(zerolog.ConsoleWriter{
@@ -77,6 +84,8 @@ func (r *Recycler) Node(opt *Options) (err error) {
 	return r.RecycleNode()
 }
 
+// RecycleNode performs the heavy lifting of the node recycle process.
+// It will attempt to drain, cordon and delete the node.
 func (r *Recycler) RecycleNode() (err error) {
 	// Does the user want to recycle the oldest node?
 	if r.options.Oldest {
@@ -107,6 +116,7 @@ func (r *Recycler) RecycleNode() (err error) {
 	return r.drainAndCordon()
 }
 
+// drainAndCordon utilises the kubectl drain and cordon commands to perform the node recycle process.
 func (r *Recycler) drainAndCordon() (err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(r.options.TimeOut)*time.Second)
 	defer cancel()
@@ -152,6 +162,7 @@ func (r *Recycler) drainAndCordon() (err error) {
 	return r.postRecycleValidation()
 }
 
+// postRecycleValidation performs a final check on the cluster to ensure it is in a valid state.
 func (r *Recycler) postRecycleValidation() (err error) {
 	log.Info().Msg("Validating cluster health")
 	for i := 0; i < 5; i++ {
@@ -167,6 +178,9 @@ func (r *Recycler) postRecycleValidation() (err error) {
 	return nil
 }
 
+// validate is called by postRecycleValidation to perform the actual checks on the cluster.
+// It ensures the cluster is healthy and the cluster has the same amount of nodes as when the
+// node recycle process was started.
 func (r *Recycler) validate() error {
 	log.Debug().Msg("Refreshing cluster information")
 	err := r.cluster.RefreshStatus(r.client)
