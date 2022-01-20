@@ -14,14 +14,12 @@ import (
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/kubectl/pkg/drain"
 )
 
 // Cluster represents useful values and object in a Kubernetes cluster
 type Cluster struct {
 	Name       string
 	Nodes      []v1.Node
-	Node       v1.Node
 	Pods       []v1.Pod
 	OldestNode v1.Node
 	StuckPods  []v1.Pod
@@ -72,10 +70,10 @@ func (c *Cluster) NewSnapshot() *Snapshot {
 // DeleteNode deletes a all pods on a node that are considered "stuck",
 // essentially stuck pods are pods that are in a state that is not
 // "Ready" or "Succeeded".
-func (cluster *Cluster) DeleteStuckPods(c *client.Client) error {
+func (cluster *Cluster) DeleteStuckPods(c *client.Client, node *v1.Node) error {
 	states := stuckStates()
 
-	podList, err := getNodePods(c, &cluster.Node)
+	podList, err := getNodePods(c, node)
 	if err != nil {
 		return err
 	}
@@ -98,15 +96,15 @@ func (cluster *Cluster) DeleteStuckPods(c *client.Client) error {
 }
 
 // FindNode takes a node name and returns the node object
-func (cluster *Cluster) FindNode(name string) (v1.Node, error) {
+func (cluster *Cluster) FindNode(name string) (*v1.Node, error) {
 	var n v1.Node
 	for _, node := range cluster.Nodes {
 		if node.Name == name {
-			return node, nil
+			return &node, nil
 		}
 	}
 
-	return n, errors.New("node not found")
+	return &n, errors.New("node not found")
 }
 
 // getNodePods returns a list of pods on a node
@@ -181,20 +179,6 @@ func oldestNode(nodes []v1.Node) (v1.Node, error) {
 	return oldestNode, nil
 }
 
-// CordonNode takes a node and runs the popular drain package to cordon the node
-func (c *Cluster) CordonNode(helper drain.Helper) error {
-	if c.Node.Name == "" {
-		return errors.New("no node found")
-	}
-
-	return drain.RunCordonOrUncordon(&helper, &c.Node, true)
-}
-
-// DrainNode takes a node and runs the popular drain package to drain the node
-func (c *Cluster) DrainNode(helper drain.Helper) error {
-	return drain.RunNodeDrain(&helper, c.Node.Name)
-}
-
 // HealthCheck ensures the cluster is in a healthy state
 // i.e. all nodes are running and ready
 func (c *Cluster) HealthCheck() error {
@@ -242,18 +226,18 @@ func (c *Cluster) RefreshStatus(client *client.Client) (err error) {
 	return nil
 }
 
-func (c *Cluster) DeleteNode(client *client.Client, awsProfile, awsRegion string) error {
-	err := client.Clientset.CoreV1().Nodes().Delete(context.Background(), c.Node.Name, metav1.DeleteOptions{})
+func (c *Cluster) DeleteNode(client *client.Client, awsProfile, awsRegion string, node *v1.Node) error {
+	err := client.Clientset.CoreV1().Nodes().Delete(context.Background(), node.Name, metav1.DeleteOptions{})
 	if err != nil {
 		return err
 	}
 
-	err = waitForNodeDeletion(client, c.Node, 10, 120)
+	err = waitForNodeDeletion(client, *node, 10, 120)
 	if err != nil {
 		return err
 	}
 
-	err = terminateNode(awsProfile, awsRegion, c.Node)
+	err = terminateNode(awsProfile, awsRegion, *node)
 	if err != nil {
 		return err
 	}

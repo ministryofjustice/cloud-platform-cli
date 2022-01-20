@@ -90,7 +90,8 @@ func Test_oldestNode(t *testing.T) {
 
 func TestCluster_DeleteStuckPods(t *testing.T) {
 	type args struct {
-		c *client.Client
+		c    *client.Client
+		node *v1.Node
 	}
 	tests := []struct {
 		name    string
@@ -101,6 +102,11 @@ func TestCluster_DeleteStuckPods(t *testing.T) {
 			name: "DeleteStuckPods",
 			args: args{
 				c: c,
+				node: &v1.Node{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "node-1",
+					},
+				},
 			},
 			wantErr: false,
 		},
@@ -108,45 +114,8 @@ func TestCluster_DeleteStuckPods(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cluster := m
-			if err := cluster.DeleteStuckPods(tt.args.c); (err != nil) != tt.wantErr {
+			if err := cluster.DeleteStuckPods(tt.args.c, tt.args.node); (err != nil) != tt.wantErr {
 				t.Errorf("Cluster.DeleteStuckPods() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func TestCluster_FindNode(t *testing.T) {
-	type args struct {
-		name string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    v1.Node
-		wantErr bool
-	}{
-		{
-			name: "FindNode",
-			args: args{
-				name: "node1",
-			},
-			want: v1.Node{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "node1",
-				},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cluster := m
-			got, err := cluster.FindNode(tt.args.name)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Cluster.FindNode() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Cluster.FindNode() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -334,7 +303,6 @@ func TestCluster_areNodesReady(t *testing.T) {
 			c := &Cluster{
 				Name:       tt.fields.Name,
 				Nodes:      tt.fields.Nodes,
-				Node:       tt.fields.Node,
 				Pods:       tt.fields.Pods,
 				OldestNode: tt.fields.OldestNode,
 				StuckPods:  tt.fields.StuckPods,
@@ -377,6 +345,7 @@ func TestCluster_DeleteNode(t *testing.T) {
 		client     *client.Client
 		awsProfile string
 		awsRegion  string
+		node       *v1.Node
 	}
 	tests := []struct {
 		name    string
@@ -389,13 +358,14 @@ func TestCluster_DeleteNode(t *testing.T) {
 				client:     c,
 				awsProfile: "",
 				awsRegion:  "",
+				node:       &v1.Node{},
 			},
 			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := m.DeleteNode(tt.args.client, tt.args.awsProfile, tt.args.awsRegion); (err != nil) != tt.wantErr {
+			if err := m.DeleteNode(tt.args.client, tt.args.awsProfile, tt.args.awsRegion, tt.args.node); (err != nil) != tt.wantErr {
 				t.Errorf("Cluster.DeleteNode() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -432,6 +402,73 @@ func Test_getClusterName(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := getClusterName(tt.args.nodes); got != tt.want {
 				t.Errorf("getClusterName() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCluster_FindNode(t *testing.T) {
+	type fields struct {
+		Name       string
+		Nodes      []v1.Node
+		Pods       []v1.Pod
+		OldestNode v1.Node
+		StuckPods  []v1.Pod
+	}
+	type args struct {
+		name string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    *v1.Node
+		wantErr bool
+	}{
+		{
+			name: "findNode",
+			fields: fields{
+				Name: "test",
+				Nodes: []v1.Node{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "node1",
+						},
+					},
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "node2",
+						},
+					},
+				},
+			},
+			args: args{
+				name: "node1",
+			},
+			want: &v1.Node{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "node1",
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cluster := &Cluster{
+				Name:       tt.fields.Name,
+				Nodes:      tt.fields.Nodes,
+				Pods:       tt.fields.Pods,
+				OldestNode: tt.fields.OldestNode,
+				StuckPods:  tt.fields.StuckPods,
+			}
+			got, err := cluster.FindNode(tt.args.name)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Cluster.FindNode() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Cluster.FindNode() = %v, want %v", got, tt.want)
 			}
 		})
 	}
