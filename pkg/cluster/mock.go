@@ -3,8 +3,19 @@ package cluster
 import (
 	"time"
 
+	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/fake"
+)
+
+var (
+	c = &client.Client{
+		Clientset: fake.NewSimpleClientset(),
+	}
+
+	m = NewMock()
+	s = m.NewSnapshot()
 )
 
 // NewMock mimics the behaviour of New() but returns a mock instead of a real

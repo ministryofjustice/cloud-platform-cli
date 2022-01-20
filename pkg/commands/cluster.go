@@ -18,8 +18,8 @@ func addClusterCmd(topLevel *cobra.Command) {
 	clusterCmd.AddCommand(clusterRecycleNodeCmd)
 
 	// recycle node flags
-	clusterRecycleNodeCmd.Flags().StringVarP(&opt.NodeName, "node", "n", "", "node to recycle")
-	clusterRecycleNodeCmd.Flags().IntVarP(&opt.TimeOut, "timeout", "t", 360, "draining a node usually takes around two minutes. If it takes longer than this, it will be cancelled.")
+	clusterRecycleNodeCmd.Flags().StringVarP(&opt.NodeName, "name", "n", "", "name of node to recycle")
+	clusterRecycleNodeCmd.Flags().IntVarP(&opt.TimeOut, "timeout", "t", 360, "amount of time to wait for the drain command to complete")
 	clusterRecycleNodeCmd.Flags().BoolVar(&opt.Oldest, "oldest", false, "whether to recycle the oldest node")
 	clusterRecycleNodeCmd.Flags().StringVar(&opt.Kubecfg, "kubecfg", filepath.Join(homedir.HomeDir(), ".kube", "config"), "path to kubeconfig file")
 	clusterRecycleNodeCmd.Flags().StringVar(&opt.AwsProfile, "aws-profile", "default", "aws profile to use")
