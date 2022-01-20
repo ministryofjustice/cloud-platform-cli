@@ -34,7 +34,6 @@ type Snapshot struct {
 
 // New constructs a Cluster object
 func New(c *client.Client) (*Cluster, error) {
-
 	pods, err := getPods(c)
 	if err != nil {
 		return nil, err
@@ -262,6 +261,7 @@ func (c *Cluster) DeleteNode(client *client.Client, awsProfile, awsRegion string
 	return nil
 }
 
+// waitForNodeDeletion waits for a specified number of retries to see if the node still exists.
 func waitForNodeDeletion(client *client.Client, node v1.Node, interval, retries int) error {
 	for i := 0; i < retries; i++ {
 		if _, err := getNode(client, node.Name); err != nil {
@@ -275,6 +275,7 @@ func waitForNodeDeletion(client *client.Client, node v1.Node, interval, retries 
 	return nil
 }
 
+// getNode takes the name of a node and return its object
 func getNode(client *client.Client, name string) (v1.Node, error) {
 	node, err := client.Clientset.CoreV1().Nodes().Get(context.Background(), name, metav1.GetOptions{})
 	if err != nil {
@@ -283,6 +284,8 @@ func getNode(client *client.Client, name string) (v1.Node, error) {
 	return *node, nil
 }
 
+// terminateNode requires an AWS profile and region, it first identifies
+// the node's instance ID and then terminates it.
 func terminateNode(awsProfile, awsRegion string, node v1.Node) error {
 	instanceId := getEc2InstanceId(node)
 
@@ -297,6 +300,7 @@ func getEc2InstanceId(node v1.Node) string {
 	return strings.Split(node.Spec.ProviderID, "/")[4]
 }
 
+// terminateInstance creates an AwsClient and terminates the specified instance
 func terminateInstance(instanceId, awsProfile, awsRegion string) error {
 	sess, err := session.NewSessionWithOptions(session.Options{
 		Profile: awsProfile,
@@ -321,6 +325,8 @@ func terminateInstance(instanceId, awsProfile, awsRegion string) error {
 	return nil
 }
 
+// ValidateCluster allows callers to validate their cluster
+// object.
 func ValidateNodeHealth(c *client.Client) bool {
 	nodes, err := getAllNodes(c)
 	if err != nil {
