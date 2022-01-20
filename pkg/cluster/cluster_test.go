@@ -210,39 +210,6 @@ func Test_getNodePods(t *testing.T) {
 	}
 }
 
-func Test_getClusterName(t *testing.T) {
-	type args struct {
-		c *client.Client
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    string
-		wantErr bool
-	}{
-		{
-			name: "failGetClusterName",
-			args: args{
-				c: c,
-			},
-			want:    "",
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := getClusterName(tt.args.c)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("getClusterName() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("getClusterName() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func Test_getPods(t *testing.T) {
 	type args struct {
 		c *client.Client
@@ -430,6 +397,41 @@ func TestCluster_DeleteNode(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := m.DeleteNode(tt.args.client, tt.args.awsProfile, tt.args.awsRegion); (err != nil) != tt.wantErr {
 				t.Errorf("Cluster.DeleteNode() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func Test_getClusterName(t *testing.T) {
+	type args struct {
+		nodes []v1.Node
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "getClusterName",
+			args: args{
+				nodes: []v1.Node{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "node1",
+							Labels: map[string]string{
+								"Cluster": "test",
+							},
+						},
+					},
+				},
+			},
+			want: "test",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getClusterName(tt.args.nodes); got != tt.want {
+				t.Errorf("getClusterName() = %v, want %v", got, tt.want)
 			}
 		})
 	}

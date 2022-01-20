@@ -34,10 +34,6 @@ type Snapshot struct {
 
 // New constructs a Cluster object
 func New(c *client.Client) (*Cluster, error) {
-	name, err := getClusterName(c)
-	if err != nil {
-		return nil, err
-	}
 
 	pods, err := getPods(c)
 	if err != nil {
@@ -54,7 +50,7 @@ func New(c *client.Client) (*Cluster, error) {
 		return nil, err
 	}
 
-	return NewWithValues(name, pods, nodes, oldestNode), nil
+	return NewWithValues(nodes[0].Labels["Cluster"], pods, nodes, oldestNode), nil
 }
 
 // NewWithValues constructs a Cluster object with values
@@ -138,13 +134,8 @@ func stuckStates() []v1.PodPhase {
 }
 
 // getClusterName returns the name of the cluster from a node
-func getClusterName(c *client.Client) (string, error) {
-	cluster, err := c.Clientset.CoreV1().Nodes().Get(context.TODO(), "", metav1.GetOptions{})
-	if err != nil {
-		return "", err
-	}
-
-	return cluster.Name, nil
+func getClusterName(nodes []v1.Node) string {
+	return nodes[0].Labels["Cluster"]
 }
 
 // getPods returns a slice of all pods in a cluster
@@ -219,7 +210,7 @@ func (c *Cluster) HealthCheck() error {
 // areNodesReady checks if all nodes are in a ready state
 func (c *Cluster) areNodesReady() error {
 	for _, node := range c.Nodes {
-		if node.Status.Conditions[0].Type != "Ready" && node.Status.Conditions[0].Status != "True" {
+		if node.Status.Conditions[0].Type != "Ready" && node.Status.Conditions[0].Status == "True" {
 			return fmt.Errorf("node %s is not ready", node.Name)
 		}
 	}
@@ -293,20 +284,17 @@ func getNode(client *client.Client, name string) (v1.Node, error) {
 }
 
 func terminateNode(awsProfile, awsRegion string, node v1.Node) error {
-	instanceId, err := getEc2InstanceId(node)
-	if err != nil {
-		return err
-	}
+	instanceId := getEc2InstanceId(node)
 
-	err = terminateInstance(instanceId, awsProfile, awsRegion)
+	err := terminateInstance(instanceId, awsProfile, awsRegion)
 	if err != nil {
 		return nil
 	}
 	return nil
 }
 
-func getEc2InstanceId(node v1.Node) (string, error) {
-	return strings.Split(node.Spec.ProviderID, "/")[4], errors.New("could not find instance id")
+func getEc2InstanceId(node v1.Node) string {
+	return strings.Split(node.Spec.ProviderID, "/")[4]
 }
 
 func terminateInstance(instanceId, awsProfile, awsRegion string) error {
