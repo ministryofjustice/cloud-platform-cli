@@ -16,13 +16,13 @@ func TestCluster_NewSnapshot(t *testing.T) {
 		{
 			name: "NewSnapshot",
 			want: &Snapshot{
-				Cluster: *m,
+				Cluster: *mockCluster,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := m
+			c := mockCluster
 			got := c.NewSnapshot()
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Cluster.NewSnapshot() = %v, want %v", got, tt.want)
