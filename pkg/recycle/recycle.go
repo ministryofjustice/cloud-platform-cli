@@ -16,19 +16,21 @@ import (
 	"k8s.io/kubectl/pkg/drain"
 )
 
-// Options are used to configure the node recycle command
+// Options are used to configure recycle sessions.
+// These options are normally passed via flags in a command line.
 type Options struct {
-	NodeName   string
-	Debug      bool
-	Force      bool
-	TimeOut    int
-	AwsProfile string
-	AwsRegion  string
-	Oldest     bool
-	Kubecfg    string
+	ResourceName string
+	Debug        bool
+	Force        bool
+	TimeOut      int
+	AwsProfile   string
+	AwsRegion    string
+	Oldest       bool
+	KubecfgPath  string
 }
 
-// Recycler represents a single node recycle session
+// Recycler is used to store objects used in a
+// recycle session.
 type Recycler struct {
 	client   *client.Client
 	cluster  *cluster.Cluster
@@ -36,12 +38,6 @@ type Recycler struct {
 
 	options       *Options
 	nodeToRecycle *v1.Node
-}
-
-// New will construct an empty Recycler struct
-// for use in a node or pod recycle
-func New() *Recycler {
-	return &Recycler{}
 }
 
 // Node is called by the cluster recycle-node command
@@ -63,12 +59,12 @@ func (r *Recycler) Node(opt *Options) (err error) {
 	}
 
 	r.options = opt
-	clientset, err := client.GetClientset(r.options.Kubecfg)
+	clientset, err := client.GetClientset(r.options.KubecfgPath)
 	if err != nil {
 		return err
 	}
 
-	log.Debug().Msgf("Generating client using kubeconfig: %s", opt.Kubecfg)
+	log.Debug().Msgf("Generating client using kubeconfig: %s", opt.KubecfgPath)
 	r.client = client.New()
 	r.client.Clientset = clientset
 
@@ -84,19 +80,17 @@ func (r *Recycler) Node(opt *Options) (err error) {
 	return r.RecycleNode()
 }
 
-// RecycleNode performs the heavy lifting of the node recycle process.
-// It will attempt to drain, cordon and delete the node.
-func (r *Recycler) RecycleNode() (err error) {
-	// Does the user want to recycle the oldest node?
+// defineResource ensures the Recycler process is populated with the correct node to recycle.
+func (r *Recycler) defineResource() (err error) {
 	if r.options.Oldest {
 		r.nodeToRecycle = &r.cluster.OldestNode
 		log.Debug().Msgf("Using oldest node: %s", r.nodeToRecycle.Name)
 	}
 
 	// Has the user specified a node to recycle?
-	if r.options.NodeName != "" {
-		log.Debug().Msgf("Node name defined as: %s. Gathering node information", r.options.NodeName)
-		r.nodeToRecycle, err = r.cluster.FindNode(r.options.NodeName)
+	if r.options.ResourceName != "" {
+		log.Debug().Msgf("Node name defined as: %s. Gathering node information", r.options.ResourceName)
+		r.nodeToRecycle, err = r.cluster.FindNode(r.options.ResourceName)
 		if err != nil {
 			return
 		}
@@ -105,6 +99,18 @@ func (r *Recycler) RecycleNode() (err error) {
 	// Fail if no node is provided
 	if r.nodeToRecycle.Name == "" {
 		return errors.New("please either choose a node to recycle or use the oldest node")
+	}
+
+	return
+}
+
+// RecycleNode performs the heavy lifting of the node recycle process.
+// It will attempt to drain, cordon and delete the node.
+func (r *Recycler) RecycleNode() (err error) {
+	// Does the user want to recycle the oldest node?
+	err = r.defineResource()
+	if err != nil {
+		return err
 	}
 
 	log.Info().Msgf("Checking cluster: %s is in a valid state to recycle node", r.cluster.Name)
@@ -155,7 +161,7 @@ func (r *Recycler) drainAndCordon() (err error) {
 	}
 
 	log.Info().Msgf("Deleting node: %s", r.nodeToRecycle.Name)
-	err = r.cluster.DeleteNode(r.client, r.options.AwsProfile, r.options.AwsRegion, r.nodeToRecycle)
+	err = cluster.DeleteNode(r.client, r.options.AwsProfile, r.options.AwsRegion, r.nodeToRecycle)
 	if err != nil {
 		return err
 	}
