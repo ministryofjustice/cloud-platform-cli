@@ -173,7 +173,7 @@ func TestCluster_DeleteNode(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := mockCluster.DeleteNode(tt.args.client, tt.args.awsProfile, tt.args.awsRegion, tt.args.node); (err != nil) != tt.wantErr {
+			if err := DeleteNode(tt.args.client, tt.args.awsProfile, tt.args.awsRegion, tt.args.node); (err != nil) != tt.wantErr {
 				t.Errorf("Cluster.DeleteNode() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

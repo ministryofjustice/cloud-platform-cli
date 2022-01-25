@@ -28,6 +28,55 @@ func (cluster *Cluster) FindNode(name string) (*v1.Node, error) {
 	return &n, errors.New("node not found")
 }
 
+// HealthCheck ensures the cluster is in a healthy state
+// i.e. all nodes are running and ready
+func (c *Cluster) HealthCheck() error {
+	err := c.areNodesReady()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// areNodesReady checks if all nodes are in a ready state
+func (c *Cluster) areNodesReady() error {
+	for _, node := range c.Nodes {
+		if node.Status.Conditions[0].Type != "Ready" && node.Status.Conditions[0].Status == "True" {
+			return fmt.Errorf("node %s is not ready", node.Name)
+		}
+	}
+
+	return nil
+}
+
+// CompareNodes confirms if the number of nodes in a snapshot
+// is the same as the number of nodes in the cluster.
+func (c *Cluster) CompareNodes(snap *Snapshot) (err error) {
+	if len(c.Nodes) != len(snap.Cluster.Nodes) {
+		return fmt.Errorf("number of nodes are different")
+	}
+
+	return nil
+}
+
+// ValidateCluster allows callers to validate their cluster
+// object.
+func ValidateNodeHealth(c *client.Client) bool {
+	nodes, err := getAllNodes(c)
+	if err != nil {
+		return false
+	}
+
+	for _, node := range nodes {
+		if node.Status.Conditions[0].Type != "Ready" && node.Status.Conditions[0].Status != "True" {
+			return false
+		}
+	}
+
+	return true
+}
+
 // getAllNodes returns a slice of all nodes in a cluster
 func getAllNodes(c *client.Client) ([]v1.Node, error) {
 	n := make([]v1.Node, 0)
@@ -61,39 +110,7 @@ func oldestNode(nodes []v1.Node) (v1.Node, error) {
 	return oldestNode, nil
 }
 
-// HealthCheck ensures the cluster is in a healthy state
-// i.e. all nodes are running and ready
-func (c *Cluster) HealthCheck() error {
-	err := c.areNodesReady()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// areNodesReady checks if all nodes are in a ready state
-func (c *Cluster) areNodesReady() error {
-	for _, node := range c.Nodes {
-		if node.Status.Conditions[0].Type != "Ready" && node.Status.Conditions[0].Status == "True" {
-			return fmt.Errorf("node %s is not ready", node.Name)
-		}
-	}
-
-	return nil
-}
-
-// CompareNodes confirms if the number of nodes in a snapshot
-// is the same as the number of nodes in the cluster.
-func (c *Cluster) CompareNodes(snap *Snapshot) (err error) {
-	if len(c.Nodes) != len(snap.Cluster.Nodes) {
-		return fmt.Errorf("number of nodes are different")
-	}
-
-	return nil
-}
-
-func (c *Cluster) DeleteNode(client *client.Client, awsProfile, awsRegion string, node *v1.Node) error {
+func DeleteNode(client *client.Client, awsProfile, awsRegion string, node *v1.Node) error {
 	err := client.Clientset.CoreV1().Nodes().Delete(context.Background(), node.Name, metav1.DeleteOptions{})
 	if err != nil {
 		return err
@@ -174,23 +191,6 @@ func terminateInstance(instanceId, awsProfile, awsRegion string) error {
 	}
 
 	return nil
-}
-
-// ValidateCluster allows callers to validate their cluster
-// object.
-func ValidateNodeHealth(c *client.Client) bool {
-	nodes, err := getAllNodes(c)
-	if err != nil {
-		return false
-	}
-
-	for _, node := range nodes {
-		if node.Status.Conditions[0].Type != "Ready" && node.Status.Conditions[0].Status != "True" {
-			return false
-		}
-	}
-
-	return true
 }
 
 // getClusterName returns the name of the cluster from a node
