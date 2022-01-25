@@ -19,8 +19,9 @@ type Snapshot struct {
 	Cluster Cluster
 }
 
-// New constructs a new Cluster object
-func New(c *client.Client) (*Cluster, error) {
+// NewCluster creates a new Cluster object and populates its
+// fields with the values from the Kubernetes cluster in the client passed to it.
+func NewCluster(c *client.Client) (*Cluster, error) {
 	pods, err := getPods(c)
 	if err != nil {
 		return nil, err
@@ -36,17 +37,12 @@ func New(c *client.Client) (*Cluster, error) {
 		return nil, err
 	}
 
-	return NewWithValues(nodes[0].Labels["Cluster"], pods, nodes, oldestNode), nil
-}
-
-// NewWithValues constructs a Cluster object with values
-func NewWithValues(name string, pods []v1.Pod, nodes []v1.Node, oldest v1.Node) *Cluster {
 	return &Cluster{
-		Name:       name,
-		Nodes:      nodes,
+		Name:       nodes[0].Labels["Cluster"],
 		Pods:       pods,
-		OldestNode: oldest,
-	}
+		Nodes:      nodes,
+		OldestNode: oldestNode,
+	}, nil
 }
 
 // NewSnapshot constructs a Snapshot cluster object
