@@ -32,11 +32,11 @@ type Options struct {
 // Recycler is used to store objects used in a
 // recycle session.
 type Recycler struct {
-	client   *client.Client
-	cluster  *cluster.Cluster
-	snapshot *cluster.Snapshot
+	Client   *client.Client
+	Cluster  *cluster.Cluster
+	Snapshot *cluster.Snapshot
 
-	options       *Options
+	Options       *Options
 	nodeToRecycle *v1.Node
 }
 
@@ -44,64 +44,15 @@ type Recycler struct {
 // which passes arguments as a struct.
 // It is used to populate the Recycler struct and instigates the
 // node recycle process.
-func (r *Recycler) Node(opt *Options) (err error) {
-	// Pretty print log output
-	log.Logger = log.Output(zerolog.ConsoleWriter{
-		Out:     os.Stderr,
-		NoColor: false,
-	})
-	// Set default log level
-	zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+func (r *Recycler) Node() (err error) {
+	r.setupLogging()
 
-	if opt.Debug {
-		zerolog.SetGlobalLevel(zerolog.DebugLevel)
-	}
-
-	r.options = opt
-	clientset, err := client.GetClientset(r.options.KubecfgPath)
-	if err != nil {
-		return err
-	}
-
-	log.Debug().Msgf("Generating client using kubeconfig: %s", opt.KubecfgPath)
-	r.client = client.New()
-	r.client.Clientset = clientset
-
-	log.Debug().Msg("Getting cluster information from kubeconfig")
-	r.cluster, err = cluster.NewCluster(r.client)
-	if err != nil {
-		return err
-	}
-
-	log.Debug().Msg("Generating cluster snapshot")
-	r.snapshot = r.cluster.NewSnapshot()
+	log.Debug().Msg("Debug enabled")
+	log.Debug().Msgf("Kube config file used: %s", r.Options.KubecfgPath)
+	log.Debug().Msgf("Using cluster: %s", r.Cluster.Name)
+	log.Debug().Msgf("Taking snapshot of cluster: %s", r.Snapshot.Cluster.Name)
 
 	return r.RecycleNode()
-}
-
-// defineResource ensures the Recycler process is populated with the correct node to recycle.
-func (r *Recycler) defineResource() (err error) {
-	if r.options.Oldest {
-		r.nodeToRecycle = &r.cluster.OldestNode
-		log.Debug().Msgf("Using oldest node: %s", r.nodeToRecycle.Name)
-	}
-
-	// Has the user specified a node to recycle?
-	if r.options.ResourceName != "" {
-		log.Debug().Msgf("Node name defined as: %s. Gathering node information", r.options.ResourceName)
-		r.nodeToRecycle, err = r.cluster.FindNode(r.options.ResourceName)
-		if err != nil {
-			return
-		}
-	}
-
-	// Fail if no node is provided
-	if r.nodeToRecycle.Name == "" {
-		return errors.New("please either choose a node to recycle or use the oldest node")
-	}
-
-	return
 }
 
 // RecycleNode performs the heavy lifting of the node recycle process.
@@ -113,8 +64,8 @@ func (r *Recycler) RecycleNode() (err error) {
 		return err
 	}
 
-	log.Info().Msgf("Checking cluster: %s is in a valid state to recycle node", r.cluster.Name)
-	err = r.cluster.HealthCheck()
+	log.Info().Msgf("Checking cluster: %s is in a valid state to recycle node", r.Cluster.Name)
+	err = r.Cluster.HealthCheck()
 	if err != nil {
 		return err
 	}
@@ -124,20 +75,20 @@ func (r *Recycler) RecycleNode() (err error) {
 
 // drainAndCordon utilises the kubectl drain and cordon commands to perform the node recycle process.
 func (r *Recycler) drainAndCordon() (err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(r.options.TimeOut)*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(r.Options.TimeOut)*time.Second)
 	defer cancel()
 
 	helper := &drain.Helper{
 		Ctx:                 ctx,
-		Client:              r.client.Clientset,
-		Force:               r.options.Force,
+		Client:              r.Client.Clientset,
+		Force:               r.Options.Force,
 		GracePeriodSeconds:  -1,
 		IgnoreAllDaemonSets: true,
 		Out:                 log.Logger,
 		ErrOut:              log.Logger,
 		// We want to proceed even when pods are using emptyDir volumes
 		DeleteEmptyDirData: true,
-		Timeout:            time.Duration(r.options.TimeOut) * time.Second,
+		Timeout:            time.Duration(r.Options.TimeOut) * time.Second,
 	}
 
 	log.Info().Msgf("Cordoning node: %s", r.nodeToRecycle.Name)
@@ -161,7 +112,7 @@ func (r *Recycler) drainAndCordon() (err error) {
 	}
 
 	log.Info().Msgf("Deleting node: %s", r.nodeToRecycle.Name)
-	err = cluster.DeleteNode(r.client, r.options.AwsProfile, r.options.AwsRegion, r.nodeToRecycle)
+	err = cluster.DeleteNode(r.Client, r.Options.AwsProfile, r.Options.AwsRegion, r.nodeToRecycle)
 	if err != nil {
 		return err
 	}
@@ -189,22 +140,61 @@ func (r *Recycler) postRecycleValidation() (err error) {
 // node recycle process was started.
 func (r *Recycler) validate() error {
 	log.Debug().Msg("Refreshing cluster information")
-	err := r.cluster.RefreshStatus(r.client)
+	err := r.Cluster.RefreshStatus(r.Client)
 	if err != nil {
 		return fmt.Errorf("failed to refresh status: %s", err)
 	}
 
-	log.Debug().Msg("Performing new healther check")
-	err = r.cluster.HealthCheck()
+	log.Debug().Msg("Performing new health check")
+	err = r.Cluster.HealthCheck()
 	if err != nil {
 		return fmt.Errorf("node %s is not healthy: %s", r.nodeToRecycle, err)
 	}
 
 	log.Debug().Msg("Comparing old snapshot to new cluster information")
-	err = r.cluster.CompareNodes(r.snapshot)
+	err = r.Cluster.CompareNodes(r.Snapshot)
 	if err != nil {
-		return fmt.Errorf("node numbers are not in the same state as before: want %v, got %v", len(r.snapshot.Cluster.Nodes), len(r.cluster.Nodes))
+		return fmt.Errorf("node numbers are not in the same state as before: want %v, got %v", len(r.Snapshot.Cluster.Nodes), len(r.Cluster.Nodes))
 	}
 
 	return nil
+}
+
+// defineResource ensures the Recycler process is populated with the correct node to recycle.
+func (r *Recycler) defineResource() (err error) {
+	if r.Options.Oldest {
+		r.nodeToRecycle = &r.Cluster.OldestNode
+		log.Debug().Msgf("Using oldest node: %s", r.nodeToRecycle.Name)
+	}
+
+	// Has the user specified a node to recycle?
+	if r.Options.ResourceName != "" {
+		log.Debug().Msgf("Node name defined as: %s. Gathering node information", r.Options.ResourceName)
+		r.nodeToRecycle, err = r.Cluster.FindNode(r.Options.ResourceName)
+		if err != nil {
+			return
+		}
+	}
+
+	// Fail if no node is provided
+	if r.nodeToRecycle.Name == "" {
+		return errors.New("please either choose a node to recycle or use the oldest node")
+	}
+
+	return
+}
+
+func (r *Recycler) setupLogging() {
+	// Pretty print log output
+	log.Logger = log.Output(zerolog.ConsoleWriter{
+		Out:     os.Stderr,
+		NoColor: false,
+	})
+	// Set default log level
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+
+	if r.Options.Debug {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	}
 }
