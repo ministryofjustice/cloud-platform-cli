@@ -102,12 +102,13 @@ func (r *Recycler) RecycleNode() (err error) {
 	if err != nil {
 		return fmt.Errorf("unable to drain node: %s", err)
 	}
-	// err = r.terminateNode()
-	// if err != nil {
-	// 	return err
-	// }
 
-	return r.drainAndCordon(drainHelper)
+	err = r.terminateNode()
+	if err != nil {
+		return err
+	}
+
+	return r.postRecycleValidation()
 }
 
 func (r *Recycler) getDrainHelper() *drain.Helper {
@@ -149,6 +150,16 @@ func (r *Recycler) cordonNode(helper *drain.Helper) error {
 	return drain.RunCordonOrUncordon(helper, r.nodeToRecycle, true)
 }
 
+func (r *Recycler) terminateNode() error {
+	log.Info().Msgf("Deleting node: %s", r.nodeToRecycle.Name)
+	err := cluster.DeleteNode(r.Client, r.Options.AwsProfile, r.Options.AwsRegion, r.nodeToRecycle)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // RemoveLabel is called when the recycle-node command fails
 func (r *Recycler) RemoveLabel(key string) error {
 	if r.nodeToRecycle.Labels == nil {
@@ -168,15 +179,6 @@ func (r *Recycler) addLabel(key, value string) error {
 	r.nodeToRecycle.Labels[key] = value
 	_, err := r.Client.Clientset.CoreV1().Nodes().Patch(context.TODO(), r.nodeToRecycle.Name, types.MergePatchType, []byte(fmt.Sprintf(`{"metadata":{"labels":{"%s":"%s"}}}`, key, value)), metav1.PatchOptions{})
 	return err
-}
-
-func (r *Recycler) drainAndCordon(helper *drain.Helper) (err error) {
-	log.Info().Msgf("Deleting node: %s", r.nodeToRecycle.Name)
-	err = cluster.DeleteNode(r.Client, r.Options.AwsProfile, r.Options.AwsRegion, r.nodeToRecycle)
-	if err != nil {
-		return err
-	}
-	return r.postRecycleValidation()
 }
 
 // postRecycleValidation performs a final check on the cluster to ensure it is in a valid state.
