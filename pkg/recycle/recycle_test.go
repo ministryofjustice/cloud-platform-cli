@@ -1,26 +1,42 @@
 package recycle
 
 import (
+	"context"
+	"fmt"
 	"testing"
 
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/cluster"
+	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 )
 
-func TestRecycler_defineResource(t *testing.T) {
-	mockCluster := cluster.NewMock()
-	mockClient := client.Client{
+var (
+	mockCluster = cluster.NewMock()
+	mockClient  = client.Client{
 		Clientset: fake.NewSimpleClientset(),
 	}
-	mockSnapshot := cluster.Snapshot{
+	mockSnapshot = cluster.Snapshot{
 		Cluster: *mockCluster,
 	}
-	mockOptions := Options{
+	mockOptions = Options{
 		ResourceName: "node1",
+		Force:        true,
+		TimeOut:      360,
 	}
 
+	mockRecycler = Recycler{
+		Client:        &mockClient,
+		Cluster:       mockCluster,
+		Snapshot:      &mockSnapshot,
+		Options:       &mockOptions,
+		nodeToRecycle: &v1.Node{},
+	}
+)
+
+func TestRecycler_defineResource(t *testing.T) {
 	type fields struct {
 		client        *client.Client
 		cluster       *cluster.Cluster
@@ -44,27 +60,14 @@ func TestRecycler_defineResource(t *testing.T) {
 			},
 			wantErr: false,
 		},
-		// {
-		// 	name: "define resource error",
-		// 	fields: fields{
-		// 		client:   &mockClient,
-		// 		cluster:  mockCluster,
-		// 		snapshot: &mockSnapshot,
-		// 		options: &Options{
-		// 			ResourceName: "",
-		// 		},
-		// 		nodeToRecycle: nil,
-		// 	},
-		// 	wantErr: true,
-		// },
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &Recycler{
-				client:        tt.fields.client,
-				cluster:       tt.fields.cluster,
-				snapshot:      tt.fields.snapshot,
-				options:       tt.fields.options,
+				Client:        tt.fields.client,
+				Cluster:       tt.fields.cluster,
+				Snapshot:      tt.fields.snapshot,
+				Options:       tt.fields.options,
 				nodeToRecycle: tt.fields.nodeToRecycle,
 			}
 			if err := r.defineResource(); (err != nil) != tt.wantErr {
@@ -72,4 +75,101 @@ func TestRecycler_defineResource(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRecycler_getDrainHelper(t *testing.T) {
+	assert := assert.New(t)
+
+	helper := mockRecycler.getDrainHelper()
+
+	assert.NotNil(t, helper)
+}
+
+func TestRecycler_cordonNode(t *testing.T) {
+	node, err := mockClient.Clientset.CoreV1().Nodes().Create(
+		context.Background(),
+		&v1.Node{
+			ObjectMeta: metav1.ObjectMeta{Name: "node1"},
+		},
+		metav1.CreateOptions{})
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	helper := mockRecycler.getDrainHelper()
+
+	mockRecycler.nodeToRecycle = node
+
+	err = mockRecycler.cordonNode(helper)
+	if err != nil {
+		t.Errorf("Recycler.cordonNode() error = %v", err)
+	}
+
+	assert.Equal(t, node.Labels["node-cordon"], "true")
+	assert.Equal(t, mockRecycler.nodeToRecycle.Spec.Unschedulable, node.Spec.Unschedulable)
+}
+
+func TestRecycler_drainNode(t *testing.T) {
+	node, err := mockClient.Clientset.CoreV1().Nodes().Create(
+		context.Background(),
+		&v1.Node{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:            "node1",
+				ResourceVersion: "1",
+				ClusterName:     "cluster1",
+				Labels:          map[string]string{"node-cordon": "true"},
+			},
+		},
+		metav1.CreateOptions{})
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	pod, err := mockClient.Clientset.CoreV1().Pods("default").Create(
+		context.Background(),
+		&v1.Pod{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "default"},
+			Spec: v1.PodSpec{
+				NodeName: "node1",
+				NodeSelector: map[string]string{
+					"node-cordon": "true",
+				},
+			},
+		},
+		metav1.CreateOptions{})
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	helper := mockRecycler.getDrainHelper()
+
+	mockRecycler.nodeToRecycle = node
+
+	// Get all pods on a node
+	pods, _ := mockClient.Clientset.CoreV1().Pods("default").List(
+		context.Background(),
+		metav1.ListOptions{
+			LabelSelector: "node-cordon=true",
+		},
+	)
+
+	// get all pods on all nodes
+	podsAll, _ := mockClient.Clientset.CoreV1().Pods("default").List(
+		context.Background(),
+		metav1.ListOptions{},
+	)
+
+	fmt.Println(podsAll)
+
+	fmt.Println(pods)
+
+	fmt.Println(mockRecycler.nodeToRecycle)
+
+	err = mockRecycler.drainNode(helper)
+	if err != nil {
+		t.Errorf("Recycler.drainNode() error = %v", err)
+	}
+
+	assert.Equal(t, node.Labels["node-drain"], "true")
+	assert.Equal(t, mockClient.Clientset.CoreV1().Pods("default").Delete(context.Background(), pod.Name, metav1.DeleteOptions{}), nil)
 }

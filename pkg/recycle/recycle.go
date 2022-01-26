@@ -13,6 +13,8 @@ import (
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/kubectl/pkg/drain"
 )
 
@@ -50,15 +52,9 @@ func (r *Recycler) Node() (err error) {
 	log.Debug().Msg("Debug enabled")
 	log.Debug().Msgf("Kube config file used: %s", r.Options.KubecfgPath)
 	log.Debug().Msgf("Using cluster: %s", r.Cluster.Name)
-	log.Debug().Msgf("Taking snapshot of cluster: %s", r.Snapshot.Cluster.Name)
+	log.Debug().Msgf("Successfully taken snapshot of cluster: %s", r.Snapshot.Cluster.Name)
 
-	return r.RecycleNode()
-}
-
-// RecycleNode performs the heavy lifting of the node recycle process.
-// It will attempt to drain, cordon and delete the node.
-func (r *Recycler) RecycleNode() (err error) {
-	// Does the user want to recycle the oldest node?
+	// specify which node to recycle
 	err = r.defineResource()
 	if err != nil {
 		return err
@@ -70,15 +66,55 @@ func (r *Recycler) RecycleNode() (err error) {
 		return err
 	}
 
-	return r.drainAndCordon()
+	// Check for node labels from previous recycle sessions
+	for _, node := range r.Cluster.Nodes {
+		if node.Labels["node-cordon"] == "true" {
+			return fmt.Errorf("node %s is already cordoned, abort", node.Name)
+		}
+
+		if node.Labels["node-drain"] == "true" {
+			return fmt.Errorf("node %s is already drained, abort", node.Name)
+		}
+	}
+
+	return r.RecycleNode()
 }
 
-// drainAndCordon utilises the kubectl drain and cordon commands to perform the node recycle process.
-func (r *Recycler) drainAndCordon() (err error) {
+// RecycleNode performs the heavy lifting of the node recycle process.
+// It will attempt to drain, cordon and delete the node.
+func (r *Recycler) RecycleNode() (err error) {
+	drainHelper := r.getDrainHelper()
+
+	err = r.cordonNode(drainHelper)
+	if apierrors.IsInvalid(err) {
+		log.Debug().Msgf("An API error occurred: %s - will continue", err)
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("failed to cordon node: %s", err)
+	}
+
+	err = r.drainNode(drainHelper)
+	if apierrors.IsInvalid(err) {
+		log.Debug().Msgf("An API error occurred: %s - will continue", err)
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("unable to drain node: %s", err)
+	}
+	// err = r.terminateNode()
+	// if err != nil {
+	// 	return err
+	// }
+
+	return r.drainAndCordon(drainHelper)
+}
+
+func (r *Recycler) getDrainHelper() *drain.Helper {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(r.Options.TimeOut)*time.Second)
 	defer cancel()
 
-	helper := &drain.Helper{
+	return &drain.Helper{
 		Ctx:                 ctx,
 		Client:              r.Client.Clientset,
 		Force:               r.Options.Force,
@@ -90,27 +126,51 @@ func (r *Recycler) drainAndCordon() (err error) {
 		DeleteEmptyDirData: true,
 		Timeout:            time.Duration(r.Options.TimeOut) * time.Second,
 	}
+}
 
-	log.Info().Msgf("Cordoning node: %s", r.nodeToRecycle.Name)
-	err = drain.RunCordonOrUncordon(helper, r.nodeToRecycle, true)
-	if apierrors.IsInvalid(err) {
-		log.Debug().Msgf("An API error occurred: %s - will continue", err)
-		return nil
-	}
-	if err != nil {
-		return err
-	}
+// Drain utilises the kubectl drain command to perform the node recycle process.
+func (r *Recycler) drainNode(helper *drain.Helper) error {
+	// err := r.addLabel("node-drain", "true")
+	// if err != nil {
+	// 	return err
+	// }
 
 	log.Info().Msgf("Draining node: %s", r.nodeToRecycle.Name)
-	err = drain.RunNodeDrain(helper, r.nodeToRecycle.Name)
-	if apierrors.IsInvalid(err) {
-		log.Debug().Msgf("An API error occurred: %s - will continue", err)
-		return nil
-	}
+	return drain.RunNodeDrain(helper, r.nodeToRecycle.Name)
+}
+
+func (r *Recycler) cordonNode(helper *drain.Helper) error {
+	log.Info().Msgf("Cordoning node: %s", r.nodeToRecycle.Name)
+	err := r.addLabel("node-cordon", "true")
 	if err != nil {
 		return err
 	}
 
+	return drain.RunCordonOrUncordon(helper, r.nodeToRecycle, true)
+}
+
+// RemoveLabel is called when the recycle-node command fails
+func (r *Recycler) RemoveLabel(key string) error {
+	if r.nodeToRecycle.Labels == nil {
+		return nil
+	}
+
+	delete(r.nodeToRecycle.Labels, key)
+	_, err := r.Client.Clientset.CoreV1().Nodes().Patch(context.TODO(), r.nodeToRecycle.Name, types.MergePatchType, []byte(fmt.Sprintf(`{"metadata":{"labels":{"%s":""}}}`, key)), metav1.PatchOptions{})
+	return err
+}
+
+func (r *Recycler) addLabel(key, value string) error {
+	if r.nodeToRecycle.Labels == nil {
+		r.nodeToRecycle.Labels = make(map[string]string)
+	}
+
+	r.nodeToRecycle.Labels[key] = value
+	_, err := r.Client.Clientset.CoreV1().Nodes().Patch(context.TODO(), r.nodeToRecycle.Name, types.MergePatchType, []byte(fmt.Sprintf(`{"metadata":{"labels":{"%s":"%s"}}}`, key, value)), metav1.PatchOptions{})
+	return err
+}
+
+func (r *Recycler) drainAndCordon(helper *drain.Helper) (err error) {
 	log.Info().Msgf("Deleting node: %s", r.nodeToRecycle.Name)
 	err = cluster.DeleteNode(r.Client, r.Options.AwsProfile, r.Options.AwsRegion, r.nodeToRecycle)
 	if err != nil {

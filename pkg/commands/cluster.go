@@ -71,6 +71,14 @@ var clusterRecycleNodeCmd = &cobra.Command{
 
 		err = recycle.Node()
 		if err != nil {
+			err := recycle.RemoveLabel("node-cordon")
+			if err != nil {
+				return fmt.Errorf("failed to remove node-cordon label: %s", err)
+			err := recycle.RemoveLabel("node-drain")
+			if err != nil {
+				return fmt.Errorf("failed to remove node-drain label: %s", err)
+			}
+
 			return err
 		}
 
