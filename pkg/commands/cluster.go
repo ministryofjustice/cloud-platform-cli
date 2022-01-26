@@ -39,7 +39,7 @@ var clusterCmd = &cobra.Command{
 
 var clusterRecycleNodeCmd = &cobra.Command{
 	Use:   "recycle-node",
-	Short: `choose a node to recycle`,
+	Short: `recycle a node`,
 	Example: heredoc.Doc(`
 	$ cloud-platform cluster recycle-node
 	`),
@@ -74,7 +74,8 @@ var clusterRecycleNodeCmd = &cobra.Command{
 			err := recycle.RemoveLabel("node-cordon")
 			if err != nil {
 				return fmt.Errorf("failed to remove node-cordon label: %s", err)
-			err := recycle.RemoveLabel("node-drain")
+			}
+			err = recycle.RemoveLabel("node-drain")
 			if err != nil {
 				return fmt.Errorf("failed to remove node-drain label: %s", err)
 			}
