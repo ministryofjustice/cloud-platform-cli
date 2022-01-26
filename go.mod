@@ -38,6 +38,7 @@ require (
 	github.com/aws/aws-sdk-go v1.41.5
 	github.com/ministryofjustice/cloud-platform-environments v1.1.1
 	github.com/rs/zerolog v1.26.1
+	github.com/stretchr/testify v1.7.0
 	k8s.io/api v0.23.2
 	k8s.io/apimachinery v0.23.2
 	k8s.io/client-go v0.23.2
@@ -102,7 +103,6 @@ require (
 	github.com/russross/blackfriday v1.5.2 // indirect
 	github.com/spf13/afero v1.6.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
-	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/xlab/treeprint v0.0.0-20181112141820-a009c3971eca // indirect
 	github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 // indirect
