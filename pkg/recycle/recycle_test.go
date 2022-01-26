@@ -113,7 +113,7 @@ func TestRecycler_drainNode(t *testing.T) {
 		context.Background(),
 		&v1.Node{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:            "node1",
+				Name:            "PleaseDrainMe",
 				ResourceVersion: "1",
 				ClusterName:     "cluster1",
 				Labels:          map[string]string{"node-cordon": "true"},
