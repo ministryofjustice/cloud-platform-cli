@@ -2,7 +2,6 @@ package recycle
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
@@ -125,51 +124,25 @@ func TestRecycler_drainNode(t *testing.T) {
 		t.Errorf("unexpected error: %v", err)
 	}
 
-	pod, err := mockClient.Clientset.CoreV1().Pods("default").Create(
-		context.Background(),
-		&v1.Pod{
-			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "default"},
-			Spec: v1.PodSpec{
-				NodeName: "node1",
-				NodeSelector: map[string]string{
-					"node-cordon": "true",
-				},
-			},
-		},
-		metav1.CreateOptions{})
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-
 	helper := mockRecycler.getDrainHelper()
 
 	mockRecycler.nodeToRecycle = node
-
-	// Get all pods on a node
-	pods, _ := mockClient.Clientset.CoreV1().Pods("default").List(
-		context.Background(),
-		metav1.ListOptions{
-			LabelSelector: "node-cordon=true",
-		},
-	)
-
-	// get all pods on all nodes
-	podsAll, _ := mockClient.Clientset.CoreV1().Pods("default").List(
-		context.Background(),
-		metav1.ListOptions{},
-	)
-
-	fmt.Println(podsAll)
-
-	fmt.Println(pods)
-
-	fmt.Println(mockRecycler.nodeToRecycle)
 
 	err = mockRecycler.drainNode(helper)
 	if err != nil {
 		t.Errorf("Recycler.drainNode() error = %v", err)
 	}
 
+	podsOnNode, err := mockClient.Clientset.CoreV1().Pods("").List(
+		context.Background(),
+		metav1.ListOptions{
+			LabelSelector: "node-cordon=true",
+		},
+	)
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
 	assert.Equal(t, node.Labels["node-drain"], "true")
-	assert.Equal(t, mockClient.Clientset.CoreV1().Pods("default").Delete(context.Background(), pod.Name, metav1.DeleteOptions{}), nil)
+	assert.Nil(t, podsOnNode.Items)
 }

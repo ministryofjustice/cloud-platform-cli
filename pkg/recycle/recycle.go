@@ -130,10 +130,10 @@ func (r *Recycler) getDrainHelper() *drain.Helper {
 
 // Drain utilises the kubectl drain command to perform the node recycle process.
 func (r *Recycler) drainNode(helper *drain.Helper) error {
-	// err := r.addLabel("node-drain", "true")
-	// if err != nil {
-	// 	return err
-	// }
+	err := r.addLabel("node-drain", "true")
+	if err != nil {
+		return err
+	}
 
 	log.Info().Msgf("Draining node: %s", r.nodeToRecycle.Name)
 	return drain.RunNodeDrain(helper, r.nodeToRecycle.Name)
