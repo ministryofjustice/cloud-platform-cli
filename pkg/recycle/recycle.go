@@ -160,6 +160,20 @@ func (r *Recycler) terminateNode() error {
 	return nil
 }
 
+func (r *Recycler) checkLabels() error {
+	for _, node := range r.Cluster.Nodes {
+		if node.Labels["node-cordon"] == "true" {
+			return fmt.Errorf("node %s is already cordoned, abort", node.Name)
+		}
+
+		if node.Labels["node-drain"] == "true" {
+			return fmt.Errorf("node %s is already drained, abort", node.Name)
+		}
+	}
+
+	return nil
+}
+
 // RemoveLabel is called when the recycle-node command fails
 func (r *Recycler) RemoveLabel(key string) error {
 	if r.nodeToRecycle.Labels == nil {

@@ -171,3 +171,25 @@ func TestRecycler_addLabel(t *testing.T) {
 	// Check that the label was added
 	assert.Equal(t, node.Labels["test-key"], "test-value")
 }
+
+func TestRecycler_checkLabels(t *testing.T) {
+	node, err := mockClient.Clientset.CoreV1().Nodes().Create(
+		context.Background(),
+		&v1.Node{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:   "PleaseLabelMe",
+				Labels: map[string]string{"node-cordon": "true"},
+			},
+		},
+		metav1.CreateOptions{})
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	mockRecycler.nodeToRecycle = node
+
+	mockRecycler.Cluster.Nodes = append(mockRecycler.Cluster.Nodes, *node)
+
+	err = mockRecycler.checkLabels()
+	assert.NotEqual(t, err, nil)
+}
