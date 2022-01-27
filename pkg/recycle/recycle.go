@@ -12,7 +12,6 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/kubectl/pkg/drain"
@@ -21,24 +20,41 @@ import (
 // Options are used to configure recycle sessions.
 // These options are normally passed via flags in a command line.
 type Options struct {
+	// Resource is the resource to be recycled.
+	// This can be a node, pod, service, deployment, etc.
 	ResourceName string
-	Debug        bool
-	Force        bool
-	TimeOut      int
-	AwsProfile   string
-	AwsRegion    string
-	Oldest       bool
-	KubecfgPath  string
+	// Debug enables the debug messages in stdout and stderr.
+	Debug bool
+	// Force enables the force flag for the kubectl drain command.
+	Force bool
+	// Timeout is the timeout for the kubectl drain command.
+	TimeOut int
+	// Oldest suggests using the oldest resource in a list, such as a node.
+	Oldest bool
+	// KubecfgPath is the path to the kubeconfig file to use for the Kubernetes client.
+	KubecfgPath string
+	// IgnoreLabel indicates that the node-cordon or node-drain labels should not be checked.
+	IgnoreLabel bool
+
+	// AwsProfile is the AWS profile to use for resource termination.
+	AwsProfile string
+	// AwsRegion is the AWS region to use for resource termination.
+	AwsRegion string
 }
 
 // Recycler is used to store objects used in a
 // recycle session.
 type Recycler struct {
-	Client   *client.Client
-	Cluster  *cluster.Cluster
+	// Client represents the kubernetes client.
+	Client *client.Client
+	// Cluster is the cluster object obtained from the current context.
+	Cluster *cluster.Cluster
+	// Snapshot is the snapshot of the cluster. Used for comparison of cluster state.
 	Snapshot *cluster.Snapshot
 
-	Options       *Options
+	// Options are used to configure the recycle session.
+	Options *Options
+	// nodeToRecycle is the Kubernetes node object to be recycled.
 	nodeToRecycle *v1.Node
 }
 
@@ -67,13 +83,11 @@ func (r *Recycler) Node() (err error) {
 	}
 
 	// Check for node labels from previous recycle sessions
-	for _, node := range r.Cluster.Nodes {
-		if node.Labels["node-cordon"] == "true" {
-			return fmt.Errorf("node %s is already cordoned, abort", node.Name)
-		}
-
-		if node.Labels["node-drain"] == "true" {
-			return fmt.Errorf("node %s is already drained, abort", node.Name)
+	log.Debug().Msg("Checking if the node-cordon or node-drain labels exist")
+	if !r.Options.IgnoreLabel {
+		err = r.checkLabels()
+		if err != nil {
+			return err
 		}
 	}
 
@@ -85,24 +99,19 @@ func (r *Recycler) Node() (err error) {
 func (r *Recycler) RecycleNode() (err error) {
 	drainHelper := r.getDrainHelper()
 
+	log.Info().Msgf("Cordoning node: %s", r.nodeToRecycle.Name)
 	err = r.cordonNode(drainHelper)
-	if apierrors.IsInvalid(err) {
-		log.Debug().Msgf("An API error occurred: %s - will continue", err)
-		return nil
-	}
 	if err != nil {
 		return fmt.Errorf("failed to cordon node: %s", err)
 	}
 
+	log.Info().Msgf("Draining node: %s", r.nodeToRecycle.Name)
 	err = r.drainNode(drainHelper)
-	if apierrors.IsInvalid(err) {
-		log.Debug().Msgf("An API error occurred: %s - will continue", err)
-		return nil
-	}
 	if err != nil {
 		return fmt.Errorf("unable to drain node: %s", err)
 	}
 
+	log.Info().Msgf("Terminate node: %s", r.nodeToRecycle.Name)
 	err = r.terminateNode()
 	if err != nil {
 		return err
@@ -112,11 +121,8 @@ func (r *Recycler) RecycleNode() (err error) {
 }
 
 func (r *Recycler) getDrainHelper() *drain.Helper {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(r.Options.TimeOut)*time.Second)
-	defer cancel()
-
 	return &drain.Helper{
-		Ctx:                 ctx,
+		Ctx:                 context.TODO(),
 		Client:              r.Client.Clientset,
 		Force:               r.Options.Force,
 		GracePeriodSeconds:  -1,
@@ -129,19 +135,8 @@ func (r *Recycler) getDrainHelper() *drain.Helper {
 	}
 }
 
-// Drain utilises the kubectl drain command to perform the node recycle process.
-func (r *Recycler) drainNode(helper *drain.Helper) error {
-	err := r.addLabel("node-drain", "true")
-	if err != nil {
-		return err
-	}
-
-	log.Info().Msgf("Draining node: %s", r.nodeToRecycle.Name)
-	return drain.RunNodeDrain(helper, r.nodeToRecycle.Name)
-}
-
 func (r *Recycler) cordonNode(helper *drain.Helper) error {
-	log.Info().Msgf("Cordoning node: %s", r.nodeToRecycle.Name)
+	log.Debug().Msgf("Adding 'node-cordon' label to: %s", r.nodeToRecycle.Name)
 	err := r.addLabel("node-cordon", "true")
 	if err != nil {
 		return err
@@ -150,8 +145,17 @@ func (r *Recycler) cordonNode(helper *drain.Helper) error {
 	return drain.RunCordonOrUncordon(helper, r.nodeToRecycle, true)
 }
 
+func (r *Recycler) drainNode(helper *drain.Helper) error {
+	log.Debug().Msgf("Adding 'node-drain' label to: %s", r.nodeToRecycle.Name)
+	err := r.addLabel("node-drain", "true")
+	if err != nil {
+		return err
+	}
+
+	return drain.RunNodeDrain(helper, r.nodeToRecycle.Name)
+}
+
 func (r *Recycler) terminateNode() error {
-	log.Info().Msgf("Deleting node: %s", r.nodeToRecycle.Name)
 	err := cluster.DeleteNode(r.Client, r.Options.AwsProfile, r.Options.AwsRegion, r.nodeToRecycle)
 	if err != nil {
 		return err

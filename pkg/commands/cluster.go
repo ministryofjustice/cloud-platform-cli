@@ -23,6 +23,8 @@ func addClusterCmd(topLevel *cobra.Command) {
 
 	// recycle node flags
 	clusterRecycleNodeCmd.Flags().StringVarP(&opt.ResourceName, "name", "n", "", "name of the resource to recycle")
+	clusterRecycleNodeCmd.Flags().BoolVarP(&opt.Force, "force", "f", true, "force the pods to drain")
+	clusterRecycleNodeCmd.Flags().BoolVarP(&opt.IgnoreLabel, "ignore-label", "i", false, "whether to ignore the labels on the resource")
 	clusterRecycleNodeCmd.Flags().IntVarP(&opt.TimeOut, "timeout", "t", 360, "amount of time to wait for the drain command to complete")
 	clusterRecycleNodeCmd.Flags().BoolVar(&opt.Oldest, "oldest", false, "whether to recycle the oldest node")
 	clusterRecycleNodeCmd.Flags().StringVar(&opt.KubecfgPath, "kubecfg", filepath.Join(homedir.HomeDir(), ".kube", "config"), "path to kubeconfig file")
@@ -71,15 +73,6 @@ var clusterRecycleNodeCmd = &cobra.Command{
 
 		err = recycle.Node()
 		if err != nil {
-			err := recycle.RemoveLabel("node-cordon")
-			if err != nil {
-				return fmt.Errorf("failed to remove node-cordon label: %s", err)
-			}
-			err = recycle.RemoveLabel("node-drain")
-			if err != nil {
-				return fmt.Errorf("failed to remove node-drain label: %s", err)
-			}
-
 			return err
 		}
 
