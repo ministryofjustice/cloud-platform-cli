@@ -146,3 +146,28 @@ func TestRecycler_drainNode(t *testing.T) {
 	assert.Equal(t, node.Labels["node-drain"], "true")
 	assert.Nil(t, podsOnNode.Items)
 }
+
+func TestRecycler_addLabel(t *testing.T) {
+	node, err := mockClient.Clientset.CoreV1().Nodes().Create(
+		context.Background(),
+		&v1.Node{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:   "PleaseLabelMe",
+				Labels: map[string]string{"node-cordon": "true"},
+			},
+		},
+		metav1.CreateOptions{})
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	mockRecycler.nodeToRecycle = node
+
+	err = mockRecycler.addLabel("test-key", "test-value")
+	if err != nil {
+		t.Errorf("Recycler.addLabel() = %v", err)
+	}
+
+	// Check that the label was added
+	assert.Equal(t, node.Labels["test-key"], "test-value")
+}
