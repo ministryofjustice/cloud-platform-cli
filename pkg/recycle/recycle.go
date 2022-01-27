@@ -1,8 +1,6 @@
 package recycle
 
 import (
-	"context"
-	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -12,9 +10,6 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/kubectl/pkg/drain"
 )
 
 // Options are used to configure recycle sessions.
@@ -42,8 +37,7 @@ type Options struct {
 	AwsRegion string
 }
 
-// Recycler is used to store objects used in a
-// recycle session.
+// Recycler is used to store objects used in a recycle session.
 type Recycler struct {
 	// Client represents the kubernetes client.
 	Client *client.Client
@@ -58,10 +52,9 @@ type Recycler struct {
 	nodeToRecycle *v1.Node
 }
 
-// Node is called by the cluster recycle-node command
-// which passes arguments as a struct.
-// It is used to populate the Recycler struct and instigates the
-// node recycle process.
+// Node is the entry point for the node recycle process.
+// It will attempt to find the node to recycle, check the cluster is ready for a node recycle
+// and then check for missing labels. It returns an error if the called RecycleNode method fails.
 func (r *Recycler) Node() (err error) {
 	r.setupLogging()
 
@@ -70,14 +63,14 @@ func (r *Recycler) Node() (err error) {
 	log.Debug().Msgf("Using cluster: %s", r.Cluster.Name)
 	log.Debug().Msgf("Successfully taken snapshot of cluster: %s", r.Snapshot.Cluster.Name)
 
-	// specify which node to recycle
-	err = r.defineResource()
+	// Populate the nodeToRecycle object
+	err = r.useNode()
 	if err != nil {
 		return err
 	}
 
 	log.Info().Msgf("Checking cluster: %s is in a valid state to recycle node", r.Cluster.Name)
-	err = r.Cluster.HealthCheck()
+	err = r.validate()
 	if err != nil {
 		return err
 	}
@@ -91,12 +84,14 @@ func (r *Recycler) Node() (err error) {
 		}
 	}
 
-	return r.RecycleNode()
+	return r.recycleNode()
 }
 
-// RecycleNode performs the heavy lifting of the node recycle process.
-// It will attempt to drain, cordon and delete the node.
-func (r *Recycler) RecycleNode() (err error) {
+// recycleNode performs the heavy lifting of the node recycle process.
+// It will create a drain helper for further usage, utilise the kubectl
+// drain package to first cordon the selected node and then drain all pods.
+// It then calls the cluster package and terminates said node from AWS Ec2.
+func (r *Recycler) recycleNode() (err error) {
 	drainHelper := r.getDrainHelper()
 
 	log.Info().Msgf("Cordoning node: %s", r.nodeToRecycle.Name)
@@ -117,90 +112,10 @@ func (r *Recycler) RecycleNode() (err error) {
 		return err
 	}
 
-	return r.postRecycleValidation()
+	return r.postNodeCheck()
 }
 
-func (r *Recycler) getDrainHelper() *drain.Helper {
-	return &drain.Helper{
-		Ctx:                 context.TODO(),
-		Client:              r.Client.Clientset,
-		Force:               r.Options.Force,
-		GracePeriodSeconds:  -1,
-		IgnoreAllDaemonSets: true,
-		Out:                 log.Logger,
-		ErrOut:              log.Logger,
-		// We want to proceed even when pods are using emptyDir volumes
-		DeleteEmptyDirData: true,
-		Timeout:            time.Duration(r.Options.TimeOut) * time.Second,
-	}
-}
-
-func (r *Recycler) cordonNode(helper *drain.Helper) error {
-	log.Debug().Msgf("Adding 'node-cordon' label to: %s", r.nodeToRecycle.Name)
-	err := r.addLabel("node-cordon", "true")
-	if err != nil {
-		return err
-	}
-
-	return drain.RunCordonOrUncordon(helper, r.nodeToRecycle, true)
-}
-
-func (r *Recycler) drainNode(helper *drain.Helper) error {
-	log.Debug().Msgf("Adding 'node-drain' label to: %s", r.nodeToRecycle.Name)
-	err := r.addLabel("node-drain", "true")
-	if err != nil {
-		return err
-	}
-
-	return drain.RunNodeDrain(helper, r.nodeToRecycle.Name)
-}
-
-func (r *Recycler) terminateNode() error {
-	err := cluster.DeleteNode(r.Client, r.Options.AwsProfile, r.Options.AwsRegion, r.nodeToRecycle)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (r *Recycler) checkLabels() error {
-	for _, node := range r.Cluster.Nodes {
-		if node.Labels["node-cordon"] == "true" {
-			return fmt.Errorf("node %s is already cordoned, abort", node.Name)
-		}
-
-		if node.Labels["node-drain"] == "true" {
-			return fmt.Errorf("node %s is already drained, abort", node.Name)
-		}
-	}
-
-	return nil
-}
-
-// RemoveLabel is called when the recycle-node command fails
-func (r *Recycler) RemoveLabel(key string) error {
-	if r.nodeToRecycle.Labels == nil {
-		return nil
-	}
-
-	delete(r.nodeToRecycle.Labels, key)
-	_, err := r.Client.Clientset.CoreV1().Nodes().Patch(context.TODO(), r.nodeToRecycle.Name, types.MergePatchType, []byte(fmt.Sprintf(`{"metadata":{"labels":{"%s":""}}}`, key)), metav1.PatchOptions{})
-	return err
-}
-
-func (r *Recycler) addLabel(key, value string) error {
-	if r.nodeToRecycle.Labels == nil {
-		r.nodeToRecycle.Labels = make(map[string]string)
-	}
-
-	r.nodeToRecycle.Labels[key] = value
-	_, err := r.Client.Clientset.CoreV1().Nodes().Patch(context.TODO(), r.nodeToRecycle.Name, types.MergePatchType, []byte(fmt.Sprintf(`{"metadata":{"labels":{"%s":"%s"}}}`, key, value)), metav1.PatchOptions{})
-	return err
-}
-
-// postRecycleValidation performs a final check on the cluster to ensure it is in a valid state.
-func (r *Recycler) postRecycleValidation() (err error) {
+func (r *Recycler) postNodeCheck() (err error) {
 	log.Info().Msg("Validating cluster health")
 	for i := 0; i < 5; i++ {
 		err := r.validate()
@@ -215,7 +130,7 @@ func (r *Recycler) postRecycleValidation() (err error) {
 	return nil
 }
 
-// validate is called by postRecycleValidation to perform the actual checks on the cluster.
+// validate is called to perform checks on the cluster.
 // It ensures the cluster is healthy and the cluster has the same amount of nodes as when the
 // node recycle process was started.
 func (r *Recycler) validate() error {
@@ -238,30 +153,6 @@ func (r *Recycler) validate() error {
 	}
 
 	return nil
-}
-
-// defineResource ensures the Recycler process is populated with the correct node to recycle.
-func (r *Recycler) defineResource() (err error) {
-	if r.Options.Oldest {
-		r.nodeToRecycle = &r.Cluster.OldestNode
-		log.Debug().Msgf("Using oldest node: %s", r.nodeToRecycle.Name)
-	}
-
-	// Has the user specified a node to recycle?
-	if r.Options.ResourceName != "" {
-		log.Debug().Msgf("Node name defined as: %s. Gathering node information", r.Options.ResourceName)
-		r.nodeToRecycle, err = r.Cluster.FindNode(r.Options.ResourceName)
-		if err != nil {
-			return
-		}
-	}
-
-	// Fail if no node is provided
-	if r.nodeToRecycle.Name == "" {
-		return errors.New("please either choose a node to recycle or use the oldest node")
-	}
-
-	return
 }
 
 func (r *Recycler) setupLogging() {

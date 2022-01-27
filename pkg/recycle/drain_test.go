@@ -27,15 +27,14 @@ var (
 	}
 
 	mockRecycler = Recycler{
-		Client:        &mockClient,
-		Cluster:       mockCluster,
-		Snapshot:      &mockSnapshot,
-		Options:       &mockOptions,
-		nodeToRecycle: &v1.Node{},
+		Client:   &mockClient,
+		Cluster:  mockCluster,
+		Snapshot: &mockSnapshot,
+		Options:  &mockOptions,
 	}
 )
 
-func TestRecycler_defineResource(t *testing.T) {
+func TestRecycler_useNode(t *testing.T) {
 	type fields struct {
 		client        *client.Client
 		cluster       *cluster.Cluster
@@ -69,7 +68,7 @@ func TestRecycler_defineResource(t *testing.T) {
 				Options:       tt.fields.options,
 				nodeToRecycle: tt.fields.nodeToRecycle,
 			}
-			if err := r.defineResource(); (err != nil) != tt.wantErr {
+			if err := r.useNode(); (err != nil) != tt.wantErr {
 				t.Errorf("Recycler.defineResource() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -177,7 +176,7 @@ func TestRecycler_checkLabels(t *testing.T) {
 		context.Background(),
 		&v1.Node{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:   "PleaseLabelMe",
+				Name:   "CheckLabel",
 				Labels: map[string]string{"node-cordon": "true"},
 			},
 		},
