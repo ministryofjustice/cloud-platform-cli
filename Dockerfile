@@ -1,5 +1,5 @@
 # Build Cloud Platform tools (CLI)
-FROM golang:1.16.0-stretch AS cloud_platform_cli_builder
+FROM golang:1.17.0-stretch AS cloud_platform_cli_builder
 
 ENV GO111MODULE=on \
     CGO_ENABLED=0 \
