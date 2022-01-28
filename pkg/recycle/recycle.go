@@ -117,6 +117,8 @@ func (r *Recycler) recycleNode() (err error) {
 
 func (r *Recycler) postNodeCheck() (err error) {
 	log.Info().Msg("Validating cluster health")
+	// Grab the node being terminated as this can get muddled after the validation.
+	nodeTerminating := r.nodeToRecycle.Name
 	for i := 0; i < 5; i++ {
 		err := r.validate()
 		if err == nil {
@@ -126,7 +128,7 @@ func (r *Recycler) postNodeCheck() (err error) {
 		time.Sleep(time.Minute)
 	}
 
-	log.Info().Msgf("Finished recycling node %s", r.nodeToRecycle.Name)
+	log.Info().Msgf("Finished recycling node %s", nodeTerminating)
 	return nil
 }
 
