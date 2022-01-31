@@ -1,0 +1,6 @@
+.git
+.github
+LICENCE
+Dockerfile
+.build-docker-image
+makefile
