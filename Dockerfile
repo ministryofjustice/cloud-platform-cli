@@ -29,10 +29,7 @@ FROM debian:bullseye-slim
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y \
-    apt-transport-https \
-    ca-certificates \
     gnupg-agent \
-    software-properties-common \
     git-crypt \
     git \
     awscli
@@ -44,4 +41,4 @@ COPY --from=tools_builder /app/terraform /usr/local/bin/terraform
 
 COPY --from=tools_builder /app/kubectl /usr/local/bin/kubectl
 
-CMD "/bin/sh"
+CMD [/bin/sh]
