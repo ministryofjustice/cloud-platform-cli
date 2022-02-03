@@ -41,7 +41,7 @@ func Test_GetAllNodes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getAllNodes(tt.args.c)
+			got, err := GetAllNodes(tt.args.c)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getAllNodes() error = %v, wantErr %v", err, tt.wantErr)
 				return

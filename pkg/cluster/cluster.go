@@ -62,7 +62,7 @@ func (c *Cluster) NewSnapshot() *Snapshot {
 // RefreshStatus performs a value overwrite of the cluster status.
 // This is useful for when the cluster is being updated.
 func (c *Cluster) RefreshStatus(client *client.Client) (err error) {
-	c.Nodes, err = getAllNodes(client)
+	c.Nodes, err = GetAllNodes(client)
 	if err != nil {
 		return err
 	}

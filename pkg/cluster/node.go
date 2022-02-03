@@ -45,9 +45,9 @@ func (c *Cluster) areNodesReady() error {
 			// There are many conditions that can be true, but we only care about
 			// "Ready" - if it's not true, then there's an issue with the kublet
 			if condition.Type == "Ready" && condition.Status != "True" {
-			return fmt.Errorf("node %s is not ready", node.Name)
+				return fmt.Errorf("node %s is not ready", node.Name)
+			}
 		}
-	}
 	}
 
 	return nil
@@ -66,7 +66,7 @@ func (c *Cluster) CompareNodes(snap *Snapshot) (err error) {
 // ValidateCluster allows callers to validate their cluster
 // object.
 func ValidateNodeHealth(c *client.Client) bool {
-	nodes, err := getAllNodes(c)
+	nodes, err := GetAllNodes(c)
 	if err != nil {
 		return false
 	}
@@ -80,8 +80,8 @@ func ValidateNodeHealth(c *client.Client) bool {
 	return true
 }
 
-// getAllNodes returns a slice of all nodes in a cluster
-func getAllNodes(c *client.Client) ([]v1.Node, error) {
+// GetAllNodes returns a slice of all nodes in a cluster
+func GetAllNodes(c *client.Client) ([]v1.Node, error) {
 	n := make([]v1.Node, 0)
 	nodes, err := c.Clientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 	if err != nil {
@@ -93,7 +93,7 @@ func getAllNodes(c *client.Client) ([]v1.Node, error) {
 
 // getOldestNode returns the oldest node in a cluster
 func getOldestNode(c *client.Client) (v1.Node, error) {
-	nodes, err := getAllNodes(c)
+	nodes, err := GetAllNodes(c)
 	if err != nil {
 		return v1.Node{}, err
 	}
