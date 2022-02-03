@@ -91,8 +91,8 @@ func TestCluster_areNodesReady(t *testing.T) {
 						Status: v1.NodeStatus{
 							Conditions: []v1.NodeCondition{
 								{
-									Type:   v1.NodeDiskPressure,
-									Status: v1.ConditionTrue,
+									Type:   v1.NodeReady,
+									Status: v1.ConditionFalse,
 								},
 							},
 						},

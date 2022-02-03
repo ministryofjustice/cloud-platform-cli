@@ -1,6 +1,7 @@
 package recycle
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -118,40 +119,55 @@ func (r *Recycler) recycleNode() (err error) {
 func (r *Recycler) postNodeCheck() (err error) {
 	log.Info().Msg("Validating cluster health")
 	// Grab the node being terminated as this can get muddled after the validation.
-	nodeTerminating := r.nodeToRecycle.Name
-	for i := 0; i < 5; i++ {
+	// It generally takes about 4 minutes for the node to recycle, but to be sure we'll wait for 7.
+	for i := 0; i < 7; i++ {
 		err := r.validate()
 		if err == nil {
-			break
+			log.Info().Msgf("Finished recycling node %s", r.nodeToRecycle.Name)
+			log.Info().Msgf("New node created: %s", r.Cluster.NewestNode.Name)
+			return nil
 		}
-		log.Info().Msg("Cluster validation failed, retrying in 1 minutes")
+
+		log.Debug().Msg(err.Error())
+		log.Warn().Msg("Cluster validation failed, retrying in 1 minutes")
 		time.Sleep(time.Minute)
 	}
 
-	log.Info().Msgf("Finished recycling node %s", nodeTerminating)
-	return nil
+	return errors.New("failed to validate cluster after 7 attempts")
 }
 
 // validate is called to perform checks on the cluster.
 // It ensures the cluster is healthy and the cluster has the same amount of nodes as when the
 // node recycle process was started.
-func (r *Recycler) validate() error {
+func (r *Recycler) validate() (err error) {
 	log.Debug().Msg("Refreshing cluster information")
-	err := r.Cluster.RefreshStatus(r.Client)
+	r.Cluster.Nodes, err = cluster.GetAllNodes(r.Client)
 	if err != nil {
 		return fmt.Errorf("failed to refresh status: %s", err)
 	}
 
-	log.Debug().Msg("Performing new health check")
-	err = r.Cluster.HealthCheck()
+	log.Debug().Msgf("Checking ec2 instance: %s has terminated", r.nodeToRecycle.Name)
+	err = cluster.CheckEc2InstanceTerminated(*r.nodeToRecycle, r.Options.AwsProfile, r.Options.AwsRegion)
 	if err != nil {
-		return fmt.Errorf("node %s is not healthy: %s", r.nodeToRecycle, err)
+		return fmt.Errorf("ec2 instance has not terminated: %s", err)
 	}
 
 	log.Debug().Msg("Comparing old snapshot to new cluster information")
 	err = r.Cluster.CompareNodes(r.Snapshot)
 	if err != nil {
 		return fmt.Errorf("node numbers are not in the same state as before: want %v, got %v", len(r.Snapshot.Cluster.Nodes), len(r.Cluster.Nodes))
+	}
+
+	log.Debug().Msg("Refreshing cluster information")
+	r.Cluster.NewestNode, err = cluster.GetNewestNode(r.Client, r.Cluster.Nodes)
+	if err != nil {
+		return fmt.Errorf("failed to get new node: %s", err)
+	}
+
+	log.Debug().Msg("Performing new health check")
+	err = r.Cluster.HealthCheck()
+	if err != nil {
+		return err
 	}
 
 	return nil

@@ -39,12 +39,15 @@ func (c *Cluster) HealthCheck() error {
 	return nil
 }
 
-// areNodesReady checks if all nodes are in a ready state
 func (c *Cluster) areNodesReady() error {
 	for _, node := range c.Nodes {
-		if node.Status.Conditions[0].Type != "Ready" && node.Status.Conditions[0].Status == "True" {
+		for _, condition := range node.Status.Conditions {
+			// There are many conditions that can be true, but we only care about
+			// "Ready" - if it's not true, then there's an issue with the kublet
+			if condition.Type == "Ready" && condition.Status != "True" {
 			return fmt.Errorf("node %s is not ready", node.Name)
 		}
+	}
 	}
 
 	return nil
@@ -198,6 +201,40 @@ func terminateInstance(instanceId, awsProfile, awsRegion string) error {
 		return err
 	}
 
+	return nil
+}
+
+// CheckEc2InstanceTerminated takes an AWS profile and region and checks if the node passed to it
+// exists in Ec2. If it does, it returns an error.
+func CheckEc2InstanceTerminated(node v1.Node, profile, region string) error {
+	instanceId := getEc2InstanceId(node)
+
+	sess, err := session.NewSessionWithOptions(session.Options{
+		Profile: profile,
+		Config: aws.Config{
+			Region: aws.String(region),
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	svc := ec2.New(sess)
+
+	output, err := svc.DescribeInstanceStatus(&ec2.DescribeInstanceStatusInput{
+		InstanceIds: []*string{
+			aws.String(instanceId),
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	for _, status := range output.InstanceStatuses {
+		if *status.InstanceState.Name != "terminated" {
+			return errors.New("node is not terminated")
+		}
+	}
 	return nil
 }
 
