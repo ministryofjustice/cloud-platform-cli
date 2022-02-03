@@ -121,6 +121,20 @@ func oldestNode(nodes []v1.Node) (v1.Node, error) {
 	return oldestNode, nil
 }
 
+// GetNodeByName takes a node name and returns the node object that has the newest creation timestamp
+func GetNewestNode(c *client.Client, nodes []v1.Node) (v1.Node, error) {
+	newest := nodes[0]
+	for _, node := range nodes {
+		if node.CreationTimestamp.After(newest.CreationTimestamp.Time) {
+			newest = node
+		}
+	}
+
+	return newest, nil
+}
+
+// DeleteNode takes a node and authenticates to both the cluster and the AWS account.
+// You must have a valid AWS credentials and an aws profile set up in your ~/.aws/credentials file.
 func DeleteNode(client *client.Client, awsProfile, awsRegion string, node *v1.Node) error {
 	err := client.Clientset.CoreV1().Nodes().Delete(context.Background(), node.Name, metav1.DeleteOptions{})
 	if err != nil {

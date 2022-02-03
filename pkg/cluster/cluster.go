@@ -11,6 +11,7 @@ type Cluster struct {
 	Nodes      []v1.Node
 	Pods       []v1.Pod
 	OldestNode v1.Node
+	NewestNode v1.Node
 	StuckPods  []v1.Pod
 }
 
@@ -27,7 +28,7 @@ func NewCluster(c *client.Client) (*Cluster, error) {
 		return nil, err
 	}
 
-	nodes, err := getAllNodes(c)
+	nodes, err := GetAllNodes(c)
 	if err != nil {
 		return nil, err
 	}
@@ -37,11 +38,17 @@ func NewCluster(c *client.Client) (*Cluster, error) {
 		return nil, err
 	}
 
+	newestNode, err := GetNewestNode(c, nodes)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Cluster{
 		Name:       nodes[0].Labels["Cluster"],
 		Pods:       pods,
 		Nodes:      nodes,
 		OldestNode: oldestNode,
+		NewestNode: newestNode,
 	}, nil
 }
 

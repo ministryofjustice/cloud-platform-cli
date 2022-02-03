@@ -303,3 +303,69 @@ func Test_oldestNode(t *testing.T) {
 		})
 	}
 }
+
+func TestGetNewestNode(t *testing.T) {
+	var (
+		timeNow = time.Now()
+	)
+	type args struct {
+		c     *client.Client
+		nodes []v1.Node
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    v1.Node
+		wantErr bool
+	}{
+		{
+			name: "GetNewestNode",
+			args: args{
+				c: mockClient,
+				nodes: []v1.Node{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							CreationTimestamp: metav1.Time{
+								Time: timeNow,
+							},
+						},
+					},
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							CreationTimestamp: metav1.Time{
+								Time: time.Now().Add(-time.Minute),
+							},
+						},
+					},
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							CreationTimestamp: metav1.Time{
+								Time: time.Now().Add(-time.Minute * 2),
+							},
+						},
+					},
+				},
+			},
+			want: v1.Node{
+				ObjectMeta: metav1.ObjectMeta{
+					CreationTimestamp: metav1.Time{
+						Time: timeNow,
+					},
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := GetNewestNode(tt.args.c, tt.args.nodes)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetNewestNode() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetNewestNode() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
