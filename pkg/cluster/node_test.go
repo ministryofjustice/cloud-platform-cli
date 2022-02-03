@@ -198,7 +198,7 @@ func Test_oldestNode(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "OldestNode",
+			name: "FindOldestNode",
 			args: args{
 				nodes: []v1.Node{
 					{
@@ -228,6 +228,62 @@ func Test_oldestNode(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					CreationTimestamp: metav1.Time{
 						Time: timeOldest,
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "IfTainted",
+			args: args{
+				nodes: []v1.Node{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							CreationTimestamp: metav1.Time{
+								Time: timeNow,
+							},
+						},
+						Spec: v1.NodeSpec{
+							Taints: []v1.Taint{
+								{
+									Key:    "key",
+									Value:  "value",
+									Effect: v1.TaintEffectNoSchedule,
+								},
+							},
+						},
+					},
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							CreationTimestamp: metav1.Time{
+								Time: timeMinus,
+							},
+						},
+						Spec: v1.NodeSpec{
+							Taints: []v1.Taint{
+								{
+									Key:    "monitoring-node",
+									Value:  "value",
+									Effect: v1.TaintEffectNoSchedule,
+								},
+							},
+						},
+					},
+				},
+			},
+			want: v1.Node{
+				ObjectMeta: metav1.ObjectMeta{
+					CreationTimestamp: metav1.Time{
+						Time: timeNow,
+					},
+				},
+				Spec: v1.NodeSpec{
+					Taints: []v1.Taint{
+						{
+							Key:    "key",
+							Value:  "value",
+							Effect: v1.TaintEffectNoSchedule,
+						},
 					},
 				},
 			},

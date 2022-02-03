@@ -102,8 +102,16 @@ func getOldestNode(c *client.Client) (v1.Node, error) {
 func oldestNode(nodes []v1.Node) (v1.Node, error) {
 	oldestNode := nodes[0]
 	for _, node := range nodes {
-		if node.CreationTimestamp.Before(&oldestNode.CreationTimestamp) {
+		// We don't want to recycle nodes tainted with a monitoring label
+		if node.CreationTimestamp.Before(&oldestNode.CreationTimestamp) && node.Spec.Taints == nil {
 			oldestNode = node
+		}
+	}
+
+	// Assert the oldest node is not tainted and fail if it is
+	for _, taints := range oldestNode.Spec.Taints {
+		if taints.Key == "monitoring-node" {
+			return v1.Node{}, errors.New("oldest node is tainted with monitoring-node and can't find a new node")
 		}
 	}
 
