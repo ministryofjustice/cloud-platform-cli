@@ -41,7 +41,7 @@ func Test_GetAllNodes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getAllNodes(tt.args.c)
+			got, err := GetAllNodes(tt.args.c)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getAllNodes() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -91,8 +91,8 @@ func TestCluster_areNodesReady(t *testing.T) {
 						Status: v1.NodeStatus{
 							Conditions: []v1.NodeCondition{
 								{
-									Type:   v1.NodeDiskPressure,
-									Status: v1.ConditionTrue,
+									Type:   v1.NodeReady,
+									Status: v1.ConditionFalse,
 								},
 							},
 						},
@@ -198,7 +198,7 @@ func Test_oldestNode(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "OldestNode",
+			name: "FindOldestNode",
 			args: args{
 				nodes: []v1.Node{
 					{
@@ -233,6 +233,62 @@ func Test_oldestNode(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "IfTainted",
+			args: args{
+				nodes: []v1.Node{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							CreationTimestamp: metav1.Time{
+								Time: timeNow,
+							},
+						},
+						Spec: v1.NodeSpec{
+							Taints: []v1.Taint{
+								{
+									Key:    "key",
+									Value:  "value",
+									Effect: v1.TaintEffectNoSchedule,
+								},
+							},
+						},
+					},
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							CreationTimestamp: metav1.Time{
+								Time: timeMinus,
+							},
+						},
+						Spec: v1.NodeSpec{
+							Taints: []v1.Taint{
+								{
+									Key:    "monitoring-node",
+									Value:  "value",
+									Effect: v1.TaintEffectNoSchedule,
+								},
+							},
+						},
+					},
+				},
+			},
+			want: v1.Node{
+				ObjectMeta: metav1.ObjectMeta{
+					CreationTimestamp: metav1.Time{
+						Time: timeNow,
+					},
+				},
+				Spec: v1.NodeSpec{
+					Taints: []v1.Taint{
+						{
+							Key:    "key",
+							Value:  "value",
+							Effect: v1.TaintEffectNoSchedule,
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -243,6 +299,72 @@ func Test_oldestNode(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("oldestNode() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetNewestNode(t *testing.T) {
+	var (
+		timeNow = time.Now()
+	)
+	type args struct {
+		c     *client.Client
+		nodes []v1.Node
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    v1.Node
+		wantErr bool
+	}{
+		{
+			name: "GetNewestNode",
+			args: args{
+				c: mockClient,
+				nodes: []v1.Node{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							CreationTimestamp: metav1.Time{
+								Time: timeNow,
+							},
+						},
+					},
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							CreationTimestamp: metav1.Time{
+								Time: time.Now().Add(-time.Minute),
+							},
+						},
+					},
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							CreationTimestamp: metav1.Time{
+								Time: time.Now().Add(-time.Minute * 2),
+							},
+						},
+					},
+				},
+			},
+			want: v1.Node{
+				ObjectMeta: metav1.ObjectMeta{
+					CreationTimestamp: metav1.Time{
+						Time: timeNow,
+					},
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := GetNewestNode(tt.args.c, tt.args.nodes)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetNewestNode() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetNewestNode() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -39,11 +39,14 @@ func (c *Cluster) HealthCheck() error {
 	return nil
 }
 
-// areNodesReady checks if all nodes are in a ready state
 func (c *Cluster) areNodesReady() error {
 	for _, node := range c.Nodes {
-		if node.Status.Conditions[0].Type != "Ready" && node.Status.Conditions[0].Status == "True" {
-			return fmt.Errorf("node %s is not ready", node.Name)
+		for _, condition := range node.Status.Conditions {
+			// There are many conditions that can be true, but we only care about
+			// "Ready" - if it's not true, then there's an issue with the kublet
+			if condition.Type == "Ready" && condition.Status != "True" {
+				return fmt.Errorf("node %s is not ready", node.Name)
+			}
 		}
 	}
 
@@ -63,7 +66,7 @@ func (c *Cluster) CompareNodes(snap *Snapshot) (err error) {
 // ValidateCluster allows callers to validate their cluster
 // object.
 func ValidateNodeHealth(c *client.Client) bool {
-	nodes, err := getAllNodes(c)
+	nodes, err := GetAllNodes(c)
 	if err != nil {
 		return false
 	}
@@ -77,8 +80,8 @@ func ValidateNodeHealth(c *client.Client) bool {
 	return true
 }
 
-// getAllNodes returns a slice of all nodes in a cluster
-func getAllNodes(c *client.Client) ([]v1.Node, error) {
+// GetAllNodes returns a slice of all nodes in a cluster
+func GetAllNodes(c *client.Client) ([]v1.Node, error) {
 	n := make([]v1.Node, 0)
 	nodes, err := c.Clientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 	if err != nil {
@@ -90,7 +93,7 @@ func getAllNodes(c *client.Client) ([]v1.Node, error) {
 
 // getOldestNode returns the oldest node in a cluster
 func getOldestNode(c *client.Client) (v1.Node, error) {
-	nodes, err := getAllNodes(c)
+	nodes, err := GetAllNodes(c)
 	if err != nil {
 		return v1.Node{}, err
 	}
@@ -102,14 +105,36 @@ func getOldestNode(c *client.Client) (v1.Node, error) {
 func oldestNode(nodes []v1.Node) (v1.Node, error) {
 	oldestNode := nodes[0]
 	for _, node := range nodes {
-		if node.CreationTimestamp.Before(&oldestNode.CreationTimestamp) {
+		// We don't want to recycle nodes tainted with a monitoring label
+		if node.CreationTimestamp.Before(&oldestNode.CreationTimestamp) && node.Spec.Taints == nil {
 			oldestNode = node
+		}
+	}
+
+	// Assert the oldest node is not tainted and fail if it is
+	for _, taints := range oldestNode.Spec.Taints {
+		if taints.Key == "monitoring-node" {
+			return v1.Node{}, errors.New("oldest node is tainted with monitoring-node and can't find a new node")
 		}
 	}
 
 	return oldestNode, nil
 }
 
+// GetNodeByName takes a node name and returns the node object that has the newest creation timestamp
+func GetNewestNode(c *client.Client, nodes []v1.Node) (v1.Node, error) {
+	newest := nodes[0]
+	for _, node := range nodes {
+		if node.CreationTimestamp.After(newest.CreationTimestamp.Time) {
+			newest = node
+		}
+	}
+
+	return newest, nil
+}
+
+// DeleteNode takes a node and authenticates to both the cluster and the AWS account.
+// You must have a valid AWS credentials and an aws profile set up in your ~/.aws/credentials file.
 func DeleteNode(client *client.Client, awsProfile, awsRegion string, node *v1.Node) error {
 	err := client.Clientset.CoreV1().Nodes().Delete(context.Background(), node.Name, metav1.DeleteOptions{})
 	if err != nil {
@@ -190,6 +215,40 @@ func terminateInstance(instanceId, awsProfile, awsRegion string) error {
 		return err
 	}
 
+	return nil
+}
+
+// CheckEc2InstanceTerminated takes an AWS profile and region and checks if the node passed to it
+// exists in Ec2. If it does, it returns an error.
+func CheckEc2InstanceTerminated(node v1.Node, profile, region string) error {
+	instanceId := getEc2InstanceId(node)
+
+	sess, err := session.NewSessionWithOptions(session.Options{
+		Profile: profile,
+		Config: aws.Config{
+			Region: aws.String(region),
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	svc := ec2.New(sess)
+
+	output, err := svc.DescribeInstanceStatus(&ec2.DescribeInstanceStatusInput{
+		InstanceIds: []*string{
+			aws.String(instanceId),
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	for _, status := range output.InstanceStatuses {
+		if *status.InstanceState.Name != "terminated" {
+			return errors.New("node is not terminated")
+		}
+	}
 	return nil
 }
 

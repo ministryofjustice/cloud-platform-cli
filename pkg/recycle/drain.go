@@ -4,10 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"time"
 
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/cluster"
 	"github.com/rs/zerolog/log"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/kubectl/pkg/drain"
@@ -20,11 +22,14 @@ func (r *Recycler) getDrainHelper() *drain.Helper {
 		Force:               r.Options.Force,
 		GracePeriodSeconds:  -1,
 		IgnoreAllDaemonSets: true,
-		Out:                 log.Logger,
+		Out:                 ioutil.Discard,
 		ErrOut:              log.Logger,
 		// We want to proceed even when pods are using emptyDir volumes
 		DeleteEmptyDirData: true,
 		Timeout:            time.Duration(r.Options.TimeOut) * time.Second,
+		OnPodDeletedOrEvicted: func(pod *v1.Pod, true bool) {
+			log.Debug().Msgf("Evicting pod %s", pod.Name)
+		},
 	}
 }
 
@@ -92,7 +97,7 @@ func (r *Recycler) addLabel(key, value string) error {
 	return err
 }
 
-// defineResource ensures the Recycler process is populated with the correct node to recycle.
+// useNode ensures the Recycler process is populated with the correct node to recycle.
 func (r *Recycler) useNode() (err error) {
 	if r.Options.Oldest {
 		r.nodeToRecycle = &r.Cluster.OldestNode
