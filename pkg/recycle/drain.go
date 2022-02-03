@@ -97,7 +97,7 @@ func (r *Recycler) addLabel(key, value string) error {
 	return err
 }
 
-// defineResource ensures the Recycler process is populated with the correct node to recycle.
+// useNode ensures the Recycler process is populated with the correct node to recycle.
 func (r *Recycler) useNode() (err error) {
 	if r.Options.Oldest {
 		r.nodeToRecycle = &r.Cluster.OldestNode

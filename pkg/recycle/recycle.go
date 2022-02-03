@@ -71,7 +71,7 @@ func (r *Recycler) Node() (err error) {
 	}
 
 	log.Info().Msgf("Checking cluster: %s is in a valid state to recycle node", r.Cluster.Name)
-	err = r.validate()
+	err = r.Cluster.HealthCheck()
 	if err != nil {
 		return err
 	}
