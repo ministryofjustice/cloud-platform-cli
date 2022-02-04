@@ -54,7 +54,7 @@ func (r *Recycler) drainNode(helper *drain.Helper) error {
 }
 
 func (r *Recycler) terminateNode() error {
-	err := cluster.DeleteNode(r.Client, r.Options.AwsProfile, r.Options.AwsRegion, r.nodeToRecycle)
+	err := cluster.DeleteNode(r.Client, *r.AwsCreds, r.nodeToRecycle)
 	if err != nil {
 		return err
 	}

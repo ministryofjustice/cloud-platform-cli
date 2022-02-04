@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
 	v1 "k8s.io/api/core/v1"
@@ -135,7 +134,7 @@ func GetNewestNode(c *client.Client, nodes []v1.Node) (v1.Node, error) {
 
 // DeleteNode takes a node and authenticates to both the cluster and the AWS account.
 // You must have a valid AWS credentials and an aws profile set up in your ~/.aws/credentials file.
-func DeleteNode(client *client.Client, awsProfile, awsRegion string, node *v1.Node) error {
+func DeleteNode(client *client.Client, awsCreds AwsCredentials, node *v1.Node) error {
 	err := client.Clientset.CoreV1().Nodes().Delete(context.Background(), node.Name, metav1.DeleteOptions{})
 	if err != nil {
 		return err
@@ -146,7 +145,7 @@ func DeleteNode(client *client.Client, awsProfile, awsRegion string, node *v1.No
 		return err
 	}
 
-	err = terminateNode(awsProfile, awsRegion, *node)
+	err = terminateNode(*node, awsCreds)
 	if err != nil {
 		return err
 	}
@@ -179,10 +178,10 @@ func getNode(client *client.Client, name string) (v1.Node, error) {
 
 // terminateNode requires an AWS profile and region, it first identifies
 // the node's instance ID and then terminates it.
-func terminateNode(awsProfile, awsRegion string, node v1.Node) error {
+func terminateNode(node v1.Node, awsCreds AwsCredentials) error {
 	instanceId := getEc2InstanceId(node)
 
-	err := terminateInstance(instanceId, awsProfile, awsRegion)
+	err := terminateInstance(instanceId, awsCreds)
 	if err != nil {
 		return nil
 	}
@@ -194,19 +193,9 @@ func getEc2InstanceId(node v1.Node) string {
 }
 
 // terminateInstance creates an AwsClient and terminates the specified instance
-func terminateInstance(instanceId, awsProfile, awsRegion string) error {
-	sess, err := session.NewSessionWithOptions(session.Options{
-		Profile: awsProfile,
-		Config: aws.Config{
-			Region: aws.String(awsRegion),
-		},
-	})
-	if err != nil {
-		return err
-	}
-
-	svc := ec2.New(sess)
-	_, err = svc.TerminateInstances(&ec2.TerminateInstancesInput{
+func terminateInstance(instanceId string, awsCreds AwsCredentials) error {
+	svc := ec2.New(awsCreds.Session)
+	_, err := svc.TerminateInstances(&ec2.TerminateInstancesInput{
 		InstanceIds: []*string{
 			aws.String(instanceId),
 		},
@@ -220,20 +209,9 @@ func terminateInstance(instanceId, awsProfile, awsRegion string) error {
 
 // CheckEc2InstanceTerminated takes an AWS profile and region and checks if the node passed to it
 // exists in Ec2. If it does, it returns an error.
-func CheckEc2InstanceTerminated(node v1.Node, profile, region string) error {
+func CheckEc2InstanceTerminated(node v1.Node, awsCreds AwsCredentials) error {
 	instanceId := getEc2InstanceId(node)
-
-	sess, err := session.NewSessionWithOptions(session.Options{
-		Profile: profile,
-		Config: aws.Config{
-			Region: aws.String(region),
-		},
-	})
-	if err != nil {
-		return err
-	}
-
-	svc := ec2.New(sess)
+	svc := ec2.New(awsCreds.Session)
 
 	output, err := svc.DescribeInstanceStatus(&ec2.DescribeInstanceStatusInput{
 		InstanceIds: []*string{

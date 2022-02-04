@@ -148,38 +148,6 @@ func TestCluster_CompareNodes(t *testing.T) {
 	}
 }
 
-func TestCluster_DeleteNode(t *testing.T) {
-	type args struct {
-		client     *client.Client
-		awsProfile string
-		awsRegion  string
-		node       *v1.Node
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "failDeleteNode",
-			args: args{
-				client:     mockClient,
-				awsProfile: "",
-				awsRegion:  "",
-				node:       &v1.Node{},
-			},
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := DeleteNode(tt.args.client, tt.args.awsProfile, tt.args.awsRegion, tt.args.node); (err != nil) != tt.wantErr {
-				t.Errorf("Cluster.DeleteNode() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
 func Test_oldestNode(t *testing.T) {
 	var (
 		timeNow    = time.Now()

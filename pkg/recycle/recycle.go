@@ -46,6 +46,8 @@ type Recycler struct {
 	Cluster *cluster.Cluster
 	// Snapshot is the snapshot of the cluster. Used for comparison of cluster state.
 	Snapshot *cluster.Snapshot
+	// AwsCreds is the AWS credentials to use for resource termination.
+	AwsCreds *cluster.AwsCredentials
 
 	// Options are used to configure the recycle session.
 	Options *Options
@@ -68,6 +70,12 @@ func (r *Recycler) Node() (err error) {
 	err = r.useNode()
 	if err != nil {
 		return err
+	}
+
+	log.Debug().Msg("Checking AWS credentials work")
+	err = r.checkAwsCreds()
+	if err != nil {
+		return fmt.Errorf("Unable to validate AWS credentials: %s", err)
 	}
 
 	log.Info().Msgf("Checking cluster: %s is in a valid state to recycle node", r.Cluster.Name)
@@ -147,7 +155,7 @@ func (r *Recycler) validate() (err error) {
 	}
 
 	log.Debug().Msgf("Checking ec2 instance: %s has terminated", r.nodeToRecycle.Name)
-	err = cluster.CheckEc2InstanceTerminated(*r.nodeToRecycle, r.Options.AwsProfile, r.Options.AwsRegion)
+	err = cluster.CheckEc2InstanceTerminated(*r.nodeToRecycle, *r.AwsCreds)
 	if err != nil {
 		return fmt.Errorf("ec2 instance has not terminated: %s", err)
 	}
@@ -186,4 +194,9 @@ func (r *Recycler) setupLogging() {
 	if r.Options.Debug {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
+}
+
+func (r *Recycler) checkAwsCreds() error {
+	_, err := r.AwsCreds.Session.Config.Credentials.Get()
+	return err
 }
