@@ -3,6 +3,7 @@ package commands
 import (
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/MakeNowJust/heredoc"
@@ -15,6 +16,10 @@ import (
 )
 
 var opt recycle.Options
+
+var (
+	awsSecret, awsAccessKey, awsProfile string
+)
 
 func addClusterCmd(topLevel *cobra.Command) {
 	topLevel.AddCommand(clusterCmd)
@@ -29,6 +34,9 @@ func addClusterCmd(topLevel *cobra.Command) {
 	clusterRecycleNodeCmd.Flags().IntVarP(&opt.TimeOut, "timeout", "t", 360, "amount of time to wait for the drain command to complete")
 	clusterRecycleNodeCmd.Flags().BoolVar(&opt.Oldest, "oldest", false, "whether to recycle the oldest node")
 	clusterRecycleNodeCmd.Flags().StringVar(&opt.KubecfgPath, "kubecfg", filepath.Join(homedir.HomeDir(), ".kube", "config"), "path to kubeconfig file")
+	clusterRecycleNodeCmd.Flags().StringVar(&awsAccessKey, "aws-access-key", os.Getenv("AWS_ACCESS_KEY_ID"), "aws access key to use")
+	clusterRecycleNodeCmd.Flags().StringVar(&awsSecret, "aws-secret-key", os.Getenv("AWS_SECRET_ACCESS_KEY"), "aws secret to use")
+	clusterRecycleNodeCmd.Flags().StringVar(&awsProfile, "aws-profile", os.Getenv("AWS_PROFILE"), "aws profile to use")
 	clusterRecycleNodeCmd.Flags().StringVar(&opt.AwsRegion, "aws-region", "eu-west-2", "aws region to use")
 	clusterRecycleNodeCmd.Flags().BoolVar(&opt.Debug, "debug", false, "enable debug logging")
 }
@@ -52,6 +60,10 @@ var clusterRecycleNodeCmd = &cobra.Command{
 		// or specify the --oldest flag.
 		if opt.ResourceName == "" && !opt.Oldest {
 			return errors.New("--name or --oldest is required")
+		}
+
+		if awsProfile == "" && awsAccessKey == "" && awsSecret == "" {
+			return errors.New("AWS credentials are required, please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY or an AWS_PROFILE")
 		}
 
 		clientset, err := client.GetClientset(opt.KubecfgPath)
