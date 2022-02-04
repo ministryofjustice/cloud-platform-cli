@@ -91,6 +91,8 @@ var clusterRecycleNodeCmd = &cobra.Command{
 
 		err = recycle.Node()
 		if err != nil {
+			// Fail hard so we get an non-zero exit code.
+			// This is mainly for when this is run in a pipeline.
 			contextLogger.Error(err)
 		}
 
