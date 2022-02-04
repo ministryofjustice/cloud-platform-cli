@@ -9,6 +9,7 @@ import (
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/cluster"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/recycle"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/util/homedir"
 )
@@ -28,7 +29,6 @@ func addClusterCmd(topLevel *cobra.Command) {
 	clusterRecycleNodeCmd.Flags().IntVarP(&opt.TimeOut, "timeout", "t", 360, "amount of time to wait for the drain command to complete")
 	clusterRecycleNodeCmd.Flags().BoolVar(&opt.Oldest, "oldest", false, "whether to recycle the oldest node")
 	clusterRecycleNodeCmd.Flags().StringVar(&opt.KubecfgPath, "kubecfg", filepath.Join(homedir.HomeDir(), ".kube", "config"), "path to kubeconfig file")
-	clusterRecycleNodeCmd.Flags().StringVar(&opt.AwsProfile, "aws-profile", "default", "aws profile to use")
 	clusterRecycleNodeCmd.Flags().StringVar(&opt.AwsRegion, "aws-region", "eu-west-2", "aws region to use")
 	clusterRecycleNodeCmd.Flags().BoolVar(&opt.Debug, "debug", false, "enable debug logging")
 }
@@ -47,6 +47,7 @@ var clusterRecycleNodeCmd = &cobra.Command{
 	`),
 	PreRun: upgradeIfNotLatest,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		contextLogger := log.WithFields(log.Fields{"subcommand": "recycle-node"})
 		// Check for missing name argument. You must define either a resource
 		// or specify the --oldest flag.
 		if opt.ResourceName == "" && !opt.Oldest {
@@ -71,9 +72,14 @@ var clusterRecycleNodeCmd = &cobra.Command{
 		// Create a snapshot for comparison later.
 		recycle.Snapshot = recycle.Cluster.NewSnapshot()
 
+		recycle.AwsCreds, err = cluster.NewAwsCreds(opt.AwsRegion)
+		if err != nil {
+			return fmt.Errorf("failed to find credentials: %s", err)
+		}
+
 		err = recycle.Node()
 		if err != nil {
-			return err
+			contextLogger.Error(err)
 		}
 
 		return nil
