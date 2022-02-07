@@ -185,7 +185,7 @@ The namespace name should be your prototype github repository name:
 
 The prototype site will be hosted at:
 
-  https://[namespace name].apps.live-1.cloud-platform.service.justice.gov.uk
+  https://[namespace name].apps.live.cloud-platform.service.justice.gov.uk
 
 A continuous deployment workflow will be created in the github repository such
 that any changes to the 'main' branch are deployed to the cloud platform.
