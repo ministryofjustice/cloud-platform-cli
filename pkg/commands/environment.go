@@ -176,7 +176,7 @@ var environmentPrototypeCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: `Create a gov.uk prototype kit site on the cloud platform`,
 	Long: `
-Create a namespace folder and some files in existing prototype github repository to host a Gov.UK
+Create a namespace folder and files in an existing prototype github repository to host a Gov.UK
 Prototype Kit website on the Cloud Platform.
 
 The namespace name should be your prototype github repository name:
