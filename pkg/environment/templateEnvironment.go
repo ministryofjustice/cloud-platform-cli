@@ -95,7 +95,6 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 		q.getAnswer()
 		if q.value == "yes" {
 			values.IsProduction = "true"
-
 		} else {
 			values.IsProduction = "false"
 		}
@@ -233,9 +232,6 @@ func downloadAndInitialiseTemplates(namespace string) (error, []*templateFromUrl
 }
 
 func createNamespaceFiles(nsValues *Namespace) error {
-
-	setNamespaceBaseFolder(nsValues.IsProduction)
-
 	err := os.MkdirAll(fmt.Sprintf("%s/%s/resources", namespaceBaseFolder, nsValues.Namespace), 0755)
 	if err != nil {
 		return err

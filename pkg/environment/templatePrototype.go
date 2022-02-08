@@ -35,15 +35,21 @@ Please run:
 
 ...and raise a pull request.
 
-Shortly after your pull request is merged, you should have access to a new
+Shortly after your pull request is merged, you should see new files in your
 github repository:
 
 	https://github.com/ministryofjustice/%s
 
-This is a normal gov.uk prototype kit repository, which you can checkout and
-work on in the usual way.
+Files to build a docker image to run the prototype site
+	Dockerfile
+	.dockerignore
+	start.sh
 
-Changes merged and pushed to the 'main' branch of this repository will be
+A continuous deployment (CD) workflow, targeting the Cloud Platform
+	.github/workflows/cd.yaml
+	kubernetes-deploy.tpl
+
+Changes merged and pushed to the 'main' branch of your prototype github repository will be
 automatically deployed to your gov.uk prototype kit website. This usually takes
 around 5 minutes.
 
@@ -70,9 +76,11 @@ func promptUserForPrototypeValues() (*Prototype, error) {
 			 This must consist only of lower-case letters, digits and
 			 dashes.
 
+			 This should be;
+			 * the name of your existing prototype's github repository
+
 			 This will be;
 			 * the name of the prototype's namespace on the Cloud Platform
-			 * the name of the prototype's github repository
 			 * part of the prototype's URL on the web
 
 			 e.g. if you choose "my-awesome-prototype", then the eventual
@@ -91,13 +99,13 @@ func promptUserForPrototypeValues() (*Prototype, error) {
 	q = userQuestion{
 		description: heredoc.Doc(`What is the name of your GitHub team?
 			The users in this GitHub team will be assigned administrator permission
-			for this Cloud Platform environment, and the github repository.
+			for this Cloud Platform environment.
 
 			Please enter the name in lower-case, with hyphens instead of spaces
 			i.e. "Check My Diary" -> "check-my-diary"
 
 			(this must be an exact match, or you will not have access to your
-			namespace or github repository)",
+			namespace)",
 			 `),
 		prompt:    "GitHub Team",
 		validator: new(githubTeamNameValidator),
@@ -188,22 +196,7 @@ func createPrototypeFiles(p *Prototype) error {
 	copyUrlToFile(prototypeTemplateUrl+"/ecr.tf", nsdir+"/resources/ecr.tf")
 	copyUrlToFile(prototypeTemplateUrl+"/serviceaccount.tf", nsdir+"/resources/serviceaccount.tf")
 	copyUrlToFile(prototypeTemplateUrl+"/basic-auth.tf", nsdir+"/resources/basic-auth.tf")
-
-	templates := []*templateFromUrl{
-		{
-			url:        prototypeTemplateUrl + "/github-repo.tf",
-			outputPath: nsdir + "/resources/github-repo.tf",
-		},
-	}
-	err = downloadTemplateContents(templates)
-	if err != nil {
-		return err
-	}
-
-	err = createFilesFromTemplates(templates, p.Namespace)
-	if err != nil {
-		return err
-	}
+	copyUrlToFile(prototypeTemplateUrl+"/github-repo.tf", nsdir+"/resources/github-repo.tf")
 
 	return nil
 }

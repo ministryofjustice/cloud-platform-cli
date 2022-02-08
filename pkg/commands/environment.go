@@ -176,16 +176,16 @@ var environmentPrototypeCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: `Create a gov.uk prototype kit site on the cloud platform`,
 	Long: `
-Create a namespace folder and a github repository to host a Gov.UK
+Create a namespace folder and files in an existing prototype github repository to host a Gov.UK
 Prototype Kit website on the Cloud Platform.
 
-The github repository will be:
+The namespace name should be your prototype github repository name:
 
-  https://github.com/ministryofjustice/[namespace name]
+  https://github.com/ministryofjustice/[repository name]
 
 The prototype site will be hosted at:
 
-  https://[namespace name].apps.live-1.cloud-platform.service.justice.gov.uk
+  https://[namespace name].apps.live.cloud-platform.service.justice.gov.uk
 
 A continuous deployment workflow will be created in the github repository such
 that any changes to the 'main' branch are deployed to the cloud platform.
