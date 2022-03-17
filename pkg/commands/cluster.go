@@ -1,8 +1,6 @@
 package commands
 
 import (
-	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -54,21 +52,21 @@ var clusterRecycleNodeCmd = &cobra.Command{
 	$ cloud-platform cluster recycle-node
 	`),
 	PreRun: upgradeIfNotLatest,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	Run: func(cmd *cobra.Command, args []string) {
 		contextLogger := log.WithFields(log.Fields{"subcommand": "recycle-node"})
 		// Check for missing name argument. You must define either a resource
 		// or specify the --oldest flag.
 		if opt.ResourceName == "" && !opt.Oldest {
-			return errors.New("--name or --oldest is required")
+			contextLogger.Fatal("--name or --oldest is required")
 		}
 
 		if awsProfile == "" && awsAccessKey == "" && awsSecret == "" {
-			return errors.New("AWS credentials are required, please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY or an AWS_PROFILE")
+			contextLogger.Fatal("AWS credentials are required, please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY or an AWS_PROFILE")
 		}
 
 		clientset, err := client.GetClientset(opt.KubecfgPath)
 		if err != nil {
-			return err
+			contextLogger.Fatal(err)
 		}
 
 		recycle := &recycle.Recycler{
@@ -78,7 +76,7 @@ var clusterRecycleNodeCmd = &cobra.Command{
 
 		recycle.Cluster, err = cluster.NewCluster(recycle.Client)
 		if err != nil {
-			return fmt.Errorf("failed to get cluster: %s", err)
+			contextLogger.Fatal(err)
 		}
 
 		// Create a snapshot for comparison later.
@@ -86,16 +84,14 @@ var clusterRecycleNodeCmd = &cobra.Command{
 
 		recycle.AwsCreds, err = cluster.NewAwsCreds(opt.AwsRegion)
 		if err != nil {
-			return fmt.Errorf("failed to find credentials: %s", err)
+			contextLogger.Fatal(err)
 		}
 
 		err = recycle.Node()
 		if err != nil {
 			// Fail hard so we get an non-zero exit code.
 			// This is mainly for when this is run in a pipeline.
-			contextLogger.Error(err)
+			contextLogger.Fatal(err)
 		}
-
-		return nil
 	},
 }
