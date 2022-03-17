@@ -23,6 +23,8 @@ func TestGrepFile(t *testing.T) {
 }
 
 func TestMigrate(t *testing.T) {
+	// skip this test until the migrate command is decommissioned
+	t.Skip()
 	repoLocalPath := "./tmp/cloud-platform-environments"
 	repo := "https://github.com/ministryofjustice/cloud-platform-environments.git"
 
