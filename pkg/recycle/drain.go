@@ -19,6 +19,7 @@ func (r *Recycler) getDrainHelper() *drain.Helper {
 	return &drain.Helper{
 		Ctx:                 context.TODO(),
 		Client:              r.Client.Clientset,
+		DisableEviction:     true,
 		Force:               r.Options.Force,
 		GracePeriodSeconds:  -1,
 		IgnoreAllDaemonSets: true,
