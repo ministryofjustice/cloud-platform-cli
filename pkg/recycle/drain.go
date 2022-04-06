@@ -73,10 +73,9 @@ func (r *Recycler) drainNode(helper *drain.Helper) error {
 			}
 		} else {
 			// No pending pods to delete. Some other error during draining
-			return err
-		}
-		if newErrs != nil {
-			log.Warn().Msgf("Error while getting the list of pending pods to delete:\n%s", utilerrors.NewAggregate(newErrs))
+			if newErrs != nil {
+				log.Warn().Msgf("Error while getting the list of pending pods to delete:\n%s", utilerrors.NewAggregate(newErrs))
+			}
 			return err
 		}
 	}
