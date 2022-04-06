@@ -65,7 +65,7 @@ func TestCreatePrototype(t *testing.T) {
 		rbacFile:         "name: \"github:my-github-team\"",
 		variablesTfFile:  "my-team-slack_channel",
 		variablesTfFile:  "my-github-team",
-		githubRepoTfFile: "PROTOTYPE_NAME",
+		githubRepoTfFile: "cloud-platform-terraform-github-prototype",
 		ecrTfFile:        "github_repositories = [var.namespace]",
 	}
 
