@@ -3,12 +3,15 @@ package recycle
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/cluster"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
+	policyv1 "k8s.io/api/policy/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes/fake"
 )
 
@@ -146,6 +149,111 @@ func TestRecycler_drainNode(t *testing.T) {
 	assert.Nil(t, podsOnNode.Items)
 }
 
+func TestRecycler_drainNodeWithPDB(t *testing.T) {
+
+	replicas := int32(1)
+
+	node, err := mockClient.Clientset.CoreV1().Nodes().Create(
+		context.Background(),
+		&v1.Node{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:            "PleaseDrainMe-02",
+				ResourceVersion: "1",
+				ClusterName:     "cluster1",
+				Labels:          map[string]string{"node-cordon": "true"},
+			},
+		},
+		metav1.CreateOptions{})
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	_, err = mockClient.Clientset.PolicyV1beta1().PodDisruptionBudgets("default").Create(
+		context.Background(),
+		&policyv1.PodDisruptionBudget{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "PodDisruptionBudget",
+				APIVersion: "policy/v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "default",
+				Name:      "my-pdb",
+			},
+			Spec: policyv1.PodDisruptionBudgetSpec{
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app.kubernetes.io/name": "my-app",
+					},
+				},
+				MinAvailable: &intstr.IntOrString{IntVal: 1},
+			},
+		},
+		metav1.CreateOptions{})
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	_, err = mockClient.Clientset.CoreV1().ReplicationControllers("default").Create(
+		context.Background(),
+		&v1.ReplicationController{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:              "rc",
+				Namespace:         "default",
+				CreationTimestamp: metav1.Time{Time: time.Now()},
+			},
+			Spec: v1.ReplicationControllerSpec{
+				Replicas: &replicas,
+			},
+		},
+		metav1.CreateOptions{})
+
+	_, err = mockClient.Clientset.CoreV1().Pods("default").Create(
+		context.Background(),
+		&v1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:              "bar",
+				Namespace:         "default",
+				CreationTimestamp: metav1.Time{Time: time.Now()},
+				Labels: map[string]string{
+					"app.kubernetes.io/name": "my-app",
+				},
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: "v1",
+						Kind:       "ReplicationController",
+						Name:       "rc",
+					},
+				},
+			},
+			Spec: v1.PodSpec{
+				NodeName: "PleaseDrainMe-02",
+			},
+		},
+		metav1.CreateOptions{})
+
+	helper := mockRecycler.getDrainHelper()
+
+	mockRecycler.nodeToRecycle = node
+
+	err = mockRecycler.drainNode(helper)
+	if err != nil {
+		t.Errorf("Recycler.drainNode() error = %v", err)
+	}
+
+	podsOnNode, err := mockClient.Clientset.CoreV1().Pods("default").List(
+		context.Background(),
+		metav1.ListOptions{
+			LabelSelector: "node-cordon=true",
+		},
+	)
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	assert.Equal(t, node.Labels["node-drain"], "true")
+	assert.Nil(t, podsOnNode.Items)
+}
+
 func TestRecycler_addLabel(t *testing.T) {
 	node, err := mockClient.Clientset.CoreV1().Nodes().Create(
 		context.Background(),
@@ -191,4 +299,9 @@ func TestRecycler_checkLabels(t *testing.T) {
 
 	err = mockRecycler.checkLabels()
 	assert.NotEqual(t, err, nil)
+}
+
+func boolptr(val bool) *bool {
+	b := val
+	return &b
 }
