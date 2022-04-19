@@ -84,10 +84,6 @@ func (c *Commander) BulkPlan() error {
 			return err
 		}
 
-		if contains(ws, "live-1") {
-			c.terraformWrapper("live-1", dir, "plan")
-		}
-
 		if contains(ws, "live") {
 			c.terraformWrapper("live", dir, "plan")
 		}
@@ -118,10 +114,6 @@ func (c *Commander) BulkApply() error {
 		ws, err := c.workspaces()
 		if err != nil {
 			return err
-		}
-
-		if contains(ws, "live-1") {
-			c.terraformWrapper("live-1", dir, "apply")
 		}
 
 		if contains(ws, "live") {
