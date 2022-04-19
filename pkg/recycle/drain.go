@@ -12,6 +12,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/kubectl/pkg/drain"
 )
 
@@ -50,7 +51,35 @@ func (r *Recycler) drainNode(helper *drain.Helper) error {
 		return err
 	}
 
-	return drain.RunNodeDrain(helper, r.nodeToRecycle.Name)
+	err = drain.RunNodeDrain(helper, r.nodeToRecycle.Name)
+	if err != nil {
+		pendingList, newErrs := helper.GetPodsForDeletion(r.nodeToRecycle.Name)
+		if pendingList != nil {
+			pods := pendingList.Pods()
+			if len(pods) != 0 {
+				log.Warn().Msgf("There are pending pods to drain on node %q - Retrying with disable-eviction enabled.",
+					r.nodeToRecycle.Name)
+				for _, pendingPod := range pods {
+					log.Warn().Msgf("%s/%s\n", "pod", pendingPod.Name)
+				}
+				// retry deleting the pending pods with disable-eviction enabled
+				// This wll delete the pods instead of evicting
+				helper.DisableEviction = true
+				err = drain.RunNodeDrain(helper, r.nodeToRecycle.Name)
+				if err != nil {
+					log.Warn().Msgf("Error while retrying to delete pending pods")
+					return err
+				}
+			}
+		} else {
+			// No pending pods to delete. Some other error during draining
+			if newErrs != nil {
+				log.Warn().Msgf("Error while getting the list of pending pods to delete:\n%s", utilerrors.NewAggregate(newErrs))
+			}
+			return err
+		}
+	}
+	return nil
 }
 
 func (r *Recycler) terminateNode() error {
