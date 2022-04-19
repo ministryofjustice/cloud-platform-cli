@@ -151,7 +151,6 @@ func TestRecycler_drainNode(t *testing.T) {
 }
 
 func TestRecycler_drainNodeWithPDB(t *testing.T) {
-
 	replicas := int32(1)
 
 	node, err := mockClient.Clientset.CoreV1().Nodes().Create(
@@ -300,9 +299,4 @@ func TestRecycler_checkLabels(t *testing.T) {
 
 	err = mockRecycler.checkLabels()
 	assert.NotEqual(t, err, nil)
-}
-
-func boolptr(val bool) *bool {
-	b := val
-	return &b
 }
