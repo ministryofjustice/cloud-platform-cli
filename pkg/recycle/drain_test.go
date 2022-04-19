@@ -9,7 +9,8 @@ import (
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/cluster"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
-	policyv1 "k8s.io/api/policy/v1beta1"
+
+	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes/fake"
@@ -168,7 +169,7 @@ func TestRecycler_drainNodeWithPDB(t *testing.T) {
 		t.Errorf("unexpected error: %v", err)
 	}
 
-	_, err = mockClient.Clientset.PolicyV1beta1().PodDisruptionBudgets("default").Create(
+	_, err = mockClient.Clientset.PolicyV1().PodDisruptionBudgets("default").Create(
 		context.Background(),
 		&policyv1.PodDisruptionBudget{
 			TypeMeta: metav1.TypeMeta{
