@@ -7,6 +7,4 @@ package environment
 // serviceaccount credentials.
 type Prototype struct {
 	Namespace         Namespace
-	BasicAuthUsername string
-	BasicAuthPassword string
 }

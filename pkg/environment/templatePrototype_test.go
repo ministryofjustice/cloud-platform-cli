@@ -20,8 +20,6 @@ func TestCreatePrototype(t *testing.T) {
 	}
 	proto := Prototype{
 		Namespace:         ns,
-		BasicAuthUsername: "myusername",
-		BasicAuthPassword: "mypassword",
 	}
 
 	createPrototypeFiles(&proto)
