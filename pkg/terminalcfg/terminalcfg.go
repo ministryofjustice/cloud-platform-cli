@@ -143,26 +143,9 @@ func TestEnv() {
 }
 
 // sets up live environment for eks cluster
-func LiveEnv() {
+func LiveManagerEnv(env string) {
 	SetAWSEnv()
-	awsProfile = "live"
-	SetKubeEnv(awsProfile)
-	// set kubecontext to correct context name
-	fmt.Println(string(colourYellow), "Updating Kube Context")
-	cmd := exec.Command("aws", "eks", "update-kubeconfig", "--name", awsProfile)
-	cmd.Run()
-	// Set Terraform workspace to the cluster name
-	SetTFWksp(awsProfile)
-	// set command line prompt to comtext name
-	os.Setenv("PS1", "\\e[1;33m`kubectl config current-context`> \\e[m")
-	// start shell with new environment variables
-	syscall.Exec(os.Getenv("SHELL"), []string{os.Getenv("SHELL")}, os.Environ())
-}
-
-// sets up manager environment for eks cluster
-func ManagerEnv() {
-	SetAWSEnv()
-	awsProfile = "manager"
+	awsProfile = env
 	SetKubeEnv(awsProfile)
 	// set kubecontext to correct context name
 	fmt.Println(string(colourYellow), "Updating Kube Context")

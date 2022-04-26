@@ -39,7 +39,7 @@ var terminalCfgLiveEnvCmd = &cobra.Command{
 	`),
 	PreRun: upgradeIfNotLatest,
 	Run: func(cmd *cobra.Command, args []string) {
-		terminalcfg.LiveEnv()
+		terminalcfg.LiveManagerEnv("live")
 	},
 }
 
@@ -51,6 +51,6 @@ var terminalCfgManagerEnvCmd = &cobra.Command{
 	`),
 	PreRun: upgradeIfNotLatest,
 	Run: func(cmd *cobra.Command, args []string) {
-		terminalcfg.ManagerEnv()
+		terminalcfg.LiveManagerEnv("manager")
 	},
 }
