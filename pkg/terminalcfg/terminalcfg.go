@@ -3,6 +3,7 @@ package terminalcfg
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"syscall"
@@ -15,7 +16,7 @@ import (
 
 // global variables
 var (
-	awsProfile   string
+	clusterName  string
 	kubeConfig   string
 	home, _      = os.UserHomeDir()
 	colourCyan   = "\033[36m"
@@ -94,16 +95,20 @@ func SetAWSEnv() {
 }
 
 // sets Kube config
-func SetKubeEnv(awsProfile string) {
+func SetKubeEnv(clusterName string) {
 	fmt.Println(string(colourYellow), "\nSetting Kube Configuration", string(colourReset))
 	// set kubeconfig for live, manager or test
 	// set kube_config_path to kubeconfig
-	if awsProfile == "live" {
-		kubeConfig = home + "/.kube/" + awsProfile + "/config"
-	} else if awsProfile == "manager" {
-		kubeConfig = home + "/.kube/" + awsProfile + "/config"
+	if clusterName == "live" {
+		kubeConfig = home + "/.kube/" + clusterName + "/config"
+	} else if clusterName == "manager" {
+		kubeConfig = home + "/.kube/" + clusterName + "/config"
 	} else {
-		kubeConfig = home + "/.kube/test/" + awsProfile + "/config"
+		kubeConfig = home + "/.kube/test/" + clusterName + "/config"
+	}
+	if kubeConfig == "" {
+		log.Fatal("kubeConfig is empty")
+		os.Exit(1)
 	}
 	os.Setenv("KUBECONFIG", kubeConfig)
 	os.Setenv("KUBE_CONFIG_PATH", os.Getenv("KUBECONFIG"))
@@ -113,10 +118,10 @@ func SetKubeEnv(awsProfile string) {
 }
 
 // sets Terraform Workspace
-func SetTFWksp(awsProfile string) {
+func SetTFWksp(clusterName string) {
 	// tf workspace to the cluster name
 	fmt.Println(string(colourYellow), "\nUpdating Terraform Workspace")
-	os.Setenv("TF_WORKSPACE", awsProfile)
+	os.Setenv("TF_WORKSPACE", clusterName)
 
 	fmt.Println(string(colourCyan), "TF_WORKSPACE:", string(colourReset), os.Getenv("TF_WORKSPACE"))
 }
@@ -127,34 +132,50 @@ func TestEnv() {
 	SetAWSEnv()
 	ListEksClusters()
 	fmt.Println("Please select a cluster to use:")
-	fmt.Scanln(&arg)
-	awsProfile = arg
-	SetKubeEnv(awsProfile)
+	_, err := fmt.Scanln(&arg)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if arg == "live" || arg == "manager" {
+		log.Fatal("Invlaid cluster name")
+		os.Exit(1)
+	}
+	clusterName = arg
+	SetKubeEnv(clusterName)
 	// set kubecontext to correct context name
 	fmt.Println(string(colourYellow), "Updating Kube Context")
-	cmd := exec.Command("aws", "eks", "update-kubeconfig", "--name", awsProfile)
+	cmd := exec.Command("aws", "eks", "update-kubeconfig", "--name", clusterName)
 	cmd.Run()
 	// Set Terraform workspace to the cluster name
-	SetTFWksp(awsProfile)
+	SetTFWksp(clusterName)
 	// set command line prompt to comtext name
 	os.Setenv("PS1", "\\e[1;33m`kubectl config current-context`> \\e[m")
 	// start shell with new environment variables
-	syscall.Exec(os.Getenv("SHELL"), []string{os.Getenv("SHELL")}, os.Environ())
+	errsys := syscall.Exec(os.Getenv("SHELL"), []string{os.Getenv("SHELL")}, os.Environ())
+	if errsys != nil {
+		log.Fatal(errsys)
+	}
 }
 
 // sets up live environment for eks cluster
 func LiveManagerEnv(env string) {
 	SetAWSEnv()
-	awsProfile = env
-	SetKubeEnv(awsProfile)
+	clusterName = env
+	if clusterName == "" {
+		log.Fatal("Cluster name is empty")
+	}
+	SetKubeEnv(clusterName)
 	// set kubecontext to correct context name
 	fmt.Println(string(colourYellow), "Updating Kube Context")
-	cmd := exec.Command("aws", "eks", "update-kubeconfig", "--name", awsProfile)
+	cmd := exec.Command("aws", "eks", "update-kubeconfig", "--name", clusterName)
 	cmd.Run()
 	// Set Terraform workspace to the cluster name
-	SetTFWksp(awsProfile)
+	SetTFWksp(clusterName)
 	// set command line prompt to comtext name
 	os.Setenv("PS1", "\\e[1;33m`kubectl config current-context`> \\e[m")
 	// start shell with new environment variables
-	syscall.Exec(os.Getenv("SHELL"), []string{os.Getenv("SHELL")}, os.Environ())
+	errsys := syscall.Exec(os.Getenv("SHELL"), []string{os.Getenv("SHELL")}, os.Environ())
+	if errsys != nil {
+		log.Fatal(errsys)
+	}
 }
