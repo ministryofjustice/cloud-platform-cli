@@ -19,6 +19,7 @@ var (
 	clusterName  string
 	kubeConfig   string
 	clusterArray []string
+	returnOuput  bool
 	home, _      = os.UserHomeDir()
 	colourCyan   = "\033[36m"
 	colourReset  = "\033[0m"
@@ -152,19 +153,18 @@ func Contains(args string) bool {
 }
 
 // sets up test environment for eks cluster
-func TestEnv() {
+func TestEnv() bool {
 	var arg string
 	SetAWSEnv()
 	ListEksClusters()
 	fmt.Println("Please select a cluster to use:")
-	_, err := fmt.Scanln(&arg)
-	if err != nil {
-		log.Fatal(string(colourRed), err, string(colourReset))
+	fmt.Scanln(&arg)
+	if !Contains(arg) {
+		log.Fatal(string(colourRed), "Invalid cluster name entered", string(colourReset))
+		os.Exit(1)
+		returnOuput = false
 	} else {
-		if !Contains(arg) {
-			fmt.Println(string(colourRed), "Cluster not found", string(colourReset))
-			os.Exit(1)
-		}
+		returnOuput = true
 	}
 	clusterName = arg
 	SetKubeEnv(clusterName)
@@ -181,14 +181,18 @@ func TestEnv() {
 	if errsys != nil {
 		log.Fatal(string(colourRed), errsys, string(colourReset))
 	}
+	return returnOuput
 }
 
 // sets up live environment for eks cluster
-func LiveManagerEnv(env string) {
+func LiveManagerEnv(env string) bool {
 	SetAWSEnv()
 	clusterName = env
-	if clusterName == "" {
-		log.Fatal(string(colourRed), "Cluster name is empty", string(colourReset))
+	if clusterName != "live" && clusterName != "manager" {
+		log.Fatal(string(colourRed), "Cluster name is incorrect", string(colourReset))
+		returnOuput = false
+	} else {
+		returnOuput = true
 	}
 	SetKubeEnv(clusterName)
 	// set kubecontext to correct context name
@@ -204,4 +208,5 @@ func LiveManagerEnv(env string) {
 	if errsys != nil {
 		log.Fatal(string(colourRed), errsys, string(colourReset))
 	}
+	return returnOuput
 }
