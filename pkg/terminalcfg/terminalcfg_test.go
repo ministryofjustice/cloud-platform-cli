@@ -2,7 +2,7 @@ package terminalcfg
 
 import "testing"
 
-func TestLiveManagerEnv(t *testing.T) {
+func TestSetKubeEnv(t *testing.T) {
 	type args struct {
 		env string
 	}
@@ -11,6 +11,13 @@ func TestLiveManagerEnv(t *testing.T) {
 		args args
 		want bool
 	}{
+		{
+			name: "Failure",
+			args: args{
+				env: "",
+			},
+			want: false,
+		},
 		{
 			name: "live Success",
 			args: args{
@@ -26,16 +33,16 @@ func TestLiveManagerEnv(t *testing.T) {
 			want: true,
 		},
 		{
-			name: "Failure",
+			name: "test Success",
 			args: args{
-				env: "default",
+				env: "cluster-test",
 			},
-			want: false,
+			want: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := LiveManagerEnv(tt.args.env); got != tt.want {
+			if got := SetKubeEnv(tt.args.env); got != tt.want {
 				t.Errorf("LiveManagerEnv() = %v, want %v", got, tt.want)
 			}
 		})

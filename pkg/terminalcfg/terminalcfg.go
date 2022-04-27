@@ -68,11 +68,10 @@ func ListEksClusters() {
 	// exclude live and manager from list
 	for _, cluster := range result.Clusters {
 		if *cluster != "live" && *cluster != "manager" {
-			clusterArray = []string{*cluster}
-			fmt.Println(string(colourCyan), "Cluster:", string(colourReset), clusterArray)
+			clusterArray = append(clusterArray, *cluster)
+			fmt.Println(string(colourCyan), "Cluster:", string(colourReset), *cluster)
 		}
 	}
-
 }
 
 //setting AWS config
@@ -92,46 +91,41 @@ func SetAWSEnv() {
 	os.Setenv("AWS_REGION", awsRegion)
 	os.Setenv("AWS_DEFAULT_REGION", os.Getenv("AWS_REGION"))
 
-	ap, _ := os.LookupEnv("AWS_PROFILE")
-	acf, _ := os.LookupEnv("AWS_CONFIG_FILE")
-	ascf, _ := os.LookupEnv("AWS_SHARED_CREDENTIALS_FILE")
-	ar, _ := os.LookupEnv("AWS_REGION")
-	adr, _ := os.LookupEnv("AWS_DEFAULT_REGION")
-
-	for _, env := range []string{ap, acf, ascf, ar, adr} {
-		if env == "" {
-			log.Fatal(string(colourRed), "Environment variable is empty", string(colourReset))
-			os.Exit(1)
-		}
-	}
-	fmt.Println(string(colourCyan), "AWS_PROFILE:", string(colourReset), ap)
-	fmt.Println(string(colourCyan), "AWS_CONFIG_FILE:", string(colourReset), acf)
-	fmt.Println(string(colourCyan), "AWS_SHARED_CREDENTIALS_FILE:", string(colourReset), ascf)
-	fmt.Println(string(colourCyan), "AWS_REGION:", string(colourReset), ar)
-	fmt.Println(string(colourCyan), "AWS_DEFAULT_REGION:", string(colourReset), adr)
+	fmt.Println(string(colourCyan), "AWS_PROFILE:", string(colourReset), os.Getenv("AWS_PROFILE"))
+	fmt.Println(string(colourCyan), "AWS_CONFIG_FILE:", string(colourReset), os.Getenv("AWS_CONFIG_FILE"))
+	fmt.Println(string(colourCyan), "AWS_SHARED_CREDENTIALS_FILE:", string(colourReset), os.Getenv("AWS_SHARED_CREDENTIALS_FILE"))
+	fmt.Println(string(colourCyan), "AWS_REGION:", string(colourReset), os.Getenv("AWS_REGION"))
+	fmt.Println(string(colourCyan), "AWS_DEFAULT_REGION:", string(colourReset), os.Getenv("AWS_DEFAULT_REGION"))
 }
 
 // sets Kube config
-func SetKubeEnv(clusterName string) {
+func SetKubeEnv(clusterName string) bool {
 	fmt.Println(string(colourYellow), "\nSetting Kube Configuration", string(colourReset))
 	// set kubeconfig for live, manager or test
 	// set kube_config_path to kubeconfig
-	if clusterName == "live" {
+	if clusterName == "" {
+		returnOuput = false
+	} else if clusterName == "live" {
 		kubeConfig = home + "/.kube/" + clusterName + "/config"
+		returnOuput = true
 	} else if clusterName == "manager" {
 		kubeConfig = home + "/.kube/" + clusterName + "/config"
+		returnOuput = true
 	} else {
 		kubeConfig = home + "/.kube/test/" + clusterName + "/config"
+		returnOuput = true
 	}
-	if kubeConfig == "" {
-		log.Fatal("kubeConfig is empty")
-		os.Exit(1)
-	}
+	// these are the three kube variables expected by kubectl
 	os.Setenv("KUBECONFIG", kubeConfig)
+	// this is needed for kubectl provider
+	os.Setenv("KUBE_CONFIG", os.Getenv("KUBECONFIG"))
 	os.Setenv("KUBE_CONFIG_PATH", os.Getenv("KUBECONFIG"))
 
 	fmt.Println(string(colourCyan), "KUBECONFIG:", string(colourReset), os.Getenv("KUBECONFIG"))
+	fmt.Println(string(colourCyan), "KUBE_CONFIG:", string(colourReset), os.Getenv("KUBE_CONFIG"))
 	fmt.Println(string(colourCyan), "KUBE_CONFIG_PATH:", string(colourReset), os.Getenv("KUBE_CONFIG_PATH"))
+
+	return returnOuput
 }
 
 // sets Terraform Workspace
@@ -143,9 +137,9 @@ func SetTFWksp(clusterName string) {
 	fmt.Println(string(colourCyan), "TF_WORKSPACE:", string(colourReset), os.Getenv("TF_WORKSPACE"))
 }
 
-func Contains(args string) bool {
+func Contains(arg string) bool {
 	for _, cluster := range clusterArray {
-		if cluster == args {
+		if cluster == arg {
 			return true
 		}
 	}
@@ -153,7 +147,7 @@ func Contains(args string) bool {
 }
 
 // sets up test environment for eks cluster
-func TestEnv() bool {
+func TestEnv() {
 	var arg string
 	SetAWSEnv()
 	ListEksClusters()
@@ -162,9 +156,6 @@ func TestEnv() bool {
 	if !Contains(arg) {
 		log.Fatal(string(colourRed), "Invalid cluster name entered", string(colourReset))
 		os.Exit(1)
-		returnOuput = false
-	} else {
-		returnOuput = true
 	}
 	clusterName = arg
 	SetKubeEnv(clusterName)
@@ -181,18 +172,14 @@ func TestEnv() bool {
 	if errsys != nil {
 		log.Fatal(string(colourRed), errsys, string(colourReset))
 	}
-	return returnOuput
 }
 
 // sets up live environment for eks cluster
-func LiveManagerEnv(env string) bool {
+func LiveManagerEnv(env string) {
 	SetAWSEnv()
 	clusterName = env
 	if clusterName != "live" && clusterName != "manager" {
 		log.Fatal(string(colourRed), "Cluster name is incorrect", string(colourReset))
-		returnOuput = false
-	} else {
-		returnOuput = true
 	}
 	SetKubeEnv(clusterName)
 	// set kubecontext to correct context name
@@ -208,5 +195,4 @@ func LiveManagerEnv(env string) bool {
 	if errsys != nil {
 		log.Fatal(string(colourRed), errsys, string(colourReset))
 	}
-	return returnOuput
 }
