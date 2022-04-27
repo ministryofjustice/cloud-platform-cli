@@ -22,6 +22,7 @@ var (
 	colourCyan   = "\033[36m"
 	colourReset  = "\033[0m"
 	colourYellow = "\033[33m"
+	colourRed    = "\033[31m"
 )
 
 // list eks clusters for aws profile
@@ -65,7 +66,7 @@ func ListEksClusters() {
 	// exclude live and manager from list
 	for _, cluster := range result.Clusters {
 		if *cluster != "live" && *cluster != "manager" {
-			fmt.Println(string(colourCyan), "Cluster Name:", string(colourReset), *cluster)
+			fmt.Println(string(colourCyan), "Cluster:", string(colourReset), *cluster)
 		}
 	}
 }
@@ -87,11 +88,23 @@ func SetAWSEnv() {
 	os.Setenv("AWS_REGION", awsRegion)
 	os.Setenv("AWS_DEFAULT_REGION", os.Getenv("AWS_REGION"))
 
-	fmt.Println(string(colourCyan), "AWS_PROFILE:", string(colourReset), os.Getenv("AWS_PROFILE"))
-	fmt.Println(string(colourCyan), "AWS_CONFIG_FILE:", string(colourReset), os.Getenv("AWS_CONFIG_FILE"))
-	fmt.Println(string(colourCyan), "AWS_SHARED_CREDENTIALS_FILE:", string(colourReset), os.Getenv("AWS_SHARED_CREDENTIALS_FILE"))
-	fmt.Println(string(colourCyan), "AWS_REGION:", string(colourReset), os.Getenv("AWS_REGION"))
-	fmt.Println(string(colourCyan), "AWS_DEFAULT_REGION:", string(colourReset), os.Getenv("AWS_DEFAULT_REGION"))
+	ap, _ := os.LookupEnv("AWS_PROFILE")
+	acf, _ := os.LookupEnv("AWS_CONFIG_FILE")
+	ascf, _ := os.LookupEnv("AWS_SHARED_CREDENTIALS_FILE")
+	ar, _ := os.LookupEnv("AWS_REGION")
+	adr, _ := os.LookupEnv("AWS_DEFAULT_REGION")
+
+	for _, env := range []string{ap, acf, ascf, ar, adr} {
+		if env == "" {
+			log.Fatal(string(colourRed), "Environment variable is empty", string(colourReset))
+			os.Exit(1)
+		}
+	}
+	fmt.Println(string(colourCyan), "AWS_PROFILE:", string(colourReset), ap)
+	fmt.Println(string(colourCyan), "AWS_CONFIG_FILE:", string(colourReset), acf)
+	fmt.Println(string(colourCyan), "AWS_SHARED_CREDENTIALS_FILE:", string(colourReset), ascf)
+	fmt.Println(string(colourCyan), "AWS_REGION:", string(colourReset), ar)
+	fmt.Println(string(colourCyan), "AWS_DEFAULT_REGION:", string(colourReset), adr)
 }
 
 // sets Kube config
@@ -134,10 +147,9 @@ func TestEnv() {
 	fmt.Println("Please select a cluster to use:")
 	_, err := fmt.Scanln(&arg)
 	if err != nil {
-		log.Fatal(err)
-	}
-	if arg == "live" || arg == "manager" {
-		log.Fatal("Invlaid cluster name")
+		log.Fatal(string(colourRed), err, string(colourReset))
+	} else if arg == "live" || arg == "manager" {
+		log.Fatal(string(colourRed), "Invlaid cluster name", string(colourReset))
 		os.Exit(1)
 	}
 	clusterName = arg
@@ -153,7 +165,7 @@ func TestEnv() {
 	// start shell with new environment variables
 	errsys := syscall.Exec(os.Getenv("SHELL"), []string{os.Getenv("SHELL")}, os.Environ())
 	if errsys != nil {
-		log.Fatal(errsys)
+		log.Fatal(string(colourRed), errsys, string(colourReset))
 	}
 }
 
@@ -162,7 +174,7 @@ func LiveManagerEnv(env string) {
 	SetAWSEnv()
 	clusterName = env
 	if clusterName == "" {
-		log.Fatal("Cluster name is empty")
+		log.Fatal(string(colourRed), "Cluster name is empty", string(colourReset))
 	}
 	SetKubeEnv(clusterName)
 	// set kubecontext to correct context name
@@ -176,6 +188,6 @@ func LiveManagerEnv(env string) {
 	// start shell with new environment variables
 	errsys := syscall.Exec(os.Getenv("SHELL"), []string{os.Getenv("SHELL")}, os.Environ())
 	if errsys != nil {
-		log.Fatal(errsys)
+		log.Fatal(string(colourRed), errsys, string(colourReset))
 	}
 }
