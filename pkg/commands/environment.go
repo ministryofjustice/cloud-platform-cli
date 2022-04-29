@@ -13,6 +13,8 @@ var (
 	MigrateSkipWarning    bool
 	MigrateCheckNamespace string
 
+	ApplyNamespace string
+
 	module        string
 	moduleVersion string
 )
@@ -26,6 +28,7 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentCmd.AddCommand(environmentCreateCmd)
 	environmentCmd.AddCommand(environmentMigrateCmd)
 	environmentCmd.AddCommand(environmentMigrateCheckCmd)
+	environmentCmd.AddCommand(environmentApplyCmd)
 	environmentEcrCmd.AddCommand(environmentEcrCreateCmd)
 	environmentRdsCmd.AddCommand(environmentRdsCreateCmd)
 	environmentS3Cmd.AddCommand(environmentS3CreateCmd)
@@ -37,6 +40,8 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	// flags
 	environmentMigrateCmd.Flags().BoolVarP(&MigrateSkipWarning, "skip-warnings", "s", false, "Whether to skip the check")
 	environmentMigrateCheckCmd.Flags().StringVarP(&MigrateCheckNamespace, "namespace", "n", "", "Namespace which you want to perform the checks")
+
+	environmentApplyCmd.Flags().StringVarP(&ApplyNamespace, "namespace", "n", "", "Namespace which you want to perform the apply")
 
 	environmentBumpModuleCmd.Flags().StringVarP(&module, "module", "m", "", "Module to upgrade the version")
 	environmentBumpModuleCmd.Flags().StringVarP(&moduleVersion, "module-version", "v", "", "Semantic version to bump a module to")
@@ -92,6 +97,22 @@ var environmentMigrateCheckCmd = &cobra.Command{
 	PreRun: upgradeIfNotLatest,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := environment.MigrateCheck(MigrateCheckNamespace); err != nil {
+			return err
+		}
+
+		return nil
+	},
+}
+
+var environmentApplyCmd = &cobra.Command{
+	Use:   "apply",
+	Short: `apply command to apply the given namespace`,
+	Example: heredoc.Doc(`
+	$ cloud-platform environment apply -n <namespace>
+	`),
+	PreRun: upgradeIfNotLatest,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if err := environment.Apply(ApplyNamespace); err != nil {
 			return err
 		}
 
