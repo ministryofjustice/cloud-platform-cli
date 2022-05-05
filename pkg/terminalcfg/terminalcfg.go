@@ -137,6 +137,24 @@ func SetTFWksp(clusterName string) {
 	fmt.Println(string(colourCyan), "TF_WORKSPACE:", string(colourReset), os.Getenv("TF_WORKSPACE"))
 }
 
+func SetTerm() {
+	// set command line prompt to comtext name
+	cmd2 := exec.Command("kubectl", "config", "current-context")
+	out, err := cmd2.CombinedOutput()
+	if err != nil {
+		log.Fatal(string(colourRed), err, string(colourReset))
+	}
+	kconfig := string(out)
+	// set KUBE_PS1 to current cluster name
+	fmt.Println(string(colourYellow), "\nSetting Terminal Environment")
+	os.Setenv("KUBE_PS1", kconfig+": ")
+	// start shell with new environment variables
+	errsys := syscall.Exec(os.Getenv("SHELL"), []string{os.Getenv("SHELL")}, os.Environ())
+	if errsys != nil {
+		log.Fatal(string(colourRed), errsys, string(colourReset))
+	}
+}
+
 func Contains(arg string) bool {
 	for _, cluster := range clusterArray {
 		if cluster == arg {
@@ -165,13 +183,7 @@ func TestEnv() {
 	cmd.Run()
 	// Set Terraform workspace to the cluster name
 	SetTFWksp(clusterName)
-	// set command line prompt to comtext name
-	os.Setenv("PS1", "\\e[1;33m`kubectl config current-context`> \\e[m")
-	// start shell with new environment variables
-	errsys := syscall.Exec(os.Getenv("SHELL"), []string{os.Getenv("SHELL")}, os.Environ())
-	if errsys != nil {
-		log.Fatal(string(colourRed), errsys, string(colourReset))
-	}
+	SetTerm()
 }
 
 // sets up live environment for eks cluster
@@ -188,11 +200,5 @@ func LiveManagerEnv(env string) {
 	cmd.Run()
 	// Set Terraform workspace to the cluster name
 	SetTFWksp(clusterName)
-	// set command line prompt to comtext name
-	os.Setenv("PS1", "\\e[1;33m`kubectl config current-context`> \\e[m")
-	// start shell with new environment variables
-	errsys := syscall.Exec(os.Getenv("SHELL"), []string{os.Getenv("SHELL")}, os.Environ())
-	if errsys != nil {
-		log.Fatal(string(colourRed), errsys, string(colourReset))
-	}
+	SetTerm()
 }
