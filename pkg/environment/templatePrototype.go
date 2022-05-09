@@ -219,7 +219,7 @@ variable "basic-auth-password" {
 `
 	varTf := fmt.Sprintf("%s/%s/resources/variables.tf", namespaceBaseFolder, p.Namespace.Namespace)
 
-	file, err := os.OpenFile(varTf, os.O_APPEND|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(varTf, os.O_APPEND|os.O_WRONLY, 0o644)
 	if err != nil {
 		return err
 	}

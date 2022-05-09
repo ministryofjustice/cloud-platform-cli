@@ -273,9 +273,7 @@ func Test_oldestNode(t *testing.T) {
 }
 
 func TestGetNewestNode(t *testing.T) {
-	var (
-		timeNow = time.Now()
-	)
+	timeNow := time.Now()
 	type args struct {
 		c     *client.Client
 		nodes []v1.Node

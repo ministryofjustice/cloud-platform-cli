@@ -15,9 +15,11 @@ import (
 // This MUST match the number of the latest release on github
 var Version = "1.14.8"
 
-const owner = "ministryofjustice"
-const repoName = "cloud-platform-cli"
-const binaryName = "cloud-platform"
+const (
+	owner      = "ministryofjustice"
+	repoName   = "cloud-platform-cli"
+	binaryName = "cloud-platform"
+)
 
 func addVersion(topLevel *cobra.Command) {
 	topLevel.AddCommand(&cobra.Command{
