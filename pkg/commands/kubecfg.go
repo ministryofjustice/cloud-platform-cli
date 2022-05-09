@@ -16,7 +16,6 @@ func addKubecfgCmd(topLevel *cobra.Command) {
 	kubecfgCmd.AddCommand(kubecfgShowGithubTeamsCmd)
 
 	kubecfgCommonFlags(kubecfgShowGithubTeamsCmd)
-
 }
 
 var kubecfgCmd = &cobra.Command{

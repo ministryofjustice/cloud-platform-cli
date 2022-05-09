@@ -42,7 +42,6 @@ func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 //------------------------------------------------------------------------------
 
 func promptUserForNamespaceValues() (*Namespace, error) {
-
 	values := Namespace{}
 
 	q := userQuestion{
@@ -232,7 +231,7 @@ func downloadAndInitialiseTemplates(namespace string) (error, []*templateFromUrl
 }
 
 func createNamespaceFiles(nsValues *Namespace) error {
-	err := os.MkdirAll(fmt.Sprintf("%s/%s/resources", namespaceBaseFolder, nsValues.Namespace), 0755)
+	err := os.MkdirAll(fmt.Sprintf("%s/%s/resources", namespaceBaseFolder, nsValues.Namespace), 0o755)
 	if err != nil {
 		return err
 	}

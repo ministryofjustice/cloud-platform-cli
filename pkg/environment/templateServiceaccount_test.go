@@ -7,7 +7,7 @@ import (
 
 func TestCreateServiceAccountFile(t *testing.T) {
 	filename := "resources/serviceaccount.tf"
-	os.Mkdir("resources", 0755)
+	os.Mkdir("resources", 0o755)
 
 	err := createSvcAccTfFile()
 	if err != nil {

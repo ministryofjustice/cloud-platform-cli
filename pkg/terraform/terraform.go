@@ -31,7 +31,6 @@ type Commander struct {
 
 // Terraform creates terraform command to be executed
 func (s *Commander) Terraform(args ...string) (*CmdOutput, error) {
-
 	var stdoutBuf bytes.Buffer
 	var stderrBuf bytes.Buffer
 	var exitCode int
@@ -92,7 +91,6 @@ func (s *Commander) Terraform(args ...string) (*CmdOutput, error) {
 
 // Init executes terraform init.
 func (s *Commander) Init(p bool) error {
-
 	output, err := s.Terraform("init")
 	if err != nil {
 		log.Error(output.Stderr)
@@ -108,7 +106,6 @@ func (s *Commander) Init(p bool) error {
 
 // SelectWs is used to select certain workspace.
 func (s *Commander) SelectWs(ws string) error {
-
 	output, err := s.Terraform("workspace", "select", ws)
 	if err != nil {
 		return err
@@ -211,7 +208,6 @@ func (s *Commander) Apply() error {
 	}
 
 	return err
-
 }
 
 // Plan executes terraform plan
@@ -255,7 +251,6 @@ func (s *Commander) Plan() error {
 	}
 
 	return err
-
 }
 
 // Workspaces return the workspaces within the state.

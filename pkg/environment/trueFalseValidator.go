@@ -1,7 +1,6 @@
 package environment
 
-type trueFalseValidator struct {
-}
+type trueFalseValidator struct{}
 
 func (v *trueFalseValidator) isValid(s string) bool {
 	l := inListValidator{

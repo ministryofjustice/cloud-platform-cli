@@ -1,7 +1,6 @@
 package environment
 
-type namespaceNameValidator struct {
-}
+type namespaceNameValidator struct{}
 
 func (v *namespaceNameValidator) isValid(s string) bool {
 	r := new(regexValidator)

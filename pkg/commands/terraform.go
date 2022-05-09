@@ -11,7 +11,6 @@ import (
 )
 
 func addTerraformCmd(topLevel *cobra.Command) {
-
 	var options terraform.Commander
 
 	rootCmd := &cobra.Command{
@@ -29,7 +28,6 @@ func addTerraformCmd(topLevel *cobra.Command) {
 
 			contextLogger.Info("Executing terraform plan, if there is a drift this program execution will fail")
 			err := options.CheckDivergence()
-
 			if err != nil {
 				contextLogger.Fatal("Error executing plan, either an error or a divergence")
 			}
@@ -51,7 +49,6 @@ func addTerraformCmd(topLevel *cobra.Command) {
 				}
 			} else {
 				err := options.BulkApply()
-
 				if err != nil {
 					contextLogger.Fatal(err)
 				}
@@ -70,19 +67,16 @@ func addTerraformCmd(topLevel *cobra.Command) {
 			if options.BulkTfPaths == "" {
 				contextLogger.Info("Executing terraform plan")
 				err := options.Plan()
-
 				if err != nil {
 					contextLogger.Fatal("Error executing terraform plan - check the outputs")
 				}
 			} else {
 				err := options.BulkPlan()
-
 				if err != nil {
 					contextLogger.Fatal(err)
 				}
 
 			}
-
 		},
 	}
 

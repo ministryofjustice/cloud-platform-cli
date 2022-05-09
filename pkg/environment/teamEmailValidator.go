@@ -1,7 +1,6 @@
 package environment
 
-type teamEmailValidator struct {
-}
+type teamEmailValidator struct{}
 
 func (v *teamEmailValidator) isValid(s string) bool {
 	r := new(regexValidator)

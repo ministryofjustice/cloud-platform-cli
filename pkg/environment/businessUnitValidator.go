@@ -1,7 +1,6 @@
 package environment
 
-type businessUnitValidator struct {
-}
+type businessUnitValidator struct{}
 
 func (v *businessUnitValidator) isValid(s string) bool {
 	l := inListValidator{

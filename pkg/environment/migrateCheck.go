@@ -10,7 +10,6 @@ import (
 
 // MigrateCheck check the namespace has the correct externalDNS annotations
 func MigrateCheck(ns string) error {
-
 	if ns == "" {
 		re := RepoEnvironment{}
 

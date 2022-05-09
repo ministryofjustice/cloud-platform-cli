@@ -7,9 +7,11 @@ import (
 	"text/template"
 )
 
-const cloudPlatformEnvRepo = "cloud-platform-environments"
-const namespaceBaseFolder = "namespaces/live.cloud-platform.service.justice.gov.uk"
-const envTemplateLocation = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template"
+const (
+	cloudPlatformEnvRepo = "cloud-platform-environments"
+	namespaceBaseFolder  = "namespaces/live.cloud-platform.service.justice.gov.uk"
+	envTemplateLocation  = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template"
+)
 
 type templateFromUrl struct {
 	outputPath string
@@ -40,7 +42,6 @@ func downloadTemplateContents(t []*templateFromUrl) error {
 }
 
 func downloadTemplate(url string) (string, error) {
-
 	response, err := http.Get(url)
 	if err != nil {
 		return "", err
