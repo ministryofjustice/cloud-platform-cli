@@ -32,6 +32,7 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentSvcCmd.AddCommand(environmentSvcCreateCmd)
 	environmentCmd.AddCommand(environmentPrototypeCmd)
 	environmentPrototypeCmd.AddCommand(environmentPrototypeCreateCmd)
+	environmentPrototypeCmd.AddCommand(environmentPrototypeDeployCmd)
 	environmentCmd.AddCommand(environmentBumpModuleCmd)
 
 	// flags
@@ -196,6 +197,40 @@ that any changes to the 'main' branch are deployed to the cloud platform.
 	PreRun: upgradeIfNotLatest,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := environment.CreateTemplatePrototype(); err != nil {
+			return err
+		}
+
+		return nil
+	},
+}
+
+var environmentPrototypeDeployCmd = &cobra.Command{
+	Use:   "deploy",
+	Short: `Create the deployment files and github actions required to deploy in Cloud Platform`,
+	Long: `
+	Create the deployment files and github actions required to deploy in Cloud Platform.
+
+The namespace name should be your prototype github repository name:
+
+  https://github.com/ministryofjustice/[repository name]
+
+The prototype site will be hosted at:
+
+  https://[namespace name].apps.live.cloud-platform.service.justice.gov.uk
+
+For branch deployments The prototype site will be hosted at:
+
+  https://[namespace name]-[branch-name].apps.live.cloud-platform.service.justice.gov.uk
+
+A continuous deployment workflow will be created in the github repository such
+that any changes to the 'main' branch are deployed to the cloud platform.
+	`,
+	Example: heredoc.Doc(`
+	$ cloud-platform environment prototype create
+	`),
+	PreRun: upgradeIfNotLatest,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if err := environment.CreateDeploymentPrototype(); err != nil {
 			return err
 		}
 

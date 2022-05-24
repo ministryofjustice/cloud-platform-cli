@@ -9,4 +9,5 @@ type Prototype struct {
 	Namespace         Namespace
 	BasicAuthUsername string
 	BasicAuthPassword string
+	Branch            string
 }
