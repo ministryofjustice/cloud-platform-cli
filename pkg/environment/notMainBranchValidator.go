@@ -25,7 +25,7 @@ func (v *notMainBranchValidator) isValid(s string) bool {
 	}
 	str := strings.Trim(string(branch), "\n")
 	if str != s {
-		fmt.Println("Current working branch should be the same as the one provided %s- %s", str, s)
+		fmt.Println("Current working branch should be the same as the branch name provided")
 		return false
 	}
 	return true
