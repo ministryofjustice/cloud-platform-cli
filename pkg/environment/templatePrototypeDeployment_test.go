@@ -6,7 +6,8 @@ import (
 )
 
 func cleanUpPrototypeDeploymentFiles() {
-	os.Remove(".github/workflows/cd-test-branch.yaml")
+	os.RemoveAll(".github")
+	os.Remove(".github")
 	os.Remove("kubernetes-deploy-test-branch.tpl")
 }
 

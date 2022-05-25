@@ -6,8 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-
-	"github.com/MakeNowJust/heredoc"
+	"strings"
 )
 
 type templateGHAction struct {
@@ -23,35 +22,69 @@ func CreateDeploymentPrototype() error {
 		fmt.Println("This command only runs from a git repository")
 		return err
 	}
-	proto, err := promptUserForPrototypeDeployValues()
-	if err != nil {
-		return (err)
-	}
 
-	err = createPrototypeDeploymentFiles(proto)
+	proto := Prototype{}
+
+	branch, err := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD").Output()
+	if err != nil {
+		fmt.Println("Cannot get the git branch")
+		return err
+	}
+	proto.BranchName = strings.Trim(string(branch), "\n")
+
+	err = createPrototypeDeploymentFiles(&proto)
 	if err != nil {
 		return err
 	}
 
+	re := RepoEnvironment{}
+
+	err, repo := re.repository()
+	if err != nil {
+		return err
+	}
+
+	host := repo + "-" + proto.BranchName
+
+	fmt.Printf(`
+Please run:
+
+    git add ./.github/workflows/cd-%s.yaml kubernetes-deploy-%s.tpl
+
+...and raise a pull request.
+
+Shortly after your pull request is merged, you should a continuous deployment
+Github Action running against the branch your prototype github repository automatically deployed to your gov.uk prototype kit website. This usually takes
+around 5 minutes.
+
+Your prototype kit website will be served at the URL:
+
+    https://%s.apps.live.cloud-platform.service.justice.gov.uk/
+
+If you have any questions or feedback, please post them in #ask-cloud-platform
+on slack.
+
+`, proto.BranchName, proto.BranchName, host)
+
 	return nil
 }
 
-func promptUserForPrototypeDeployValues() (*Prototype, error) {
-	proto := Prototype{}
+// func promptUserForPrototypeDeployValues() (*Prototype, error) {
+// 	proto := Prototype{}
 
-	q := userQuestion{
-		description: heredoc.Doc(`What is the branch name you want to deploy the prototype?
-		e.g. app-testing
-			 `),
-		prompt:    "Branch name",
-		validator: new(notMainBranchValidator),
-	}
-	q.getAnswer()
+// 	q := userQuestion{
+// 		description: heredoc.Doc(`What is the branch name you want to deploy the prototype?
+// 		e.g. app-testing
+// 			 `),
+// 		prompt:    "Branch name",
+// 		validator: new(notMainBranchValidator),
+// 	}
+// 	q.getAnswer()
 
-	proto.BranchName = q.value
+// 	proto.BranchName = q.value
 
-	return &proto, nil
-}
+// 	return &proto, nil
+// }
 
 func createPrototypeDeploymentFiles(p *Prototype) error {
 
