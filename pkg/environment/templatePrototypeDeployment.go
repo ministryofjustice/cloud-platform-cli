@@ -9,10 +9,6 @@ import (
 	"strings"
 )
 
-type templateGHAction struct {
-	BranchName string
-}
-
 const prototypeDeploymentTemplateUrl = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-github-prototype/branch-testing/templates"
 
 func CreateDeploymentPrototype() error {
