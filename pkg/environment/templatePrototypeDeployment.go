@@ -14,6 +14,7 @@ const prototypeRepoUrl = "https://raw.githubusercontent.com/ministryofjustice/mo
 
 func CreateDeploymentPrototype() error {
 
+	// Check if this is a git repository
 	_, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
 	if err != nil {
 		fmt.Println("This command only runs from a git repository")
@@ -22,6 +23,7 @@ func CreateDeploymentPrototype() error {
 
 	proto := Prototype{}
 
+	// Fetch the git current branch
 	branch, err := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD").Output()
 	if err != nil {
 		fmt.Println("Cannot get the git branch")
@@ -34,6 +36,7 @@ func CreateDeploymentPrototype() error {
 		return err
 	}
 
+	// Build the url based on the repository they are in
 	re := RepoEnvironment{}
 
 	err, repo := re.repository()
