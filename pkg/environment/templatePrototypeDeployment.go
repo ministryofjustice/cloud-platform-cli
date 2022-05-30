@@ -49,11 +49,13 @@ func CreateDeploymentPrototype() error {
 	fmt.Printf(`
 Please run:
 
-    git add ./.github/workflows/cd-%s.yaml kubernetes-deploy-%s.tpl 
+    git add ./.github/workflows/cd-%s.yaml kubernetes-deploy-%s.tpl Dockerfile .dockerignore start.sh
 
-...and raise a pull request.
+	git commit -m "Add docker build and deployment files"
 
-Shortly after your pull request is merged, you should a continuous deployment
+    and push the commit to the branch.
+
+Shortly after your pull request with the above commit is merged, you should a continuous deployment
 Github Action running against the branch your prototype github repository automatically deployed to your gov.uk prototype kit website. This usually takes
 around 5 minutes.
 
