@@ -9,6 +9,9 @@ func cleanUpPrototypeDeploymentFiles() {
 	os.RemoveAll(".github")
 	os.Remove(".github")
 	os.Remove("kubernetes-deploy-test-branch.tpl")
+	os.Remove("Dockerfile")
+	os.Remove(".dockerignore")
+	os.Remove("start.sh")
 }
 
 func TestCreateDeploymentPrototype(t *testing.T) {
@@ -21,10 +24,16 @@ func TestCreateDeploymentPrototype(t *testing.T) {
 
 	githubActionFile := "./.github/workflows/cd-test-branch.yaml"
 	deploymentFile := "./kubernetes-deploy-test-branch.tpl"
+	dockerFile := "./Dockerfile"
+	dockerIgnoreFile := "./.dockerignore"
+	startShFile := "./start.sh"
 
 	filenames := []string{
 		githubActionFile,
 		deploymentFile,
+		dockerFile,
+		dockerIgnoreFile,
+		startShFile,
 	}
 
 	for _, f := range filenames {

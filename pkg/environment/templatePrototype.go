@@ -35,32 +35,10 @@ Please run:
 
 ...and raise a pull request.
 
-Shortly after your pull request is merged, you should see new files in your
-github repository:
-
-	https://github.com/ministryofjustice/%s
-
-Files to build a docker image to run the prototype site
-	Dockerfile
-	.dockerignore
-	start.sh
-
-A continuous deployment (CD) workflow, targeting the Cloud Platform
-	.github/workflows/cd.yaml
-	kubernetes-deploy.tpl
-
-Changes merged and pushed to the 'main' branch of your prototype github repository will be
-automatically deployed to your gov.uk prototype kit website. This usually takes
-around 5 minutes.
-
-Your prototype kit website will be served at the URL:
-
-    https://%s.apps.live.cloud-platform.service.justice.gov.uk/
-
 If you have any questions or feedback, please post them in #ask-cloud-platform
 on slack.
 
-`, namespaceBaseFolder+"/"+s, s, s)
+`, namespaceBaseFolder+"/"+s)
 
 	return nil
 }
@@ -86,8 +64,9 @@ func promptUserForPrototypeValues() (*Prototype, error) {
 			 e.g. if you choose "my-awesome-prototype", then the eventual
 			 URL of the prototype will be:
 
-			 https://my-awesome-prototype.apps.live.cloud-platform.service.justice.gov.uk/
+			 https://my-awesome-prototype-main.apps.live.cloud-platform.service.justice.gov.uk/
 
+			 where "main" is the branch you have published
 			 `),
 		prompt:    "Name",
 		validator: new(namespaceNameValidator),
@@ -196,7 +175,6 @@ func createPrototypeFiles(p *Prototype) error {
 	copyUrlToFile(prototypeTemplateUrl+"/ecr.tf", nsdir+"/resources/ecr.tf")
 	copyUrlToFile(prototypeTemplateUrl+"/serviceaccount.tf", nsdir+"/resources/serviceaccount.tf")
 	copyUrlToFile(prototypeTemplateUrl+"/basic-auth.tf", nsdir+"/resources/basic-auth.tf")
-	copyUrlToFile(prototypeTemplateUrl+"/github-repo.tf", nsdir+"/resources/github-repo.tf")
 
 	return nil
 }

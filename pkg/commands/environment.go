@@ -19,6 +19,8 @@ var (
 
 func addEnvironmentCmd(topLevel *cobra.Command) {
 	topLevel.AddCommand(environmentCmd)
+	topLevel.AddCommand(prototypeCmd)
+	prototypeCmd.AddCommand(prototypeDeployCmd)
 	environmentCmd.AddCommand(environmentEcrCmd)
 	environmentCmd.AddCommand(environmentRdsCmd)
 	environmentCmd.AddCommand(environmentS3Cmd)
@@ -32,7 +34,6 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentSvcCmd.AddCommand(environmentSvcCreateCmd)
 	environmentCmd.AddCommand(environmentPrototypeCmd)
 	environmentPrototypeCmd.AddCommand(environmentPrototypeCreateCmd)
-	environmentPrototypeCmd.AddCommand(environmentPrototypeDeployCmd)
 	environmentCmd.AddCommand(environmentBumpModuleCmd)
 
 	// flags
@@ -46,6 +47,12 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 var environmentCmd = &cobra.Command{
 	Use:    "environment",
 	Short:  `Cloud Platform Environment actions`,
+	PreRun: upgradeIfNotLatest,
+}
+
+var prototypeCmd = &cobra.Command{
+	Use:    "prototype",
+	Short:  `Cloud Platform Prototype actions`,
 	PreRun: upgradeIfNotLatest,
 }
 
@@ -175,7 +182,7 @@ var environmentPrototypeCmd = &cobra.Command{
 
 var environmentPrototypeCreateCmd = &cobra.Command{
 	Use:   "create",
-	Short: `Create a gov.uk prototype kit site on the cloud platform`,
+	Short: `Create an environment to host gov.uk prototype kit site on the cloud platform`,
 	Long: `
 Create a namespace folder and files in an existing prototype github repository to host a Gov.UK
 Prototype Kit website on the Cloud Platform.
@@ -183,13 +190,6 @@ Prototype Kit website on the Cloud Platform.
 The namespace name should be your prototype github repository name:
 
   https://github.com/ministryofjustice/[repository name]
-
-The prototype site will be hosted at:
-
-  https://[namespace name].apps.live.cloud-platform.service.justice.gov.uk
-
-A continuous deployment workflow will be created in the github repository such
-that any changes to the 'main' branch are deployed to the cloud platform.
 	`,
 	Example: heredoc.Doc(`
 	$ cloud-platform environment prototype create
@@ -204,29 +204,21 @@ that any changes to the 'main' branch are deployed to the cloud platform.
 	},
 }
 
-var environmentPrototypeDeployCmd = &cobra.Command{
+var prototypeDeployCmd = &cobra.Command{
 	Use:   "deploy",
 	Short: `Create the deployment files and github actions required to deploy in Cloud Platform`,
 	Long: `
-	Create the deployment files and github actions required to deploy in Cloud Platform.
+	Create the deployment files and github actions required to deploy the Prototype kit from a github repository in Cloud Platform.
 
-The namespace name should be your prototype github repository name:
-
-  https://github.com/ministryofjustice/[repository name]
-
-The prototype site will be hosted at:
-
-  https://[namespace name].apps.live.cloud-platform.service.justice.gov.uk
-
-For branch deployments The prototype site will be hosted at:
+The files will be generated based on where the current local branch of the prototype github repository is pointed to:
 
   https://[namespace name]-[branch-name].apps.live.cloud-platform.service.justice.gov.uk
 
 A continuous deployment workflow will be created in the github repository such
-that any changes to the 'main' branch are deployed to the cloud platform.
+that any changes to the branch are deployed to the cloud platform.
 	`,
 	Example: heredoc.Doc(`
-	$ cloud-platform environment prototype create
+	$ cloud-platform prototype deploy
 	`),
 	PreRun: upgradeIfNotLatest,
 	RunE: func(cmd *cobra.Command, args []string) error {

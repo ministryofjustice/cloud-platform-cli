@@ -9,7 +9,8 @@ import (
 	"strings"
 )
 
-const prototypeDeploymentTemplateUrl = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-github-prototype/branch-testing/templates"
+const prototypeDeploymentTemplateUrl = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template/resources/prototype/templates"
+const prototypeRepoUrl = "https://raw.githubusercontent.com/ministryofjustice/moj-prototype-template/main"
 
 func CreateDeploymentPrototype() error {
 
@@ -45,7 +46,7 @@ func CreateDeploymentPrototype() error {
 	fmt.Printf(`
 Please run:
 
-    git add ./.github/workflows/cd-%s.yaml kubernetes-deploy-%s.tpl
+    git add ./.github/workflows/cd-%s.yaml kubernetes-deploy-%s.tpl 
 
 ...and raise a pull request.
 
@@ -65,23 +66,6 @@ on slack.
 	return nil
 }
 
-// func promptUserForPrototypeDeployValues() (*Prototype, error) {
-// 	proto := Prototype{}
-
-// 	q := userQuestion{
-// 		description: heredoc.Doc(`What is the branch name you want to deploy the prototype?
-// 		e.g. app-testing
-// 			 `),
-// 		prompt:    "Branch name",
-// 		validator: new(notMainBranchValidator),
-// 	}
-// 	q.getAnswer()
-
-// 	proto.BranchName = q.value
-
-// 	return &proto, nil
-// }
-
 func createPrototypeDeploymentFiles(p *Prototype) error {
 
 	ghDir := ".github/workflows/"
@@ -92,6 +76,10 @@ func createPrototypeDeploymentFiles(p *Prototype) error {
 	ghActionFile := ghDir + "cd-" + p.BranchName + ".yaml"
 
 	copyUrlToFile(prototypeDeploymentTemplateUrl+"/cd.yaml", ghActionFile)
+
+	copyUrlToFile(prototypeRepoUrl+"/Dockerfile", "Dockerfile")
+	copyUrlToFile(prototypeRepoUrl+"/.dockerignore", ".dockerignore")
+	copyUrlToFile(prototypeRepoUrl+"/start.sh", "start.sh")
 
 	input, err := ioutil.ReadFile(ghActionFile)
 	if err != nil {
