@@ -10,17 +10,12 @@ import (
 )
 
 var (
-	MigrateSkipWarning    bool
-	MigrateCheckNamespace string
-
 	module        string
 	moduleVersion string
 )
 
 func addEnvironmentCmd(topLevel *cobra.Command) {
 	topLevel.AddCommand(environmentCmd)
-	topLevel.AddCommand(prototypeCmd)
-	prototypeCmd.AddCommand(prototypeDeployCmd)
 	environmentCmd.AddCommand(environmentEcrCmd)
 	environmentCmd.AddCommand(environmentRdsCmd)
 	environmentCmd.AddCommand(environmentS3Cmd)
@@ -42,12 +37,6 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 var environmentCmd = &cobra.Command{
 	Use:    "environment",
 	Short:  `Cloud Platform Environment actions`,
-	PreRun: upgradeIfNotLatest,
-}
-
-var prototypeCmd = &cobra.Command{
-	Use:    "prototype",
-	Short:  `Cloud Platform Prototype actions`,
 	PreRun: upgradeIfNotLatest,
 }
 
@@ -160,32 +149,6 @@ The namespace name should be your prototype github repository name:
 	PreRun: upgradeIfNotLatest,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := environment.CreateTemplatePrototype(); err != nil {
-			return err
-		}
-
-		return nil
-	},
-}
-
-var prototypeDeployCmd = &cobra.Command{
-	Use:   "deploy",
-	Short: `Create the deployment files and github actions required to deploy in Cloud Platform`,
-	Long: `
-	Create the deployment files and github actions required to deploy the Prototype kit from a github repository in Cloud Platform.
-
-The files will be generated based on where the current local branch of the prototype github repository is pointed to:
-
-  https://[namespace name]-[branch-name].apps.live.cloud-platform.service.justice.gov.uk
-
-A continuous deployment workflow will be created in the github repository such
-that any changes to the branch are deployed to the cloud platform.
-	`,
-	Example: heredoc.Doc(`
-	$ cloud-platform prototype deploy
-	`),
-	PreRun: upgradeIfNotLatest,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := environment.CreateDeploymentPrototype(); err != nil {
 			return err
 		}
 

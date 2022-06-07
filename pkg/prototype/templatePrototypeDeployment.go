@@ -1,50 +1,39 @@
-package environment
+package prototype
 
 import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
-	"strings"
+
+	"github.com/ministryofjustice/cloud-platform-cli/pkg/util"
 )
 
 const prototypeDeploymentTemplateUrl = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template/resources/prototype/templates"
 const prototypeRepoUrl = "https://raw.githubusercontent.com/ministryofjustice/moj-prototype-template/main"
 
-func CreateDeploymentPrototype() error {
+func CreateDeploymentPrototype(skipDockerFiles bool) error {
 
-	// Check if this is a git repository
-	_, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
+	// Build the url based on the repository they are in
+	util := util.Repository{}
+
+	repo, err := util.Repository()
 	if err != nil {
 		fmt.Println("This command only runs from a git repository")
 		return err
 	}
 
-	proto := Prototype{}
-
-	// Fetch the git current branch
-	branch, err := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD").Output()
-	if err != nil {
-		fmt.Println("Cannot get the git branch")
-		return err
-	}
-	proto.BranchName = strings.Trim(string(branch), "\n")
-
-	err = createPrototypeDeploymentFiles(&proto)
+	branch, err := util.GetBranch()
 	if err != nil {
 		return err
 	}
 
-	// Build the url based on the repository they are in
-	re := RepoEnvironment{}
-
-	err, repo := re.repository()
+	err = createPrototypeDeploymentFiles(branch)
 	if err != nil {
 		return err
 	}
 
-	host := repo + "-" + proto.BranchName
+	host := repo + "-" + branch
 
 	fmt.Printf(`
 Please run:
@@ -66,12 +55,12 @@ Your prototype kit website will be served at the URL:
 If you have any questions or feedback, please post them in #ask-cloud-platform
 on slack.
 
-`, proto.BranchName, proto.BranchName, host)
+`, branch, branch, host)
 
 	return nil
 }
 
-func createPrototypeDeploymentFiles(p *Prototype) error {
+func createPrototypeDeploymentFiles(branch string) error {
 
 	ghDir := ".github/workflows/"
 	err := os.MkdirAll(ghDir, 0o755)
