@@ -3,6 +3,8 @@ package environment
 import (
 	"os"
 	"testing"
+
+	"github.com/ministryofjustice/cloud-platform-cli/pkg/util"
 )
 
 func TestCreatePrototype(t *testing.T) {
@@ -67,7 +69,7 @@ func TestCreatePrototype(t *testing.T) {
 	}
 
 	for filename, searchString := range stringsInFiles {
-		fileContainsString(t, filename, searchString)
+		util.FileContainsString(t, filename, searchString)
 	}
 
 	cleanUpNamespacesFolder("foobar")
