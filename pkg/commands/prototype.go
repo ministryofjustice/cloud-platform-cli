@@ -12,7 +12,7 @@ func addPrototypeCmd(topLevel *cobra.Command) {
 	topLevel.AddCommand(prototypeCmd)
 	prototypeCmd.AddCommand(prototypeDeployCmd)
 	prototypeDeployCmd.AddCommand(prototypeDeployCreateCmd)
-	prototypeCmd.Flags().BoolVarP(&SkipDockerFiles, "skip-docker-files", "s", false, "Whether to skip the files required to build the docker image i.e Dockerfile, .dockerignore, start.sh")
+	prototypeDeployCreateCmd.Flags().BoolVarP(&SkipDockerFiles, "skip-docker-files", "s", false, "Whether to skip the files required to build the docker image i.e Dockerfile, .dockerignore, start.sh")
 }
 
 var prototypeCmd = &cobra.Command{

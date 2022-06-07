@@ -39,9 +39,13 @@ func CreateDeploymentPrototype(skipDockerFiles bool) error {
 	fmt.Printf(`
 Please run:
 
-    git add ./.github/workflows/cd-%s.yaml kubernetes-deploy-%s.tpl Dockerfile .dockerignore start.sh
+    git add ./.github/workflows/cd-%s.yaml kubernetes-deploy-%s.tpl
 
-	git commit -m "Add docker build and deployment files"
+	if --skip-docker-files flag is not used, then run,
+
+	git add Dockerfile .dockerignore start.sh
+
+	git commit -m "Add deployment files"
 
     and push the commit to the branch.
 
