@@ -13,7 +13,7 @@ import (
 )
 
 // This MUST match the number of the latest release on github
-var Version = "1.14.8"
+var Version = "1.14.9"
 
 const (
 	owner      = "ministryofjustice"
