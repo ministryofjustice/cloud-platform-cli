@@ -36,5 +36,5 @@ func CreateTemplateS3(cmd *cobra.Command, args []string) error {
 func createS3TfFile() error {
 	// The s3 "template" is actually an example file that we can just save
 	// "as is" into the user's resources/ directory as `s3.tf`
-	return copyUrlToFile(s3TemplateFile, s3TfFile)
+	return CopyUrlToFile(s3TemplateFile, s3TfFile)
 }

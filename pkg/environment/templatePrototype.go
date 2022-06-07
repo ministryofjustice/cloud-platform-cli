@@ -172,9 +172,9 @@ func createPrototypeFiles(p *Prototype) error {
 
 	nsdir := namespaceBaseFolder + "/" + p.Namespace.Namespace
 
-	copyUrlToFile(prototypeTemplateUrl+"/ecr.tf", nsdir+"/resources/ecr.tf")
-	copyUrlToFile(prototypeTemplateUrl+"/serviceaccount.tf", nsdir+"/resources/serviceaccount.tf")
-	copyUrlToFile(prototypeTemplateUrl+"/basic-auth.tf", nsdir+"/resources/basic-auth.tf")
+	CopyUrlToFile(prototypeTemplateUrl+"/ecr.tf", nsdir+"/resources/ecr.tf")
+	CopyUrlToFile(prototypeTemplateUrl+"/serviceaccount.tf", nsdir+"/resources/serviceaccount.tf")
+	CopyUrlToFile(prototypeTemplateUrl+"/basic-auth.tf", nsdir+"/resources/basic-auth.tf")
 
 	return nil
 }
