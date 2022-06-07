@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/ministryofjustice/cloud-platform-cli/pkg/environment"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/util"
 )
 
@@ -28,7 +29,7 @@ func CreateDeploymentPrototype(skipDockerFiles bool) error {
 		return err
 	}
 
-	err = createPrototypeDeploymentFiles(branch)
+	err = createPrototypeDeploymentFiles(branch, skipDockerFiles)
 	if err != nil {
 		return err
 	}
@@ -60,33 +61,35 @@ on slack.
 	return nil
 }
 
-func createPrototypeDeploymentFiles(branch string) error {
+func createPrototypeDeploymentFiles(branch string, skipDockerFiles bool) error {
+
+	if !skipDockerFiles {
+		environment.CopyUrlToFile(prototypeRepoUrl+"/Dockerfile", "Dockerfile")
+		environment.CopyUrlToFile(prototypeRepoUrl+"/.dockerignore", ".dockerignore")
+		environment.CopyUrlToFile(prototypeRepoUrl+"/start.sh", "start.sh")
+	}
 
 	ghDir := ".github/workflows/"
 	err := os.MkdirAll(ghDir, 0o755)
 	if err != nil {
 		return err
 	}
-	ghActionFile := ghDir + "cd-" + p.BranchName + ".yaml"
+	ghActionFile := ghDir + "cd-" + branch + ".yaml"
 
-	copyUrlToFile(prototypeDeploymentTemplateUrl+"/cd.yaml", ghActionFile)
-
-	copyUrlToFile(prototypeRepoUrl+"/Dockerfile", "Dockerfile")
-	copyUrlToFile(prototypeRepoUrl+"/.dockerignore", ".dockerignore")
-	copyUrlToFile(prototypeRepoUrl+"/start.sh", "start.sh")
+	environment.CopyUrlToFile(prototypeDeploymentTemplateUrl+"/cd.yaml", ghActionFile)
 
 	input, err := ioutil.ReadFile(ghActionFile)
 	if err != nil {
 		return err
 	}
 
-	output := bytes.Replace(input, []byte("branch-name"), []byte(p.BranchName), -1)
+	output := bytes.Replace(input, []byte("branch-name"), []byte(branch), -1)
 
 	if err = ioutil.WriteFile(ghActionFile, output, 0666); err != nil {
 		return err
 	}
 
-	copyUrlToFile(prototypeDeploymentTemplateUrl+"/kubernetes-deploy.tpl", "kubernetes-deploy-"+p.BranchName+".tpl")
+	environment.CopyUrlToFile(prototypeDeploymentTemplateUrl+"/kubernetes-deploy.tpl", "kubernetes-deploy-"+branch+".tpl")
 
 	return nil
 

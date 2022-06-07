@@ -1,9 +1,8 @@
 package commands
 
 import (
-	environment "github.com/ministryofjustice/cloud-platform-cli/pkg/environment"
-
 	"github.com/MakeNowJust/heredoc"
+	"github.com/ministryofjustice/cloud-platform-cli/pkg/prototype"
 	"github.com/spf13/cobra"
 )
 
@@ -46,7 +45,7 @@ that any changes to the branch are deployed to the cloud platform.
 	`),
 	PreRun: upgradeIfNotLatest,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := environment.CreateDeploymentPrototype(SkipDockerFiles); err != nil {
+		if err := prototype.CreateDeploymentPrototype(SkipDockerFiles); err != nil {
 			return err
 		}
 

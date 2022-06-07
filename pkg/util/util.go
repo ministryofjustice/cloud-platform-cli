@@ -12,6 +12,13 @@ type Repository struct {
 	branch            string
 }
 
+type templateFromUrl struct {
+	outputPath string
+	content    string
+	name       string
+	url        string
+}
+
 // set and return the name of the git repository which the current working
 // directory is located within
 func (re *Repository) Repository() (string, error) {
