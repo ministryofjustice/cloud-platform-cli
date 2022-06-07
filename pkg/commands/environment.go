@@ -26,8 +26,6 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentCmd.AddCommand(environmentS3Cmd)
 	environmentCmd.AddCommand(environmentSvcCmd)
 	environmentCmd.AddCommand(environmentCreateCmd)
-	environmentCmd.AddCommand(environmentMigrateCmd)
-	environmentCmd.AddCommand(environmentMigrateCheckCmd)
 	environmentEcrCmd.AddCommand(environmentEcrCreateCmd)
 	environmentRdsCmd.AddCommand(environmentRdsCreateCmd)
 	environmentS3Cmd.AddCommand(environmentS3CreateCmd)
@@ -37,9 +35,6 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentCmd.AddCommand(environmentBumpModuleCmd)
 
 	// flags
-	environmentMigrateCmd.Flags().BoolVarP(&MigrateSkipWarning, "skip-warnings", "s", false, "Whether to skip the check")
-	environmentMigrateCheckCmd.Flags().StringVarP(&MigrateCheckNamespace, "namespace", "n", "", "Namespace which you want to perform the checks")
-
 	environmentBumpModuleCmd.Flags().StringVarP(&module, "module", "m", "", "Module to upgrade the version")
 	environmentBumpModuleCmd.Flags().StringVarP(&moduleVersion, "module-version", "v", "", "Semantic version to bump a module to")
 }
@@ -73,38 +68,6 @@ var environmentEcrCmd = &cobra.Command{
 	$ cloud-platform environment ecr create
 	`),
 	PreRun: upgradeIfNotLatest,
-}
-
-var environmentMigrateCmd = &cobra.Command{
-	Use:   "migrate",
-	Short: `Migrate command to help with live migration`,
-	Example: heredoc.Doc(`
-	$ cloud-platform environment migrate
-	`),
-	PreRun: upgradeIfNotLatest,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := environment.Migrate(MigrateSkipWarning); err != nil {
-			return err
-		}
-
-		return nil
-	},
-}
-
-var environmentMigrateCheckCmd = &cobra.Command{
-	Use:   "migrate-check",
-	Short: `migrate-check command to help with live migration`,
-	Example: heredoc.Doc(`
-	$ cloud-platform environment migrate-check -n <namespace>
-	`),
-	PreRun: upgradeIfNotLatest,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := environment.MigrateCheck(MigrateCheckNamespace); err != nil {
-			return err
-		}
-
-		return nil
-	},
 }
 
 var environmentEcrCreateCmd = &cobra.Command{
