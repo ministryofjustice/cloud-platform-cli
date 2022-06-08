@@ -38,5 +38,5 @@ func CreateTemplateServiceAccount() error {
 func createSvcAccTfFile() error {
 	// The serviceaccount "template" is actually an example file that we can just save
 	// as is into the user's resources/ directory as `serviceaccount.tf`
-	return copyUrlToFile(svcAccTemplateFile, svcAccTfFile)
+	return CopyUrlToFile(svcAccTemplateFile, svcAccTfFile)
 }

@@ -3,6 +3,8 @@ package environment
 import (
 	"os"
 	"testing"
+
+	"github.com/ministryofjustice/cloud-platform-cli/pkg/util"
 )
 
 func TestCreateServiceAccountFile(t *testing.T) {
@@ -15,7 +17,7 @@ func TestCreateServiceAccountFile(t *testing.T) {
 	}
 
 	moduleName := "github.com/ministryofjustice/cloud-platform-terraform-serviceaccount"
-	fileContainsString(t, filename, moduleName)
+	util.FileContainsString(t, filename, moduleName)
 
 	os.Remove(filename)
 	os.Remove("resources")

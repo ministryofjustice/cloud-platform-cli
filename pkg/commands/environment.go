@@ -10,9 +10,6 @@ import (
 )
 
 var (
-	MigrateSkipWarning    bool
-	MigrateCheckNamespace string
-
 	module        string
 	moduleVersion string
 )
@@ -137,7 +134,7 @@ var environmentPrototypeCmd = &cobra.Command{
 
 var environmentPrototypeCreateCmd = &cobra.Command{
 	Use:   "create",
-	Short: `Create a gov.uk prototype kit site on the cloud platform`,
+	Short: `Create an environment to host gov.uk prototype kit site on the cloud platform`,
 	Long: `
 Create a namespace folder and files in an existing prototype github repository to host a Gov.UK
 Prototype Kit website on the Cloud Platform.
@@ -145,13 +142,6 @@ Prototype Kit website on the Cloud Platform.
 The namespace name should be your prototype github repository name:
 
   https://github.com/ministryofjustice/[repository name]
-
-The prototype site will be hosted at:
-
-  https://[namespace name].apps.live.cloud-platform.service.justice.gov.uk
-
-A continuous deployment workflow will be created in the github repository such
-that any changes to the 'main' branch are deployed to the cloud platform.
 	`,
 	Example: heredoc.Doc(`
 	$ cloud-platform environment prototype create

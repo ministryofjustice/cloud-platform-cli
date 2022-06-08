@@ -60,7 +60,7 @@ func directoryExists(path string) bool {
 	}
 }
 
-func copyUrlToFile(url string, targetFilename string) error {
+func CopyUrlToFile(url string, targetFilename string) error {
 	str, err := downloadTemplate(url)
 	if err != nil {
 		return err
