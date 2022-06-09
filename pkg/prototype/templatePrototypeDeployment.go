@@ -49,9 +49,8 @@ Please run:
 
     and push the commit to the branch.
 
-Shortly after your pull request with the above commit is merged, you should a continuous deployment
-Github Action running against the branch your prototype github repository automatically deployed to your gov.uk prototype kit website. This usually takes
-around 5 minutes.
+Shortly after your commit is pushed, you should see a Github Action pipeline running against the branch of your prototype code 
+and automatically deploy your prototype kit website to the Cloud Platform. This usually takes around 5 minutes.
 
 Your prototype kit website will be served at the URL:
 

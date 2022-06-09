@@ -29,11 +29,7 @@ func CreateTemplatePrototype() error {
 	s := proto.Namespace.Namespace
 
 	fmt.Printf(`
-Please run:
-
-    git add %s
-
-...and raise a pull request.
+Please go back to the user guide and follow the instructions to Raise a PR.
 
 If you have any questions or feedback, please post them in #ask-cloud-platform
 on slack.
@@ -50,24 +46,13 @@ func promptUserForPrototypeValues() (*Prototype, error) {
 	values := Namespace{}
 
 	q := userQuestion{
-		description: heredoc.Doc(`Please choose a hostname for your prototype.
-			 This must consist only of lower-case letters, digits and
-			 dashes.
+		description: heredoc.Doc(`Please choose an environment name for your prototype.
+		This must be
+		* the name of your existing prototype's github repository
 
-			 This should be;
-			 * the name of your existing prototype's github repository
-
-			 This will be;
-			 * the name of the prototype's namespace on the Cloud Platform
-			 * part of the prototype's URL on the web
-
-			 e.g. if you choose "my-awesome-prototype", then the eventual
-			 URL of the prototype will be:
-
-			 https://my-awesome-prototype-main.apps.live.cloud-platform.service.justice.gov.uk/
-
-			 where "main" is the branch you have published
-			 `),
+		This will be;
+		* the name of the prototype's namespace on the Cloud Platform
+		* part of the prototype's URL on the web`),
 		prompt:    "Name",
 		validator: new(namespaceNameValidator),
 	}
