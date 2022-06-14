@@ -1,6 +1,21 @@
 package terminalcfg
 
-import "testing"
+import (
+	"testing"
+)
+
+func TestSetAWSEnv(t *testing.T) {
+	tests := []struct {
+		name string
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			SetAWSEnv()
+		})
+	}
+}
 
 func TestSetKubeEnv(t *testing.T) {
 	type args struct {
@@ -45,6 +60,37 @@ func TestSetKubeEnv(t *testing.T) {
 			if got := SetKubeEnv(tt.args.env); got != tt.want {
 				t.Errorf("LiveManagerEnv() = %v, want %v", got, tt.want)
 			}
+		})
+	}
+}
+
+func TestSetTFWksp(t *testing.T) {
+	type args struct {
+		clusterName string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "Failure",
+			args: args{
+				clusterName: "",
+			},
+			want: false,
+		},
+		{
+			name: "live Success",
+			args: args{
+				clusterName: "live",
+			},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			SetTFWksp(tt.args.clusterName)
 		})
 	}
 }

@@ -19,7 +19,7 @@ var (
 	clusterName  string
 	kubeConfig   string
 	clusterArray []string
-	returnOuput  bool
+	returnOutput bool
 	home, _      = os.UserHomeDir()
 	colourCyan   = "\033[36m"
 	colourReset  = "\033[0m"
@@ -104,16 +104,16 @@ func SetKubeEnv(clusterName string) bool {
 	// set kubeconfig for live, manager or test
 	// set kube_config_path to kubeconfig
 	if clusterName == "" {
-		returnOuput = false
+		returnOutput = false
 	} else if clusterName == "live" {
 		kubeConfig = home + "/.kube/" + clusterName + "/config"
-		returnOuput = true
+		returnOutput = true
 	} else if clusterName == "manager" {
 		kubeConfig = home + "/.kube/" + clusterName + "/config"
-		returnOuput = true
+		returnOutput = true
 	} else {
 		kubeConfig = home + "/.kube/test/" + clusterName + "/config"
-		returnOuput = true
+		returnOutput = true
 	}
 	// these are the three kube variables expected by kubectl
 	os.Setenv("KUBECONFIG", kubeConfig)
@@ -125,16 +125,23 @@ func SetKubeEnv(clusterName string) bool {
 	fmt.Println(string(colourCyan), "KUBE_CONFIG:", string(colourReset), os.Getenv("KUBE_CONFIG"))
 	fmt.Println(string(colourCyan), "KUBE_CONFIG_PATH:", string(colourReset), os.Getenv("KUBE_CONFIG_PATH"))
 
-	return returnOuput
+	return returnOutput
 }
 
 // sets Terraform Workspace
-func SetTFWksp(clusterName string) {
+func SetTFWksp(clusterName string) bool {
 	// tf workspace to the cluster name
 	fmt.Println(string(colourYellow), "\nUpdating Terraform Workspace")
 	os.Setenv("TF_WORKSPACE", clusterName)
+	if clusterName == "" {
+		returnOutput = false
+	} else {
+		returnOutput = true
+	}
 
 	fmt.Println(string(colourCyan), "TF_WORKSPACE:", string(colourReset), os.Getenv("TF_WORKSPACE"))
+
+	return returnOutput
 }
 
 func SetTerm() {
@@ -176,13 +183,24 @@ func TestEnv() {
 		os.Exit(1)
 	}
 	clusterName = arg
-	SetKubeEnv(clusterName)
+
+	// set kube config
+	ske := SetKubeEnv(clusterName)
+	if !ske {
+		log.Fatal(string(colourRed), "Kube Environment not set", string(colourReset), ske)
+	}
+
 	// set kubecontext to correct context name
 	fmt.Println(string(colourYellow), "Updating Kube Context")
 	cmd := exec.Command("aws", "eks", "update-kubeconfig", "--name", clusterName)
 	cmd.Run()
+
 	// Set Terraform workspace to the cluster name
-	SetTFWksp(clusterName)
+	stfe := SetTFWksp(clusterName)
+	if !stfe {
+		log.Fatal(string(colourRed), "Terraform workspace not set", string(colourReset), stfe)
+	}
+
 	SetTerm()
 }
 
@@ -193,12 +211,23 @@ func LiveManagerEnv(env string) {
 	if clusterName != "live" && clusterName != "manager" {
 		log.Fatal(string(colourRed), "Cluster name is incorrect", string(colourReset))
 	}
-	SetKubeEnv(clusterName)
+
+	// set kube config
+	ske := SetKubeEnv(clusterName)
+	if !ske {
+		log.Fatal(string(colourRed), "Kube Environment not set", string(colourReset), ske)
+	}
+
 	// set kubecontext to correct context name
 	fmt.Println(string(colourYellow), "Updating Kube Context")
 	cmd := exec.Command("aws", "eks", "update-kubeconfig", "--name", clusterName)
 	cmd.Run()
+
 	// Set Terraform workspace to the cluster name
-	SetTFWksp(clusterName)
+	stfe := SetTFWksp(clusterName)
+	if !stfe {
+		log.Fatal(string(colourRed), "Terraform workspace not set", string(colourReset), stfe)
+	}
+
 	SetTerm()
 }

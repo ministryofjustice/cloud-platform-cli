@@ -1,12 +1,19 @@
 # Terminal
 
-`terminal` is a sub-command of cloud-platform cli. Used for setting up session with all the necessary configuration, needed to make sure both kubernetes and terraform are set to the correct cluster.
+`terminal` is a sub-command used to set up a session with all the necessary configuration, needed to make sure both kubernetes and terraform are set to the correct in the selected cluster.
 
 ---
 ## Prerequisites
 ---
 aws configuration: 
   - config and credentials files are required to run this command. they need to be set up in the `.aws` directory under the users home directory.
+  - To allow the use of the prompt to work correctly the following needs to be set in your profile. `.bashrc`, `.zshrc` 
+
+```
+  if [ -n "$KUBECONFIG" ]; then
+    PS1="$KUBE_PS1"
+  fi
+```
 
 ---
 ## Usage
