@@ -113,12 +113,8 @@ var environmentApplyCmd = &cobra.Command{
 	PreRun: upgradeIfNotLatest,
 	RunE: func(cmd *cobra.Command, args []string) error {
 
-		applier, err := environment.NewApplier(ApplyNamespace)
+		err := environment.Applier(ApplyNamespace)
 		if err != nil {
-			return err
-		}
-
-		if err := applier.Apply(); err != nil {
 			return err
 		}
 
