@@ -36,7 +36,7 @@ RUN chmod +x kubectl terraform
 
 FROM alpine:3.14
 
-ENV AWSCLI_VERSION=2.2.41
+ENV AWSCLI_VERSION=2.7.6
 ENV GLIBC_VER=2.31-r0
 
 RUN apk add --update --no-cache \
