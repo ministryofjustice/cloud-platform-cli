@@ -10,13 +10,9 @@ import (
 )
 
 var (
-	MigrateSkipWarning    bool
-	MigrateCheckNamespace string
-
 	ApplyNamespace string
-
-	module        string
-	moduleVersion string
+	module         string
+	moduleVersion  string
 )
 
 func addEnvironmentCmd(topLevel *cobra.Command) {
@@ -26,8 +22,6 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentCmd.AddCommand(environmentS3Cmd)
 	environmentCmd.AddCommand(environmentSvcCmd)
 	environmentCmd.AddCommand(environmentCreateCmd)
-	environmentCmd.AddCommand(environmentMigrateCmd)
-	environmentCmd.AddCommand(environmentMigrateCheckCmd)
 	environmentCmd.AddCommand(environmentApplyCmd)
 	environmentEcrCmd.AddCommand(environmentEcrCreateCmd)
 	environmentRdsCmd.AddCommand(environmentRdsCreateCmd)
@@ -38,11 +32,7 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentCmd.AddCommand(environmentBumpModuleCmd)
 
 	// flags
-	environmentMigrateCmd.Flags().BoolVarP(&MigrateSkipWarning, "skip-warnings", "s", false, "Whether to skip the check")
-	environmentMigrateCheckCmd.Flags().StringVarP(&MigrateCheckNamespace, "namespace", "n", "", "Namespace which you want to perform the checks")
-
 	environmentApplyCmd.Flags().StringVarP(&ApplyNamespace, "namespace", "n", "", "Namespace which you want to perform the apply")
-
 	environmentBumpModuleCmd.Flags().StringVarP(&module, "module", "m", "", "Module to upgrade the version")
 	environmentBumpModuleCmd.Flags().StringVarP(&moduleVersion, "module-version", "v", "", "Semantic version to bump a module to")
 }
@@ -70,38 +60,6 @@ var environmentEcrCmd = &cobra.Command{
 	$ cloud-platform environment ecr create
 	`),
 	PreRun: upgradeIfNotLatest,
-}
-
-var environmentMigrateCmd = &cobra.Command{
-	Use:   "migrate",
-	Short: `Migrate command to help with live migration`,
-	Example: heredoc.Doc(`
-	$ cloud-platform environment migrate
-	`),
-	PreRun: upgradeIfNotLatest,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := environment.Migrate(MigrateSkipWarning); err != nil {
-			return err
-		}
-
-		return nil
-	},
-}
-
-var environmentMigrateCheckCmd = &cobra.Command{
-	Use:   "migrate-check",
-	Short: `migrate-check command to help with live migration`,
-	Example: heredoc.Doc(`
-	$ cloud-platform environment migrate-check -n <namespace>
-	`),
-	PreRun: upgradeIfNotLatest,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := environment.MigrateCheck(MigrateCheckNamespace); err != nil {
-			return err
-		}
-
-		return nil
-	},
 }
 
 var environmentApplyCmd = &cobra.Command{
@@ -197,7 +155,7 @@ var environmentPrototypeCmd = &cobra.Command{
 
 var environmentPrototypeCreateCmd = &cobra.Command{
 	Use:   "create",
-	Short: `Create a gov.uk prototype kit site on the cloud platform`,
+	Short: `Create an environment to host gov.uk prototype kit site on the cloud platform`,
 	Long: `
 Create a namespace folder and files in an existing prototype github repository to host a Gov.UK
 Prototype Kit website on the Cloud Platform.
@@ -205,13 +163,6 @@ Prototype Kit website on the Cloud Platform.
 The namespace name should be your prototype github repository name:
 
   https://github.com/ministryofjustice/[repository name]
-
-The prototype site will be hosted at:
-
-  https://[namespace name].apps.live.cloud-platform.service.justice.gov.uk
-
-A continuous deployment workflow will be created in the github repository such
-that any changes to the 'main' branch are deployed to the cloud platform.
 	`,
 	Example: heredoc.Doc(`
 	$ cloud-platform environment prototype create

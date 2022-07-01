@@ -1,7 +1,6 @@
 package environment
 
-type yesNoValidator struct {
-}
+type yesNoValidator struct{}
 
 func (v *yesNoValidator) isValid(s string) bool {
 	l := inListValidator{

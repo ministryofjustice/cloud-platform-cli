@@ -11,7 +11,6 @@ import (
 
 // Kubectl creates kubectl command to be executed
 func (s *Commander) Kubectl(args ...string) (*CmdOutput, error) {
-
 	var stdoutBuf bytes.Buffer
 	var stderrBuf bytes.Buffer
 	var exitCode int

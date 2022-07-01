@@ -6,8 +6,10 @@ import (
 	"github.com/gookit/color"
 )
 
-const svcAccTemplateFile = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-serviceaccount/main/template/serviceaccount.tmpl"
-const svcAccTfFile = "resources/serviceaccount.tf"
+const (
+	svcAccTemplateFile = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-serviceaccount/main/template/serviceaccount.tmpl"
+	svcAccTfFile       = "resources/serviceaccount.tf"
+)
 
 // CreateTemplateServiceAccount sets and creates a template file containing all
 // the necessary values to create a serviceaccount resource in Kubernetes. It
@@ -36,5 +38,5 @@ func CreateTemplateServiceAccount() error {
 func createSvcAccTfFile() error {
 	// The serviceaccount "template" is actually an example file that we can just save
 	// as is into the user's resources/ directory as `serviceaccount.tf`
-	return copyUrlToFile(svcAccTemplateFile, svcAccTfFile)
+	return CopyUrlToFile(svcAccTemplateFile, svcAccTfFile)
 }

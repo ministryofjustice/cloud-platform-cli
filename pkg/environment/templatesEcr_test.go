@@ -3,6 +3,8 @@ package environment
 import (
 	"os"
 	"testing"
+
+	"github.com/ministryofjustice/cloud-platform-cli/pkg/util"
 )
 
 func TestCreatesEcrTfFile(t *testing.T) {
@@ -15,7 +17,7 @@ func TestCreatesEcrTfFile(t *testing.T) {
 	}
 
 	moduleName := "github.com/ministryofjustice/cloud-platform-terraform-ecr-credentials"
-	fileContainsString(t, filename, moduleName)
+	util.FileContainsString(t, filename, moduleName)
 
 	os.Remove(filename)
 	os.Remove("resources")

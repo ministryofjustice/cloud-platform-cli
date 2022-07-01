@@ -2,8 +2,7 @@ package environment
 
 import "fmt"
 
-type notEmptyValidator struct {
-}
+type notEmptyValidator struct{}
 
 func (v *notEmptyValidator) isValid(s string) bool {
 	if s == "" {

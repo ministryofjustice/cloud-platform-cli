@@ -3,6 +3,8 @@ package environment
 import (
 	"os"
 	"testing"
+
+	"github.com/ministryofjustice/cloud-platform-cli/pkg/util"
 )
 
 func cleanUpNamespacesFolder(namespace string) {
@@ -66,7 +68,7 @@ func TestCreateNamespace(t *testing.T) {
 	}
 
 	for filename, searchString := range stringsInFiles {
-		fileContainsString(t, filename, searchString)
+		util.FileContainsString(t, filename, searchString)
 	}
 
 	cleanUpNamespacesFolder("foobar")

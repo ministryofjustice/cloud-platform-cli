@@ -1,7 +1,6 @@
 package environment
 
-type githubUrlValidator struct {
-}
+type githubUrlValidator struct{}
 
 func (v *githubUrlValidator) isValid(s string) bool {
 	r := new(regexValidator)

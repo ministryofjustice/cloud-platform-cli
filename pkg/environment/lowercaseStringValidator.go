@@ -1,7 +1,6 @@
 package environment
 
-type lowercaseStringValidator struct {
-}
+type lowercaseStringValidator struct{}
 
 func (v *lowercaseStringValidator) isValid(s string) bool {
 	r := new(regexValidator)
