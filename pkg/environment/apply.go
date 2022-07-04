@@ -1,7 +1,6 @@
 package environment
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -75,17 +74,8 @@ func (a *Apply) initialize() {
 	}
 
 }
-func (a *Apply) Apply() error {
 
-	err := a.applyNamespace()
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	return nil
-
-}
-
-func (a *Apply) applyNamespace() error {
+func (a *Apply) ApplyNamespace() (map[string]string, error) {
 	log.Printf("Applying namespace: %v", a.Namespace)
 
 	// outputKubectl, err := applyKubectl()
@@ -95,11 +85,7 @@ func (a *Apply) applyNamespace() error {
 	// }
 
 	outputTerraform, _ := a.Terraformer.TerraformInitAndApply(a.Namespace, a.Dir)
-
-	output := outputTerraform
-
-	fmt.Printf("Output of Namespace changes %s", output)
-	return nil
+	return outputTerraform, nil
 }
 
 // applyKubectl attempts to dryn-run of "kubectl apply" to the files in the given folder.

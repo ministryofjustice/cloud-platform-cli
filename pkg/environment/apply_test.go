@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestApply_applyNamespace(t *testing.T) {
+func TestApply_ApplyNamespace(t *testing.T) {
 	type fields struct {
 		RequiredEnvVars RequiredEnvVars
 		Dir             string
@@ -17,6 +17,7 @@ func TestApply_applyNamespace(t *testing.T) {
 	tests := []struct {
 		name              string
 		fields            fields
+		TerraformOutputs  map[string]string
 		checkExpectations func(t *testing.T, terraform *mocks.Terraformer, outputs map[string]string, err error)
 	}{
 		{
@@ -33,23 +34,26 @@ func TestApply_applyNamespace(t *testing.T) {
 				Dir:       "/root/foo",
 				Namespace: "foobar",
 			},
+			TerraformOutputs: map[string]string{"myoutput": "foo"},
 			checkExpectations: func(t *testing.T, terraform *mocks.Terraformer, outputs map[string]string, err error) {
-				terraform.AssertCalled(t, "TerraformInitAndApply", "/root/foo")
+				terraform.AssertCalled(t, "TerraformInitAndApply", "foobar", "/root/foo")
 				assert.Nil(t, err)
 				assert.Len(t, outputs, 1)
-				assert.Equal(t, "old", outputs["myoutput"])
 			},
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
 		terraform := new(mocks.Terraformer)
-		a := &Apply{
-			RequiredEnvVars: tt.fields.RequiredEnvVars,
+		terraform.On("TerraformInitAndApply", tests[i].fields.Namespace, tests[i].fields.Dir).Return(tests[i].TerraformOutputs, nil)
+		a := Apply{
+			RequiredEnvVars: tests[i].fields.RequiredEnvVars,
 			Terraformer:     terraform,
-			Dir:             tt.fields.Dir,
-			Namespace:       tt.fields.Namespace,
+			Dir:             tests[i].fields.Dir,
+			Namespace:       tests[i].fields.Namespace,
 		}
-		outputs, err := a.applyNamespace()
-		t.Run(tests[tt].name, func(t *testing.T) { tests[tt].CheckExpectations(t, terraform, state, outputs, err) })
+		outputs, err := a.ApplyNamespace()
+		t.Run(tests[i].name, func(t *testing.T) {
+			tests[i].checkExpectations(t, terraform, outputs, err)
+		})
 	}
 }
