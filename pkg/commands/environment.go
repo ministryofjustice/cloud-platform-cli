@@ -10,9 +10,9 @@ import (
 )
 
 var (
-	ApplyNamespace string
-	module         string
-	moduleVersion  string
+	Namespace     string
+	module        string
+	moduleVersion string
 )
 
 func addEnvironmentCmd(topLevel *cobra.Command) {
@@ -32,7 +32,7 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentCmd.AddCommand(environmentBumpModuleCmd)
 
 	// flags
-	environmentApplyCmd.Flags().StringVarP(&ApplyNamespace, "namespace", "n", "", "Namespace which you want to perform the apply")
+	environmentApplyCmd.Flags().StringVarP(&Namespace, "namespace", "n", "", "Namespace which you want to perform the apply")
 	environmentBumpModuleCmd.Flags().StringVarP(&module, "module", "m", "", "Module to upgrade the version")
 	environmentBumpModuleCmd.Flags().StringVarP(&moduleVersion, "module-version", "v", "", "Semantic version to bump a module to")
 }
@@ -71,7 +71,8 @@ var environmentApplyCmd = &cobra.Command{
 	PreRun: upgradeIfNotLatest,
 	RunE: func(cmd *cobra.Command, args []string) error {
 
-		err := environment.Applier(ApplyNamespace)
+		environment.NewApplier(Namespace)
+		err := environment.ApplyNamespace(Namespace)
 		if err != nil {
 			return err
 		}

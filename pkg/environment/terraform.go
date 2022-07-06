@@ -104,28 +104,3 @@ func (m *TerraformerImpl) TerraformDestroy(directory string) error {
 
 	return terraform.Destroy(context.Background())
 }
-
-// func buildInitOptions(args []string) []tfexec.InitOption {
-// 	var opts []tfexec.InitOption
-
-// 	// if we want to init with an s3/dynamo remote state
-// 	rs := cmd.Flags().Lookup("remote-state")
-// 	if rs.Value.String() == "true" {
-// 		opts = append(opts,
-// 			configureRegion(cmd, mergedVars),
-// 			configureBucket(cmd, mergedVars),
-// 			configureStateKey(cmd, mergedVars, args),
-// 		)
-
-// 		sl := cmd.Flags().Lookup("state-lock")
-// 		if sl.Value.String() == "true" {
-// 			opts = append(opts,
-// 				configureStateLock(cmd, mergedVars),
-// 			)
-// 		}
-// 	} else {
-// 		opts = append(opts, tfexec.Backend(false))
-// 	}
-
-// 	return append(opts, tfexec.Upgrade(true))
-// }
