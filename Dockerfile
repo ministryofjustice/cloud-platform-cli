@@ -75,6 +75,9 @@ RUN apk add --no-cache --virtual .dependencies binutils curl \
         glibc-*.apk \
     && apk del --purge .dependencies
 
+# Create a blank aws profile to satisfy the aws provider requirements
+RUN mkdir -p /root/.aws && echo "[moj-cp]" > /root/.aws/credentials
+
 COPY --from=cli_builder /build/cloud-platform /usr/local/bin/cloud-platform
 COPY --from=cli_builder /build/kubectl /usr/local/bin/kubectl
 COPY --from=cli_builder /build/terraform /usr/local/bin/terraform
