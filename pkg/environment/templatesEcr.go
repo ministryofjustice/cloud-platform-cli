@@ -7,8 +7,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const ecrTemplateFile = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-ecr-credentials/main/examples/ecr.tf"
-const ecrTfFile = "resources/ecr.tf"
+const (
+	ecrTemplateFile = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-ecr-credentials/main/examples/ecr.tf"
+	ecrTfFile       = "resources/ecr.tf"
+)
 
 func CreateTemplateEcr(cmd *cobra.Command, args []string) error {
 	re := RepoEnvironment{}
@@ -33,5 +35,5 @@ func CreateTemplateEcr(cmd *cobra.Command, args []string) error {
 func createEcrTfFile() error {
 	// The ecr "template" is actually an example file that we can just save
 	// "as is" into the user's resources/ directory as `ecr.tf`
-	return copyUrlToFile(ecrTemplateFile, ecrTfFile)
+	return CopyUrlToFile(ecrTemplateFile, ecrTfFile)
 }

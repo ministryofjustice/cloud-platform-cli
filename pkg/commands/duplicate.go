@@ -8,16 +8,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	DuplicateIngressNamespace string
-)
+var DuplicateIngressNamespace string
 
 func addDuplicateCmd(topLevel *cobra.Command) {
 	topLevel.AddCommand(duplicateCmd)
 	duplicateCmd.AddCommand(duplicateIngressCmd)
 
 	duplicateIngressCmd.Flags().StringVarP(&DuplicateIngressNamespace, "namespace", "n", "", "Namespace which you want to perform the duplicate resource")
-
 }
 
 var duplicateCmd = &cobra.Command{
@@ -45,10 +42,8 @@ To access the cluster, it assumes that the user has either set the env variable 
 			return nil
 		}
 		return errors.New("requires existing ingress resource name")
-
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-
 		return duplicate.DuplicateIngress(DuplicateIngressNamespace, args[0])
 	},
 }

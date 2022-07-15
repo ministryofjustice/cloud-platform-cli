@@ -109,7 +109,6 @@ func copyAndChangeIngress(inIngress *v1.Ingress) (*v1.Ingress, error) {
 		if strings.Contains(k, "meta.helm.sh") || strings.Contains(k, "kubectl.kubernetes.io/last-applied-configuration") {
 			delete(duplicateIngress.Annotations, k)
 		}
-
 	}
 
 	duplicateIngress.ObjectMeta.Name = inIngress.ObjectMeta.Name + "-duplicate"
