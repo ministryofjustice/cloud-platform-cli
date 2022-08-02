@@ -15,6 +15,7 @@ type Cluster struct {
 	OldestNode v1.Node
 	NewestNode v1.Node
 	StuckPods  []v1.Pod
+	Spec       NewClusterOptions
 }
 
 // Snapshot represents a snapshot of a Kubernetes cluster object
@@ -27,6 +28,31 @@ type AwsCredentials struct {
 	Session *session.Session
 	Profile string
 	Region  string
+}
+
+type NewClusterOptions struct {
+	Name          string
+	ClusterSuffix string
+
+	NodeCount int
+	VpcName   string
+
+	GitCryptUnlock bool
+
+	Kubeconfig string
+
+	MaxNameLength int `default:"12"`
+	TimeOut       int
+	Debug         bool
+
+	Auth0          AuthOpts
+	AwsCredentials AwsCredentials
+}
+
+type AuthOpts struct {
+	Domain       string
+	ClientId     string
+	ClientSecret string
 }
 
 // NewCluster creates a new Cluster object and populates its
@@ -93,5 +119,54 @@ func (c *Cluster) RefreshStatus(client *client.Client) (err error) {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+// Create creates a new Kubernetes cluster using the options passed to it.
+func Create(opts *NewClusterOptions) error {
+	// create vpc
+	err := CreateVpc(opts)
+	if err != nil {
+		return err
+	}
+
+	// create kubernetes cluster
+	err = CreateCluster(opts)
+	if err != nil {
+		return err
+	}
+
+	// install components into kubernetes cluster
+	err = InstallComponents(opts)
+	if err != nil {
+		return err
+	}
+
+	// perform health check on the cluster
+	err = HealthCheck(opts)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// CreateVpc creates a new VPC in AWS.
+func CreateVpc(opts *NewClusterOptions) error {
+	return nil
+}
+
+// CreateCluster creates a new Kubernetes cluster in AWS.
+func CreateCluster(opts *NewClusterOptions) error {
+	return nil
+}
+
+// InstallComponents installs components into the Kubernetes cluster.
+func InstallComponents(opts *NewClusterOptions) error {
+	return nil
+}
+
+// HealthCheck performs a health check on the Kubernetes cluster.
+func HealthCheck(opts *NewClusterOptions) error {
 	return nil
 }

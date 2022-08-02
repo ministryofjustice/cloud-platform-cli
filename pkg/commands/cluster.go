@@ -1,8 +1,10 @@
 package commands
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
@@ -13,7 +15,12 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
-var opt recycle.Options
+var (
+	createOptions = &cluster.NewClusterOptions{}
+	auth          = &cluster.AuthOpts{}
+)
+
+var recycleOptions recycle.Options
 
 var awsSecret, awsAccessKey, awsProfile string
 
@@ -22,25 +29,75 @@ func addClusterCmd(topLevel *cobra.Command) {
 
 	// sub cobra commands
 	clusterCmd.AddCommand(clusterRecycleNodeCmd)
+	clusterCmd.AddCommand(clusterCreateCmd)
 
 	// recycle node flags
-	clusterRecycleNodeCmd.Flags().StringVarP(&opt.ResourceName, "name", "n", "", "name of the resource to recycle")
-	clusterRecycleNodeCmd.Flags().BoolVarP(&opt.Force, "force", "f", true, "force the pods to drain")
-	clusterRecycleNodeCmd.Flags().BoolVarP(&opt.IgnoreLabel, "ignore-label", "i", false, "whether to ignore the labels on the resource")
-	clusterRecycleNodeCmd.Flags().IntVarP(&opt.TimeOut, "timeout", "t", 360, "amount of time to wait for the drain command to complete")
-	clusterRecycleNodeCmd.Flags().BoolVar(&opt.Oldest, "oldest", false, "whether to recycle the oldest node")
-	clusterRecycleNodeCmd.Flags().StringVar(&opt.KubecfgPath, "kubecfg", filepath.Join(homedir.HomeDir(), ".kube", "config"), "path to kubeconfig file")
-	clusterRecycleNodeCmd.Flags().StringVar(&awsAccessKey, "aws-access-key", os.Getenv("AWS_ACCESS_KEY_ID"), "aws access key to use")
-	clusterRecycleNodeCmd.Flags().StringVar(&awsSecret, "aws-secret-key", os.Getenv("AWS_SECRET_ACCESS_KEY"), "aws secret to use")
-	clusterRecycleNodeCmd.Flags().StringVar(&awsProfile, "aws-profile", os.Getenv("AWS_PROFILE"), "aws profile to use")
-	clusterRecycleNodeCmd.Flags().StringVar(&opt.AwsRegion, "aws-region", "eu-west-2", "aws region to use")
-	clusterRecycleNodeCmd.Flags().BoolVar(&opt.Debug, "debug", false, "enable debug logging")
+	clusterRecycleNodeCmd.Flags().StringVarP(&recycleOptions.ResourceName, "name", "n", "", "name of the resource to recycle")
+	clusterRecycleNodeCmd.Flags().BoolVarP(&recycleOptions.Force, "force", "f", true, "force the pods to drain")
+	clusterRecycleNodeCmd.Flags().BoolVarP(&recycleOptions.IgnoreLabel, "ignore-label", "i", false, "whether to ignore the labels on the resource")
+	clusterRecycleNodeCmd.Flags().IntVarP(&recycleOptions.TimeOut, "timeout", "t", 360, "amount of time to wait for the drain command to complete")
+	clusterRecycleNodeCmd.Flags().BoolVar(&recycleOptions.Oldest, "oldest", false, "whether to recycle the oldest node")
+	clusterRecycleNodeCmd.Flags().StringVar(&recycleOptions.KubecfgPath, "kubecfg", filepath.Join(homedir.HomeDir(), ".kube", "config"), "path to kubeconfig file")
+	clusterRecycleNodeCmd.Flags().StringVar(&recycleOptions.AwsRegion, "aws-region", "eu-west-2", "aws region to use")
+	clusterRecycleNodeCmd.Flags().BoolVar(&recycleOptions.Debug, "debug", false, "enable debug logging")
+
+	// Global cluster flags
+	clusterCmd.Flags().StringVar(&awsAccessKey, "aws-access-key", os.Getenv("AWS_ACCESS_KEY_ID"), "aws access key to use")
+	clusterCmd.Flags().StringVar(&awsSecret, "aws-secret-key", os.Getenv("AWS_SECRET_ACCESS_KEY"), "aws secret to use")
+	clusterCmd.Flags().StringVar(&awsProfile, "aws-profile", os.Getenv("AWS_PROFILE"), "aws profile to use")
+
+	// Add cluster flags
+	clusterCreateCmd.Flags().StringVar(&auth.ClientId, "auth0-client-id", os.Getenv("AUTH0_CLIENT_ID"), "[required] auth0 client id to use")
+	clusterCreateCmd.Flags().StringVar(&auth.ClientSecret, "auth0-client-secret", os.Getenv("AUTH0_CLIENT_SECRET"), "[required] auth0 client secret to use")
+	clusterCreateCmd.Flags().StringVar(&auth.Domain, "auth0-domain", os.Getenv("AUTH0_DOMAIN"), "[required] auth0 domain to use")
+
+	clusterCreateCmd.Flags().StringVar(&createOptions.Name, "name", fmt.Sprintf("cp-%s-%s", time.Now().Format("02-01"), time.Now().Day), "[optional] name of the cluster")
+	clusterCreateCmd.Flags().StringVar(&createOptions.VpcName, "vpc", createOptions.Name, "[optional] name of the vpc to use")
+	clusterCreateCmd.Flags().StringVar(&createOptions.ClusterSuffix, "cluster-suffix", "cloud-platform.service.justice.gov.uk", "[optional] suffix to append to the cluster name")
+	clusterCreateCmd.Flags().StringVar(&createOptions.Kubeconfig, "kubeconfig", filepath.Join(homedir.HomeDir(), ".kube", "config"), "[optional] path to kubeconfig file")
+	clusterCreateCmd.Flags().BoolVar(&createOptions.Debug, "debug", false, "[optional] enable debug logging")
+	clusterCreateCmd.Flags().BoolVar(&createOptions.GitCryptUnlock, "git-crypt", false, "[optional] unlock the git repo")
+	clusterCreateCmd.Flags().IntVar(&createOptions.NodeCount, "nodes", 3, "[optional] number of nodes to create. [default] 3")
+	clusterCreateCmd.Flags().IntVar(&createOptions.TimeOut, "timeout", 600, "[optional] amount of time to wait for the command to complete. [default] 600s")
 }
 
 var clusterCmd = &cobra.Command{
 	Use:    "cluster",
 	Short:  `Cloud Platform cluster actions`,
 	PreRun: upgradeIfNotLatest,
+}
+
+var clusterCreateCmd = &cobra.Command{
+	Use:   "create",
+	Short: `Create a new Cloud Platform cluster`,
+	Example: heredoc.Doc(`
+		$ cloud-platform cluster create --name my-cluster --region eu-west-2 --kubecfg-path ~/.kube/config
+	`),
+	PreRun: upgradeIfNotLatest,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		contextLogger := log.WithFields(log.Fields{"subcommand": "create-cluster"})
+
+		if awsProfile == "" && awsAccessKey == "" && awsSecret == "" {
+			contextLogger.Fatal("AWS credentials are required, please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY or an AWS_PROFILE")
+		}
+
+		if createOptions.Auth0.ClientId == "" || createOptions.Auth0.ClientSecret == "" || createOptions.Auth0.Domain == "" {
+			contextLogger.Fatal("Auth0 credentials are required, please set AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET and AUTH0_DOMAIN")
+		}
+
+		if len(createOptions.Name) > createOptions.MaxNameLength {
+			contextLogger.Fatal("Cluster name is too long, please use a shorter name")
+		}
+
+		creds, err := cluster.NewAwsCreds("eu-west-2")
+		if err != nil {
+			contextLogger.Fatal(err)
+		}
+
+		createOptions.AwsCredentials = *creds
+
+		return cluster.Create(createOptions)
+	},
 }
 
 var clusterRecycleNodeCmd = &cobra.Command{
@@ -54,7 +111,7 @@ var clusterRecycleNodeCmd = &cobra.Command{
 		contextLogger := log.WithFields(log.Fields{"subcommand": "recycle-node"})
 		// Check for missing name argument. You must define either a resource
 		// or specify the --oldest flag.
-		if opt.ResourceName == "" && !opt.Oldest {
+		if recycleOptions.ResourceName == "" && !recycleOptions.Oldest {
 			contextLogger.Fatal("--name or --oldest is required")
 		}
 
@@ -62,14 +119,14 @@ var clusterRecycleNodeCmd = &cobra.Command{
 			contextLogger.Fatal("AWS credentials are required, please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY or an AWS_PROFILE")
 		}
 
-		clientset, err := client.GetClientset(opt.KubecfgPath)
+		clientset, err := client.GetClientset(recycleOptions.KubecfgPath)
 		if err != nil {
 			contextLogger.Fatal(err)
 		}
 
 		recycle := &recycle.Recycler{
 			Client:  &client.Client{Clientset: clientset},
-			Options: &opt,
+			Options: &recycleOptions,
 		}
 
 		recycle.Cluster, err = cluster.NewCluster(recycle.Client)
@@ -80,7 +137,7 @@ var clusterRecycleNodeCmd = &cobra.Command{
 		// Create a snapshot for comparison later.
 		recycle.Snapshot = recycle.Cluster.NewSnapshot()
 
-		recycle.AwsCreds, err = cluster.NewAwsCreds(opt.AwsRegion)
+		recycle.AwsCreds, err = cluster.NewAwsCreds(recycleOptions.AwsRegion)
 		if err != nil {
 			contextLogger.Fatal(err)
 		}
