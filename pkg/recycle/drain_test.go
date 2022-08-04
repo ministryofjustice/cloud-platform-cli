@@ -118,7 +118,6 @@ func TestRecycler_drainNode(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:            "PleaseDrainMe",
 				ResourceVersion: "1",
-				ClusterName:     "cluster1",
 				Labels:          map[string]string{"node-cordon": "true"},
 			},
 		},
@@ -159,7 +158,6 @@ func TestRecycler_drainNodeWithPDB(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:            "PleaseDrainMe-02",
 				ResourceVersion: "1",
-				ClusterName:     "cluster1",
 				Labels:          map[string]string{"node-cordon": "true"},
 			},
 		},
