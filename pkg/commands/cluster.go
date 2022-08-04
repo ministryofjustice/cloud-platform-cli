@@ -7,16 +7,16 @@ import (
 	"time"
 
 	"github.com/MakeNowJust/heredoc"
-	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
-	"github.com/ministryofjustice/cloud-platform-cli/pkg/cluster"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/recycle"
+	"github.com/ministryofjustice/cloud-platform-go-library/client"
+	"github.com/ministryofjustice/cloud-platform-go-library/cluster"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/util/homedir"
 )
 
 var (
-	createOptions = &cluster.NewClusterOptions{}
+	createOptions = &cluster.CreateOptions{}
 	auth          = &cluster.AuthOpts{}
 )
 
@@ -56,7 +56,6 @@ func addClusterCmd(topLevel *cobra.Command) {
 	clusterCreateCmd.Flags().StringVar(&createOptions.ClusterSuffix, "cluster-suffix", "cloud-platform.service.justice.gov.uk", "[optional] suffix to append to the cluster name")
 	clusterCreateCmd.Flags().StringVar(&createOptions.Kubeconfig, "kubeconfig", filepath.Join(homedir.HomeDir(), ".kube", "config"), "[optional] path to kubeconfig file")
 	clusterCreateCmd.Flags().BoolVar(&createOptions.Debug, "debug", false, "[optional] enable debug logging")
-	clusterCreateCmd.Flags().BoolVar(&createOptions.GitCryptUnlock, "git-crypt", false, "[optional] unlock the git repo")
 	clusterCreateCmd.Flags().IntVar(&createOptions.NodeCount, "nodes", 3, "[optional] number of nodes to create. [default] 3")
 	clusterCreateCmd.Flags().IntVar(&createOptions.TimeOut, "timeout", 600, "[optional] amount of time to wait for the command to complete. [default] 600s")
 }
@@ -89,7 +88,7 @@ var clusterCreateCmd = &cobra.Command{
 			contextLogger.Fatal("Cluster name is too long, please use a shorter name")
 		}
 
-		creds, err := cluster.NewAwsCreds("eu-west-2")
+		creds, err := client.NewAwsCreds("eu-west-2")
 		if err != nil {
 			contextLogger.Fatal(err)
 		}
@@ -119,34 +118,34 @@ var clusterRecycleNodeCmd = &cobra.Command{
 			contextLogger.Fatal("AWS credentials are required, please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY or an AWS_PROFILE")
 		}
 
-		clientset, err := client.GetClientset(recycleOptions.KubecfgPath)
-		if err != nil {
-			contextLogger.Fatal(err)
-		}
+		// clientset, err := client.GetClientset(recycleOptions.KubecfgPath)
+		// if err != nil {
+		// 	contextLogger.Fatal(err)
+		// }
 
-		recycle := &recycle.Recycler{
-			Client:  &client.Client{Clientset: clientset},
-			Options: &recycleOptions,
-		}
+		// recycle := &recycle.Recycler{
+		// 	Client:  &client.Client{Clientset: clientset},
+		// 	Options: &recycleOptions,
+		// }
 
-		recycle.Cluster, err = cluster.NewCluster(recycle.Client)
-		if err != nil {
-			contextLogger.Fatal(err)
-		}
+		// recycle.Cluster, err = cluster.NewCluster(recycle.Client)
+		// if err != nil {
+		// 	contextLogger.Fatal(err)
+		// }
 
-		// Create a snapshot for comparison later.
-		recycle.Snapshot = recycle.Cluster.NewSnapshot()
+		// // Create a snapshot for comparison later.
+		// recycle.Snapshot = recycle.Cluster.NewSnapshot()
 
-		recycle.AwsCreds, err = cluster.NewAwsCreds(recycleOptions.AwsRegion)
-		if err != nil {
-			contextLogger.Fatal(err)
-		}
+		// recycle.AwsCreds, err = cluster.NewAwsCreds(recycleOptions.AwsRegion)
+		// if err != nil {
+		// 	contextLogger.Fatal(err)
+		// }
 
-		err = recycle.Node()
-		if err != nil {
-			// Fail hard so we get an non-zero exit code.
-			// This is mainly for when this is run in a pipeline.
-			contextLogger.Fatal(err)
-		}
+		// err = recycle.Node()
+		// if err != nil {
+		// 	// Fail hard so we get an non-zero exit code.
+		// 	// This is mainly for when this is run in a pipeline.
+		// 	contextLogger.Fatal(err)
+		// }
 	},
 }
