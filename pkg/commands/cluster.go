@@ -7,17 +7,21 @@ import (
 	"time"
 
 	"github.com/MakeNowJust/heredoc"
-	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
-	"github.com/ministryofjustice/cloud-platform-cli/pkg/cluster"
+	"github.com/gruntwork-io/go-commons/git"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/recycle"
+	"github.com/ministryofjustice/cloud-platform-go-library/client"
+	"github.com/ministryofjustice/cloud-platform-go-library/cluster"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/util/homedir"
 )
 
+// Global variables used for cluster creation
 var (
-	createOptions = &cluster.NewClusterOptions{}
+	createOptions = &cluster.CreateOptions{}
 	auth          = &cluster.AuthOpts{}
+	date          = time.Now().Format("0201")
+	minHour       = time.Now().Format("1504")
 )
 
 var recycleOptions recycle.Options
@@ -51,12 +55,11 @@ func addClusterCmd(topLevel *cobra.Command) {
 	clusterCreateCmd.Flags().StringVar(&auth.ClientSecret, "auth0-client-secret", os.Getenv("AUTH0_CLIENT_SECRET"), "[required] auth0 client secret to use")
 	clusterCreateCmd.Flags().StringVar(&auth.Domain, "auth0-domain", os.Getenv("AUTH0_DOMAIN"), "[required] auth0 domain to use")
 
-	clusterCreateCmd.Flags().StringVar(&createOptions.Name, "name", fmt.Sprintf("cp-%s-%s", time.Now().Format("02-01"), time.Now().Day), "[optional] name of the cluster")
+	// if a name is not specified, create a random one using the format DD-MM-HH-MM
+	clusterCreateCmd.Flags().StringVar(&createOptions.Name, "name", fmt.Sprintf("cp-%s-%s", date, minHour), "[optional] name of the cluster")
 	clusterCreateCmd.Flags().StringVar(&createOptions.VpcName, "vpc", createOptions.Name, "[optional] name of the vpc to use")
 	clusterCreateCmd.Flags().StringVar(&createOptions.ClusterSuffix, "cluster-suffix", "cloud-platform.service.justice.gov.uk", "[optional] suffix to append to the cluster name")
-	clusterCreateCmd.Flags().StringVar(&createOptions.Kubeconfig, "kubeconfig", filepath.Join(homedir.HomeDir(), ".kube", "config"), "[optional] path to kubeconfig file")
 	clusterCreateCmd.Flags().BoolVar(&createOptions.Debug, "debug", false, "[optional] enable debug logging")
-	clusterCreateCmd.Flags().BoolVar(&createOptions.GitCryptUnlock, "git-crypt", false, "[optional] unlock the git repo")
 	clusterCreateCmd.Flags().IntVar(&createOptions.NodeCount, "nodes", 3, "[optional] number of nodes to create. [default] 3")
 	clusterCreateCmd.Flags().IntVar(&createOptions.TimeOut, "timeout", 600, "[optional] amount of time to wait for the command to complete. [default] 600s")
 }
@@ -77,6 +80,11 @@ var clusterCreateCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		contextLogger := log.WithFields(log.Fields{"subcommand": "create-cluster"})
 
+		// Ensure the executor is in the `cloud-platform-infrastructure` repository
+		if err := ensureExecutorInRepository(contextLogger); err != nil {
+			return err
+		}
+
 		if awsProfile == "" && awsAccessKey == "" && awsSecret == "" {
 			contextLogger.Fatal("AWS credentials are required, please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY or an AWS_PROFILE")
 		}
@@ -89,14 +97,16 @@ var clusterCreateCmd = &cobra.Command{
 			contextLogger.Fatal("Cluster name is too long, please use a shorter name")
 		}
 
-		creds, err := cluster.NewAwsCreds("eu-west-2")
+		creds, err := client.NewAwsCreds("eu-west-2")
 		if err != nil {
 			contextLogger.Fatal(err)
 		}
 
 		createOptions.AwsCredentials = *creds
 
-		return cluster.Create(createOptions)
+		c := cluster.Cluster{}
+
+		return c.Create(createOptions)
 	},
 }
 
@@ -108,45 +118,65 @@ var clusterRecycleNodeCmd = &cobra.Command{
 	`),
 	PreRun: upgradeIfNotLatest,
 	Run: func(cmd *cobra.Command, args []string) {
-		contextLogger := log.WithFields(log.Fields{"subcommand": "recycle-node"})
-		// Check for missing name argument. You must define either a resource
-		// or specify the --oldest flag.
-		if recycleOptions.ResourceName == "" && !recycleOptions.Oldest {
-			contextLogger.Fatal("--name or --oldest is required")
-		}
+// 		contextLogger := log.WithFields(log.Fields{"subcommand": "recycle-node"})
+// 		// Check for missing name argument. You must define either a resource
+// 		// or specify the --oldest flag.
+// 		if recycleOptions.ResourceName == "" && !recycleOptions.Oldest {
+// 			contextLogger.Fatal("--name or --oldest is required")
+// 		}
 
-		if awsProfile == "" && awsAccessKey == "" && awsSecret == "" {
-			contextLogger.Fatal("AWS credentials are required, please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY or an AWS_PROFILE")
-		}
+// 		if awsProfile == "" && awsAccessKey == "" && awsSecret == "" {
+// 			contextLogger.Fatal("AWS credentials are required, please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY or an AWS_PROFILE")
+// 		}
 
-		clientset, err := client.GetClientset(recycleOptions.KubecfgPath)
-		if err != nil {
-			contextLogger.Fatal(err)
-		}
+// 		clientset, err := client.GetClientset(recycleOptions.KubecfgPath)
+// 		if err != nil {
+// 			contextLogger.Fatal(err)
+// 		}
 
-		recycle := &recycle.Recycler{
-			Client:  &client.Client{Clientset: clientset},
-			Options: &recycleOptions,
-		}
+// 		recycle := &recycle.Recycler{
+// 			Client:  &client.Client{Clientset: clientset},
+// 			Options: &recycleOptions,
+// 		}
 
-		recycle.Cluster, err = cluster.NewCluster(recycle.Client)
-		if err != nil {
-			contextLogger.Fatal(err)
-		}
+// 		recycle.Cluster, err = cluster.NewCluster(recycle.Client)
+// 		if err != nil {
+// 			contextLogger.Fatal(err)
+// 		}
 
-		// Create a snapshot for comparison later.
-		recycle.Snapshot = recycle.Cluster.NewSnapshot()
+// 		// Create a snapshot for comparison later.
+// 		recycle.Snapshot = recycle.Cluster.NewSnapshot()
 
-		recycle.AwsCreds, err = cluster.NewAwsCreds(recycleOptions.AwsRegion)
-		if err != nil {
-			contextLogger.Fatal(err)
-		}
+// 		recycle.AwsCreds, err = cluster.NewAwsCreds(recycleOptions.AwsRegion)
+// 		if err != nil {
+// 			contextLogger.Fatal(err)
+// 		}
 
-		err = recycle.Node()
-		if err != nil {
-			// Fail hard so we get an non-zero exit code.
-			// This is mainly for when this is run in a pipeline.
-			contextLogger.Fatal(err)
+// 		err = recycle.Node()
+// 		if err != nil {
+// 			// Fail hard so we get an non-zero exit code.
+// 			// This is mainly for when this is run in a pipeline.
+// 			contextLogger.Fatal(err)
+// 		}
+// 	},
+// }
+
+// ensureExecutorInRepository ensures that the executor is in the `cloud-platform-infrastructure` repository.
+func ensureExecutorInRepository(executorPart string) error {
+	// Check if the executor is in the `cloud-platform-infrastructure` repository.
+	// If not, clone it.
+	if _, err := os.Stat(executorPath); os.IsNotExist(err) {
+		logger.Info("Executor not found, cloning...")
+		if err := git.Clone(executorPath, executorRepo); err != nil {
+			return err
 		}
-	},
+	}
+
+	// Check if the executor is in the correct branch.
+	// If not, checkout the correct branch.
+	if err := git.Checkout(executorPath, executorBranch); err != nil {
+		return err
+	}
+
+	return nil
 }

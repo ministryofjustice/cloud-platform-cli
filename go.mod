@@ -2,6 +2,8 @@ module github.com/ministryofjustice/cloud-platform-cli
 
 go 1.18
 
+replace github.com/ministryofjustice/cloud-platform-go-library => /Users/jasonbirchall/Documents/workarea/cloud-platform-go-library
+
 require (
 	github.com/MakeNowJust/heredoc v1.0.0
 	github.com/agext/levenshtein v1.2.3 // indirect
@@ -31,6 +33,7 @@ require (
 
 require (
 	github.com/aws/aws-sdk-go v1.44.69
+	github.com/ministryofjustice/cloud-platform-go-library v0.0.0-00010101000000-000000000000
 	github.com/rs/zerolog v1.27.0
 	github.com/stretchr/testify v1.8.0
 	k8s.io/api v0.24.3
@@ -108,6 +111,7 @@ require (
 	k8s.io/component-base v0.24.3 // indirect
 	k8s.io/klog/v2 v2.70.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20220803164354-a70c9af30aea // indirect
+	k8s.io/metrics v0.24.3 // indirect
 	k8s.io/utils v0.0.0-20220728103510-ee6ede2d64ed // indirect
 	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
 	sigs.k8s.io/kustomize/api v0.12.1 // indirect
