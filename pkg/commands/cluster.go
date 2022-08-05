@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/MakeNowJust/heredoc"
-	"github.com/gruntwork-io/go-commons/git"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/recycle"
 	"github.com/ministryofjustice/cloud-platform-go-library/client"
 	"github.com/ministryofjustice/cloud-platform-go-library/cluster"
@@ -70,6 +69,8 @@ var clusterCmd = &cobra.Command{
 	PreRun: upgradeIfNotLatest,
 }
 
+// TODO: Add statement about needing to be in the infrastruture repository.Labels
+// TODO: Add statment about needing to decrypt repository before running.
 var clusterCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: `Create a new Cloud Platform cluster`,
@@ -79,11 +80,6 @@ var clusterCreateCmd = &cobra.Command{
 	PreRun: upgradeIfNotLatest,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		contextLogger := log.WithFields(log.Fields{"subcommand": "create-cluster"})
-
-		// Ensure the executor is in the `cloud-platform-infrastructure` repository
-		if err := ensureExecutorInRepository(contextLogger); err != nil {
-			return err
-		}
 
 		if awsProfile == "" && awsAccessKey == "" && awsSecret == "" {
 			contextLogger.Fatal("AWS credentials are required, please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY or an AWS_PROFILE")
@@ -118,65 +114,77 @@ var clusterRecycleNodeCmd = &cobra.Command{
 	`),
 	PreRun: upgradeIfNotLatest,
 	Run: func(cmd *cobra.Command, args []string) {
-// 		contextLogger := log.WithFields(log.Fields{"subcommand": "recycle-node"})
-// 		// Check for missing name argument. You must define either a resource
-// 		// or specify the --oldest flag.
-// 		if recycleOptions.ResourceName == "" && !recycleOptions.Oldest {
-// 			contextLogger.Fatal("--name or --oldest is required")
-// 		}
+		// 		contextLogger := log.WithFields(log.Fields{"subcommand": "recycle-node"})
+		// 		// Check for missing name argument. You must define either a resource
+		// 		// or specify the --oldest flag.
+		// 		if recycleOptions.ResourceName == "" && !recycleOptions.Oldest {
+		// 			contextLogger.Fatal("--name or --oldest is required")
+		// 		}
 
-// 		if awsProfile == "" && awsAccessKey == "" && awsSecret == "" {
-// 			contextLogger.Fatal("AWS credentials are required, please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY or an AWS_PROFILE")
-// 		}
+		// 		if awsProfile == "" && awsAccessKey == "" && awsSecret == "" {
+		// 			contextLogger.Fatal("AWS credentials are required, please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY or an AWS_PROFILE")
+		// 		}
 
-// 		clientset, err := client.GetClientset(recycleOptions.KubecfgPath)
-// 		if err != nil {
-// 			contextLogger.Fatal(err)
-// 		}
+		// 		clientset, err := client.GetClientset(recycleOptions.KubecfgPath)
+		// 		if err != nil {
+		// 			contextLogger.Fatal(err)
+		// 		}
 
-// 		recycle := &recycle.Recycler{
-// 			Client:  &client.Client{Clientset: clientset},
-// 			Options: &recycleOptions,
-// 		}
+		// 		recycle := &recycle.Recycler{
+		// 			Client:  &client.Client{Clientset: clientset},
+		// 			Options: &recycleOptions,
+		// 		}
 
-// 		recycle.Cluster, err = cluster.NewCluster(recycle.Client)
-// 		if err != nil {
-// 			contextLogger.Fatal(err)
-// 		}
+		// 		recycle.Cluster, err = cluster.NewCluster(recycle.Client)
+		// 		if err != nil {
+		// 			contextLogger.Fatal(err)
+		// 		}
 
-// 		// Create a snapshot for comparison later.
-// 		recycle.Snapshot = recycle.Cluster.NewSnapshot()
+		// 		// Create a snapshot for comparison later.
+		// 		recycle.Snapshot = recycle.Cluster.NewSnapshot()
 
-// 		recycle.AwsCreds, err = cluster.NewAwsCreds(recycleOptions.AwsRegion)
-// 		if err != nil {
-// 			contextLogger.Fatal(err)
-// 		}
+		// 		recycle.AwsCreds, err = cluster.NewAwsCreds(recycleOptions.AwsRegion)
+		// 		if err != nil {
+		// 			contextLogger.Fatal(err)
+		// 		}
 
-// 		err = recycle.Node()
-// 		if err != nil {
-// 			// Fail hard so we get an non-zero exit code.
-// 			// This is mainly for when this is run in a pipeline.
-// 			contextLogger.Fatal(err)
-// 		}
-// 	},
-// }
+		// 		err = recycle.Node()
+		// 		if err != nil {
+		// 			// Fail hard so we get an non-zero exit code.
+		// 			// This is mainly for when this is run in a pipeline.
+		// 			contextLogger.Fatal(err)
+		// 		}
+		// 	},
+		// }
 
-// ensureExecutorInRepository ensures that the executor is in the `cloud-platform-infrastructure` repository.
-func ensureExecutorInRepository(executorPart string) error {
-	// Check if the executor is in the `cloud-platform-infrastructure` repository.
-	// If not, clone it.
-	if _, err := os.Stat(executorPath); os.IsNotExist(err) {
-		logger.Info("Executor not found, cloning...")
-		if err := git.Clone(executorPath, executorRepo); err != nil {
-			return err
-		}
-	}
+		// clientset, err := client.GetClientset(recycleOptions.KubecfgPath)
+		// if err != nil {
+		// 	contextLogger.Fatal(err)
+		// }
 
-	// Check if the executor is in the correct branch.
-	// If not, checkout the correct branch.
-	if err := git.Checkout(executorPath, executorBranch); err != nil {
-		return err
-	}
+		// recycle := &recycle.Recycler{
+		// 	Client:  &client.Client{Clientset: clientset},
+		// 	Options: &recycleOptions,
+		// }
 
-	return nil
+		// recycle.Cluster, err = cluster.NewCluster(recycle.Client)
+		// if err != nil {
+		// 	contextLogger.Fatal(err)
+		// }
+
+		// // Create a snapshot for comparison later.
+		// recycle.Snapshot = recycle.Cluster.NewSnapshot()
+
+		// recycle.AwsCreds, err = cluster.NewAwsCreds(recycleOptions.AwsRegion)
+		// if err != nil {
+		// 	contextLogger.Fatal(err)
+		// }
+
+		// err = recycle.Node()
+		// if err != nil {
+		// 	// Fail hard so we get an non-zero exit code.
+		// 	// This is mainly for when this is run in a pipeline.
+		// 	contextLogger.Fatal(err)
+		// }
+	},
 }
