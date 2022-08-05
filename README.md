@@ -4,10 +4,10 @@
 
 `cloud-platform` is a command-line tool used by the cloud-platform team and tenants to perform actions on the platform, for example:
 
-   - Create environment configuration using a template
-   - Divergences in terraform states
-   - Terraform apply
-   - Others
+- Create environment configuration using a template
+- Divergences in terraform states
+- Terraform apply
+- Others
 
 User documentation is here: https://user-guide.cloud-platform.service.justice.gov.uk/documentation/getting-started/cloud-platform-cli.html
 
@@ -100,11 +100,13 @@ actions need to be performed.
 
 ## Develop
 
-You will need golang installed (version 1.13 or greater).
+You will need Go installed.
 
 ### Build locally
 
 Run `make` to create a `cloud-platform` binary.
+
+[note] Something worth noting when building locally. You'll need to pass the `--skip-version-check` command to avoid a message about upgrading.
 
 ### Testing
 
@@ -115,8 +117,8 @@ Run `make test` to run the unit tests.
 This project includes a [github action](.github/workflows/build-release.yml) which
 will automatically do the following steps:
 
-* build a new release and make it available in the [github ui]
-* build a new docker image and push it to [docker hub], tagged with the version number
+- build a new release and make it available in the [github ui]
+- build a new docker image and push it to [docker hub], tagged with the version number
 
 In order to trigger this action, push a new tag version like this:
 
@@ -125,7 +127,7 @@ git tag [my new version]
 git push --tags
 ```
 
-The value of this tag **must** be the same as the string value of `Version` in the file `pkg/commands/version.go`
+The value of this tag **must** will be built into the binary `Version` in the file `pkg/commands/version.go`
 
 #### `PreRun` hook
 
