@@ -2,18 +2,19 @@ package commands
 
 import (
 	"errors"
+	"path/filepath"
 
 	environment "github.com/ministryofjustice/cloud-platform-cli/pkg/environment"
+	log "github.com/sirupsen/logrus"
+	"k8s.io/client-go/util/homedir"
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/spf13/cobra"
 )
 
-var (
-	Namespace     string
-	module        string
-	moduleVersion string
-)
+var module, moduleVersion string
+
+var optFlags environment.Options
 
 func addEnvironmentCmd(topLevel *cobra.Command) {
 	topLevel.AddCommand(environmentCmd)
@@ -32,7 +33,9 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentCmd.AddCommand(environmentBumpModuleCmd)
 
 	// flags
-	environmentApplyCmd.Flags().StringVarP(&Namespace, "namespace", "n", "", "Namespace which you want to perform the apply")
+	environmentApplyCmd.Flags().StringVarP(&optFlags.Namespace, "namespace", "n", "", "Namespace which you want to perform the apply")
+	environmentApplyCmd.Flags().StringVar(&optFlags.KubecfgPath, "kubecfg", filepath.Join(homedir.HomeDir(), ".kube", "config"), "path to kubeconfig file")
+	environmentApplyCmd.Flags().StringVar(&optFlags.ClusterCtx, "cluster", "live.cloud-platform.service.gov.uk", "path to kubeconfig file")
 	environmentBumpModuleCmd.Flags().StringVarP(&module, "module", "m", "", "Module to upgrade the version")
 	environmentBumpModuleCmd.Flags().StringVarP(&moduleVersion, "module-version", "v", "", "Semantic version to bump a module to")
 }
@@ -69,15 +72,15 @@ var environmentApplyCmd = &cobra.Command{
 	$ cloud-platform environment apply -n <namespace>
 	`),
 	PreRun: upgradeIfNotLatest,
-	RunE: func(cmd *cobra.Command, args []string) error {
-
-		environment.NewApplier(Namespace)
-		err := environment.ApplyNamespace(Namespace)
-		if err != nil {
-			return err
+	Run: func(cmd *cobra.Command, args []string) {
+		contextLogger := log.WithFields(log.Fields{"subcommand": "apply"})
+		applier := &environment.Apply{
+			Options: &optFlags,
 		}
-
-		return nil
+		_, err := applier.Apply()
+		if err != nil {
+			contextLogger.Fatal(err)
+		}
 	},
 }
 

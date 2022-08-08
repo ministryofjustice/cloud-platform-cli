@@ -5,17 +5,13 @@ import (
 	"os"
 
 	"github.com/kelseyhightower/envconfig"
-	authenticate "github.com/ministryofjustice/cloud-platform-environments/pkg/authenticate"
 )
 
-type KubeConfig struct {
-	KubeconfigS3Bucket string `required:"true" envconfig:"KUBECONFIG_S3_BUCKET"`
-	KubeconfigS3Key    string `required:"true" envconfig:"KUBECONFIG_S3_KEY"`
-	Context            string `default:"live.cloud-platform.service.justice.gov.uk"`
-	AwsRegion          string `required:"true" split_words:"true"`
-	Kubeconfig         string `default:"kubeconfig"`
+// Options are used to configure apply sessions.
+// These options are normally passed via flags in a command line.
+type Options struct {
+	Namespace, KubecfgPath, ClusterCtx string
 }
-
 type RequiredEnvVars struct {
 	clustername        string `required:"true" envconfig:"TF_VAR_cluster_name"`
 	clusterstatebucket string `required:"true" envconfig:"TF_VAR_cluster_state_bucket"`
@@ -26,57 +22,42 @@ type RequiredEnvVars struct {
 }
 
 type Apply struct {
-	KubeConfig      KubeConfig
+	Options         *Options
 	RequiredEnvVars RequiredEnvVars
 	Terraformer     Terraformer
 	Dir             string
-	Namespace       string
 }
 
-func NewApplier(namespace string) (*Apply, error) {
-
-	var kubecfg KubeConfig
-	err := envconfig.Process("", &kubecfg)
-	if err != nil {
-		log.Fatalln("Kubeconfig environment variables not set:", err.Error())
-	}
-
-	var reqConfig RequiredEnvVars
-	err = envconfig.Process("", &reqConfig)
-	if err != nil {
-		log.Fatalln("Pipeline environment variables not set:", err.Error())
-	}
-
+func NewApply(opt Options) (*Apply, error) {
 	workingDir, _ := os.Getwd()
-
-	applier := Apply{
-		KubeConfig:      kubecfg,
-		RequiredEnvVars: reqConfig,
-		Terraformer:     NewTerraformer("/usr/local/bin/terraform"),
-		Namespace:       namespace,
-		Dir:             workingDir + "/namespaces/" + kubecfg.Context + "/" + namespace,
+	var reqEnvVars RequiredEnvVars
+	err := envconfig.Process("", &reqEnvVars)
+	if err != nil {
+		return nil, err
 	}
-	applier.initialize()
-
-	return &applier, nil
+	return &Apply{
+		Options:         &opt,
+		Terraformer:     NewTerraformer("/usr/local/bin/terraform"),
+		Dir:             workingDir + "/namespaces/" + opt.ClusterCtx + "/" + opt.Namespace,
+		RequiredEnvVars: reqEnvVars,
+	}, nil
 }
 
-func (a *Apply) initialize() {
-
-	err := authenticate.SwitchContextFromS3Bucket(
-		a.KubeConfig.KubeconfigS3Bucket,
-		a.KubeConfig.KubeconfigS3Key,
-		a.KubeConfig.AwsRegion,
-		a.KubeConfig.Context,
-		a.KubeConfig.Kubeconfig)
+func (a *Apply) Apply() (map[string]string, error) {
+	applier, err := NewApply(*a.Options)
 	if err != nil {
-		log.Fatalln("error in switching context", err)
+		return nil, err
 	}
 
+	_, err = applier.ApplyNamespace()
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
 }
 
 func (a *Apply) ApplyNamespace() (map[string]string, error) {
-	log.Printf("Applying namespace: %v", a.Namespace)
+	log.Printf("Applying namespace: %v", a.Options.Namespace)
 
 	// outputKubectl, err := applyKubectl()
 	// if err != nil {
@@ -84,7 +65,7 @@ func (a *Apply) ApplyNamespace() (map[string]string, error) {
 	// 	return err
 	// }
 
-	outputTerraform, _ := a.Terraformer.TerraformInitAndApply(a.Namespace, a.Dir)
+	outputTerraform, _ := a.Terraformer.TerraformInitAndApply(a.Options.Namespace, a.Dir)
 	return outputTerraform, nil
 }
 
