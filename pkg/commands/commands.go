@@ -14,5 +14,4 @@ func AddCommands(topLevel *cobra.Command) {
 	addDecodeSecret(topLevel)
 	addDuplicateCmd(topLevel)
 	addClusterCmd(topLevel)
-	addExternalDns(topLevel)
 }

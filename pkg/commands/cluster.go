@@ -17,10 +17,12 @@ import (
 
 // Global variables used for cluster creation
 var (
-	createOptions = &cluster.CreateOptions{}
-	auth          = &cluster.AuthOpts{}
-	date          = time.Now().Format("0201")
-	minHour       = time.Now().Format("1504")
+	createOptions = &cluster.CreateOptions{
+		MaxNameLength: 12,
+	}
+	auth    = &cluster.AuthOpts{}
+	date    = time.Now().Format("0201")
+	minHour = time.Now().Format("1504")
 )
 
 var recycleOptions recycle.Options
@@ -55,7 +57,7 @@ func addClusterCmd(topLevel *cobra.Command) {
 	clusterCreateCmd.Flags().StringVar(&auth.Domain, "auth0-domain", os.Getenv("AUTH0_DOMAIN"), "[required] auth0 domain to use")
 
 	// if a name is not specified, create a random one using the format DD-MM-HH-MM
-	clusterCreateCmd.Flags().StringVar(&createOptions.Name, "name", fmt.Sprintf("cp-%s-%s", date, minHour), "[optional] name of the cluster")
+	clusterCreateCmd.Flags().StringVar(&createOptions.Name, "name", fmt.Sprintf("jb-%s-%s", date, minHour), "[optional] name of the cluster")
 	clusterCreateCmd.Flags().StringVar(&createOptions.VpcName, "vpc", createOptions.Name, "[optional] name of the vpc to use")
 	clusterCreateCmd.Flags().StringVar(&createOptions.ClusterSuffix, "cluster-suffix", "cloud-platform.service.justice.gov.uk", "[optional] suffix to append to the cluster name")
 	clusterCreateCmd.Flags().BoolVar(&createOptions.Debug, "debug", false, "[optional] enable debug logging")
@@ -69,17 +71,18 @@ var clusterCmd = &cobra.Command{
 	PreRun: upgradeIfNotLatest,
 }
 
-// TODO: Add statement about needing to be in the infrastruture repository.Labels
+// TODO: Add statement about needing to be in the infrastruture repository.
 // TODO: Add statment about needing to decrypt repository before running.
 var clusterCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: `Create a new Cloud Platform cluster`,
 	Example: heredoc.Doc(`
-		$ cloud-platform cluster create --name my-cluster --region eu-west-2 --kubecfg-path ~/.kube/config
+		$ cloud-platform cluster create --name my-cluster --kubecfg-path ~/.kube/config
 	`),
 	PreRun: upgradeIfNotLatest,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		contextLogger := log.WithFields(log.Fields{"subcommand": "create-cluster"})
+		createOptions.Auth0 = *auth
 
 		if awsProfile == "" && awsAccessKey == "" && awsSecret == "" {
 			contextLogger.Fatal("AWS credentials are required, please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY or an AWS_PROFILE")
