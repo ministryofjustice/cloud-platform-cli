@@ -35,7 +35,7 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	// flags
 	environmentApplyCmd.Flags().StringVarP(&optFlags.Namespace, "namespace", "n", "", "Namespace which you want to perform the apply")
 	environmentApplyCmd.Flags().StringVar(&optFlags.KubecfgPath, "kubecfg", filepath.Join(homedir.HomeDir(), ".kube", "config"), "path to kubeconfig file")
-	environmentApplyCmd.Flags().StringVar(&optFlags.ClusterCtx, "cluster", "live.cloud-platform.service.gov.uk", "path to kubeconfig file")
+	environmentApplyCmd.Flags().StringVar(&optFlags.ClusterCtx, "cluster", "live.cloud-platform.service.justice.gov.uk", "path to kubeconfig file")
 	environmentBumpModuleCmd.Flags().StringVarP(&module, "module", "m", "", "Module to upgrade the version")
 	environmentBumpModuleCmd.Flags().StringVarP(&moduleVersion, "module-version", "v", "", "Semantic version to bump a module to")
 }

@@ -1,6 +1,7 @@
 package environment
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -16,7 +17,7 @@ const TerraformVersion = "0.14.6"
 type Applier interface {
 	Initialize()
 	KubectlApply(directory string) (string, error)
-	TerraformInitAndApply(namespace string, directory string) (map[string]string, error)
+	TerraformInitAndApply(namespace string, directory string) (string, error)
 	TerraformDestroy(directory string) error
 }
 
@@ -68,10 +69,25 @@ func (m *ApplierImpl) optionEnvBackendConfigVars(c EnvBackendConfigVars) error {
 	return nil
 }
 
-func (m *ApplierImpl) TerraformInitAndApply(namespace, directory string) (map[string]string, error) {
+func (m *ApplierImpl) TerraformInitAndApply(namespace, directory string) (string, error) {
+	var out bytes.Buffer
 	terraform, err := tfexec.NewTerraform(directory, m.terraformBinaryPath)
 	if err != nil {
-		return map[string]string{}, errors.New("unable to instantiate Terraform: " + err.Error())
+		return "", errors.New("unable to instantiate Terraform: " + err.Error())
+	}
+
+	terraform.SetStdout(&out)
+	terraform.SetStderr(&out)
+
+	// Sometimes the error text would be useful in the command output that's
+	// displayed in the UI. For this reason, we append the error to the
+	// output before we return it.
+	errReturn := func(out bytes.Buffer, err error) (string, error) {
+		if err != nil {
+			return fmt.Sprintf("%s\n%s", out.String(), err.Error()), err
+		}
+
+		return out.String(), nil
 	}
 
 	key := m.config.PipelineStateKeyPrefix + m.config.PipelineClusterState + "/" + namespace + "/terraform.tfstate"
@@ -82,24 +98,15 @@ func (m *ApplierImpl) TerraformInitAndApply(namespace, directory string) (map[st
 		tfexec.BackendConfig(fmt.Sprintf("dynamodb_table=%s", m.config.PipelineTerraformStateLockTable)),
 		tfexec.BackendConfig(fmt.Sprintf("region=%s", m.config.PipelineStateRegion)))
 	if err != nil {
-		return nil, err
+		return errReturn(out, err)
 	}
 
-	log.Println("Applying Terraform")
-	err = terraform.Apply(context.Background(), tfexec.Refresh(false))
+	err = terraform.Apply(context.Background(), tfexec.Refresh(true))
 	if err != nil {
-		return nil, errors.New("unable to apply Terraform: " + err.Error())
+		return "", errors.New("unable to apply Terraform: " + err.Error())
 	}
 
-	rawOutputs, _ := terraform.Output(context.Background())
-	outputs := make(map[string]string, len(rawOutputs))
-	for outputName, outputRawValue := range rawOutputs {
-		outputValue := string(outputRawValue.Value)
-		// Strip the first and last quote which gets added for some reason
-		outputValue = outputValue[1 : len(outputValue)-1]
-		outputs[outputName] = outputValue
-	}
-	return outputs, nil
+	return out.String(), nil
 }
 
 func (m *ApplierImpl) TerraformDestroy(directory string) error {

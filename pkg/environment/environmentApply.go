@@ -3,7 +3,6 @@ package environment
 import (
 	"fmt"
 	"log"
-	"os"
 
 	"github.com/kelseyhightower/envconfig"
 )
@@ -30,7 +29,6 @@ type Apply struct {
 }
 
 func NewApply(opt Options) (*Apply, error) {
-	workingDir, _ := os.Getwd()
 	var reqEnvVars RequiredEnvVars
 	err := envconfig.Process("", &reqEnvVars)
 	if err != nil {
@@ -39,7 +37,7 @@ func NewApply(opt Options) (*Apply, error) {
 	return &Apply{
 		Options:         &opt,
 		Applier:         NewApplier("/usr/local/bin/terraform", "/usr/local/bin/kubectl"),
-		Dir:             workingDir + "/namespaces/" + opt.ClusterCtx + "/" + opt.Namespace,
+		Dir:             "namespaces/" + opt.ClusterCtx + "/" + opt.Namespace,
 		RequiredEnvVars: reqEnvVars,
 	}, nil
 }
@@ -65,7 +63,7 @@ func (a *Apply) Apply() (map[string]string, error) {
 }
 
 func (a *Apply) ApplyKubectl() (string, error) {
-	log.Printf("Applying kubectl for namespace: %v", a.Options.Namespace)
+	log.Printf("Applying kubectl for namespace: %v in directory %v", a.Options.Namespace, a.Dir)
 
 	outputKubectl, err := a.Applier.KubectlApply(a.Dir)
 	if err != nil {
@@ -76,7 +74,7 @@ func (a *Apply) ApplyKubectl() (string, error) {
 	return outputKubectl, nil
 }
 
-func (a *Apply) ApplyTerraform() (map[string]string, error) {
+func (a *Apply) ApplyTerraform() (string, error) {
 	log.Printf("Applying Terraform for namespace: %v", a.Options.Namespace)
 
 	tfFolder := a.Dir + "/resources"
@@ -84,7 +82,7 @@ func (a *Apply) ApplyTerraform() (map[string]string, error) {
 	outputTerraform, err := a.Applier.TerraformInitAndApply(a.Options.Namespace, tfFolder)
 	if err != nil {
 		err := fmt.Errorf("error running terraform on namespace %s: %v", a.Options.Namespace, err)
-		return nil, err
+		return "", err
 	}
 	return outputTerraform, nil
 }
