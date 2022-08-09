@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os/exec"
 
 	"github.com/hashicorp/terraform-exec/tfexec"
 	"github.com/kelseyhightower/envconfig"
@@ -12,19 +13,22 @@ import (
 
 const TerraformVersion = "0.14.6"
 
-type Terraformer interface {
+type Applier interface {
 	Initialize()
+	KubectlApply(directory string) (string, error)
 	TerraformInitAndApply(namespace string, directory string) (map[string]string, error)
 	TerraformDestroy(directory string) error
 }
 
-type TerraformerImpl struct {
+type ApplierImpl struct {
 	terraformBinaryPath string
+	kubectlBinaryPath   string
 	terraformVersion    string
 	config              EnvBackendConfigVars
 }
 
 type EnvBackendConfigVars struct {
+	kubeconfig                      string `required:"true"`
 	PipelineStateBucket             string `required:"true" split_words:"true"`
 	PipelineStateKeyPrefix          string `required:"true" split_words:"true"`
 	PipelineTerraformStateLockTable string `required:"true" split_words:"true"`
@@ -33,36 +37,38 @@ type EnvBackendConfigVars struct {
 	PipelineClusterState            string `required:"true" split_words:"true"`
 }
 
-func NewTerraformer(terraformBinaryPath string) Terraformer {
+func NewApplier(terraformBinaryPath string, kubectlBinaryPath string) Applier {
 
-	tf := TerraformerImpl{
+	applier := ApplierImpl{
 		terraformVersion:    TerraformVersion,
 		terraformBinaryPath: terraformBinaryPath,
+		kubectlBinaryPath:   kubectlBinaryPath,
 	}
-	tf.Initialize()
-	return &tf
+	applier.Initialize()
+	return &applier
 }
 
-func (m *TerraformerImpl) Initialize() {
+func (m *ApplierImpl) Initialize() {
 	var tfConfig EnvBackendConfigVars
 	err := envconfig.Process("", &tfConfig)
 	if err != nil {
-		log.Fatalln("Terraform environment variables not set:", err.Error())
+		log.Fatalln("Terraform and Kubeconfig environment variables not set:", err.Error())
 	}
 	m.optionEnvBackendConfigVars(tfConfig)
 }
 
-func (m *TerraformerImpl) optionEnvBackendConfigVars(c EnvBackendConfigVars) error {
+func (m *ApplierImpl) optionEnvBackendConfigVars(c EnvBackendConfigVars) error {
 	m.config.PipelineStateBucket = c.PipelineStateBucket
 	m.config.PipelineStateKeyPrefix = c.PipelineStateKeyPrefix
 	m.config.PipelineTerraformStateLockTable = c.PipelineTerraformStateLockTable
 	m.config.PipelineStateRegion = c.PipelineStateRegion
 	m.config.PipelineCluster = c.PipelineCluster
 	m.config.PipelineClusterState = c.PipelineClusterState
+	m.config.kubeconfig = c.kubeconfig
 	return nil
 }
 
-func (m *TerraformerImpl) TerraformInitAndApply(namespace, directory string) (map[string]string, error) {
+func (m *ApplierImpl) TerraformInitAndApply(namespace, directory string) (map[string]string, error) {
 	terraform, err := tfexec.NewTerraform(directory, m.terraformBinaryPath)
 	if err != nil {
 		return map[string]string{}, errors.New("unable to instantiate Terraform: " + err.Error())
@@ -96,11 +102,22 @@ func (m *TerraformerImpl) TerraformInitAndApply(namespace, directory string) (ma
 	return outputs, nil
 }
 
-func (m *TerraformerImpl) TerraformDestroy(directory string) error {
+func (m *ApplierImpl) TerraformDestroy(directory string) error {
 	terraform, err := tfexec.NewTerraform(directory, m.terraformBinaryPath)
 	if err != nil {
 		return err
 	}
 
 	return terraform.Destroy(context.Background())
+}
+
+func (m *ApplierImpl) KubectlApply(directory string) (string, error) {
+	args := []string{"kubectl", "apply", "-f", directory}
+
+	stdout, err := exec.Command(args[0], args[1:]...).CombinedOutput()
+	if err != nil {
+		err = fmt.Errorf("Error: %v", err)
+	}
+
+	return string(stdout), err
 }
