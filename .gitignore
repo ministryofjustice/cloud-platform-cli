@@ -4,7 +4,7 @@
 *.dll
 *.so
 *.dylib
-cloud-platform
+cloud-platform*
 
 # Test binary, built with `go test -c`
 *.test
