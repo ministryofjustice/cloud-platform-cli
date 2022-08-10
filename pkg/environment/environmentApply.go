@@ -42,24 +42,24 @@ func NewApply(opt Options) (*Apply, error) {
 	}, nil
 }
 
-func (a *Apply) Apply() (map[string]string, error) {
+func (a *Apply) Apply() error {
 	applier, err := NewApply(*a.Options)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	outputKubectl, err := applier.ApplyKubectl()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	outputTerraform, err := applier.ApplyTerraform()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	fmt.Println("\nOutput of kubectl:", outputKubectl, "\nOutput of terraform", outputTerraform)
-	return nil, nil
+	return nil
 }
 
 func (a *Apply) ApplyKubectl() (string, error) {

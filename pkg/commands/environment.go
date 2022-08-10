@@ -77,7 +77,7 @@ var environmentApplyCmd = &cobra.Command{
 		applier := &environment.Apply{
 			Options: &optFlags,
 		}
-		_, err := applier.Apply()
+		err := applier.Apply()
 		if err != nil {
 			contextLogger.Fatal(err)
 		}
