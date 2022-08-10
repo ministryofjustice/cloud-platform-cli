@@ -50,16 +50,14 @@ func (_m *Applier) TerraformDestroy(directory string) error {
 }
 
 // TerraformInitAndApply provides a mock function with given fields: namespace, directory
-func (_m *Applier) TerraformInitAndApply(namespace string, directory string) (map[string]string, error) {
+func (_m *Applier) TerraformInitAndApply(namespace string, directory string) (string, error) {
 	ret := _m.Called(namespace, directory)
 
-	var r0 map[string]string
-	if rf, ok := ret.Get(0).(func(string, string) map[string]string); ok {
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string, string) string); ok {
 		r0 = rf(namespace, directory)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]string)
-		}
+		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error

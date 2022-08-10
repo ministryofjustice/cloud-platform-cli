@@ -17,8 +17,8 @@ func TestApply_ApplyTerraform(t *testing.T) {
 	tests := []struct {
 		name              string
 		fields            fields
-		TerraformOutputs  map[string]string
-		checkExpectations func(t *testing.T, terraform *mocks.Applier, outputs map[string]string, err error)
+		TerraformOutputs  string
+		checkExpectations func(t *testing.T, terraform *mocks.Applier, outputs string, err error)
 	}{
 		{
 			name: "Apply foo namespace",
@@ -38,11 +38,11 @@ func TestApply_ApplyTerraform(t *testing.T) {
 				},
 				Dir: "/root/foo",
 			},
-			TerraformOutputs: map[string]string{"myoutput": "foo"},
-			checkExpectations: func(t *testing.T, apply *mocks.Applier, outputs map[string]string, err error) {
+			TerraformOutputs: "foo",
+			checkExpectations: func(t *testing.T, apply *mocks.Applier, outputs string, err error) {
 				apply.AssertCalled(t, "TerraformInitAndApply", "foobar", "/root/foo/resources")
 				assert.Nil(t, err)
-				assert.Len(t, outputs, 1)
+				assert.Len(t, outputs, 3)
 			},
 		},
 	}
