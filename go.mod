@@ -29,7 +29,7 @@ require (
 )
 
 require (
-	github.com/aws/aws-sdk-go v1.44.69
+	github.com/aws/aws-sdk-go v1.44.73
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/hashicorp/terraform-exec v0.17.2
 	github.com/kelseyhightower/envconfig v1.4.0
