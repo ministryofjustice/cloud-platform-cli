@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/go-git/go-git"
+	"github.com/go-git/go-git/v5"
 	"github.com/ministryofjustice/cloud-platform-environments/pkg/authenticate"
 )
 
