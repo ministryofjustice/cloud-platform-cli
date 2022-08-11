@@ -23,6 +23,7 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentCmd.AddCommand(environmentS3Cmd)
 	environmentCmd.AddCommand(environmentSvcCmd)
 	environmentCmd.AddCommand(environmentCreateCmd)
+	environmentCmd.AddCommand(environmentPlanCmd)
 	environmentCmd.AddCommand(environmentApplyCmd)
 	environmentEcrCmd.AddCommand(environmentEcrCreateCmd)
 	environmentRdsCmd.AddCommand(environmentRdsCreateCmd)
@@ -33,9 +34,18 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentCmd.AddCommand(environmentBumpModuleCmd)
 
 	// flags
+	environmentApplyCmd.Flags().BoolVar(&optFlags.AllNamespaces, "all-namespaces", false, "Apply to all namespaces with -all-namespaces")
 	environmentApplyCmd.Flags().StringVarP(&optFlags.Namespace, "namespace", "n", "", "Namespace which you want to perform the apply")
 	environmentApplyCmd.Flags().StringVar(&optFlags.KubecfgPath, "kubecfg", filepath.Join(homedir.HomeDir(), ".kube", "config"), "path to kubeconfig file")
 	environmentApplyCmd.Flags().StringVar(&optFlags.ClusterCtx, "cluster", "live.cloud-platform.service.justice.gov.uk", "path to kubeconfig file")
+
+	environmentPlanCmd.Flags().IntVar(&optFlags.PRNumber, "pr", 0, "PR number to which ou want to perform the plan")
+	environmentPlanCmd.Flags().StringVar(&optFlags.GitToken, "git-token", "", "Personal access Token from Github ")
+	environmentPlanCmd.Flags().StringVar(&optFlags.KubecfgPath, "kubecfg", filepath.Join(homedir.HomeDir(), ".kube", "config"), "path to kubeconfig file")
+	environmentPlanCmd.Flags().StringVar(&optFlags.ClusterCtx, "cluster", "live.cloud-platform.service.justice.gov.uk", "path to kubeconfig file")
+
+	environmentPlanCmd.MarkPersistentFlagRequired("pr")
+
 	environmentBumpModuleCmd.Flags().StringVarP(&module, "module", "m", "", "Module to upgrade the version")
 	environmentBumpModuleCmd.Flags().StringVarP(&moduleVersion, "module-version", "v", "", "Semantic version to bump a module to")
 }
@@ -65,6 +75,25 @@ var environmentEcrCmd = &cobra.Command{
 	PreRun: upgradeIfNotLatest,
 }
 
+var environmentPlanCmd = &cobra.Command{
+	Use:   "plan",
+	Short: `Do a plan for given namespace`,
+	Example: heredoc.Doc(`
+	$ cloud-platform environment plan
+	`),
+	PreRun: upgradeIfNotLatest,
+	Run: func(cmd *cobra.Command, args []string) {
+		contextLogger := log.WithFields(log.Fields{"subcommand": "plan"})
+		applier := &environment.Apply{
+			Options: &optFlags,
+		}
+		err := applier.Plan()
+		if err != nil {
+			contextLogger.Fatal(err)
+		}
+	},
+}
+
 var environmentApplyCmd = &cobra.Command{
 	Use:   "apply",
 	Short: `apply command to apply the given namespace`,
@@ -77,10 +106,18 @@ var environmentApplyCmd = &cobra.Command{
 		applier := &environment.Apply{
 			Options: &optFlags,
 		}
-		err := applier.Apply()
-		if err != nil {
-			contextLogger.Fatal(err)
+		if optFlags.AllNamespaces {
+			err := applier.ApplyAll()
+			if err != nil {
+				contextLogger.Fatal(err)
+			}
+		} else {
+			err := applier.Apply()
+			if err != nil {
+				contextLogger.Fatal(err)
+			}
 		}
+
 	},
 }
 

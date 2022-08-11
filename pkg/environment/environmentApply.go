@@ -5,12 +5,15 @@ import (
 	"log"
 
 	"github.com/kelseyhightower/envconfig"
+	"github.com/ministryofjustice/cloud-platform-cli/pkg/util"
 )
 
 // Options are used to configure apply sessions.
 // These options are normally passed via flags in a command line.
 type Options struct {
-	Namespace, KubecfgPath, ClusterCtx string
+	Namespace, KubecfgPath, ClusterCtx, GitToken string
+	PRNumber                                     int
+	AllNamespaces                                bool
 }
 type RequiredEnvVars struct {
 	clustername        string `required:"true" envconfig:"TF_VAR_cluster_name"`
@@ -43,6 +46,18 @@ func NewApply(opt Options) (*Apply, error) {
 }
 
 func (a *Apply) Apply() error {
+
+	re := RepoEnvironment{}
+	err := re.mustBeInCloudPlatformEnvironments()
+	if err != nil {
+		return err
+	}
+
+	err = util.GetLatestGitPull()
+	if err != nil {
+		return err
+	}
+
 	applier, err := NewApply(*a.Options)
 	if err != nil {
 		return err
@@ -62,16 +77,123 @@ func (a *Apply) Apply() error {
 	return nil
 }
 
-func (a *Apply) ApplyKubectl() (string, error) {
-	log.Printf("Applying kubectl for namespace: %v in directory %v", a.Options.Namespace, a.Dir)
+func (a *Apply) Plan() error {
 
-	outputKubectl, err := a.Applier.KubectlApply(a.Dir)
+	re := RepoEnvironment{}
+	err := re.mustBeInCloudPlatformEnvironments()
+	if err != nil {
+		return err
+	}
+
+	changedNamespaces, err := util.ChangedInPR(a.Options.GitToken, cloudPlatformEnvRepo, mojOwner, a.Options.PRNumber)
+	if err != nil {
+		return err
+	}
+
+	for _, namespace := range changedNamespaces {
+		a.Options.Namespace = namespace
+
+		applier, err := NewApply(*a.Options)
+		if err != nil {
+			return err
+		}
+
+		outputKubectl, err := applier.PlanKubectl()
+		if err != nil {
+			return err
+		}
+
+		outputTerraform, err := applier.PlanTerraform()
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("\nOutput of kubectl:", outputKubectl, "\nOutput of terraform", outputTerraform)
+	}
+	return nil
+}
+
+func (a *Apply) ApplyAll() error {
+
+	repoPath := "namespaces/" + a.Options.ClusterCtx
+	folderChunks := util.GetFolderChunks(repoPath, numRoutines)
+
+	for i := 0; i < len(folderChunks); i++ {
+		err := a.applyNamespaceDirs(folderChunks[i])
+		if err != nil {
+			return err
+		}
+
+	}
+	return nil
+}
+
+func (a *Apply) applyNamespaceDirs(chunkFolder []string) error {
+
+	for _, folder := range chunkFolder {
+		a.Options.Namespace = folder
+
+		err := util.GetLatestGitPull()
+		if err != nil {
+			return err
+		}
+
+		applier, err := NewApply(*a.Options)
+		if err != nil {
+			return err
+		}
+
+		outputKubectl, err := applier.ApplyKubectl()
+		if err != nil {
+			return err
+		}
+
+		outputTerraform, err := applier.ApplyTerraform()
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("\nOutput of kubectl:", outputKubectl, "\nOutput of terraform", outputTerraform)
+	}
+
+	return nil
+}
+
+func (a *Apply) PlanKubectl() (string, error) {
+	log.Printf("Doing kubectl dry-run for namespace: %v in directory %v", a.Options.Namespace, a.Dir)
+
+	outputKubectl, err := a.Applier.KubectlApply(a.Options.Namespace, a.Dir, true)
 	if err != nil {
 		err := fmt.Errorf("error running kubectl on namespace %s: %v", a.Options.Namespace, err)
 		return "", err
 	}
 
 	return outputKubectl, nil
+}
+
+func (a *Apply) ApplyKubectl() (string, error) {
+	log.Printf("Apply kubectl for namespace: %v in directory %v", a.Options.Namespace, a.Dir)
+
+	outputKubectl, err := a.Applier.KubectlApply(a.Options.Namespace, a.Dir, false)
+	if err != nil {
+		err := fmt.Errorf("error running kubectl on namespace %s: %v", a.Options.Namespace, err)
+		return "", err
+	}
+
+	return outputKubectl, nil
+}
+
+func (a *Apply) PlanTerraform() (string, error) {
+	log.Printf("Doing Terraform Plan for namespace: %v", a.Options.Namespace)
+
+	tfFolder := a.Dir + "/resources"
+
+	outputTerraform, err := a.Applier.TerraformInitAndPlan(a.Options.Namespace, tfFolder)
+	if err != nil {
+		err := fmt.Errorf("error running terraform on namespace %s: %v", a.Options.Namespace, err)
+		return "", err
+	}
+	return outputTerraform, nil
 }
 
 func (a *Apply) ApplyTerraform() (string, error) {

@@ -14,20 +14,20 @@ func (_m *Applier) Initialize() {
 	_m.Called()
 }
 
-// KubectlApply provides a mock function with given fields: directory
-func (_m *Applier) KubectlApply(directory string) (string, error) {
-	ret := _m.Called(directory)
+// KubectlApply provides a mock function with given fields: namespace, directory, dryRun
+func (_m *Applier) KubectlApply(namespace string, directory string, dryRun bool) (string, error) {
+	ret := _m.Called(namespace, directory, dryRun)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(string) string); ok {
-		r0 = rf(directory)
+	if rf, ok := ret.Get(0).(func(string, string, bool) string); ok {
+		r0 = rf(namespace, directory, dryRun)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(directory)
+	if rf, ok := ret.Get(1).(func(string, string, bool) error); ok {
+		r1 = rf(namespace, directory, dryRun)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -51,6 +51,27 @@ func (_m *Applier) TerraformDestroy(directory string) error {
 
 // TerraformInitAndApply provides a mock function with given fields: namespace, directory
 func (_m *Applier) TerraformInitAndApply(namespace string, directory string) (string, error) {
+	ret := _m.Called(namespace, directory)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string, string) string); ok {
+		r0 = rf(namespace, directory)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, string) error); ok {
+		r1 = rf(namespace, directory)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// TerraformInitAndPlan provides a mock function with given fields: namespace, directory
+func (_m *Applier) TerraformInitAndPlan(namespace string, directory string) (string, error) {
 	ret := _m.Called(namespace, directory)
 
 	var r0 string

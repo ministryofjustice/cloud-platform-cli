@@ -11,6 +11,8 @@ const (
 	cloudPlatformEnvRepo = "cloud-platform-environments"
 	namespaceBaseFolder  = "namespaces/live.cloud-platform.service.justice.gov.uk"
 	envTemplateLocation  = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template"
+	numRoutines          = 1
+	mojOwner             = "ministryofjustice"
 )
 
 type templateFromUrl struct {
