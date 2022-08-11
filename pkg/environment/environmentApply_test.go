@@ -96,7 +96,7 @@ func TestApply_ApplyKubectl(t *testing.T) {
 			},
 			KubectlOutputs: "/root/foo",
 			checkExpectations: func(t *testing.T, apply *mocks.Applier, outputs string, err error) {
-				apply.AssertCalled(t, "KubectlApply", "/root/foo")
+				apply.AssertCalled(t, "KubectlApply", "foobar", "/root/foo", false)
 				assert.Nil(t, err)
 				assert.Len(t, outputs, 9)
 			},
@@ -104,7 +104,7 @@ func TestApply_ApplyKubectl(t *testing.T) {
 	}
 	for i := range tests {
 		kubectl := new(mocks.Applier)
-		kubectl.On("KubectlApply", tests[i].fields.Dir).Return(tests[i].KubectlOutputs, nil)
+		kubectl.On("KubectlApply", "foobar", tests[i].fields.Dir, false).Return(tests[i].KubectlOutputs, nil)
 		a := Apply{
 			RequiredEnvVars: tests[i].fields.RequiredEnvVars,
 			Applier:         kubectl,
