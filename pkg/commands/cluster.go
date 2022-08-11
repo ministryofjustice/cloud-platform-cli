@@ -63,6 +63,7 @@ func addClusterCmd(topLevel *cobra.Command) {
 	clusterCreateCmd.Flags().BoolVar(&createOptions.Debug, "debug", false, "[optional] enable debug logging")
 	clusterCreateCmd.Flags().IntVar(&createOptions.NodeCount, "nodes", 3, "[optional] number of nodes to create. [default] 3")
 	clusterCreateCmd.Flags().IntVar(&createOptions.TimeOut, "timeout", 600, "[optional] amount of time to wait for the command to complete. [default] 600s")
+	clusterCreateCmd.Flags().StringVar(&createOptions.TerraformOptions.Version, "terraformVersion", "0.14.8", "[optional] the terraform version to use. [default] 0.14.8")
 }
 
 var clusterCmd = &cobra.Command{
