@@ -21,6 +21,7 @@ var (
 		MaxNameLength: 12,
 	}
 	auth    = &cluster.AuthOpts{}
+	tf      = &cluster.TerraformOptions{}
 	date    = time.Now().Format("0201")
 	minHour = time.Now().Format("1504")
 )
@@ -63,7 +64,10 @@ func addClusterCmd(topLevel *cobra.Command) {
 	clusterCreateCmd.Flags().BoolVar(&createOptions.Debug, "debug", false, "[optional] enable debug logging")
 	clusterCreateCmd.Flags().IntVar(&createOptions.NodeCount, "nodes", 3, "[optional] number of nodes to create. [default] 3")
 	clusterCreateCmd.Flags().IntVar(&createOptions.TimeOut, "timeout", 600, "[optional] amount of time to wait for the command to complete. [default] 600s")
-	clusterCreateCmd.Flags().StringVar(&createOptions.TerraformOptions.Version, "terraformVersion", "0.14.8", "[optional] the terraform version to use. [default] 0.14.8")
+	clusterCreateCmd.Flags().BoolVar(&createOptions.Fast, "fast", false, "[optional] enable fast mode - this creates a cluster as quickly as possible. [default] false")
+
+	// Terraform options
+	clusterCreateCmd.Flags().StringVar(&tf.Version, "terraformVersion", "0.14.8", "[optional] the terraform version to use. [default] 0.14.8")
 }
 
 var clusterCmd = &cobra.Command{
@@ -84,6 +88,7 @@ var clusterCreateCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		contextLogger := log.WithFields(log.Fields{"subcommand": "create-cluster"})
 		createOptions.Auth0 = *auth
+		createOptions.TerraformOptions = *tf
 
 		if awsProfile == "" && awsAccessKey == "" && awsSecret == "" {
 			contextLogger.Fatal("AWS credentials are required, please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY or an AWS_PROFILE")

@@ -2,7 +2,7 @@ module github.com/ministryofjustice/cloud-platform-cli
 
 go 1.18
 
-replace github.com/ministryofjustice/cloud-platform-go-library => /Users/jasonbirchall/Documents/workarea/cloud-platform-go-library
+replace github.com/ministryofjustice/cloud-platform-go-library => /Users/json0/Documents/laptop_workarea/cloud-platform-go-library
 
 require (
 	github.com/MakeNowJust/heredoc v1.0.0
