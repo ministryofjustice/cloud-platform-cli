@@ -56,7 +56,7 @@ func TestApply_ApplyTerraform(t *testing.T) {
 			Dir:             tests[i].fields.Dir,
 			Options:         tests[i].fields.Options,
 		}
-		outputs, err := a.ApplyTerraform()
+		outputs, err := a.applyTerraform()
 		t.Run(tests[i].name, func(t *testing.T) {
 			tests[i].checkExpectations(t, terraform, outputs, err)
 		})
@@ -111,7 +111,7 @@ func TestApply_ApplyKubectl(t *testing.T) {
 			Dir:             tests[i].fields.Dir,
 			Options:         tests[i].fields.Options,
 		}
-		outputs, err := a.ApplyKubectl()
+		outputs, err := a.applyKubectl()
 		t.Run(tests[i].name, func(t *testing.T) {
 			tests[i].checkExpectations(t, kubectl, outputs, err)
 		})

@@ -52,28 +52,10 @@ func (a *Apply) Apply() error {
 	if err != nil {
 		return err
 	}
-
-	err = util.GetLatestGitPull()
+	err = a.applyNamespace()
 	if err != nil {
 		return err
 	}
-
-	applier, err := NewApply(*a.Options)
-	if err != nil {
-		return err
-	}
-
-	outputKubectl, err := applier.ApplyKubectl()
-	if err != nil {
-		return err
-	}
-
-	outputTerraform, err := applier.ApplyTerraform()
-	if err != nil {
-		return err
-	}
-
-	fmt.Println("\nOutput of kubectl:", outputKubectl, "\nOutput of terraform", outputTerraform)
 	return nil
 }
 
@@ -92,23 +74,10 @@ func (a *Apply) Plan() error {
 
 	for _, namespace := range changedNamespaces {
 		a.Options.Namespace = namespace
-
-		applier, err := NewApply(*a.Options)
+		err = a.applyNamespace()
 		if err != nil {
 			return err
 		}
-
-		outputKubectl, err := applier.PlanKubectl()
-		if err != nil {
-			return err
-		}
-
-		outputTerraform, err := applier.PlanTerraform()
-		if err != nil {
-			return err
-		}
-
-		fmt.Println("\nOutput of kubectl:", outputKubectl, "\nOutput of terraform", outputTerraform)
 	}
 	return nil
 }
@@ -137,29 +106,17 @@ func (a *Apply) applyNamespaceDirs(chunkFolder []string) error {
 		if err != nil {
 			return err
 		}
-
-		applier, err := NewApply(*a.Options)
+		err = a.applyNamespace()
 		if err != nil {
 			return err
 		}
 
-		outputKubectl, err := applier.ApplyKubectl()
-		if err != nil {
-			return err
-		}
-
-		outputTerraform, err := applier.ApplyTerraform()
-		if err != nil {
-			return err
-		}
-
-		fmt.Println("\nOutput of kubectl:", outputKubectl, "\nOutput of terraform", outputTerraform)
 	}
 
 	return nil
 }
 
-func (a *Apply) PlanKubectl() (string, error) {
+func (a *Apply) planKubectl() (string, error) {
 	log.Printf("Doing kubectl dry-run for namespace: %v in directory %v", a.Options.Namespace, a.Dir)
 
 	outputKubectl, err := a.Applier.KubectlApply(a.Options.Namespace, a.Dir, true)
@@ -171,7 +128,7 @@ func (a *Apply) PlanKubectl() (string, error) {
 	return outputKubectl, nil
 }
 
-func (a *Apply) ApplyKubectl() (string, error) {
+func (a *Apply) applyKubectl() (string, error) {
 	log.Printf("Apply kubectl for namespace: %v in directory %v", a.Options.Namespace, a.Dir)
 
 	outputKubectl, err := a.Applier.KubectlApply(a.Options.Namespace, a.Dir, false)
@@ -183,7 +140,7 @@ func (a *Apply) ApplyKubectl() (string, error) {
 	return outputKubectl, nil
 }
 
-func (a *Apply) PlanTerraform() (string, error) {
+func (a *Apply) planTerraform() (string, error) {
 	log.Printf("Doing Terraform Plan for namespace: %v", a.Options.Namespace)
 
 	tfFolder := a.Dir + "/resources"
@@ -196,7 +153,7 @@ func (a *Apply) PlanTerraform() (string, error) {
 	return outputTerraform, nil
 }
 
-func (a *Apply) ApplyTerraform() (string, error) {
+func (a *Apply) applyTerraform() (string, error) {
 	log.Printf("Applying Terraform for namespace: %v", a.Options.Namespace)
 
 	tfFolder := a.Dir + "/resources"
@@ -207,4 +164,26 @@ func (a *Apply) ApplyTerraform() (string, error) {
 		return "", err
 	}
 	return outputTerraform, nil
+}
+
+func (a *Apply) applyNamespace() error {
+
+	applier, err := NewApply(*a.Options)
+	if err != nil {
+		return err
+	}
+
+	outputKubectl, err := applier.planKubectl()
+	if err != nil {
+		return err
+	}
+
+	outputTerraform, err := applier.planTerraform()
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("\nOutput of kubectl:", outputKubectl, "\nOutput of terraform", outputTerraform)
+	return nil
+
 }

@@ -86,12 +86,10 @@ func ChangedInPR(token, repo, owner string, prNumber int) ([]string, error) {
 
 	var namespaceNames []string
 	for _, repo := range repos {
-		if strings.Contains(*repo.Filename, "live") {
-			// namespaces filepaths are assumed to come in
-			// the format: namespaces/live.cloud-platform.service.justice.gov.uk/<namespaceName>
-			s := strings.Split(*repo.Filename, "/")
-			namespaceNames = append(namespaceNames, s[2])
-		}
+		// namespaces filepaths are assumed to come in
+		// the format: namespaces/<cluster>.cloud-platform.service.justice.gov.uk/<namespaceName>
+		s := strings.Split(*repo.Filename, "/")
+		namespaceNames = append(namespaceNames, s[2])
 	}
 
 	return deduplicateList(namespaceNames), nil
