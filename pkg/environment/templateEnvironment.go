@@ -67,6 +67,12 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 	q.getAnswer()
 	values.Environment = q.value
 
+	// If the user requests a namespace for a dev-alpha environment,
+	// we need to create the namespace in the dev-alpha directory.
+	if q.value == "dev-alpha" {
+		namespaceBaseFolder = devAlphaBaseDir
+	}
+
 	if q.value == "development" || q.value == "dev" {
 		values.IsProduction = "false"
 
