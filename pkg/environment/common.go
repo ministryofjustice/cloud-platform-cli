@@ -9,11 +9,16 @@ import (
 
 const (
 	cloudPlatformEnvRepo = "cloud-platform-environments"
-	namespaceBaseFolder  = "namespaces/live.cloud-platform.service.justice.gov.uk"
+	liveBaseDir          = "namespaces/live.cloud-platform.service.justice.gov.uk"
+	devAlphaBaseDir      = "namespaces/dev-alpha.cloud-platform.service.justice.gov.uk"
 	envTemplateLocation  = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template"
 	numRoutines          = 1
 	mojOwner             = "ministryofjustice"
 )
+
+// namespaceBaseFolder is the base folder for the cloud-platform-environments repository.
+// we set this as a global variable so it can be used to define the cluster directory later on.
+var namespaceBaseFolder = liveBaseDir
 
 type templateFromUrl struct {
 	outputPath string
