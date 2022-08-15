@@ -4,17 +4,9 @@ on:
   workflow_dispatch:
   pull_request:
     types: [opened, edited, reopened, synchronize]
-    paths-ignore:
-      - "**.md"
-      - ".github/**"
-      - "makefile"
   push:
     branches:
       - main
-    paths-ignore:
-      - "**.md"
-      - ".github/**"
-      - "makefile"
 jobs:
   run-tests:
     strategy:
