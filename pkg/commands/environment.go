@@ -2,6 +2,7 @@ package commands
 
 import (
 	"errors"
+	"os"
 	"path/filepath"
 
 	environment "github.com/ministryofjustice/cloud-platform-cli/pkg/environment"
@@ -12,8 +13,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// variables specific to commands package used to store the values of flags of various environment sub commands
 var module, moduleVersion string
-
 var optFlags environment.Options
 
 func addEnvironmentCmd(topLevel *cobra.Command) {
@@ -36,15 +37,19 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	// flags
 	environmentApplyCmd.Flags().BoolVar(&optFlags.AllNamespaces, "all-namespaces", false, "Apply to all namespaces with -all-namespaces")
 	environmentApplyCmd.Flags().StringVarP(&optFlags.Namespace, "namespace", "n", "", "Namespace which you want to perform the apply")
+	// Re-use the environmental variable TF_VAR_github_token to call Github Client which is needed to perform terraform operations on each namespace
+	environmentApplyCmd.Flags().StringVar(&optFlags.GithubToken, "github-token", os.Getenv("TF_VAR_github_token"), "Personal access Token from Github ")
 	environmentApplyCmd.Flags().StringVar(&optFlags.KubecfgPath, "kubecfg", filepath.Join(homedir.HomeDir(), ".kube", "config"), "path to kubeconfig file")
-	environmentApplyCmd.Flags().StringVar(&optFlags.ClusterCtx, "cluster", "live.cloud-platform.service.justice.gov.uk", "path to kubeconfig file")
+	environmentApplyCmd.Flags().StringVar(&optFlags.ClusterCtx, "cluster", "", "folder name under namespaces/ inside cloud-platform-environments repo refering to full cluster name")
 
-	environmentPlanCmd.Flags().IntVar(&optFlags.PRNumber, "pr", 0, "PR number to which ou want to perform the plan")
-	environmentPlanCmd.Flags().StringVar(&optFlags.GitToken, "git-token", "", "Personal access Token from Github ")
+	// e.g. if this is the Pull rquest to perform the plan: https://github.com/ministryofjustice/cloud-platform-environments/pull/8370, the pr ID is 8370.
+	environmentPlanCmd.Flags().IntVar(&optFlags.PRNumber, "prNumber", 0, "Pull request ID or number to which you want to perform the plan")
+	environmentPlanCmd.Flags().StringVarP(&optFlags.Namespace, "namespace", "n", "", "Namespace which you want to perform the plan/apply")
+
+	// Re-use the environmental variable TF_VAR_github_token to call Github Client which is needed to perform terraform operations on each namespace
+	environmentPlanCmd.Flags().StringVar(&optFlags.GithubToken, "github-token", os.Getenv("TF_VAR_github_token"), "Personal access Token from Github ")
 	environmentPlanCmd.Flags().StringVar(&optFlags.KubecfgPath, "kubecfg", filepath.Join(homedir.HomeDir(), ".kube", "config"), "path to kubeconfig file")
-	environmentPlanCmd.Flags().StringVar(&optFlags.ClusterCtx, "cluster", "live.cloud-platform.service.justice.gov.uk", "path to kubeconfig file")
-
-	environmentPlanCmd.MarkPersistentFlagRequired("pr")
+	environmentPlanCmd.Flags().StringVar(&optFlags.ClusterCtx, "cluster", "", "folder name under namespaces/ inside cloud-platform-environments repo refering to full cluster name")
 
 	environmentBumpModuleCmd.Flags().StringVarP(&module, "module", "m", "", "Module to upgrade the version")
 	environmentBumpModuleCmd.Flags().StringVarP(&moduleVersion, "module-version", "v", "", "Semantic version to bump a module to")
@@ -76,8 +81,28 @@ var environmentEcrCmd = &cobra.Command{
 }
 
 var environmentPlanCmd = &cobra.Command{
-	Use:   "plan",
-	Short: `Do a plan for given namespace`,
+	Use: "plan",
+	Short: `Perform a terraform plan and kubectl apply -dry-run for a given namespace using either -namespace flag or the
+	the namespace in the given PR Id/Number`,
+	Long: `
+	Perform a kubectl apply -dry-run and a terraform plan for a given namespace using either -namespace flag or the
+	the namespace in the given PR Id/Number
+
+	Along with the mandatory input flag, the below environments variables needs to be set
+	TF_VAR_cluster_name - e.g. "cp-1902-02" to get the vpc details for some modules like rds, es
+	TF_VAR_cluster_state_bucket - State where the cluster state is stored
+	TF_VAR_cluster_state_key - folder name/state key inside the state bucket where cluster state is stored
+	TF_VAR_github_owner - Github owner: ministryofjustice
+	TF_VAR_github_token - Personal access token with repo scope to push github action secrets
+	TF_VAR_kubernetes_cluster - Full name of the Cluster e.g. XXXXXX.gr7.eu-west2.eks.amazonaws.com
+	PINGDOM_API_TOKEN - API Token to access pingdom
+	PIPELINE_TERRAFORM_STATE_LOCK_TABLE - DynamoDB table where the state lock is stored
+	PIPELINE_STATE_BUCKET - State bucket where the environments state is stored e.g cloud-platform-terraform-state
+	PIPELINE_STATE_KEY_PREFIX - State key/ folder where the environments terraform state is stored e.g cloud-platform-environments
+	PIPELINE_STATE_REGION - State region of the bucket e.g. eu-west-1
+	PIPELINE_CLUSTER - Cluster name/folder inside namespaces/ in cloud-platform-environments
+	PIPELINE_CLUSTER_STATE - Cluster name/folder inside the state bucket where the environments terraform state is stored. for "live" the state is stored under "live-1.cloud-platform.service..."
+	`,
 	Example: heredoc.Doc(`
 	$ cloud-platform environment plan
 	`),
@@ -96,7 +121,26 @@ var environmentPlanCmd = &cobra.Command{
 
 var environmentApplyCmd = &cobra.Command{
 	Use:   "apply",
-	Short: `apply command to apply the given namespace`,
+	Short: `Perform a terraform apply and kubectl apply for a given namespace`,
+	Long: `
+	Perform a kubectl apply and a terraform apply for a given namespace using either -namespace flag or the
+	the namespace in the given PR Id/Number
+
+	Along with the mandatory input flag, the below environments variables needs to be set
+	TF_VAR_cluster_name - e.g. "cp-1902-02" to get the vpc details for some modules like rds, es
+	TF_VAR_cluster_state_bucket - State where the cluster state is stored
+	TF_VAR_cluster_state_key - folder name/state key inside the state bucket where cluster state is stored
+	TF_VAR_github_owner - Github owner: ministryofjustice
+	TF_VAR_github_token - Personal access token with repo scope to push github action secrets
+	TF_VAR_kubernetes_cluster - Full name of the Cluster e.g. XXXXXX.gr7.eu-west2.eks.amazonaws.com
+	PINGDOM_API_TOKEN - API Token to access pingdom
+	PIPELINE_TERRAFORM_STATE_LOCK_TABLE - DynamoDB table where the state lock is stored
+	PIPELINE_STATE_BUCKET - State bucket where the environments state is stored e.g cloud-platform-terraform-state
+	PIPELINE_STATE_KEY_PREFIX - State key/ folder where the environments terraform state is stored e.g cloud-platform-environments
+	PIPELINE_STATE_REGION - State region of the bucket e.g. eu-west-1
+	PIPELINE_CLUSTER - Cluster name/folder inside namespaces/ in cloud-platform-environments
+	PIPELINE_CLUSTER_STATE - Cluster name/folder inside the state bucket where the environments terraform state is stored
+	`,
 	Example: heredoc.Doc(`
 	$ cloud-platform environment apply -n <namespace>
 	`),

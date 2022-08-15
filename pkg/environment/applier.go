@@ -12,7 +12,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 )
 
-const TerraformVersion = "0.14.6"
+const TerraformVersion = "0.14.8"
 
 type Applier interface {
 	Initialize()
@@ -40,7 +40,6 @@ type EnvBackendConfigVars struct {
 }
 
 func NewApplier(terraformBinaryPath string, kubectlBinaryPath string) Applier {
-
 	applier := ApplierImpl{
 		terraformVersion:    TerraformVersion,
 		terraformBinaryPath: terraformBinaryPath,
@@ -54,7 +53,7 @@ func (m *ApplierImpl) Initialize() {
 	var tfConfig EnvBackendConfigVars
 	err := envconfig.Process("", &tfConfig)
 	if err != nil {
-		log.Fatalln("Terraform and Kubeconfig environment variables not set:", err.Error())
+		log.Fatalln("Pipeline, Terraform and Kubeconfig environment variables not set:", err.Error())
 	}
 	m.optionEnvBackendConfigVars(tfConfig)
 }
@@ -164,7 +163,7 @@ func (m *ApplierImpl) KubectlApply(namespace, directory string, dryRun bool) (st
 
 	args := []string{""}
 	if dryRun {
-		args = []string{"kubectl", "-n", namespace, "--dry-run", "apply", "-f", directory}
+		args = []string{"kubectl", "-n", namespace, "apply", "--dry-run", "-f", directory}
 	} else {
 		args = []string{"kubectl", "-n", namespace, "apply", "-f", directory}
 	}

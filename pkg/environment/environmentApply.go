@@ -11,9 +11,9 @@ import (
 // Options are used to configure apply sessions.
 // These options are normally passed via flags in a command line.
 type Options struct {
-	Namespace, KubecfgPath, ClusterCtx, GitToken string
-	PRNumber                                     int
-	AllNamespaces                                bool
+	Namespace, KubecfgPath, ClusterCtx, GithubToken string
+	PRNumber                                        int
+	AllNamespaces                                   bool
 }
 type RequiredEnvVars struct {
 	clustername        string `required:"true" envconfig:"TF_VAR_cluster_name"`
@@ -67,18 +67,33 @@ func (a *Apply) Plan() error {
 		return err
 	}
 
-	changedNamespaces, err := util.ChangedInPR(a.Options.GitToken, cloudPlatformEnvRepo, mojOwner, a.Options.PRNumber)
-	if err != nil {
+	if a.Options.PRNumber == 0 && a.Options.Namespace == "" {
+		err := fmt.Errorf("either a PR Id/Number or a namespace is required to perform plan")
 		return err
 	}
 
-	for _, namespace := range changedNamespaces {
-		a.Options.Namespace = namespace
-		err = a.applyNamespace()
+	// If a namespace is given as a flag, then perform a plan for the given namespace.
+	if a.Options.Namespace != "" {
+		err = a.planNamespace()
 		if err != nil {
 			return err
 		}
+		return nil
+	} else {
+		changedNamespaces, err := util.ChangedInPR(a.Options.GithubToken, cloudPlatformEnvRepo, mojOwner, a.Options.PRNumber)
+		if err != nil {
+			return err
+		}
+
+		for _, namespace := range changedNamespaces {
+			a.Options.Namespace = namespace
+			err = a.planNamespace()
+			if err != nil {
+				return err
+			}
+		}
 	}
+
 	return nil
 }
 
@@ -121,7 +136,7 @@ func (a *Apply) planKubectl() (string, error) {
 
 	outputKubectl, err := a.Applier.KubectlApply(a.Options.Namespace, a.Dir, true)
 	if err != nil {
-		err := fmt.Errorf("error running kubectl on namespace %s: %v", a.Options.Namespace, err)
+		err := fmt.Errorf("error running kubectl on namespace %s: in directory: %v, %v", a.Options.Namespace, a.Dir, err)
 		return "", err
 	}
 
@@ -167,6 +182,28 @@ func (a *Apply) applyTerraform() (string, error) {
 }
 
 func (a *Apply) applyNamespace() error {
+
+	applier, err := NewApply(*a.Options)
+	if err != nil {
+		return err
+	}
+
+	outputKubectl, err := applier.applyKubectl()
+	if err != nil {
+		return err
+	}
+
+	outputTerraform, err := applier.applyTerraform()
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("\nOutput of kubectl:", outputKubectl, "\nOutput of terraform", outputTerraform)
+	return nil
+
+}
+
+func (a *Apply) planNamespace() error {
 
 	applier, err := NewApply(*a.Options)
 	if err != nil {
