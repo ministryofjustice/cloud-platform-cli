@@ -3,6 +3,7 @@ package environment
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/MakeNowJust/heredoc"
@@ -69,7 +70,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 
 	// If the user requests a namespace for a dev-alpha environment,
 	// we need to create the namespace in the dev-alpha directory.
-	if q.value == "dev-alpha" {
+	if strings.ToLower(q.value) == "dev-alpha" {
 		namespaceBaseFolder = devAlphaBaseDir
 	}
 
