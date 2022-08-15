@@ -7,14 +7,14 @@ on:
     paths-ignore:
       - "**.md"
       - ".github/**"
-      - "Makefile"
+      - "makefile"
   push:
     branches:
       - main
     paths-ignore:
       - "**.md"
       - ".github/**"
-      - "Makefile"
+      - "makefile"
 jobs:
   run-tests:
     strategy:
