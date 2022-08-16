@@ -82,7 +82,10 @@ func ChangedInPR(token, repo, owner string, prNumber int) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	repos, _, _ := client.PullRequests.ListFiles(context.Background(), owner, repo, prNumber, nil)
+	repos, _, err := client.PullRequests.ListFiles(context.Background(), owner, repo, prNumber, nil)
+	if err != nil {
+		return nil, err
+	}
 
 	var namespaceNames []string
 	for _, repo := range repos {

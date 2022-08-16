@@ -156,7 +156,10 @@ func (a *Apply) ApplyAll() error {
 	}
 
 	repoPath := "namespaces/" + a.Options.ClusterCtx
-	folderChunks := util.GetFolderChunks(repoPath, numRoutines)
+	folderChunks, err := util.GetFolderChunks(repoPath, numRoutines)
+	if err != nil {
+		return err
+	}
 
 	for i := 0; i < len(folderChunks); i++ {
 		err := a.applyNamespaceDirs(folderChunks[i])

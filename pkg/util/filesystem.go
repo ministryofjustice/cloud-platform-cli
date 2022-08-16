@@ -3,14 +3,16 @@ package util
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 )
 
-func GetFolderChunks(repoPath string, numRoutines int) [][]string {
+func GetFolderChunks(repoPath string, numRoutines int) ([][]string, error) {
 
 	folders, err := ListFolderPaths(repoPath)
+	if err != nil {
+		return nil, err
+	}
 
 	nsFolders := []string{}
 
@@ -20,15 +22,11 @@ func GetFolderChunks(repoPath string, numRoutines int) [][]string {
 		nsFolders = append(nsFolders, f)
 	}
 
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	folderChunks, err := chunkFolders(nsFolders, numRoutines)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
-	return folderChunks
+	return folderChunks, nil
 }
 
 // ListFolders take the path as input, list all the folders in the give path and
@@ -39,7 +37,6 @@ func ListFolderPaths(path string) ([]string, error) {
 	err := filepath.Walk(path,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
-				log.Fatalf("prevent panic by handling failure accessing a path %q: %v\n", path, err)
 				return err
 			}
 
@@ -53,7 +50,7 @@ func ListFolderPaths(path string) ([]string, error) {
 			return nil
 		})
 	if err != nil {
-		log.Println(err)
+		return nil, err
 	}
 
 	return folders, nil
@@ -95,7 +92,7 @@ func ListFiles(path string) ([]string, error) {
 		return nil
 	})
 	if err != nil {
-		log.Println(err)
+		return nil, err
 	}
 	return files, nil
 
