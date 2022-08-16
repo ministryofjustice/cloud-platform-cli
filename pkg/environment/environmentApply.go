@@ -38,18 +38,30 @@ type Apply struct {
 // NewApply creates a new Apply object and populates its fields with values from options(which are flags),
 // instantiate Applier object which also checks and sets the Backend config variables to do terraform init,
 // RequiredEnvVars object which stores the values required for plan/apply of namespace
-func NewApply(opt Options) (*Apply, error) {
+func NewApply(opt Options) *Apply {
+
+	apply := Apply{
+		Options: &opt,
+		Applier: NewApplier("/usr/local/bin/terraform", "/usr/local/bin/kubectl"),
+		Dir:     "namespaces/" + opt.ClusterCtx + "/" + opt.Namespace,
+	}
+
+	apply.Initialize()
+	return &apply
+}
+
+func (a *Apply) Initialize() {
 	var reqEnvVars RequiredEnvVars
 	err := envconfig.Process("", &reqEnvVars)
 	if err != nil {
-		return nil, err
+		log.Fatalln("Environment variables required to perform terraform operations not set:", err.Error())
 	}
-	return &Apply{
-		Options:         &opt,
-		Applier:         NewApplier("/usr/local/bin/terraform", "/usr/local/bin/kubectl"),
-		Dir:             "namespaces/" + opt.ClusterCtx + "/" + opt.Namespace,
-		RequiredEnvVars: reqEnvVars,
-	}, nil
+	a.RequiredEnvVars.clustername = reqEnvVars.clustername
+	a.RequiredEnvVars.clusterstatebucket = reqEnvVars.clusterstatebucket
+	a.RequiredEnvVars.clusterstatekey = reqEnvVars.clusterstatekey
+	a.RequiredEnvVars.githubowner = reqEnvVars.githubowner
+	a.RequiredEnvVars.githubtoken = reqEnvVars.githubtoken
+	a.RequiredEnvVars.pingdomapitoken = reqEnvVars.pingdomapitoken
 }
 
 // Plan is the entry point for performing a namespace plan.
@@ -235,10 +247,7 @@ func (a *Apply) applyTerraform() (string, error) {
 // planNamespace intiates a new Apply object with options and env variables, and calls the
 // applyKubectl with dry-run enabled and calls applier TerraformInitAndPlan and prints the output
 func (a *Apply) planNamespace() error {
-	applier, err := NewApply(*a.Options)
-	if err != nil {
-		return err
-	}
+	applier := NewApply(*a.Options)
 
 	outputKubectl, err := applier.planKubectl()
 	if err != nil {
@@ -257,10 +266,7 @@ func (a *Apply) planNamespace() error {
 // applyNamespace intiates a new Apply object with options and env variables, and calls the
 // applyKubectl with dry-run disabled and calls applier TerraformInitAndApply and prints the output
 func (a *Apply) applyNamespace() error {
-	applier, err := NewApply(*a.Options)
-	if err != nil {
-		return err
-	}
+	applier := NewApply(*a.Options)
 
 	outputKubectl, err := applier.applyKubectl()
 	if err != nil {
