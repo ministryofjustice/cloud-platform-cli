@@ -54,8 +54,6 @@ func (a *Apply) Initialize() {
 		log.Fatalln("Environment variables required to perform terraform operations not set:", err.Error())
 	}
 	a.RequiredEnvVars.clustername = reqEnvVars.clustername
-	a.RequiredEnvVars.clusterstatebucket = reqEnvVars.clusterstatebucket
-	a.RequiredEnvVars.clusterstatekey = reqEnvVars.clusterstatekey
 	a.RequiredEnvVars.githubowner = reqEnvVars.githubowner
 	a.RequiredEnvVars.githubtoken = reqEnvVars.githubtoken
 	a.RequiredEnvVars.pingdomapitoken = reqEnvVars.pingdomapitoken
