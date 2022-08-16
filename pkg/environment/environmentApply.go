@@ -178,28 +178,75 @@ func (a *Apply) applyNamespaceDirs(chunkFolder []string) error {
 	return nil
 }
 
-// planNamespace intiates a new Apply object with options and env variables, and calls the
-// applyKubectl with dry-run enabled and calls applier TerraformInitAndPlan and prints the output
-func (a *Apply) planNamespace() error {
-	newApply, err := NewApply(*a.Options)
-	if err != nil {
-		return err
-	}
-
+// planKubectl calls the applier -> applyKubectl with dry-run enabled and return the output from applier
+func (a *Apply) planKubectl() (string, error) {
 	log.Printf("Doing kubectl dry-run for namespace: %v in directory %v", a.Options.Namespace, a.Dir)
 
-	outputKubectl, err := newApply.Applier.KubectlApply(a.Options.Namespace, a.Dir, true)
+	outputKubectl, err := a.Applier.KubectlApply(a.Options.Namespace, a.Dir, true)
 	if err != nil {
 		err := fmt.Errorf("error running kubectl on namespace %s: in directory: %v, %v", a.Options.Namespace, a.Dir, err)
-		return err
+		return "", err
 	}
 
+	return outputKubectl, nil
+}
+
+// applyKubectl calls the applier -> applyKubectl with dry-run disabled and return the output from applier
+func (a *Apply) applyKubectl() (string, error) {
+	log.Printf("Apply kubectl for namespace: %v in directory %v", a.Options.Namespace, a.Dir)
+
+	outputKubectl, err := a.Applier.KubectlApply(a.Options.Namespace, a.Dir, false)
+	if err != nil {
+		err := fmt.Errorf("error running kubectl on namespace %s: %v", a.Options.Namespace, err)
+		return "", err
+	}
+
+	return outputKubectl, nil
+}
+
+// planTerraform calls applier -> TerraformInitAndPlan and prints the output from applier
+func (a *Apply) planTerraform() (string, error) {
 	log.Printf("Doing Terraform Plan for namespace: %v", a.Options.Namespace)
 
 	tfFolder := a.Dir + "/resources"
+
 	outputTerraform, err := a.Applier.TerraformInitAndPlan(a.Options.Namespace, tfFolder)
 	if err != nil {
 		err := fmt.Errorf("error running terraform on namespace %s: %v", a.Options.Namespace, err)
+		return "", err
+	}
+	return outputTerraform, nil
+}
+
+// applyTerraform calls applier -> TerraformInitAndApply and prints the output from applier
+func (a *Apply) applyTerraform() (string, error) {
+	log.Printf("Applying Terraform for namespace: %v", a.Options.Namespace)
+
+	tfFolder := a.Dir + "/resources"
+
+	outputTerraform, err := a.Applier.TerraformInitAndApply(a.Options.Namespace, tfFolder)
+	if err != nil {
+		err := fmt.Errorf("error running terraform on namespace %s: %v", a.Options.Namespace, err)
+		return "", err
+	}
+	return outputTerraform, nil
+}
+
+// planNamespace intiates a new Apply object with options and env variables, and calls the
+// applyKubectl with dry-run enabled and calls applier TerraformInitAndPlan and prints the output
+func (a *Apply) planNamespace() error {
+	applier, err := NewApply(*a.Options)
+	if err != nil {
+		return err
+	}
+
+	outputKubectl, err := applier.planKubectl()
+	if err != nil {
+		return err
+	}
+
+	outputTerraform, err := applier.planTerraform()
+	if err != nil {
 		return err
 	}
 
@@ -210,24 +257,18 @@ func (a *Apply) planNamespace() error {
 // applyNamespace intiates a new Apply object with options and env variables, and calls the
 // applyKubectl with dry-run disabled and calls applier TerraformInitAndApply and prints the output
 func (a *Apply) applyNamespace() error {
-	newApply, err := NewApply(*a.Options)
+	applier, err := NewApply(*a.Options)
 	if err != nil {
 		return err
 	}
 
-	log.Printf("Apply kubectl for namespace: %v in directory %v", a.Options.Namespace, a.Dir)
-
-	outputKubectl, err := newApply.Applier.KubectlApply(a.Options.Namespace, a.Dir, false)
+	outputKubectl, err := applier.applyKubectl()
 	if err != nil {
-		err := fmt.Errorf("error running kubectl on namespace %s: %v", a.Options.Namespace, err)
 		return err
 	}
-	log.Printf("Applying Terraform for namespace: %v", a.Options.Namespace)
 
-	tfFolder := a.Dir + "/resources"
-	outputTerraform, err := newApply.Applier.TerraformInitAndApply(a.Options.Namespace, tfFolder)
+	outputTerraform, err := applier.applyTerraform()
 	if err != nil {
-		err := fmt.Errorf("error running terraform on namespace %s: %v", a.Options.Namespace, err)
 		return err
 	}
 
