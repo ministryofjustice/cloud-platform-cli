@@ -10,11 +10,12 @@ import (
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/util"
 )
 
-const prototypeDeploymentTemplateUrl = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template/resources/prototype/templates"
-const prototypeRepoUrl = "https://raw.githubusercontent.com/ministryofjustice/moj-prototype-template/main"
+const (
+	prototypeDeploymentTemplateUrl = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template/resources/prototype/templates"
+	prototypeRepoUrl               = "https://raw.githubusercontent.com/ministryofjustice/moj-prototype-template/main"
+)
 
 func CreateDeploymentPrototype(skipDockerFiles bool) error {
-
 	// Build the url based on the repository they are in
 	util := util.Repository{}
 
@@ -66,7 +67,6 @@ on slack.
 }
 
 func createPrototypeDeploymentFiles(branch string, skipDockerFiles bool) error {
-
 	if !skipDockerFiles {
 		environment.CopyUrlToFile(prototypeRepoUrl+"/Dockerfile", "Dockerfile")
 		environment.CopyUrlToFile(prototypeRepoUrl+"/.dockerignore", ".dockerignore")
@@ -96,5 +96,4 @@ func createPrototypeDeploymentFiles(branch string, skipDockerFiles bool) error {
 	environment.CopyUrlToFile(prototypeDeploymentTemplateUrl+"/kubernetes-deploy.tpl", "kubernetes-deploy-"+branch+".tpl")
 
 	return nil
-
 }

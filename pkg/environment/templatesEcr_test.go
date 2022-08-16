@@ -9,7 +9,7 @@ import (
 
 func TestCreatesEcrTfFile(t *testing.T) {
 	filename := "resources/ecr.tf"
-	os.Mkdir("resources", 0755)
+	os.Mkdir("resources", 0o755)
 
 	err := createEcrTfFile()
 	if err != nil {
