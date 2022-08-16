@@ -20,10 +20,12 @@ type Options struct {
 // RequiredEnvVars is used to store values such as TF_VAR_ , github and pingdom tokens
 // which are needed to perform terraform operations for a given namespace
 type RequiredEnvVars struct {
-	clustername     string `required:"true" envconfig:"TF_VAR_cluster_name"`
-	githubowner     string `required:"true" envconfig:"TF_VAR_github_owner"`
-	githubtoken     string `required:"true" envconfig:"TF_VAR_github_token"`
-	pingdomapitoken string `required:"true" envconfig:"PINGDOM_API_TOKEN"`
+	clustername        string `required:"true" envconfig:"TF_VAR_cluster_name"`
+	clusterstatebucket string `required:"true" envconfig:"TF_VAR_cluster_state_bucket"`
+	kubernetescluster  string `required:"true" envconfig:"TF_VAR_kubernetes_cluster"`
+	githubowner        string `required:"true" envconfig:"TF_VAR_github_owner"`
+	githubtoken        string `required:"true" envconfig:"TF_VAR_github_token"`
+	pingdomapitoken    string `required:"true" envconfig:"PINGDOM_API_TOKEN"`
 }
 
 // Apply is used to store objects in a Apply/Plan session
