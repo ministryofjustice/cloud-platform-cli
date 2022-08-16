@@ -26,7 +26,7 @@ func TestBumpModule(t *testing.T) {
 				moduleName:   "test",
 				newVersion:   "0.1.2",
 				checkVersion: "0.1.2",
-				file:         createTestFile(t),
+				file:         createTestFile(t, "correct.tf"),
 			},
 			wantErr:     false,
 			wantSuccess: true,
@@ -37,7 +37,7 @@ func TestBumpModule(t *testing.T) {
 				moduleName:   "test",
 				newVersion:   "0.1.2",
 				checkVersion: "NOTHING",
-				file:         createTestFile(),
+				file:         createTestFile(t, "incorrect.tf"),
 			},
 			wantErr:     false,
 			wantSuccess: false,
@@ -49,8 +49,8 @@ func TestBumpModule(t *testing.T) {
 				t.Errorf("BumpModule() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			if checkModuleChange(tt.args.checkVersion, tt.args.file.Name()) != tt.wantSuccess {
-				t.Errorf("BumpModule() checkSourceChange = %v, want %v", checkModuleChange(tt.args.checkVersion, tt.args.file.Name()), tt.wantSuccess)
+			if checkModuleChange(t, tt.args.checkVersion, tt.args.file.Name()) != tt.wantSuccess {
+				t.Errorf("BumpModule() checkSourceChange = %v, want %v", checkModuleChange(t, tt.args.checkVersion, tt.args.file.Name()), tt.wantSuccess)
 			}
 			defer os.Remove(tt.args.file.Name())
 		})
@@ -58,8 +58,8 @@ func TestBumpModule(t *testing.T) {
 }
 
 // createTestFile creates a test file with the given version.
-func createTestFile(t *testing.T) os.File {
-	f, err := os.Create("test.tf")
+func createTestFile(t *testing.T, file string) os.File {
+	f, err := os.Create(file)
 	if err != nil {
 		t.Errorf("Error creating file: %s", err)
 	}
