@@ -2,7 +2,6 @@ package environment
 
 import (
 	"bytes"
-	"fmt"
 	"os"
 	"testing"
 )
@@ -27,7 +26,7 @@ func TestBumpModule(t *testing.T) {
 				moduleName:   "test",
 				newVersion:   "0.1.2",
 				checkVersion: "0.1.2",
-				file:         createTestFile(),
+				file:         createTestFile(t),
 			},
 			wantErr:     false,
 			wantSuccess: true,
@@ -59,10 +58,10 @@ func TestBumpModule(t *testing.T) {
 }
 
 // createTestFile creates a test file with the given version.
-func createTestFile() os.File {
+func createTestFile(t *testing.T) os.File {
 	f, err := os.Create("test.tf")
 	if err != nil {
-		fmt.Errorf("Error creating file: %e", err)
+		t.Errorf("Error creating file: %s", err)
 	}
 
 	defer f.Close()
@@ -75,10 +74,10 @@ const chunkSize = 64000
 
 // checkModuleChange checks if the file has been changed and contains
 // the string passed to it.
-func checkModuleChange(v, f string) bool {
+func checkModuleChange(t *testing.T, v, f string) bool {
 	file, err := os.Open(f)
 	if err != nil {
-		fmt.Errorf("Error reading file: %e", err)
+		t.Errorf("Error reading file: %s", err)
 	}
 	defer file.Close()
 
@@ -86,7 +85,7 @@ func checkModuleChange(v, f string) bool {
 	_, err = file.Read(b)
 
 	if err != nil {
-		fmt.Errorf("Error reading file: %e", err)
+		t.Errorf("Error reading file: %s", err)
 	}
 
 	return bytes.Contains(b, []byte(v))
