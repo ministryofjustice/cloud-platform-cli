@@ -9,7 +9,7 @@ import (
 
 func TestCreatesS3TfFile(t *testing.T) {
 	filename := "resources/s3.tf"
-	os.Mkdir("resources", 0755)
+	os.Mkdir("resources", 0o755)
 
 	err := createS3TfFile()
 	if err != nil {

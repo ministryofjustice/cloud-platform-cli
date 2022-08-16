@@ -9,7 +9,7 @@ import (
 
 func TestCreatesRdsTfFile(t *testing.T) {
 	filename := "resources/rds.tf"
-	os.Mkdir("resources", 0755)
+	os.Mkdir("resources", 0o755)
 
 	err := createRdsTfFile()
 	if err != nil {

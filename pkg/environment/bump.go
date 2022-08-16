@@ -62,7 +62,7 @@ func BumpModule(m, v string) error {
 
 					blockBody.SetAttributeValue("source", cty.StringVal(val))
 				}
-				err = os.WriteFile(path, f.Bytes(), 0644)
+				err = os.WriteFile(path, f.Bytes(), 0o644)
 				if err != nil {
 					return err
 				}
