@@ -36,15 +36,17 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 
 	// flags
 	environmentApplyCmd.Flags().BoolVar(&optFlags.AllNamespaces, "all-namespaces", false, "Apply to all namespaces with -all-namespaces")
+	// e.g. if this is the Pull rquest to perform the plan: https://github.com/ministryofjustice/cloud-platform-environments/pull/8370, the pr ID is 8370.
+	environmentApplyCmd.Flags().IntVar(&optFlags.PRNumber, "prNumber", 0, "Pull request ID or number to which you want to perform the plan")
 	environmentApplyCmd.Flags().StringVarP(&optFlags.Namespace, "namespace", "n", "", "Namespace which you want to perform the apply")
 	// Re-use the environmental variable TF_VAR_github_token to call Github Client which is needed to perform terraform operations on each namespace
 	environmentApplyCmd.Flags().StringVar(&optFlags.GithubToken, "github-token", os.Getenv("TF_VAR_github_token"), "Personal access Token from Github ")
 	environmentApplyCmd.Flags().StringVar(&optFlags.KubecfgPath, "kubecfg", filepath.Join(homedir.HomeDir(), ".kube", "config"), "path to kubeconfig file")
 	environmentApplyCmd.Flags().StringVar(&optFlags.ClusterCtx, "cluster", "", "folder name under namespaces/ inside cloud-platform-environments repo refering to full cluster name")
 
-	// e.g. if this is the Pull rquest to perform the plan: https://github.com/ministryofjustice/cloud-platform-environments/pull/8370, the pr ID is 8370.
+	// e.g. if this is the Pull rquest to perform the apply: https://github.com/ministryofjustice/cloud-platform-environments/pull/8370, the pr ID is 8370.
 	environmentPlanCmd.Flags().IntVar(&optFlags.PRNumber, "prNumber", 0, "Pull request ID or number to which you want to perform the plan")
-	environmentPlanCmd.Flags().StringVarP(&optFlags.Namespace, "namespace", "n", "", "Namespace which you want to perform the plan/apply")
+	environmentPlanCmd.Flags().StringVarP(&optFlags.Namespace, "namespace", "n", "", "Namespace which you want to perform the plan")
 
 	// Re-use the environmental variable TF_VAR_github_token to call Github Client which is needed to perform terraform operations on each namespace
 	environmentPlanCmd.Flags().StringVar(&optFlags.GithubToken, "github-token", os.Getenv("TF_VAR_github_token"), "Personal access Token from Github ")
