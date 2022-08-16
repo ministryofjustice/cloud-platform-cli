@@ -11,11 +11,20 @@ import (
 func GetFolderChunks(repoPath string, numRoutines int) [][]string {
 
 	folders, err := ListFolderPaths(repoPath)
+
+	nsFolders := []string{}
+
+	// skip the root folder namespaces/cluster.cloud-platform.service.justice.gov.uk which is the first
+	// element of the slice. We dont want to apply from the root folder
+	for _, f := range folders[1:] {
+		nsFolders = append(nsFolders, f)
+	}
+
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	folderChunks, err := chunkFolders(folders, numRoutines)
+	folderChunks, err := chunkFolders(nsFolders, numRoutines)
 	if err != nil {
 		log.Fatal(err)
 	}

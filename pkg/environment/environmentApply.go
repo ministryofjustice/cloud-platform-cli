@@ -3,6 +3,7 @@ package environment
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/kelseyhightower/envconfig"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/util"
@@ -170,7 +171,10 @@ func (a *Apply) ApplyAll() error {
 // the apply of that namespace
 func (a *Apply) applyNamespaceDirs(chunkFolder []string) error {
 	for _, folder := range chunkFolder {
-		a.Options.Namespace = folder
+
+		// split the path to get the namespace name
+		namespace := strings.Split(folder, "/")
+		a.Options.Namespace = namespace[2]
 
 		err := util.GetLatestGitPull()
 		if err != nil {
