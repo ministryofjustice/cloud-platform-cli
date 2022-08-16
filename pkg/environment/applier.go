@@ -53,7 +53,7 @@ func (m *ApplierImpl) Initialize() {
 	var tfConfig EnvBackendConfigVars
 	err := envconfig.Process("", &tfConfig)
 	if err != nil {
-		log.Fatalln("Pipeline, Terraform and Kubeconfig environment variables not set:", err.Error())
+		log.Fatalln("Terraform backend and Kubeconfig environment variables not set:", err.Error())
 	}
 	m.optionEnvBackendConfigVars(tfConfig)
 }
@@ -161,7 +161,7 @@ func (m *ApplierImpl) TerraformDestroy(directory string) error {
 
 func (m *ApplierImpl) KubectlApply(namespace, directory string, dryRun bool) (string, error) {
 
-	args := []string{""}
+	args := []string{}
 	if dryRun {
 		args = []string{"kubectl", "-n", namespace, "apply", "--dry-run", "-f", directory}
 	} else {
@@ -170,7 +170,7 @@ func (m *ApplierImpl) KubectlApply(namespace, directory string, dryRun bool) (st
 
 	stdout, err := exec.Command(args[0], args[1:]...).CombinedOutput()
 	if err != nil {
-		err = fmt.Errorf("Error: %v", err)
+		err = fmt.Errorf("error: %v", err)
 	}
 
 	return string(stdout), err
