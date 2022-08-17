@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"time"
 
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/cluster"
@@ -23,7 +23,7 @@ func (r *Recycler) getDrainHelper() *drain.Helper {
 		Force:               r.Options.Force,
 		GracePeriodSeconds:  -1,
 		IgnoreAllDaemonSets: true,
-		Out:                 ioutil.Discard,
+		Out:                 io.Discard,
 		ErrOut:              log.Logger,
 		// We want to proceed even when pods are using emptyDir volumes
 		DeleteEmptyDirData: true,

@@ -3,7 +3,6 @@ package prototype
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/environment"
@@ -82,14 +81,14 @@ func createPrototypeDeploymentFiles(branch string, skipDockerFiles bool) error {
 
 	environment.CopyUrlToFile(prototypeDeploymentTemplateUrl+"/cd.yaml", ghActionFile)
 
-	input, err := ioutil.ReadFile(ghActionFile)
+	input, err := os.ReadFile(ghActionFile)
 	if err != nil {
 		return err
 	}
 
 	output := bytes.Replace(input, []byte("branch-name"), []byte(branch), -1)
 
-	if err = ioutil.WriteFile(ghActionFile, output, 0666); err != nil {
+	if err = os.WriteFile(ghActionFile, output, 0666); err != nil {
 		return err
 	}
 

@@ -14,7 +14,7 @@ type RepoEnvironment struct {
 }
 
 func (re *RepoEnvironment) mustBeInCloudPlatformEnvironments() error {
-	err, repo := re.repository()
+	repo, err := re.repository()
 	if err != nil {
 		return err
 	}
