@@ -1,7 +1,7 @@
 package environment
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"text/template"
@@ -51,7 +51,7 @@ func downloadTemplate(url string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	data, _ := ioutil.ReadAll(response.Body)
+	data, _ := io.ReadAll(response.Body)
 	content := string(data)
 
 	return content, nil
