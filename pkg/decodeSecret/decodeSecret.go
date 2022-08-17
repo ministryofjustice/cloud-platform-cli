@@ -72,7 +72,7 @@ func (sd *secretDecoder) processJson(jsn string) (string, error) {
 
 	sd.stashAwsCredentials(data)
 
-	err, str := formatJson(result)
+	str, err := formatJson(result)
 	if err != nil {
 		return "", err
 	}
@@ -112,11 +112,11 @@ func base64decode(i interface{}) string {
 	return string(str)
 }
 
-func formatJson(result map[string]interface{}) (error, string) {
+func formatJson(result map[string]interface{}) (string, error) {
 	str, err := json.MarshalIndent(result, "", "    ")
 	if err != nil {
-		return err, ""
+		return "", err
 	}
 
-	return nil, fmt.Sprintf("%s\n", str)
+	return string(str), err
 }
