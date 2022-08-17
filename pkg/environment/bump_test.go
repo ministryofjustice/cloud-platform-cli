@@ -62,7 +62,7 @@ func createTestFile() os.File {
 	f, _ := os.Create("test.tf")
 
 	defer f.Close()
-	f.WriteString("module test { source = \"test=1.0.0\" }")
+	_, _ = f.WriteString("module test { source = \"test=1.0.0\" }")
 
 	return *f
 }

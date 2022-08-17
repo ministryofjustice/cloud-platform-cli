@@ -67,9 +67,18 @@ on slack.
 
 func createPrototypeDeploymentFiles(branch string, skipDockerFiles bool) error {
 	if !skipDockerFiles {
-		environment.CopyUrlToFile(prototypeRepoUrl+"/Dockerfile", "Dockerfile")
-		environment.CopyUrlToFile(prototypeRepoUrl+"/.dockerignore", ".dockerignore")
-		environment.CopyUrlToFile(prototypeRepoUrl+"/start.sh", "start.sh")
+		err := environment.CopyUrlToFile(prototypeRepoUrl+"/Dockerfile", "Dockerfile")
+		if err != nil {
+			return err
+		}
+		err = environment.CopyUrlToFile(prototypeRepoUrl+"/.dockerignore", ".dockerignore")
+		if err != nil {
+			return err
+		}
+		err = environment.CopyUrlToFile(prototypeRepoUrl+"/start.sh", "start.sh")
+		if err != nil {
+			return err
+		}
 	}
 
 	ghDir := ".github/workflows/"
@@ -79,7 +88,10 @@ func createPrototypeDeploymentFiles(branch string, skipDockerFiles bool) error {
 	}
 	ghActionFile := ghDir + "cd-" + branch + ".yaml"
 
-	environment.CopyUrlToFile(prototypeDeploymentTemplateUrl+"/cd.yaml", ghActionFile)
+	err = environment.CopyUrlToFile(prototypeDeploymentTemplateUrl+"/cd.yaml", ghActionFile)
+	if err != nil {
+		return err
+	}
 
 	input, err := os.ReadFile(ghActionFile)
 	if err != nil {
@@ -92,7 +104,10 @@ func createPrototypeDeploymentFiles(branch string, skipDockerFiles bool) error {
 		return err
 	}
 
-	environment.CopyUrlToFile(prototypeDeploymentTemplateUrl+"/kubernetes-deploy.tpl", "kubernetes-deploy-"+branch+".tpl")
+	err = environment.CopyUrlToFile(prototypeDeploymentTemplateUrl+"/kubernetes-deploy.tpl", "kubernetes-deploy-"+branch+".tpl")
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

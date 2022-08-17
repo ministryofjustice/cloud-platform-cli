@@ -54,7 +54,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 		prompt:    "Name",
 		validator: new(namespaceNameValidator),
 	}
-	q.getAnswer()
+	_ = q.getAnswer()
 	values.Namespace = q.value
 
 	q = userQuestion{
@@ -65,7 +65,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 		prompt:    "Environment",
 		validator: new(lowercaseStringValidator),
 	}
-	q.getAnswer()
+	_ = q.getAnswer()
 	values.Environment = q.value
 
 	// If the user requests a namespace for a dev-alpha environment,
@@ -85,7 +85,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 			prompt:    "Sandbox?",
 			validator: new(yesNoValidator),
 		}
-		q.getAnswer()
+		_ = q.getAnswer()
 		if q.value == "yes" {
 			values.ReviewAfter = reviewAfter()
 		}
@@ -98,7 +98,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 			prompt:    "Production?",
 			validator: new(yesNoValidator),
 		}
-		q.getAnswer()
+		_ = q.getAnswer()
 		if q.value == "yes" {
 			values.IsProduction = "true"
 		} else {
@@ -114,7 +114,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 		prompt:    "Application",
 		validator: new(notEmptyValidator),
 	}
-	q.getAnswer()
+	_ = q.getAnswer()
 	values.Application = q.value
 
 	q = userQuestion{
@@ -128,7 +128,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 		prompt:    "GitHub Team",
 		validator: new(githubTeamNameValidator),
 	}
-	q.getAnswer()
+	_ = q.getAnswer()
 	values.GithubTeam = q.value
 
 	q = userQuestion{
@@ -138,7 +138,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 		prompt:    "Business Unit",
 		validator: new(businessUnitValidator),
 	}
-	q.getAnswer()
+	_ = q.getAnswer()
 	values.BusinessUnit = q.value
 
 	q = userQuestion{
@@ -150,7 +150,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 		prompt:    "Team Slack Channel",
 		validator: new(slackChannelValidator),
 	}
-	q.getAnswer()
+	_ = q.getAnswer()
 	values.SlackChannel = q.value
 
 	q = userQuestion{
@@ -162,7 +162,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 		prompt:    "Team Email",
 		validator: new(teamEmailValidator),
 	}
-	q.getAnswer()
+	_ = q.getAnswer()
 	values.InfrastructureSupport = q.value
 
 	q = userQuestion{
@@ -173,7 +173,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 		prompt:    "Github Repo",
 		validator: new(githubUrlValidator),
 	}
-	q.getAnswer()
+	_ = q.getAnswer()
 	values.SourceCode = q.value
 
 	q = userQuestion{
@@ -184,7 +184,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 		prompt:    "Team",
 		validator: new(notEmptyValidator),
 	}
-	q.getAnswer()
+	_ = q.getAnswer()
 	values.Owner = q.value
 
 	return &values, nil

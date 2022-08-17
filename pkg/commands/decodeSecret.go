@@ -22,10 +22,10 @@ $ cloud-platform decode-secret -n mynamespace -s mysecret
 	}
 
 	cmd.Flags().StringVarP(&opts.Secret, "secret", "s", "", "Secret name")
-	cmd.MarkFlagRequired("secret")
+	_ = cmd.MarkFlagRequired("secret")
 
 	cmd.Flags().StringVarP(&opts.Namespace, "namespace", "n", "", "Namespace name")
-	cmd.MarkFlagRequired("namespace")
+	_ = cmd.MarkFlagRequired("namespace")
 
 	cmd.Flags().BoolVarP(&opts.ExportAwsCreds, "export-aws-credentials", "e", false, "Export AWS credentials as shell variables")
 

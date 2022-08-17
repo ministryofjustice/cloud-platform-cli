@@ -30,7 +30,10 @@ func TestCreateNamespace(t *testing.T) {
 		IsProduction:          "false",
 	}
 
-	createNamespaceFiles(&ns)
+	err := createNamespaceFiles(&ns)
+	if err != nil {
+		t.Errorf("Unexpected error: %s", err)
+	}
 
 	dir := namespaceBaseFolder + "/foobar/"
 	namespaceFile := dir + "00-namespace.yaml"

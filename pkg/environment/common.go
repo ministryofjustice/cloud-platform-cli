@@ -58,7 +58,12 @@ func CopyUrlToFile(url string, targetFilename string) error {
 	if err != nil {
 		return err
 	}
-	f.WriteString(str)
+
+	_, err = f.WriteString(str)
+	if err != nil {
+		return err
+	}
+
 	f.Close()
 
 	return nil

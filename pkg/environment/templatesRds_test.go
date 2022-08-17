@@ -9,9 +9,12 @@ import (
 
 func TestCreatesRdsTfFile(t *testing.T) {
 	filename := "resources/rds.tf"
-	os.Mkdir("resources", 0o755)
+	err := os.Mkdir("resources", 0o755)
+	if err != nil {
+		t.Error(err)
+	}
 
-	err := createRdsTfFile()
+	err = createRdsTfFile()
 	if err != nil {
 		t.Errorf("Unexpected error: %s", err)
 	}
