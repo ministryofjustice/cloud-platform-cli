@@ -2,13 +2,13 @@ package util
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 	"testing"
 )
 
 func FileContainsString(t *testing.T, filename string, searchString string) {
-	contents, err := ioutil.ReadFile(filename)
+	contents, err := os.ReadFile(filename)
 	if err != nil {
 		t.Errorf("Unexpected error: %s", err)
 	}

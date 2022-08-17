@@ -13,6 +13,27 @@ func TestBumpModule(t *testing.T) {
 		t.Errorf("Error creating test file: %e", err)
 	}
 	type args struct {
+		m string
+		v string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := BumpModule(tt.args.m, tt.args.v); (err != nil) != tt.wantErr {
+				t.Errorf("BumpModule() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestBumpModuleOld(t *testing.T) {
+	type args struct {
 		moduleName   string
 		newVersion   string
 		checkVersion string
