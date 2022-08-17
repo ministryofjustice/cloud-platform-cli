@@ -190,7 +190,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 	return &values, nil
 }
 
-func downloadAndInitialiseTemplates(namespace string) (error, []*templateFromUrl) {
+func downloadAndInitialiseTemplates(namespace string) ([]*templateFromUrl, error) {
 	templates := []*templateFromUrl{
 		{
 			name: "00-namespace.yaml",
@@ -228,13 +228,13 @@ func downloadAndInitialiseTemplates(namespace string) (error, []*templateFromUrl
 
 	err := downloadTemplateContents(templates)
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 
 	for _, s := range templates {
 		s.outputPath = fmt.Sprintf("%s/%s/", namespaceBaseFolder, namespace) + s.name
 	}
-	return nil, templates
+	return templates, nil
 }
 
 func createNamespaceFiles(nsValues *Namespace) error {
@@ -243,7 +243,7 @@ func createNamespaceFiles(nsValues *Namespace) error {
 		return err
 	}
 
-	err, templates := downloadAndInitialiseTemplates(nsValues.Namespace)
+	templates, err := downloadAndInitialiseTemplates(nsValues.Namespace)
 	if err != nil {
 		return err
 	}
@@ -291,5 +291,5 @@ func createDirHash(nsValues *Namespace) error {
 }
 
 func reviewAfter() string {
-	return fmt.Sprintf(time.Now().AddDate(0, 3, 0).Format("2006-01-02"))
+	return string(time.Now().AddDate(0, 3, 0).Format("2006-01-02"))
 }
