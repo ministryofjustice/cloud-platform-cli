@@ -48,14 +48,6 @@ func downloadTemplate(url string) (string, error) {
 	return content, nil
 }
 
-func directoryExists(path string) bool {
-	if stat, err := os.Stat(path); err == nil && stat.IsDir() {
-		return true
-	} else {
-		return false
-	}
-}
-
 func CopyUrlToFile(url string, targetFilename string) error {
 	str, err := downloadTemplate(url)
 	if err != nil {
