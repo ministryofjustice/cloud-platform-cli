@@ -15,7 +15,7 @@ func main() {
 		Use:   "cloud-platform",
 		Short: "Multi-purpose CLI from the Cloud Platform team",
 		Run: func(cmd *cobra.Command, args []string) {
-			cmd.Help()
+			_ = cmd.Help()
 		},
 	}
 
@@ -25,7 +25,7 @@ func main() {
 	// which runs in a pipeline.
 	var SkipVersionCheck bool
 	cmds.PersistentFlags().BoolVarP(&SkipVersionCheck, "skip-version-check", "", false, "don't check for updates")
-	viper.BindPFlag("skip-version-check", cmds.PersistentFlags().Lookup("skip-version-check"))
+	_ = viper.BindPFlag("skip-version-check", cmds.PersistentFlags().Lookup("skip-version-check"))
 
 	commands.AddCommands(cmds)
 

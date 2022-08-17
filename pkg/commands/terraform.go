@@ -100,12 +100,12 @@ func addCommonFlags(cmd *cobra.Command, o *terraform.Commander) {
 	cmd.PersistentFlags().StringVarP(&o.VarFile, "var-file", "v", "", "tfvar to be used by terraform")
 	cmd.PersistentFlags().StringVar(&o.BulkTfPaths, "dirs-file", "", "Required for bulk-plans, file path which holds directories where terraform plan is going to be executed")
 
-	cmd.MarkPersistentFlagRequired("aws-access-key-id")
-	cmd.MarkPersistentFlagRequired("aws-secret-access-key")
+	_ = cmd.MarkPersistentFlagRequired("aws-access-key-id")
+	_ = cmd.MarkPersistentFlagRequired("aws-secret-access-key")
 
 	cmd.PersistentFlags().VisitAll(func(f *pflag.Flag) {
 		if viper.IsSet(f.Name) && viper.GetString(f.Name) != "" {
-			cmd.PersistentFlags().Set(f.Name, viper.GetString(f.Name))
+			_ = cmd.PersistentFlags().Set(f.Name, viper.GetString(f.Name))
 		}
 	})
 }

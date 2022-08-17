@@ -61,11 +61,14 @@ func (sd *secretDecoder) processJson(jsn string) (string, error) {
 	}
 
 	var result map[string]interface{}
-	json.Unmarshal([]byte(jsn), &result)
+	err := json.Unmarshal([]byte(jsn), &result)
+	if err != nil {
+		return "", err
+	}
 
 	data := result["data"].(map[string]interface{})
 
-	err := decodeKeys(data)
+	err = decodeKeys(data)
 	if err != nil {
 		return "", err
 	}

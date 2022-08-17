@@ -15,7 +15,10 @@ func TestRequireNamespaceFolder(t *testing.T) {
 		t.Errorf("This should have failed")
 	}
 
-	os.Create("00-namespace.yaml")
+	_, err = os.Create("00-namespace.yaml")
+	if err != nil {
+		t.Errorf("Could not create 00-namespace.yaml")
+	}
 
 	if re.mustBeInANamespaceFolder() != nil {
 		t.Errorf("This should have passed")

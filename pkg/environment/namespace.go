@@ -36,7 +36,11 @@ func (ns *Namespace) readYamlFile(filename string) error {
 		fmt.Printf("Failed to read namespace YAML file: %s", filename)
 		return err
 	}
-	ns.parseYaml(contents)
+	err = ns.parseYaml(contents)
+	if err != nil {
+		fmt.Printf("Failed to parse namespace YAML file: %s", filename)
+		return err
+	}
 	return nil
 }
 

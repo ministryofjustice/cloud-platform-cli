@@ -70,7 +70,10 @@ func (r *myRelease) getLatestReleaseInfo() error {
 		return err
 	}
 
-	json.Unmarshal(body, r)
+	err = json.Unmarshal(body, r)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

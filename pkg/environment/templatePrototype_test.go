@@ -26,7 +26,10 @@ func TestCreatePrototype(t *testing.T) {
 		BasicAuthPassword: "mypassword",
 	}
 
-	createPrototypeFiles(&proto)
+	err := createPrototypeFiles(&proto)
+	if err != nil {
+		t.Errorf("Unexpected error: %s", err)
+	}
 
 	dir := namespaceBaseFolder + "/foobar/"
 	namespaceFile := dir + "00-namespace.yaml"
