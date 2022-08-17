@@ -8,6 +8,10 @@ import (
 )
 
 func TestBumpModule(t *testing.T) {
+	f, err := createTestFile()
+	if err != nil {
+		t.Errorf("Error creating test file: %e", err)
+	}
 	type args struct {
 		moduleName   string
 		newVersion   string
@@ -27,7 +31,7 @@ func TestBumpModule(t *testing.T) {
 				moduleName:   "test",
 				newVersion:   "0.1.2",
 				checkVersion: "0.1.2",
-				file:         createTestFile(),
+				file:         f,
 			},
 			wantErr:     false,
 			wantSuccess: true,
@@ -38,7 +42,7 @@ func TestBumpModule(t *testing.T) {
 				moduleName:   "test",
 				newVersion:   "0.1.2",
 				checkVersion: "NOTHING",
-				file:         createTestFile(),
+				file:         f,
 			},
 			wantErr:     false,
 			wantSuccess: false,
@@ -50,8 +54,13 @@ func TestBumpModule(t *testing.T) {
 				t.Errorf("BumpModule() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			if checkModuleChange(tt.args.checkVersion, tt.args.file.Name()) != tt.wantSuccess {
-				t.Errorf("BumpModule() checkSourceChange = %v, want %v", checkModuleChange(tt.args.checkVersion, tt.args.file.Name()), tt.wantSuccess)
+			check, err := checkModuleChange(tt.args.checkVersion, tt.args.file.Name())
+			if (err != nil) != tt.wantErr {
+				t.Errorf("BumpModule() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if check != tt.wantSuccess {
+				t.Errorf("BumpModule() checkSourceChange = %v, want %v", check, tt.wantSuccess)
 			}
 			defer os.Remove(tt.args.file.Name())
 		})
@@ -59,26 +68,26 @@ func TestBumpModule(t *testing.T) {
 }
 
 // createTestFile creates a test file with the given version.
-func createTestFile() os.File {
+func createTestFile() (os.File, error) {
 	f, err := os.Create("test.tf")
 	if err != nil {
-		fmt.Errorf("Error creating file: %e", err)
+		return *f, fmt.Errorf("Error creating file: %e", err)
 	}
 
 	defer f.Close()
 	f.WriteString("module test { source = \"test=1.0.0\" }")
 
-	return *f
+	return *f, nil
 }
 
 const chunkSize = 64000
 
 // checkModuleChange checks if the file has been changed and contains
 // the string passed to it.
-func checkModuleChange(v, f string) bool {
+func checkModuleChange(v, f string) (bool, error) {
 	file, err := os.Open(f)
 	if err != nil {
-		fmt.Errorf("Error reading file: %e", err)
+		return false, fmt.Errorf("Error reading file: %e", err)
 	}
 	defer file.Close()
 
@@ -86,8 +95,8 @@ func checkModuleChange(v, f string) bool {
 	_, err = file.Read(b)
 
 	if err != nil {
-		fmt.Errorf("Error reading file: %e", err)
+		return false, fmt.Errorf("Error reading file: %e", err)
 	}
 
-	return bytes.Contains(b, []byte(v))
+	return bytes.Contains(b, []byte(v)), nil
 }
