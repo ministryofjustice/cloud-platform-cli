@@ -1,6 +1,9 @@
 package decodeSecret
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestDecodeSecret(t *testing.T) {
 	jsn := `{ "data": { "key1": "d2liYmxl", "key2": "d29iYmxl" } }`
@@ -12,9 +15,10 @@ func TestDecodeSecret(t *testing.T) {
     }
 }
 `
+
 	sd := secretDecoder{}
 	actual, err := sd.processJson(jsn)
-	if err != nil || actual != expected {
+	if err != nil || actual != strings.TrimSpace(expected) {
 		t.Errorf("Expected:\n%s\nGot:\n%s\n", expected, actual)
 	}
 }
@@ -31,7 +35,7 @@ func TestBadBase64(t *testing.T) {
 `
 	sd := secretDecoder{}
 	actual, err := sd.processJson(jsn)
-	if err != nil || actual != expected {
+	if err != nil || actual != strings.TrimSpace(expected) {
 		t.Errorf("Expected:\n%s\nGot:\n%s\n", expected, actual)
 	}
 }
