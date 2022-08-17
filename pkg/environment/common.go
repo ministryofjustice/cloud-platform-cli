@@ -25,15 +25,6 @@ type templateFromUrl struct {
 	url        string
 }
 
-func outputFileWriter(fileName string) (*os.File, error) {
-	f, err := os.Create(fileName)
-	if err != nil {
-		return nil, err
-	}
-
-	return f, nil
-}
-
 func downloadTemplateContents(t []*templateFromUrl) error {
 	for _, s := range t {
 		content, err := downloadTemplate(s.url)
