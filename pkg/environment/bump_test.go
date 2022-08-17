@@ -8,42 +8,6 @@ import (
 
 func TestBumpModule(t *testing.T) {
 	type args struct {
-		m string
-		v string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "Correctly bump a module version",
-			args: args{
-				m: "test",
-				v: "1.0.0",
-			},
-			wantErr: false,
-		},
-		{
-			name: "Incorrectly bump a module version",
-			args: args{
-				m: "test",
-				v: "1.0.0",
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := BumpModule(tt.args.m, tt.args.v); (err != nil) != tt.wantErr {
-				t.Errorf("BumpModule() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func TestBumpModuleOld(t *testing.T) {
-	type args struct {
 		moduleName   string
 		newVersion   string
 		checkVersion string
