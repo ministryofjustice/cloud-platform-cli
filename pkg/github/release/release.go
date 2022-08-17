@@ -65,7 +65,7 @@ func (r *Release) informUserToUpgrade() error {
 }
 
 func (r *myRelease) getLatestReleaseInfo() error {
-	err, body := r.getLatestReleaseJson()
+	body, err := r.getLatestReleaseJson()
 	if err != nil {
 		return err
 	}
@@ -75,23 +75,23 @@ func (r *myRelease) getLatestReleaseInfo() error {
 	return nil
 }
 
-func (r *myRelease) getLatestReleaseJson() (error, []byte) {
+func (r *myRelease) getLatestReleaseJson() ([]byte, error) {
 	body := r.releaseJson
 
 	if len(body) == 0 {
 		response, err := http.Get(r.latestReleaseUrl())
 		if err != nil {
-			return err, nil
+			return nil, err
 		}
 		body, err := io.ReadAll(response.Body)
 		if err != nil {
-			return err, nil
+			return nil, err
 		}
 
 		r.releaseJson = body
 	}
 
-	return nil, r.releaseJson
+	return r.releaseJson, nil
 }
 
 func (r *myRelease) latestReleaseUrl() string {
