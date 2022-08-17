@@ -76,7 +76,7 @@ func TestCreateNamespace(t *testing.T) {
 
 func TestRunningOutsideEnvironmentsWorkingCopy(t *testing.T) {
 	err := CreateTemplateNamespace(nil, nil)
-	if err.Error() != "This command may only be run from within a working copy of the cloud-platform-environments repository\n" {
+	if err.Error() != "this command may only be run from within a working copy of the cloud-platform-environments repository" {
 		t.Errorf("Unexpected error: %s", err)
 	}
 }
