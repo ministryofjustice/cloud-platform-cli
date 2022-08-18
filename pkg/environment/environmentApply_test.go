@@ -116,5 +116,4 @@ func TestApply_ApplyKubectl(t *testing.T) {
 			tests[i].checkExpectations(t, kubectl, outputs, err)
 		})
 	}
-
 }

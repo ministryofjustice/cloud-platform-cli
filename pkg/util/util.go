@@ -77,7 +77,6 @@ func GetLatestGitPull() error {
 }
 
 func ChangedInPR(token, repo, owner string, prNumber int) ([]string, error) {
-
 	client, err := authenticate.GitHubClient(token)
 	if err != nil {
 		return nil, err

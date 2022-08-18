@@ -163,7 +163,6 @@ var environmentApplyCmd = &cobra.Command{
 				contextLogger.Fatal(err)
 			}
 		}
-
 	},
 }
 

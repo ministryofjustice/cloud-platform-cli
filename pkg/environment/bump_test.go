@@ -74,4 +74,3 @@ func checkModuleChange(v, f string) bool {
 
 	return strings.Contains(string(contents), v)
 }
-

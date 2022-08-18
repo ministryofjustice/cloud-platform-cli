@@ -8,19 +8,15 @@ import (
 )
 
 func GetFolderChunks(repoPath string, numRoutines int) ([][]string, error) {
-
 	folders, err := ListFolderPaths(repoPath)
 	if err != nil {
 		return nil, err
 	}
 
-	nsFolders := []string{}
-
 	// skip the root folder namespaces/cluster.cloud-platform.service.justice.gov.uk which is the first
 	// element of the slice. We dont want to apply from the root folder
-	for _, f := range folders[1:] {
-		nsFolders = append(nsFolders, f)
-	}
+	var nsFolders []string
+	nsFolders = append(nsFolders, folders[1:]...)
 
 	folderChunks, err := chunkFolders(nsFolders, numRoutines)
 	if err != nil {
@@ -57,7 +53,6 @@ func ListFolderPaths(path string) ([]string, error) {
 }
 
 func chunkFolders(folders []string, nRoutines int) ([][]string, error) {
-
 	nChunks := len(folders) / nRoutines
 
 	fmt.Println("Number of folders per chunk", nChunks)
@@ -79,7 +74,6 @@ func chunkFolders(folders []string, nRoutines int) ([][]string, error) {
 }
 
 func ListFiles(path string) ([]string, error) {
-
 	var files []string
 
 	err := filepath.WalkDir(path, func(path string, dir os.DirEntry, err error) error {
@@ -95,5 +89,4 @@ func ListFiles(path string) ([]string, error) {
 		return nil, err
 	}
 	return files, nil
-
 }

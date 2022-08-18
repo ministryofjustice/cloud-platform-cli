@@ -11,11 +11,17 @@ import (
 func TestListFolders(t *testing.T) {
 	repoPath := "somerepo"
 
-	os.MkdirAll(repoPath, os.ModePerm)
+	err := os.MkdirAll(repoPath, os.ModePerm)
+	if err != nil {
+		t.Errorf("Failed to create repo path: %s", err)
+	}
 
 	ns_folder := "somerepo/somenamespace"
 
-	os.Mkdir(ns_folder, os.ModePerm)
+	err = os.Mkdir(ns_folder, os.ModePerm)
+	if err != nil {
+		t.Errorf("Failed to create repo path: %s", err)
+	}
 
 	folders, err := util.ListFolderPaths(repoPath)
 	if err != nil {
@@ -31,5 +37,4 @@ func TestListFolders(t *testing.T) {
 		t.Errorf("Expected directory %v not found", ns_folder)
 	}
 	defer os.RemoveAll(repoPath)
-
 }
