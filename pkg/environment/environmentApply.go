@@ -122,7 +122,7 @@ func (a *Apply) Apply() error {
 
 	// If a namespace is given as a flag, then perform a apply for the given namespace.
 	if a.Options.Namespace != "" {
-		err = a.planNamespace()
+		err = a.applyNamespace()
 		if err != nil {
 			return err
 		}
