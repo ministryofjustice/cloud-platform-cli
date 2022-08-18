@@ -17,8 +17,6 @@ import (
 
 // Commander struct holds all data required to execute terraform.
 type Commander struct {
-	action          string
-	cmd             []string
 	cmdDir          string
 	cmdEnv          []string
 	AccessKeyID     string
@@ -133,17 +131,16 @@ func (s *Commander) CheckDivergence() error {
 
 	// Check if user provided a terraform var-file.
 	if s.VarFile != "" {
-		cmd = append([]string{fmt.Sprintf("-var-file=%s", s.VarFile)})
+		cmd = []string{fmt.Sprintf("-var-file=%s", s.VarFile)}
 	}
 
-	arg := append(
-		[]string{
-			"plan",
-			"-no-color",
-			"-detailed-exitcode",
-		},
-		cmd...,
-	)
+	arg := []string{
+		"plan",
+		"-no-color",
+		"-detailed-exitcode",
+	}
+
+	arg = append(arg, cmd...)
 
 	output, err := s.Terraform(arg...)
 	if err != nil {
@@ -182,17 +179,16 @@ func (s *Commander) Apply() error {
 
 	// Check if user provided a terraform var-file
 	if s.VarFile != "" {
-		cmd = append([]string{fmt.Sprintf("-var-file=%s", s.VarFile)})
+		cmd = []string{fmt.Sprintf("-var-file=%s", s.VarFile)}
 	}
 
-	arg := append(
-		[]string{
-			"apply",
-			"-no-color",
-			"-auto-approve",
-		},
-		cmd...,
-	)
+	arg := []string{
+		"apply",
+		"-no-color",
+		"-auto-approve",
+	}
+
+	arg = append(arg, cmd...)
 
 	output, err := s.Terraform(arg...)
 	if err != nil {
@@ -226,16 +222,15 @@ func (s *Commander) Plan() error {
 
 	// Check if user provided a terraform var-file
 	if s.VarFile != "" {
-		cmd = append([]string{fmt.Sprintf("-var-file=%s", s.VarFile)})
+		cmd = []string{fmt.Sprintf("-var-file=%s", s.VarFile)}
 	}
 
-	arg := append(
-		[]string{
-			"plan",
-			"-no-color",
-		},
-		cmd...,
-	)
+	arg := []string{
+		"plan",
+		"-no-color",
+	}
+
+	arg = append(arg, cmd...)
 
 	output, err := s.Terraform(arg...)
 	if err != nil {

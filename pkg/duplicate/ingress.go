@@ -101,7 +101,6 @@ func copyAndChangeIngress(inIngress *v1.Ingress) (*v1.Ingress, error) {
 	// Discard the extra data returned by the k8s API which we don't need in the duplicate
 	duplicateIngress.Status = v1.IngressStatus{}
 	duplicateIngress.ObjectMeta.ResourceVersion = ""
-	duplicateIngress.ObjectMeta.SelfLink = ""
 	duplicateIngress.ObjectMeta.UID = ""
 
 	// Discard unwanted annotations that are copied from original ingress that are not needs in the duplicate

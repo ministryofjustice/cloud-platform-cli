@@ -25,7 +25,7 @@ func DecodeSecret(opts *DecodeSecretOptions) error {
 
 	sd := secretDecoder{}
 
-	err, str := sd.processJson(jsn)
+	str, err := sd.processJson(jsn)
 	if err != nil {
 		return err
 	}
@@ -35,7 +35,7 @@ func DecodeSecret(opts *DecodeSecretOptions) error {
 		fmt.Println("export AWS_ACCESS_KEY_ID=\"" + sd.AccessKeyID + "\"")
 		fmt.Println("export AWS_SECRET_ACCESS_KEY=\"" + sd.SecretAccessKey + "\"")
 	} else {
-		fmt.Printf(str)
+		fmt.Println(str)
 	}
 	return nil
 }
@@ -55,29 +55,32 @@ func retrieveSecret(namespace, secret string) string {
 	return out.String()
 }
 
-func (sd *secretDecoder) processJson(jsn string) (error, string) {
+func (sd *secretDecoder) processJson(jsn string) (string, error) {
 	if jsn == "" {
-		return errors.New("failed to retrieve secret from namespace"), ""
+		return "", errors.New("failed to retrieve secret from namespace")
 	}
 
 	var result map[string]interface{}
-	json.Unmarshal([]byte(jsn), &result)
+	err := json.Unmarshal([]byte(jsn), &result)
+	if err != nil {
+		return "", err
+	}
 
 	data := result["data"].(map[string]interface{})
 
-	err := decodeKeys(data)
+	err = decodeKeys(data)
 	if err != nil {
-		return err, ""
+		return "", err
 	}
 
 	sd.stashAwsCredentials(data)
 
-	err, str := formatJson(result)
+	str, err := formatJson(result)
 	if err != nil {
-		return err, ""
+		return "", err
 	}
 
-	return nil, str
+	return str, nil
 }
 
 // Stash AWS creds, if present, in case we need to output commands to set them
@@ -98,7 +101,7 @@ func decodeKeys(data map[string]interface{}) error {
 		case string:
 			data[k] = base64decode(v)
 		default:
-			return fmt.Errorf("Expected key %s of secret to be a string, but it wasn't\n", k)
+			return fmt.Errorf("expected key %s of secret to be a string, but it wasn't", k)
 		}
 	}
 	return nil
@@ -109,14 +112,14 @@ func base64decode(i interface{}) string {
 	if e != nil {
 		return "ERROR: base64 decode failed"
 	}
-	return fmt.Sprintf("%s", str)
+	return string(str)
 }
 
-func formatJson(result map[string]interface{}) (error, string) {
+func formatJson(result map[string]interface{}) (string, error) {
 	str, err := json.MarshalIndent(result, "", "    ")
 	if err != nil {
-		return err, ""
+		return "", err
 	}
 
-	return nil, fmt.Sprintf("%s\n", str)
+	return string(str), err
 }

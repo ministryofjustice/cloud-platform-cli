@@ -26,7 +26,10 @@ func TestCreatePrototype(t *testing.T) {
 		BasicAuthPassword: "mypassword",
 	}
 
-	createPrototypeFiles(&proto)
+	err := createPrototypeFiles(&proto)
+	if err != nil {
+		t.Errorf("Unexpected error: %s", err)
+	}
 
 	dir := namespaceBaseFolder + "/foobar/"
 	namespaceFile := dir + "00-namespace.yaml"
@@ -77,7 +80,7 @@ func TestCreatePrototype(t *testing.T) {
 
 func TestOutsideEnvironmentsWorkingCopy(t *testing.T) {
 	err := CreateTemplatePrototype()
-	if err.Error() != "This command may only be run from within a working copy of the cloud-platform-environments repository\n" {
+	if err.Error() != "this command may only be run from within a working copy of the cloud-platform-environments repository" {
 		t.Errorf("Unexpected error: %s", err)
 	}
 }

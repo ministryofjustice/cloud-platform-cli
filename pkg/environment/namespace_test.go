@@ -15,7 +15,10 @@ func TestNamespaceName(t *testing.T) {
 // Test getting namespace information from a file
 func TestNamespaceFromYamlFile(t *testing.T) {
 	ns := Namespace{}
-	ns.readYamlFile("fixtures/foobar-namespace.yml")
+	err := ns.readYamlFile("fixtures/foobar-namespace.yml")
+	if err != nil {
+		t.Errorf("Failed to read namespace YAML file: %s", err)
+	}
 	if ns.Namespace != "foobar" {
 		t.Errorf("Expect foobar, got: %s", ns.Namespace)
 	}

@@ -30,7 +30,10 @@ func TestCreateNamespace(t *testing.T) {
 		IsProduction:          "false",
 	}
 
-	createNamespaceFiles(&ns)
+	err := createNamespaceFiles(&ns)
+	if err != nil {
+		t.Errorf("Unexpected error: %s", err)
+	}
 
 	dir := namespaceBaseFolder + "/foobar/"
 	namespaceFile := dir + "00-namespace.yaml"
@@ -76,7 +79,7 @@ func TestCreateNamespace(t *testing.T) {
 
 func TestRunningOutsideEnvironmentsWorkingCopy(t *testing.T) {
 	err := CreateTemplateNamespace(nil, nil)
-	if err.Error() != "This command may only be run from within a working copy of the cloud-platform-environments repository\n" {
+	if err.Error() != "this command may only be run from within a working copy of the cloud-platform-environments repository" {
 		t.Errorf("Unexpected error: %s", err)
 	}
 }

@@ -15,7 +15,10 @@ func TestRequireNamespaceFolder(t *testing.T) {
 		t.Errorf("This should have failed")
 	}
 
-	os.Create("00-namespace.yaml")
+	_, err = os.Create("00-namespace.yaml")
+	if err != nil {
+		t.Errorf("Could not create 00-namespace.yaml")
+	}
 
 	if re.mustBeInANamespaceFolder() != nil {
 		t.Errorf("This should have passed")
@@ -51,7 +54,7 @@ func TestRequireCpEnvRepo(t *testing.T) {
 // If we assign a string value to 'repository', we get it back
 func TestRepoEnvironmentRepository(t *testing.T) {
 	re := RepoEnvironment{currentRepository: "foobar"}
-	_, str := re.repository()
+	str, _ := re.repository()
 	if str != "foobar" {
 		t.Errorf("Something went wrong: %s", str)
 	}
@@ -61,7 +64,7 @@ func TestRepoEnvironmentRepository(t *testing.T) {
 // current git repository is called
 func TestRepoEnvironmentDefaultRepository(t *testing.T) {
 	re := RepoEnvironment{}
-	_, str := re.repository()
+	str, _ := re.repository()
 	if str != "cloud-platform-cli" {
 		t.Errorf("Expected cloud-platform-cli, got: x%sx", str)
 	}

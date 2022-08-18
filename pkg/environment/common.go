@@ -1,7 +1,7 @@
 package environment
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"text/template"
@@ -27,15 +27,6 @@ type templateFromUrl struct {
 	url        string
 }
 
-func outputFileWriter(fileName string) (*os.File, error) {
-	f, err := os.Create(fileName)
-	if err != nil {
-		return nil, err
-	}
-
-	return f, nil
-}
-
 func downloadTemplateContents(t []*templateFromUrl) error {
 	for _, s := range t {
 		content, err := downloadTemplate(s.url)
@@ -53,18 +44,10 @@ func downloadTemplate(url string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	data, _ := ioutil.ReadAll(response.Body)
+	data, _ := io.ReadAll(response.Body)
 	content := string(data)
 
 	return content, nil
-}
-
-func directoryExists(path string) bool {
-	if stat, err := os.Stat(path); err == nil && stat.IsDir() {
-		return true
-	} else {
-		return false
-	}
 }
 
 func CopyUrlToFile(url string, targetFilename string) error {
@@ -77,7 +60,12 @@ func CopyUrlToFile(url string, targetFilename string) error {
 	if err != nil {
 		return err
 	}
-	f.WriteString(str)
+
+	_, err = f.WriteString(str)
+	if err != nil {
+		return err
+	}
+
 	f.Close()
 
 	return nil

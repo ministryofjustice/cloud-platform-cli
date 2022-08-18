@@ -3,18 +3,18 @@ package prototype
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/environment"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/util"
 )
 
-const prototypeDeploymentTemplateUrl = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template/resources/prototype/templates"
-const prototypeRepoUrl = "https://raw.githubusercontent.com/ministryofjustice/moj-prototype-template/main"
+const (
+	prototypeDeploymentTemplateUrl = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template/resources/prototype/templates"
+	prototypeRepoUrl               = "https://raw.githubusercontent.com/ministryofjustice/moj-prototype-template/main"
+)
 
 func CreateDeploymentPrototype(skipDockerFiles bool) error {
-
 	// Build the url based on the repository they are in
 	util := util.Repository{}
 
@@ -66,11 +66,19 @@ on slack.
 }
 
 func createPrototypeDeploymentFiles(branch string, skipDockerFiles bool) error {
-
 	if !skipDockerFiles {
-		environment.CopyUrlToFile(prototypeRepoUrl+"/Dockerfile", "Dockerfile")
-		environment.CopyUrlToFile(prototypeRepoUrl+"/.dockerignore", ".dockerignore")
-		environment.CopyUrlToFile(prototypeRepoUrl+"/start.sh", "start.sh")
+		err := environment.CopyUrlToFile(prototypeRepoUrl+"/Dockerfile", "Dockerfile")
+		if err != nil {
+			return err
+		}
+		err = environment.CopyUrlToFile(prototypeRepoUrl+"/.dockerignore", ".dockerignore")
+		if err != nil {
+			return err
+		}
+		err = environment.CopyUrlToFile(prototypeRepoUrl+"/start.sh", "start.sh")
+		if err != nil {
+			return err
+		}
 	}
 
 	ghDir := ".github/workflows/"
@@ -80,21 +88,26 @@ func createPrototypeDeploymentFiles(branch string, skipDockerFiles bool) error {
 	}
 	ghActionFile := ghDir + "cd-" + branch + ".yaml"
 
-	environment.CopyUrlToFile(prototypeDeploymentTemplateUrl+"/cd.yaml", ghActionFile)
+	err = environment.CopyUrlToFile(prototypeDeploymentTemplateUrl+"/cd.yaml", ghActionFile)
+	if err != nil {
+		return err
+	}
 
-	input, err := ioutil.ReadFile(ghActionFile)
+	input, err := os.ReadFile(ghActionFile)
 	if err != nil {
 		return err
 	}
 
 	output := bytes.Replace(input, []byte("branch-name"), []byte(branch), -1)
 
-	if err = ioutil.WriteFile(ghActionFile, output, 0666); err != nil {
+	if err = os.WriteFile(ghActionFile, output, 0666); err != nil {
 		return err
 	}
 
-	environment.CopyUrlToFile(prototypeDeploymentTemplateUrl+"/kubernetes-deploy.tpl", "kubernetes-deploy-"+branch+".tpl")
+	err = environment.CopyUrlToFile(prototypeDeploymentTemplateUrl+"/kubernetes-deploy.tpl", "kubernetes-deploy-"+branch+".tpl")
+	if err != nil {
+		return err
+	}
 
 	return nil
-
 }

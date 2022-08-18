@@ -4,7 +4,8 @@
 *.dll
 *.so
 *.dylib
-cloud-platform*
+# Cloud platform binaries built with the makefile
+cloud-platform-*
 
 # Test binary, built with `go test -c`
 *.test

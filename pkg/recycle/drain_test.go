@@ -191,7 +191,7 @@ func TestRecycler_drainNodeWithPDB(t *testing.T) {
 		t.Errorf("unexpected error: %v", err)
 	}
 
-	_, err = mockClient.Clientset.CoreV1().ReplicationControllers("default").Create(
+	_, _ = mockClient.Clientset.CoreV1().ReplicationControllers("default").Create(
 		context.Background(),
 		&v1.ReplicationController{
 			ObjectMeta: metav1.ObjectMeta{
@@ -205,7 +205,7 @@ func TestRecycler_drainNodeWithPDB(t *testing.T) {
 		},
 		metav1.CreateOptions{})
 
-	_, err = mockClient.Clientset.CoreV1().Pods("default").Create(
+	_, _ = mockClient.Clientset.CoreV1().Pods("default").Create(
 		context.Background(),
 		&v1.Pod{
 			ObjectMeta: metav1.ObjectMeta{

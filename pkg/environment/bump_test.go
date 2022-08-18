@@ -1,8 +1,8 @@
 package environment
 
 import (
-	"bytes"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -26,7 +26,7 @@ func TestBumpModule(t *testing.T) {
 				moduleName:   "test",
 				newVersion:   "0.1.2",
 				checkVersion: "0.1.2",
-				file:         createTestFile(t, "correct.tf"),
+				file:         createTestFile(),
 			},
 			wantErr:     false,
 			wantSuccess: true,
@@ -37,7 +37,7 @@ func TestBumpModule(t *testing.T) {
 				moduleName:   "test",
 				newVersion:   "0.1.2",
 				checkVersion: "NOTHING",
-				file:         createTestFile(t, "incorrect.tf"),
+				file:         createTestFile(),
 			},
 			wantErr:     false,
 			wantSuccess: false,
@@ -49,8 +49,8 @@ func TestBumpModule(t *testing.T) {
 				t.Errorf("BumpModule() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			if checkModuleChange(t, tt.args.checkVersion, tt.args.file.Name()) != tt.wantSuccess {
-				t.Errorf("BumpModule() checkSourceChange = %v, want %v", checkModuleChange(t, tt.args.checkVersion, tt.args.file.Name()), tt.wantSuccess)
+			if checkModuleChange(tt.args.checkVersion, tt.args.file.Name()) != tt.wantSuccess {
+				t.Errorf("BumpModule() checkSourceChange = %v, want %v", checkModuleChange(tt.args.checkVersion, tt.args.file.Name()), tt.wantSuccess)
 			}
 			defer os.Remove(tt.args.file.Name())
 		})
@@ -58,35 +58,20 @@ func TestBumpModule(t *testing.T) {
 }
 
 // createTestFile creates a test file with the given version.
-func createTestFile(t *testing.T, file string) os.File {
-	f, err := os.Create(file)
-	if err != nil {
-		t.Errorf("Error creating file: %s", err)
-	}
+func createTestFile() os.File {
+	f, _ := os.Create("test.tf")
 
 	defer f.Close()
-	f.WriteString("module test { source = \"test=1.0.0\" }")
+	_, _ = f.WriteString("module test { source = \"test=1.0.0\" }")
 
 	return *f
 }
 
-const chunkSize = 64000
-
 // checkModuleChange checks if the file has been changed and contains
 // the string passed to it.
-func checkModuleChange(t *testing.T, v, f string) bool {
-	file, err := os.Open(f)
-	if err != nil {
-		t.Errorf("Error reading file: %s", err)
-	}
-	defer file.Close()
+func checkModuleChange(v, f string) bool {
+	contents, _ := os.ReadFile(f)
 
-	b := make([]byte, chunkSize)
-	_, err = file.Read(b)
-
-	if err != nil {
-		t.Errorf("Error reading file: %s", err)
-	}
-
-	return bytes.Contains(b, []byte(v))
+	return strings.Contains(string(contents), v)
 }
+

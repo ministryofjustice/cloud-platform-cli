@@ -9,9 +9,12 @@ import (
 
 func TestCreateServiceAccountFile(t *testing.T) {
 	filename := "resources/serviceaccount.tf"
-	os.Mkdir("resources", 0o755)
+	err := os.Mkdir("resources", 0o755)
+	if err != nil {
+		t.Error(err)
+	}
 
-	err := createSvcAccTfFile()
+	err = createSvcAccTfFile()
 	if err != nil {
 		t.Errorf("Unexpected error: %s", err)
 	}

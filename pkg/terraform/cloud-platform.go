@@ -85,11 +85,17 @@ func (c *Commander) BulkPlan() error {
 		}
 
 		if contains(ws, "live") {
-			c.terraformWrapper("live", dir, "plan")
+			err := c.terraformWrapper("live", dir, "plan")
+			if err != nil {
+				return err
+			}
 		}
 
 		if contains(ws, "manager") {
-			c.terraformWrapper("manager", dir, "plan")
+			err := c.terraformWrapper("manager", dir, "plan")
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -117,11 +123,17 @@ func (c *Commander) BulkApply() error {
 		}
 
 		if contains(ws, "live") {
-			c.terraformWrapper("live", dir, "apply")
+			err := c.terraformWrapper("live", dir, "apply")
+			if err != nil {
+				return err
+			}
 		}
 
 		if contains(ws, "manager") {
-			c.terraformWrapper("manager", dir, "apply")
+			err := c.terraformWrapper("manager", dir, "apply")
+			if err != nil {
+				return err
+			}
 		}
 
 	}
