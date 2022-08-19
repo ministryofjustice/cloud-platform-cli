@@ -4,3 +4,4 @@ LICENCE
 Dockerfile
 .build-docker-image
 makefile
+install.sh
