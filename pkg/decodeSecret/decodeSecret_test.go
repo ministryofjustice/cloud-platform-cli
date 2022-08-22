@@ -1,7 +1,6 @@
 package decodeSecret
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 )
@@ -65,7 +64,7 @@ func TestRecordsAwsSecrets(t *testing.T) {
 func TestOutputtingUnicodeSecrets(t *testing.T) {
 	jsn := `{ "data": { "key1": "dGVzdFVuaWNvZGU8Pj9A"} }`
 
-	expected := fmt.Sprintf("key1: testUnicode<>?@\n")
+	expected := "key1: testUnicode<>?@\n"
 	sd := secretDecoder{}
 	actual, err := sd.processJson(jsn, true)
 	if err != nil || actual != expected {
