@@ -71,3 +71,13 @@ func TestOutputtingUnicodeSecrets(t *testing.T) {
 		t.Errorf("\nExpected:%s\nGot:%s\n", expected, actual)
 	}
 }
+
+func TestRawPrintEmpty(t *testing.T) {
+	jsn := ``
+
+	sd := secretDecoder{}
+	_, err := sd.processJson(jsn, true)
+	if err == nil {
+		t.Error("Expected an error when passing an empty string")
+	}
+}
