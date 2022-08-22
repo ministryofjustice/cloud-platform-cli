@@ -29,5 +29,7 @@ $ cloud-platform decode-secret -n mynamespace -s mysecret
 
 	cmd.Flags().BoolVarP(&opts.ExportAwsCreds, "export-aws-credentials", "e", false, "Export AWS credentials as shell variables")
 
+	cmd.Flags().BoolVarP(&opts.Raw, "raw", "r", false, "Output the raw secret, rather than prettyprinting")
+
 	topLevel.AddCommand(cmd)
 }

@@ -18,6 +18,9 @@ type DecodeSecretOptions struct {
 	Secret         string
 	Namespace      string
 	ExportAwsCreds bool
+	// Raw allows you to output the json without formatting it.
+	// Formatting the json means we can't print unicode characters (that might exist in secrets).
+	Raw bool
 }
 
 func DecodeSecret(opts *DecodeSecretOptions) error {
@@ -25,7 +28,7 @@ func DecodeSecret(opts *DecodeSecretOptions) error {
 
 	sd := secretDecoder{}
 
-	str, err := sd.processJson(jsn)
+	str, err := sd.processJson(jsn, opts.Raw)
 	if err != nil {
 		return err
 	}
@@ -55,7 +58,7 @@ func retrieveSecret(namespace, secret string) string {
 	return out.String()
 }
 
-func (sd *secretDecoder) processJson(jsn string) (string, error) {
+func (sd *secretDecoder) processJson(jsn string, rawPrint bool) (string, error) {
 	if jsn == "" {
 		return "", errors.New("failed to retrieve secret from namespace")
 	}
@@ -74,6 +77,19 @@ func (sd *secretDecoder) processJson(jsn string) (string, error) {
 	}
 
 	sd.stashAwsCredentials(data)
+
+	// If the user selected to output the raw JSON, do so
+	var rawStr string
+	if rawPrint {
+		for k, v := range data {
+			rawStr += fmt.Sprintf("%s: %s\n", k, v)
+		}
+		if rawStr == "" {
+			return "", errors.New("unable to return the raw JSON, either the secret is empty or the secret is not in the correct format")
+		}
+
+		return rawStr, nil
+	}
 
 	str, err := formatJson(result)
 	if err != nil {
@@ -121,5 +137,5 @@ func formatJson(result map[string]interface{}) (string, error) {
 		return "", err
 	}
 
-	return string(str), err
+	return string(str), nil
 }
