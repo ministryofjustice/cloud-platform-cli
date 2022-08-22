@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/cobra/doc"
 	"github.com/spf13/viper"
 
 	commands "github.com/ministryofjustice/cloud-platform-cli/pkg/commands"
@@ -32,5 +34,9 @@ func main() {
 	if err := cmds.Execute(); err != nil {
 		fmt.Printf("Error during command execution: %v", err)
 		os.Exit(0)
+	}
+
+	if err := doc.GenMarkdownTree(cmds, "./doc"); err != nil {
+		log.Fatal(err)
 	}
 }
