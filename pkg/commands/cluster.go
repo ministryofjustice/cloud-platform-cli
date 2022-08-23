@@ -28,7 +28,7 @@ var (
 
 var recycleOptions recycle.Options
 
-var awsSecret, awsAccessKey, awsProfile string
+var awsSecret, awsAccessKey, awsProfile, awsRegion string
 
 func addClusterCmd(topLevel *cobra.Command) {
 	topLevel.AddCommand(clusterCmd)
@@ -48,9 +48,10 @@ func addClusterCmd(topLevel *cobra.Command) {
 	clusterRecycleNodeCmd.Flags().BoolVar(&recycleOptions.Debug, "debug", false, "enable debug logging")
 
 	// Global cluster flags
-	clusterCmd.Flags().StringVar(&awsAccessKey, "aws-access-key", os.Getenv("AWS_ACCESS_KEY_ID"), "aws access key to use")
-	clusterCmd.Flags().StringVar(&awsSecret, "aws-secret-key", os.Getenv("AWS_SECRET_ACCESS_KEY"), "aws secret to use")
-	clusterCmd.Flags().StringVar(&awsProfile, "aws-profile", os.Getenv("AWS_PROFILE"), "aws profile to use")
+	clusterCmd.Flags().StringVar(&awsAccessKey, "aws-access-key", os.Getenv("AWS_ACCESS_KEY_ID"), "[required] aws access key to use")
+	clusterCmd.Flags().StringVar(&awsSecret, "aws-secret-key", os.Getenv("AWS_SECRET_ACCESS_KEY"), "[required] aws secret to use")
+	clusterCmd.Flags().StringVar(&awsProfile, "aws-profile", os.Getenv("AWS_PROFILE"), "[required] aws profile to use")
+	clusterCmd.Flags().StringVar(&awsRegion, "aws-region", os.Getenv("AWS_REGION"), "[required] aws region to use")
 
 	// Add cluster flags
 	clusterCreateCmd.Flags().StringVar(&auth.ClientId, "auth0-client-id", os.Getenv("AUTH0_CLIENT_ID"), "[required] auth0 client id to use")
@@ -102,7 +103,7 @@ var clusterCreateCmd = &cobra.Command{
 			contextLogger.Fatal("Cluster name is too long, please use a shorter name")
 		}
 
-		creds, err := client.NewAwsCreds("eu-west-2")
+		creds, err := client.NewAwsCreds(awsRegion)
 		if err != nil {
 			contextLogger.Fatal(err)
 		}
