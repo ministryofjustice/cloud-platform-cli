@@ -5,14 +5,16 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/eks"
-	"github.com/go-git/go-git/v5" // with go modules enabled (GO111MODULE=on or outside GOPATH)
+	"github.com/pkg/errors"
 
+	// with go modules enabled (GO111MODULE=on or outside GOPATH)
 	"github.com/hashicorp/go-version"
 	install "github.com/hashicorp/hc-install"
 	"github.com/hashicorp/hc-install/fs"
@@ -187,36 +189,15 @@ func (c *Cluster) RefreshStatus(client *client.Client) (err error) {
 
 // Create creates a new Kubernetes cluster using the options passed to it.
 func (cluster *Cluster) Create(opts *CreateOptions, terraform *TerraformOptions, awsCred *AwsCredentials) error {
-	// Clone the repository to a directory.
-	fmt.Println("Cloning repository")
-	_, err := git.PlainClone("./tmp", false, &git.CloneOptions{
-		URL:      "https://" + terraform.FilePath,
-		Progress: os.Stdout,
-	})
+	// Ensure the executor is running the command in the correct directory.
+	repoName, err := findTopLevelGitDir(".")
 	if err != nil {
-		if err == git.ErrRepositoryAlreadyExists {
-			fmt.Println("Repository already exists")
-		} else {
-			return err
-		}
+		return fmt.Errorf("cannot find top level git dir: %s", err)
 	}
-	defer os.RemoveAll("./tmp")
 
-	// Checkout the correct branch.
-	// wt, err := repo.Worktree()
-	// if err != nil {
-	// 	return fmt.Errorf("Failed to get worktree: %s", err)
-	// }
-
-	// fmt.Println("Checking out branch")
-	// branch := "create-cluster"
-	// err = wt.Checkout(&git.CheckoutOptions{
-	// 	Branch: plumbing.NewBranchReferenceName(fmt.Sprintf("refs/heads/%s", branch)),
-	// 	Force:  true,
-	// })
-	// if err != nil {
-	// 	return err
-	// }
+	if !strings.Contains(repoName, "cloud-platform-infrastructure") {
+		return errors.New("must be run from the cloud-platform-infrastructure repository")
+	}
 
 	fmt.Println("Creating cluster")
 	err = terraform.Run(awsCred, opts.Fast)
@@ -232,7 +213,7 @@ func (cluster *Cluster) Create(opts *CreateOptions, terraform *TerraformOptions,
 
 func (terraform *TerraformOptions) Run(creds *AwsCredentials, fast bool) error {
 	// Directory paths in the cloud-platform-infrastructure repository.
-	const baseDir = "./tmp/terraform/aws-accounts/cloud-platform-aws/"
+	const baseDir = "./terraform/aws-accounts/cloud-platform-aws/"
 	var (
 		vpcDir        = baseDir + "vpc/"
 		clusterDir    = vpcDir + "eks/"
@@ -527,4 +508,23 @@ func deleteLocalState(path string) error {
 	}
 
 	return nil
+}
+
+func findTopLevelGitDir(workingDir string) (string, error) {
+	dir, err := filepath.Abs(workingDir)
+	if err != nil {
+		return "", errors.Wrap(err, "invalid working dir")
+	}
+
+	for {
+		if _, err := os.Stat(filepath.Join(dir, ".git")); err == nil {
+			return dir, nil
+		}
+
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return "", errors.New("no git repository found")
+		}
+		dir = parent
+	}
 }
