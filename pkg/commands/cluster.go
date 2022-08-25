@@ -4,24 +4,29 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/MakeNowJust/heredoc"
+	"github.com/ministryofjustice/cloud-platform-cli/pkg/cluster"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/recycle"
-	"github.com/ministryofjustice/cloud-platform-go-library/client"
-	"github.com/ministryofjustice/cloud-platform-go-library/cluster"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/util/homedir"
 )
+
+// infraRepository is the repository used to store Terraform and other configuration files.
+const infraRepository = "github.com/ministryofjustice/cloud-platform-infrastructure"
 
 // Global variables used for cluster creation
 var (
 	createOptions = &cluster.CreateOptions{
 		MaxNameLength: 12,
 	}
-	auth    = &cluster.AuthOpts{}
-	tf      = &cluster.TerraformOptions{}
+	auth = &cluster.AuthOpts{}
+	tf   = &cluster.TerraformOptions{
+		FilePath: infraRepository,
+	}
 	date    = time.Now().Format("0201")
 	minHour = time.Now().Format("1504")
 )
@@ -83,13 +88,13 @@ var clusterCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: `Create a new Cloud Platform cluster`,
 	Example: heredoc.Doc(`
-		$ cloud-platform cluster create --name my-cluster --kubecfg-path ~/.kube/config
+		$ cloud-platform cluster create --name my-cluster
 	`),
 	PreRun: upgradeIfNotLatest,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		contextLogger := log.WithFields(log.Fields{"subcommand": "create-cluster"})
+
 		createOptions.Auth0 = *auth
-		createOptions.TerraformOptions = *tf
 
 		if awsProfile == "" && awsAccessKey == "" && awsSecret == "" {
 			contextLogger.Fatal("AWS credentials are required, please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY or an AWS_PROFILE")
@@ -103,16 +108,22 @@ var clusterCreateCmd = &cobra.Command{
 			contextLogger.Fatal("Cluster name is too long, please use a shorter name")
 		}
 
-		creds, err := client.NewAwsCreds(awsRegion)
+		if strings.Contains(createOptions.Name, "live") || strings.Contains(createOptions.Name, "manager") {
+			contextLogger.Fatal("Cluster name cannot contain the words 'live' or 'manager'")
+		}
+
+		creds, err := cluster.NewAwsCreds(awsRegion)
 		if err != nil {
 			contextLogger.Fatal(err)
 		}
 
-		createOptions.AwsCredentials = *creds
+		// Cluster object
+		c := cluster.Cluster{
+			Name: createOptions.Name,
+		}
 
-		c := cluster.Cluster{}
-
-		return c.Create(createOptions)
+		tf.Workspace = createOptions.Name
+		return c.Create(createOptions, tf, creds)
 	},
 }
 
