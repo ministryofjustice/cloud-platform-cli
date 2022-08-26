@@ -19,7 +19,6 @@ import (
 	"github.com/hashicorp/hc-install/releases"
 	"github.com/hashicorp/hc-install/src"
 	"github.com/hashicorp/terraform-exec/tfexec"
-	tfjson "github.com/hashicorp/terraform-json"
 	"github.com/pkg/errors"
 )
 
@@ -191,43 +190,43 @@ func (terraform *TerraformOptions) InitAndApply(tf *tfexec.Terraform, fast bool)
 }
 
 func (terraform *TerraformOptions) HealthCheck(tf *tfexec.Terraform, creds *AwsCredentials) error {
-	fmt.Println("Show terraform")
-	state, err := tf.Show(context.Background())
+	output, err := tf.Output(context.TODO())
 	if err != nil {
-		// if errors.As(err, &tfexec.ErrStatePlanRead{}) {
 		if strings.Contains(err.Error(), "plugin") || strings.Contains(err.Error(), "init") {
 			fmt.Println("Init again, due to failure")
 			err = tf.Init(context.TODO(), terraform.InitVars...)
 			if err != nil {
 				return fmt.Errorf("failed to init: %w", err)
 			}
-			state, err = tf.Show(context.Background())
+			output, err = tf.Output(context.Background())
 			if err != nil {
-				return fmt.Errorf("failed to create show: %w", err)
+				return fmt.Errorf("failed to create output: %w", err)
 			}
-			return err
+			return fmt.Errorf("failed to show terraform output: %w", err)
 		}
 	}
+
+	// Get VPC ID from terraform output.
+	vpcID := output["vpc_id"]
+	if vpcID.Value == nil {
+		return errors.New("vpc_id not found in terraform output")
+	}
+	fmt.Println("VPC ID:", vpcID.Value)
 
 	fmt.Println("Check terraform")
 	// switch case for checking which directory we are in
 	switch {
 	case strings.Contains(tf.WorkingDir(), "vpc"):
-		vpcEndpointId, err := getVpcFromState(state)
-		if err != nil {
-			return fmt.Errorf("failed to get vpc endpoint id: %w", err)
-		}
-		err = checkVpc(vpcEndpointId, terraform.Workspace, creds.Session)
+		err = checkVpc(string(vpcID.Value), terraform.Workspace, creds.Session)
 		if err != nil {
 			return fmt.Errorf("failed to check vpc: %w", err)
 		}
 		fmt.Println("Check complete")
 	case strings.Contains(tf.WorkingDir(), "eks"):
-		err := checkCluster(terraform.Workspace, state, creds.Session)
+		err := checkCluster(terraform.Workspace, creds.Session)
 		if err != nil {
 			return fmt.Errorf("failed to check cluster: %w", err)
 		}
-		// TODO: Check cluster health
 	case strings.Contains(tf.WorkingDir(), "components"):
 		// TODO: Check components health
 	}
@@ -386,7 +385,7 @@ func (terraform *TerraformOptions) Apply(directory string, creds *AwsCredentials
 // }
 
 // checkCluster checks the cluster is created and exists.
-func checkCluster(name string, state *tfjson.State, session *session.Session) error {
+func checkCluster(name string, session *session.Session) error {
 	// Check the cluster is created and exists.
 	cluster, err := getCluster(name, session)
 	if err != nil {
@@ -410,20 +409,6 @@ func getCluster(name string, session *session.Session) (*eks.Cluster, error) {
 	}
 
 	return cluster.Cluster, nil
-}
-
-func getVpcFromState(state *tfjson.State) (string, error) {
-	var vpcEndpointId string
-	for k, v := range state.Values.Outputs {
-		if k == "vpc_id" {
-			vpcEndpointId = v.Value.(string)
-		}
-	}
-	if vpcEndpointId == "" {
-		return "", fmt.Errorf("failed to find vpc endpoint id")
-	}
-
-	return vpcEndpointId, nil
 }
 
 func deleteLocalState(dir string, paths ...string) error {
