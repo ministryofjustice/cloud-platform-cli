@@ -426,9 +426,9 @@ func (terraform *TerraformOptions) Apply(directory string, creds *AwsCredentials
 	fmt.Println("object looks like:", tf)
 
 	// if .terraform.tfstate directory exists, delete it
-	err = deleteLocalState(strings.Join([]string{directory, ".terraform"}, "/"))
+	err = deleteLocalState(directory, ".terraform", ".terraform.lock.hcl")
 	if err != nil {
-		return fmt.Errorf("failed to delete .terraform.tfstate directory: %w", err)
+		return fmt.Errorf("failed to delete temp directory: %w", err)
 	}
 
 	return terraform.ApplyAndCheck(tf, creds, fast)
@@ -499,12 +499,16 @@ func getVpcFromState(state *tfjson.State) (string, error) {
 	return vpcEndpointId, nil
 }
 
-func deleteLocalState(path string) error {
-	if _, err := os.Stat(path); err == nil {
-		err = os.RemoveAll(path)
-		if err != nil {
-			return err
+func deleteLocalState(dir string, paths ...string) error {
+	for _, path := range paths {
+		path := strings.Join([]string{dir, path}, "/")
+		if _, err := os.Stat(path); err == nil {
+			err = os.RemoveAll(path)
+			if err != nil {
+				return err
+			}
 		}
+
 	}
 
 	return nil
