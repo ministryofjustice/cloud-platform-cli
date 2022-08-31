@@ -41,6 +41,16 @@ executing binaries downloaded from the internet. To do this, locate the file in
 the Finder, right-click it and choose "Open". After doing this once, you should
 be able to run the command as normal.
 
+## Usage
+
+The `/doc` directory should contain usage instructions, otherwise, please see the output of `cloud-platform --help` or the [user-guide](https://user-guide.cloud-platform.service.justice.gov.uk/documentation/getting-started/cloud-platform-cli.html) entry for more information.
+
+### Autogenerate documentation
+
+The cli uses the [cobra-docs](https://github.com/spf13/cobra/blob/main/doc/md_docs.md) generator to create automated Markdown pages from Cobra.
+
+When a pull-request is opened, a GitHub Action will trigger and autogenerate the documentation. The action will commit these changes back to the remote branch.
+
 ## Develop
 
 You will need Go installed.
