@@ -174,13 +174,13 @@ func (terraform *TerraformOptions) CreateTerraformObj() error {
 }
 
 func (terraform *TerraformOptions) InitAndApply(tf *tfexec.Terraform, fast bool) error {
-	fmt.Println("Init terraform")
+	fmt.Printf("Init terraform on directory %s\n", tf.WorkingDir())
 	err := terraform.Initialise(tf)
 	if err != nil {
 		return fmt.Errorf("failed to init terraform: %w", err)
 	}
 
-	fmt.Println("Apply terraform")
+	fmt.Printf("Apply terraform on directory %s\n", tf.WorkingDir())
 	err = terraform.ExecuteApply(tf, fast)
 	if err != nil {
 		return fmt.Errorf("failed to apply: %w", err)
@@ -211,7 +211,7 @@ func (terraform *TerraformOptions) HealthCheck(tf *tfexec.Terraform, creds *AwsC
 	if vpcID.Value == nil {
 		return errors.New("vpc_id not found in terraform output")
 	}
-	fmt.Println("VPC ID:", vpcID.Value)
+	fmt.Println("VPC ID:", string(vpcID.Value))
 
 	fmt.Println("Check terraform")
 	// switch case for checking which directory we are in
@@ -241,7 +241,7 @@ func (terraform *TerraformOptions) ApplyAndCheck(tf *tfexec.Terraform, creds *Aw
 
 	err = terraform.HealthCheck(tf, creds)
 	if err != nil {
-		return fmt.Errorf("an error occurred attempting to perform a healthcheck")
+		return fmt.Errorf("an error occurred attempting to perform a healthcheck %w", err)
 	}
 
 	return nil
@@ -312,6 +312,8 @@ func (terraform *TerraformOptions) ExecuteApply(tf *tfexec.Terraform, fast bool)
 
 // CheckVpc asserts that the vpc is up and running. It tests the vpc state and id.
 func checkVpc(vpcId, workspace string, sess *session.Session) error {
+	// Trim the vpcId to remove quotes
+	trimVpc := strings.Trim(vpcId, "")
 	svc := ec2.New(sess)
 
 	vpc, err := svc.DescribeVpcs(&ec2.DescribeVpcsInput{
@@ -330,8 +332,8 @@ func checkVpc(vpcId, workspace string, sess *session.Session) error {
 		return fmt.Errorf("no vpc found")
 	}
 
-	if vpc.Vpcs[0].VpcId != nil && *vpc.Vpcs[0].VpcId != vpcId {
-		return fmt.Errorf("vpc id mismatch: %s != %s", *vpc.Vpcs[0].VpcId, vpcId)
+	if vpc.Vpcs[0].VpcId != nil && *vpc.Vpcs[0].VpcId != trimVpc {
+		return fmt.Errorf("vpc id mismatch: %s != %s", *vpc.Vpcs[0].VpcId, trimVpc)
 	}
 
 	if vpc.Vpcs[0].State != nil && *vpc.Vpcs[0].State != "available" {
