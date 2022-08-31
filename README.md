@@ -45,11 +45,11 @@ be able to run the command as normal.
 
 The `/doc` directory should contain usage instructions, otherwise, please see the output of `cloud-platform --help` or the [user-guide](https://user-guide.cloud-platform.service.justice.gov.uk/documentation/getting-started/cloud-platform-cli.html) entry for more information.
 
-### Generate docs
+### Autogenerate documentation
 
-The cli uses the [cobra-docs](https://github.com/spf13/cobra/blob/main/doc/md_docs.md) generator to create automated Markdown pages from cobra.
+The cli uses the [cobra-docs](https://github.com/spf13/cobra/blob/main/doc/md_docs.md) generator to create automated Markdown pages from Cobra.
 
-When updating a command or creating a new sub-command, please also ensure you generate new documentation. This will happen automatically by running the command and committing the Markdown file in your branch.
+When a pull-request is opened, a GitHub Action will trigger and autogenerate the documentation. The action will commit these changes back to the remote branch.
 
 ## Develop
 
@@ -80,7 +80,7 @@ git tag [my new version]
 git push --tags
 ```
 
-The value of this tag **must** will be built into the binary `Version` in the file `pkg/commands/version.go`
+The value of this tag **must** be built into the binary `Version` in the file `pkg/commands/version.go`. This will happen automatically on release.
 
 #### `PreRun` hook
 
