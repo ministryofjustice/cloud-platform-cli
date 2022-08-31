@@ -17,6 +17,7 @@ func main() {
 	cmds := &cobra.Command{
 		Use:   "cloud-platform",
 		Short: "Multi-purpose CLI from the Cloud Platform team",
+		DisableAutoGenTag: true,
 		Run: func(cmd *cobra.Command, args []string) {
 			_ = cmd.Help()
 		},
