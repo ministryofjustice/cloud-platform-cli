@@ -43,7 +43,7 @@ brews:
     description: Multi-purpose CLI for Ministry of Justice Cloud Platform.
     license: MIT
     install: |-
-      bin.install "cloud-platform""
+      bin.install "cloud-platform"
       bash_completion.install "completions/cloud-platform.bash" => "cloud-platform"
       zsh_completion.install "completions/cloud-platform.zsh" => "_cloud-platform"
       fish_completion.install "completions/cloud-platform.fish"
