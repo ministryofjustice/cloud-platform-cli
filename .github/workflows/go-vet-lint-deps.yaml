@@ -1,4 +1,4 @@
-name: go-vet-lint
+name: Lint and vet Go code
 on:
   workflow_dispatch:
   pull_request:
