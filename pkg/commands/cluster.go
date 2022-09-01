@@ -91,7 +91,7 @@ var clusterCreateCmd = &cobra.Command{
 		$ cloud-platform cluster create --name my-cluster
 	`),
 	PreRun: upgradeIfNotLatest,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	Run: func(cmd *cobra.Command, args []string) {
 		contextLogger := log.WithFields(log.Fields{"subcommand": "create-cluster"})
 
 		createOptions.Auth0 = *auth
@@ -123,7 +123,9 @@ var clusterCreateCmd = &cobra.Command{
 		}
 
 		tf.Workspace = createOptions.Name
-		return c.Create(createOptions, tf, creds)
+		if err = c.Create(createOptions, tf, creds); err != nil {
+			contextLogger.Fatalf("An error occurred creating the cluster: %s", err)
+		}
 	},
 }
 

@@ -313,7 +313,7 @@ func (terraform *TerraformOptions) ExecuteApply(tf *tfexec.Terraform, fast bool)
 // CheckVpc asserts that the vpc is up and running. It tests the vpc state and id.
 func checkVpc(vpcId, workspace string, sess *session.Session) error {
 	// Trim the vpcId to remove quotes
-	trimVpc := strings.Trim(vpcId, "")
+	trimVpc := strings.Trim(vpcId, "\"")
 	svc := ec2.New(sess)
 
 	vpc, err := svc.DescribeVpcs(&ec2.DescribeVpcsInput{
