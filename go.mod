@@ -121,7 +121,3 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
-
-replace github.com/ministryofjustice/cloud-platform-go-library/client => /Users/jasonbirchall/Documents/laptop_workarea/cloud-platform-go-library/client
-
-replace github.com/ministryofjustice/cloud-platform-go-library/cluster => /Users/jasonbirchall/Documents/laptop_workarea/cloud-platform-go-library/cluster
