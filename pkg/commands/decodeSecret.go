@@ -9,9 +9,11 @@ import (
 func addDecodeSecret(topLevel *cobra.Command) {
 	opts := &decodeSecret.DecodeSecretOptions{}
 
+	alias := []string{"decode", "secret"}
 	cmd := &cobra.Command{
-		Use:   "decode-secret",
-		Short: `Decode a kubernetes secret`,
+		Use:     "decode-secret",
+		Aliases: alias,
+		Short:   `Decode a kubernetes secret`,
 		Example: heredoc.Doc(`
 $ cloud-platform decode-secret -n mynamespace -s mysecret
 	`),
