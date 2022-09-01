@@ -286,6 +286,7 @@ func (terraform *TerraformOptions) SetWorkspace(tf *tfexec.Terraform, creds *Aws
 func createKubeconfig(workspace string, session *session.Session) error {
 	// Check if the cluster exists
 	clusterName := fmt.Sprintf("%s", workspace)
+	fmt.Printf("Checking if cluster %s exists\n", clusterName)
 	clusters, err := eks.New(session).ListClusters(&eks.ListClustersInput{})
 	if err != nil {
 		return err
