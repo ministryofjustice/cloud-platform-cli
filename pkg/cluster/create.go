@@ -292,25 +292,19 @@ func createKubeconfig(workspace string, session *session.Session) error {
 		return err
 	}
 
-	var found bool
 	for _, cluster := range clusters.Clusters {
 		if *cluster == clusterName {
-			found = true
+			fmt.Printf("Cluster %s exists, creating kubeconfig\n", clusterName)
+			out, err := exec.Command("aws", "eks", "--region", "eu-west-2", "update-kubeconfig", "--name", clusterName).Output()
+			if err != nil {
+				return err
+			}
+			fmt.Println(string(out))
 			break
 		}
 	}
 
-	if !found {
-		fmt.Println("Cluster not found, ignoring")
-		return nil
-	}
-
-	// aws eks --region eu-west-2 update-kubeconfig --name <cluster-name>
-	_, err = exec.Command("aws", "eks", "--region", "eu-west-2", "update-kubeconfig", "--name", clusterName).Output()
-	if err != nil {
-		return err
-	}
-
+	fmt.Println("Cluster not found, skipping kubeconfig creation")
 	return nil
 }
 
