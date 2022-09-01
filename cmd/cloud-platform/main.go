@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -14,14 +13,37 @@ import (
 )
 
 func main() {
+	alias := []string{"moj-cp"}
+	// validArgs lets us use the short form of the command, e.g. `cloud-platform environment`
+	validArgs := []string{"environment", "decode-secret", "duplicate", "kubecfg", "terraform", "version"}
 	cmds := &cobra.Command{
-		Use:   "cloud-platform",
-		Short: "Multi-purpose CLI from the Cloud Platform team",
+		Use:               "cloud-platform",
+		Aliases:           alias,
+		ValidArgs:         validArgs,
+		Short:             "Multi-purpose CLI from the Cloud Platform team",
 		DisableAutoGenTag: true,
 		Run: func(cmd *cobra.Command, args []string) {
 			_ = cmd.Help()
 		},
 	}
+
+	docs := &cobra.Command{
+		Use:               "generate-docs",
+		Short:             "Generate markdown docs for the CLI",
+		DisableAutoGenTag: true,
+		Run: func(cmd *cobra.Command, args []string) {
+
+			fmt.Println("Generating docs...")
+			if _, err := os.Stat("doc"); os.IsNotExist(err) {
+				log.Fatalln("doc directory does not exist, assuming we're not in the cli repository")
+			}
+			if err := doc.GenMarkdownTree(cmds, "./doc"); err != nil {
+				log.Fatal(err)
+			}
+			os.Exit(0)
+		},
+	}
+	cmds.AddCommand(docs)
 
 	commands.AddCommands(cmds)
 
@@ -32,24 +54,6 @@ func main() {
 	var SkipVersionCheck bool
 	cmds.PersistentFlags().BoolVarP(&SkipVersionCheck, "skip-version-check", "", false, "don't check for updates")
 	_ = viper.BindPFlag("skip-version-check", cmds.PersistentFlags().Lookup("skip-version-check"))
-
-	// Document generation is usually left to an automated pipeline, but can be
-	// triggered manually using the --generate-docs flag.
-	var GenerateDocs bool
-	// Using the stdlib flag package as we need to parse the flag before cmd.Execute() is called.
-	flag.BoolVar(&GenerateDocs, "generate-docs", false, "generate CLI documentation")
-	flag.Parse()
-
-	if GenerateDocs {
-		fmt.Println("Generating docs...")
-		if _, err := os.Stat("doc"); os.IsNotExist(err) {
-			log.Fatalln("doc directory does not exist, assuming we're not in the cli repository")
-		}
-		if err := doc.GenMarkdownTree(cmds, "./doc"); err != nil {
-			log.Fatal(err)
-		}
-		os.Exit(0)
-	}
 
 	if err := cmds.Execute(); err != nil {
 		fmt.Printf("Error during command execution: %v", err)
