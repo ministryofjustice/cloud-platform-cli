@@ -16,6 +16,7 @@ cloud-platform [flags]
 ### SEE ALSO
 
 * [cloud-platform cluster](cloud-platform_cluster.md)	 - Cloud Platform cluster actions
+* [cloud-platform completion](cloud-platform_completion.md)	 - Generate the autocompletion script for the specified shell
 * [cloud-platform decode-secret](cloud-platform_decode-secret.md)	 - Decode a kubernetes secret
 * [cloud-platform duplicate](cloud-platform_duplicate.md)	 - Cloud Platform duplicate resource
 * [cloud-platform environment](cloud-platform_environment.md)	 - Cloud Platform Environment actions
