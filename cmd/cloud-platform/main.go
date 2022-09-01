@@ -30,6 +30,7 @@ func main() {
 	docs := &cobra.Command{
 		Use:               "generate-docs",
 		Short:             "Generate markdown docs for the CLI",
+		Hidden:            true,
 		DisableAutoGenTag: true,
 		Run: func(cmd *cobra.Command, args []string) {
 
