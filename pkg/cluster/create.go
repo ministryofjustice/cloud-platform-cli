@@ -121,7 +121,7 @@ func (terraform *TerraformOptions) Run(creds *AwsCredentials, fast bool) error {
 	directories := []string{
 		vpcDir,
 		clusterDir,
-		// componentsDir,
+		componentsDir,
 	}
 
 	// TODO: Remove prints
@@ -231,6 +231,10 @@ func (terraform *TerraformOptions) HealthCheck(tf *tfexec.Terraform, creds *AwsC
 		if err != nil {
 			return fmt.Errorf("failed to check cluster: %w", err)
 		}
+		err = authToCluster(terraform.Workspace)
+		if err != nil {
+			return fmt.Errorf("failed to auth to cluster: %w", err)
+		}
 	case strings.Contains(tf.WorkingDir(), "components"):
 		// TODO: Check components health
 	}
@@ -298,16 +302,24 @@ func createKubeconfig(workspace string, session *session.Session) error {
 	for _, cluster := range clusters.Clusters {
 		if *cluster == clusterName {
 			fmt.Printf("Cluster %s exists, creating kubeconfig\n", clusterName)
-			out, err := exec.Command("aws", "eks", "--region", "eu-west-2", "update-kubeconfig", "--name", clusterName).Output()
+			err = authToCluster(workspace)
 			if err != nil {
 				return err
 			}
-			fmt.Println("output of auth command:", string(out))
 			return nil
 		}
 	}
 
 	fmt.Println("Cluster not found, skipping kubeconfig creation")
+	return nil
+}
+
+func authToCluster(cluster string) error {
+	_, err := exec.Command("aws", "eks", "--region", "eu-west-2", "update-kubeconfig", "--name", cluster).Output()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -453,7 +465,7 @@ func deleteLocalState(dir string, paths ...string) error {
 		if _, err := os.Stat(path); err == nil {
 			err = os.RemoveAll(path)
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to delete %s/%s local state: %w", dir, paths, err)
 			}
 		}
 	}
