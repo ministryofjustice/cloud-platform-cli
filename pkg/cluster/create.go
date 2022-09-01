@@ -191,6 +191,9 @@ func (terraform *TerraformOptions) InitAndApply(tf *tfexec.Terraform, creds *Aws
 }
 
 func (terraform *TerraformOptions) HealthCheck(tf *tfexec.Terraform, creds *AwsCredentials) error {
+	// We don't want terraform to print out the output here as the package doesn't respect the secret flag.
+	tf.SetStdout(nil)
+	tf.SetStderr(nil)
 	output, err := tf.Output(context.TODO())
 	if err != nil {
 		if strings.Contains(err.Error(), "plugin") || strings.Contains(err.Error(), "init") {
@@ -300,7 +303,7 @@ func createKubeconfig(workspace string, session *session.Session) error {
 				return err
 			}
 			fmt.Println("output of auth command:", string(out))
-			break
+			return nil
 		}
 	}
 
