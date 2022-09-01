@@ -286,17 +286,22 @@ func (terraform *TerraformOptions) SetWorkspace(tf *tfexec.Terraform, creds *Aws
 func createKubeconfig(workspace string, session *session.Session) error {
 	// Check if the cluster exists
 	clusterName := fmt.Sprintf("%s", workspace)
-	_, err := eks.New(session).DescribeCluster(
-		&eks.DescribeClusterInput{
-			Name: aws.String(clusterName),
-		},
-	)
-	if err.Error() == eks.ErrCodeResourceNotFoundException {
-		fmt.Println("Cluster does not yet exist, ignoring")
-		return nil
-	}
+	clusters, err := eks.New(session).ListClusters(&eks.ListClustersInput{})
 	if err != nil {
 		return err
+	}
+
+	var found bool
+	for _, cluster := range clusters.Clusters {
+		if *cluster == clusterName {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		fmt.Println("Cluster not found, ignoring")
+		return nil
 	}
 
 	// aws eks --region eu-west-2 update-kubeconfig --name <cluster-name>
