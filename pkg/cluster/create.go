@@ -249,15 +249,15 @@ func (terraform *TerraformOptions) ApplyAndCheck(tf *tfexec.Terraform, creds *Aw
 }
 
 // intialise performs the `terraform init` function.
-func (terraform *TerraformOptions) Initialise(tf *tfexec.Terraform) error {
+func (terraform *TerraformOptions) Initialise(tf *tfexec.Terraform, creds *AwsCredentials) error {
 	err := tf.Init(context.Background())
 	if err != nil {
 		return err
 	}
-	return terraform.SetWorkspace(tf)
+	return terraform.SetWorkspace(tf, creds)
 }
 
-func (terraform *TerraformOptions) SetWorkspace(tf *tfexec.Terraform) error {
+func (terraform *TerraformOptions) SetWorkspace(tf *tfexec.Terraform, creds *AwsCredentials) error {
 	list, _, err := tf.WorkspaceList(context.Background())
 
 	for _, ws := range list {
