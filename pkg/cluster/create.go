@@ -299,7 +299,7 @@ func createKubeconfig(workspace string, session *session.Session) error {
 			if err != nil {
 				return err
 			}
-			fmt.Println(string(out))
+			fmt.Println("output of auth command:", string(out))
 			break
 		}
 	}
