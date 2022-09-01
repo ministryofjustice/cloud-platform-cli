@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -173,9 +174,9 @@ func (terraform *TerraformOptions) CreateTerraformObj() error {
 	return nil
 }
 
-func (terraform *TerraformOptions) InitAndApply(tf *tfexec.Terraform, fast bool) error {
+func (terraform *TerraformOptions) InitAndApply(tf *tfexec.Terraform, creds *AwsCredentials, fast bool) error {
 	fmt.Printf("Init terraform on directory %s\n", tf.WorkingDir())
-	err := terraform.Initialise(tf)
+	err := terraform.Initialise(tf, creds)
 	if err != nil {
 		return fmt.Errorf("failed to init terraform: %w", err)
 	}
@@ -234,7 +235,7 @@ func (terraform *TerraformOptions) HealthCheck(tf *tfexec.Terraform, creds *AwsC
 }
 
 func (terraform *TerraformOptions) ApplyAndCheck(tf *tfexec.Terraform, creds *AwsCredentials, fast bool) error {
-	err := terraform.InitAndApply(tf, fast)
+	err := terraform.InitAndApply(tf, creds, fast)
 	if err != nil {
 		return fmt.Errorf("an error occurred attempting to init and apply %w", err)
 	}
@@ -265,11 +266,41 @@ func (terraform *TerraformOptions) SetWorkspace(tf *tfexec.Terraform) error {
 			if err != nil {
 				return err
 			}
+			// does my cluster exits?
+			if createKubeconfig(terraform.Workspace, creds.Session); err != nil {
+				return err
+			}
+			// then auth to it using the aws cli
 			return nil
 		}
 	}
 
 	err = tf.WorkspaceNew(context.Background(), terraform.Workspace)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func createKubeconfig(workspace string, session *session.Session) error {
+	// Check if the cluster exists
+	clusterName := fmt.Sprintf("%s", workspace)
+	_, err := eks.New(session).DescribeCluster(
+		&eks.DescribeClusterInput{
+			Name: aws.String(clusterName),
+		},
+	)
+	if strings.Contains(err.Error(), eks.ErrCodeResourceNotFoundException) {
+		fmt.Println("Cluster does not yet exist, ignoring")
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	// aws eks --region eu-west-2 update-kubeconfig --name <cluster-name>
+	_, err = exec.Command("aws", "eks", "--region", "eu-west-2", "update-kubeconfig", "--name", clusterName).Output()
 	if err != nil {
 		return err
 	}
