@@ -291,7 +291,7 @@ func createKubeconfig(workspace string, session *session.Session) error {
 			Name: aws.String(clusterName),
 		},
 	)
-	if strings.Contains(err.Error(), eks.ErrCodeResourceNotFoundException) {
+	if err.Error() == eks.ErrCodeResourceNotFoundException {
 		fmt.Println("Cluster does not yet exist, ignoring")
 		return nil
 	}
