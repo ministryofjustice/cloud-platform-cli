@@ -30,7 +30,7 @@ require (
 )
 
 require (
-	github.com/aws/aws-sdk-go v1.44.86
+	github.com/aws/aws-sdk-go v1.44.91
 	github.com/rs/zerolog v1.27.0
 	github.com/stretchr/testify v1.8.0
 	k8s.io/api v0.24.4
