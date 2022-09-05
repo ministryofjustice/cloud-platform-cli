@@ -2,6 +2,8 @@ module github.com/ministryofjustice/cloud-platform-cli
 
 go 1.18
 
+replace github.com/ministryofjustice/cloud-platform-cli => /Users/jasonbirchall/Documents/workarea/cloud-platform-cli
+
 require (
 	github.com/MakeNowJust/heredoc v1.0.0
 	github.com/agext/levenshtein v1.2.3 // indirect
@@ -31,6 +33,7 @@ require (
 
 require (
 	github.com/aws/aws-sdk-go v1.44.86
+	github.com/matryer/is v1.4.0
 	github.com/rs/zerolog v1.27.0
 	github.com/stretchr/testify v1.8.0
 	k8s.io/api v0.24.4
