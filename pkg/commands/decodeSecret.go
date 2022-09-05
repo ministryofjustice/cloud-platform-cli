@@ -9,9 +9,11 @@ import (
 func addDecodeSecret(topLevel *cobra.Command) {
 	opts := &decodeSecret.DecodeSecretOptions{}
 
+	alias := []string{"decode", "secret"}
 	cmd := &cobra.Command{
-		Use:   "decode-secret",
-		Short: `Decode a kubernetes secret`,
+		Use:     "decode-secret",
+		Aliases: alias,
+		Short:   `Decode a kubernetes secret`,
 		Example: heredoc.Doc(`
 $ cloud-platform decode-secret -n mynamespace -s mysecret
 	`),
@@ -28,6 +30,8 @@ $ cloud-platform decode-secret -n mynamespace -s mysecret
 	_ = cmd.MarkFlagRequired("namespace")
 
 	cmd.Flags().BoolVarP(&opts.ExportAwsCreds, "export-aws-credentials", "e", false, "Export AWS credentials as shell variables")
+
+	cmd.Flags().BoolVarP(&opts.Raw, "raw", "r", false, "Output the raw secret, rather than prettyprinting")
 
 	topLevel.AddCommand(cmd)
 }

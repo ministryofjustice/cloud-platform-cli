@@ -1,0 +1,22 @@
+name: Build docs
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: ">=1.19.0"
+      - run: go install
+        working-directory: cmd/cloud-platform
+      - run: rm -r doc/ && mkdir -p doc
+      - run: go run cmd/cloud-platform/main.go generate-docs --skip-version-check
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "docs(automated) update generated documentation"

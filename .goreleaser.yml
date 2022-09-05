@@ -1,18 +1,23 @@
 project_name: cloud-platform-cli
-
 before:
   hooks:
     - go mod download
+    - scripts/completions.sh
+archives:
+  - files:
+      - README.md
+      - LICENSE
+      - completions/*
 builds:
   - env:
       - CGO_ENABLED=0
+    main: ./cmd/cloud-platform
     binary: cloud-platform
     goos:
       - linux
       - darwin
-      - windows
     goarch:
-      - 386
+      - "386"
       - amd64
       - arm
       - arm64
@@ -37,7 +42,10 @@ brews:
     homepage: https://user-guide.cloud-platform.service.justice.gov.uk/#cloud-platform-user-guide
     description: Multi-purpose CLI for Ministry of Justice Cloud Platform.
     license: MIT
-    install: |
+    install: |-
       bin.install "cloud-platform"
+      bash_completion.install "completions/cloud-platform.bash" => "cloud-platform"
+      zsh_completion.install "completions/cloud-platform.zsh" => "_cloud-platform"
+      fish_completion.install "completions/cloud-platform.fish"
     dependencies:
       - name: go
