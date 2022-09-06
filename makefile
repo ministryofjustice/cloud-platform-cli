@@ -16,10 +16,10 @@ endif
 FLAGS := -ldflags "-X github.com/ministryofjustice/cloud-platform-cli/pkg/commands.Version=$(VERSION)"
 
 build:
-	go build $(FLAGS) -o cloud-platform-$(VERSION) ./cmd/cloud-platform/main.go
+	go build $(FLAGS) -o cloud-platform-$(VERSION) .
 
 run:
-	go run $(FLAGS) ./cmd/cloud-platform/main.go
+	go run $(FLAGS) .
 
 test:
 	go test ./...
