@@ -104,11 +104,6 @@ func (a *Apply) Plan() error {
 // else checks for PR number and get the list of changed namespaces in that merged PR. Then does the kubectl apply and
 // terraform init and apply of all the namespaces merged in the PR
 func (a *Apply) Apply() error {
-	re := RepoEnvironment{}
-	err := re.mustBeInCloudPlatformEnvironments()
-	if err != nil {
-		return err
-	}
 
 	if a.Options.PRNumber == 0 && a.Options.Namespace == "" {
 		err := fmt.Errorf("either a PR Id/Number or a namespace is required to perform apply")
@@ -117,7 +112,7 @@ func (a *Apply) Apply() error {
 
 	// If a namespace is given as a flag, then perform a apply for the given namespace.
 	if a.Options.Namespace != "" {
-		err = a.applyNamespace()
+		err := a.applyNamespace()
 		if err != nil {
 			return err
 		}
