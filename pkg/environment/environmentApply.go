@@ -68,11 +68,6 @@ func (a *Apply) Initialize() {
 // else checks for PR number and get the list of changed namespaces in the PR. Then does the kubectl apply -dry-run and
 // terraform init and plan of all the namespaces changed in the PR
 func (a *Apply) Plan() error {
-	re := RepoEnvironment{}
-	err := re.mustBeInCloudPlatformEnvironments()
-	if err != nil {
-		return err
-	}
 
 	if a.Options.PRNumber == 0 && a.Options.Namespace == "" {
 		err := fmt.Errorf("either a PR Id/Number or a namespace is required to perform plan")
@@ -81,7 +76,7 @@ func (a *Apply) Plan() error {
 
 	// If a namespace is given as a flag, then perform a plan for the given namespace.
 	if a.Options.Namespace != "" {
-		err = a.planNamespace()
+		err := a.planNamespace()
 		if err != nil {
 			return err
 		}
