@@ -1,25 +1,22 @@
 package cmd
 
 import (
-	"bytes"
 	"strings"
 	"testing"
-
-	"github.com/spf13/cobra"
 )
 
-func ExecuteCommand(t *testing.T, cmd *cobra.Command, args ...string) (string, error) {
-	t.Helper()
-	buf := new(bytes.Buffer)
-	cmd.SetOut(buf)
-	cmd.SetErr(buf)
-	cmd.SetArgs(args)
+// func ExecuteCommand(t *testing.T, cmd *cobra.Command, args ...string) (string, error) {
+// 	t.Helper()
+// 	buf := new(bytes.Buffer)
+// 	cmd.SetOut(buf)
+// 	cmd.SetErr(buf)
+// 	cmd.SetArgs(args)
 
-	args = append([]string{"--skip-version-check"}, args...)
+// 	args = append([]string{"--skip-version-check"}, args...)
 
-	err := cmd.Execute()
-	return strings.TrimSpace(buf.String()), err
-}
+// 	err := cmd.Execute()
+// 	return strings.TrimSpace(buf.String()), err
+// }
 
 func TestCloudPlatformRootCmd(t *testing.T) {
 	tests := []struct {
@@ -38,7 +35,7 @@ func TestCloudPlatformRootCmd(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			out, err := ExecuteCommand(t, rootCmd, tc.args...)
+			out, err := ExecuteCommand(t, tc.args...)
 			if (err != nil) != tc.wantErr {
 				t.Errorf("execute() \nerror = \n%v \nwantErr \n%v", err, tc.wantErr)
 				return

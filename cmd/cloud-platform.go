@@ -1,7 +1,11 @@
 package cmd
 
 import (
+	"bytes"
 	"errors"
+	"fmt"
+	"strings"
+	"testing"
 
 	commands "github.com/ministryofjustice/cloud-platform-cli/pkg/commands"
 	"github.com/spf13/cobra"
@@ -12,7 +16,7 @@ var validArgs = []string{"environment", "decode-secret", "duplicate", "kubecfg",
 
 var SkipVersionCheck bool
 
-var RootCmd = &cobra.Command{
+var rootCmd = &cobra.Command{
 	Use: "cloud-platform",
 	// validArgs lets us use the short form of the command, e.g. `cloud-platform environment`
 	ValidArgs:         validArgs,
@@ -22,6 +26,11 @@ var RootCmd = &cobra.Command{
 }
 
 func RootCmdRunE(cmd *cobra.Command, args []string) error {
+	_, err := cmd.Flags().GetBool("skip-version-check")
+	if err != nil {
+		return err
+	}
+
 	if len(args) == 0 {
 		return cmd.Help()
 	}
@@ -32,20 +41,40 @@ func RootCmdRunE(cmd *cobra.Command, args []string) error {
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	commands.AddCommands(RootCmd)
-	RootCmd.AddCommand(docs)
+	commands.AddCommands(rootCmd)
+	rootCmd.AddCommand(docs)
 
-	cobra.CheckErr(RootCmd.Execute())
+	cobra.CheckErr(rootCmd.Execute())
 }
 
-func rootCmdFlags(cmd *cobra.Command) {
+func RootCmdFlags(cmd *cobra.Command) {
 	// We need the option to bypass the automatic update process, so that new
 	// releases of the cloud-platform tool don't break any pipelines which use
 	// the tool. This allows us to add `--skip-version-check` to any command
 	// which runs in a pipeline.
-	RootCmd.PersistentFlags().BoolVarP(&SkipVersionCheck, "skip-version-check", "", false, "don't check for updates")
-	_ = viper.BindPFlag("skip-version-check", RootCmd.PersistentFlags().Lookup("skip-version-check"))
+	rootCmd.PersistentFlags().BoolVarP(&SkipVersionCheck, "skip-version-check", "", false, "don't check for updates")
+	_ = viper.BindPFlag("skip-version-check", rootCmd.PersistentFlags().Lookup("skip-version-check"))
 }
 func init() {
-	rootCmdFlags(RootCmd)
+	RootCmdFlags(rootCmd)
+}
+
+func ExecuteCommand(t *testing.T, cmd *cobra.Command, args ...string) (string, error) {
+	// t.Helper()
+	fmt.Printf("Start ExecuteCommand with args: %v", args)
+	fmt.Println("Creating object")
+	buf := new(bytes.Buffer)
+	cmd.SetOut(buf)
+	cmd.SetErr(buf)
+	cmd.SetArgs(args)
+	fmt.Println(cmd)
+
+	// args = append([]string{"--skip-version-check"}, args...)
+
+	err := cmd.Execute()
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(buf.String()), err
 }

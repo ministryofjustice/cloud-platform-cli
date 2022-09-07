@@ -1,6 +1,6 @@
 module github.com/ministryofjustice/cloud-platform-cli
 
-go 1.18
+go 1.19
 
 replace github.com/ministryofjustice/cloud-platform-cli => /Users/jasonbirchall/Documents/workarea/cloud-platform-cli
 
@@ -33,7 +33,9 @@ require (
 
 require (
 	github.com/aws/aws-sdk-go v1.44.86
-	github.com/matryer/is v1.4.0
+	github.com/google/go-cmdtest v0.4.0
+	github.com/onsi/ginkgo/v2 v2.1.4
+	github.com/onsi/gomega v1.19.0
 	github.com/rs/zerolog v1.27.0
 	github.com/stretchr/testify v1.8.0
 	k8s.io/api v0.24.4
@@ -69,6 +71,7 @@ require (
 	github.com/google/btree v1.1.2 // indirect
 	github.com/google/gnostic v0.6.9 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
+	github.com/google/renameio v0.1.0 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
