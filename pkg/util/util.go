@@ -1,13 +1,13 @@
 package util
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"os/exec"
 	"strings"
 
-	"github.com/go-git/go-git/v5"
 	"github.com/ministryofjustice/cloud-platform-environments/pkg/authenticate"
 )
 
@@ -55,24 +55,20 @@ func (re *Repository) GetBranch() (string, error) {
 // It is assumed the current working directory is a git repo so ensure you check before calling this method
 func GetLatestGitPull() error {
 	// git pull of the repo
-	// We instantiate a new repository targeting the given path (the .git folder)
-	r, err := git.PlainOpen(".")
+	cmd := exec.Command("git", "pull")
+
+	var out bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
 	if err != nil {
+		fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
 		return err
 	}
+	fmt.Println("Executing git pull")
 
-	// Get the working directory for the repository
-	w, err := r.Worktree()
-	if err != nil {
-		return err
-	}
-
-	// Pull the latest changes from the origin remote and merge into the current branch
-	err = w.Pull(&git.PullOptions{RemoteName: "origin"})
-
-	if err != nil && err != git.NoErrAlreadyUpToDate {
-		return err
-	}
 	return nil
 }
 
