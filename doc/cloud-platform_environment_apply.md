@@ -38,7 +38,7 @@ $ cloud-platform environment apply -n <namespace>
 ### Options
 
 ```
-      --all-namespaces        Apply to all namespaces with -all-namespaces
+      --all-namespaces        Apply all namespaces with -all-namespaces
       --cluster string        folder name under namespaces/ inside cloud-platform-environments repo refering to full cluster name
       --github-token string   Personal access Token from Github 
   -h, --help                  help for apply
