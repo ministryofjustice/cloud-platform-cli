@@ -186,7 +186,7 @@ func (a *Apply) applyNamespaceDirs(chunkFolder []string) error {
 
 // planKubectl calls the applier -> applyKubectl with dry-run enabled and return the output from applier
 func (a *Apply) planKubectl() (string, error) {
-	log.Printf("Doing kubectl dry-run for namespace: %v in directory %v", a.Options.Namespace, a.Dir)
+	log.Printf("Running kubectl dry-run for namespace: %v in directory %v", a.Options.Namespace, a.Dir)
 
 	outputKubectl, err := a.Applier.KubectlApply(a.Options.Namespace, a.Dir, true)
 	if err != nil {
@@ -199,7 +199,7 @@ func (a *Apply) planKubectl() (string, error) {
 
 // applyKubectl calls the applier -> applyKubectl with dry-run disabled and return the output from applier
 func (a *Apply) applyKubectl() (string, error) {
-	log.Printf("Apply kubectl for namespace: %v in directory %v", a.Options.Namespace, a.Dir)
+	log.Printf("Running kubectl for namespace: %v in directory %v", a.Options.Namespace, a.Dir)
 
 	outputKubectl, err := a.Applier.KubectlApply(a.Options.Namespace, a.Dir, false)
 	if err != nil {
@@ -212,7 +212,7 @@ func (a *Apply) applyKubectl() (string, error) {
 
 // planTerraform calls applier -> TerraformInitAndPlan and prints the output from applier
 func (a *Apply) planTerraform() (string, error) {
-	log.Printf("Doing Terraform Plan for namespace: %v", a.Options.Namespace)
+	log.Printf("Running Terraform Plan for namespace: %v", a.Options.Namespace)
 
 	tfFolder := a.Dir + "/resources"
 
@@ -226,7 +226,7 @@ func (a *Apply) planTerraform() (string, error) {
 
 // applyTerraform calls applier -> TerraformInitAndApply and prints the output from applier
 func (a *Apply) applyTerraform() (string, error) {
-	log.Printf("Applying Terraform for namespace: %v", a.Options.Namespace)
+	log.Printf("Running Terraform Apply for namespace: %v", a.Options.Namespace)
 
 	tfFolder := a.Dir + "/resources"
 

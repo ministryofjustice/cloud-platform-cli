@@ -35,7 +35,7 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentCmd.AddCommand(environmentBumpModuleCmd)
 
 	// flags
-	environmentApplyCmd.Flags().BoolVar(&optFlags.AllNamespaces, "all-namespaces", false, "Apply to all namespaces with -all-namespaces")
+	environmentApplyCmd.Flags().BoolVar(&optFlags.AllNamespaces, "all-namespaces", false, "Apply all namespaces with -all-namespaces")
 	// e.g. if this is the Pull rquest to perform the plan: https://github.com/ministryofjustice/cloud-platform-environments/pull/8370, the pr ID is 8370.
 	environmentApplyCmd.Flags().IntVar(&optFlags.PRNumber, "prNumber", 0, "Pull request ID or number to which you want to perform the plan")
 	environmentApplyCmd.Flags().StringVarP(&optFlags.Namespace, "namespace", "n", "", "Namespace which you want to perform the apply")
