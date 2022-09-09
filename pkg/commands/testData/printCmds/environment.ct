@@ -1,0 +1,16 @@
+$ cloud-platform environment create --skip-version-check --> FAIL
+Error: current directory is not in a git repo working copy
+Usage:
+  cloud-platform environment create [flags]
+
+Examples:
+$ cloud-platform environment create
+
+
+Flags:
+  -h, --help   help for create
+
+Global Flags:
+      --skip-version-check   don't check for updates
+
+Error: current directory is not in a git repo working copy
