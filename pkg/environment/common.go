@@ -12,6 +12,8 @@ const (
 	liveBaseDir          = "namespaces/live.cloud-platform.service.justice.gov.uk"
 	devAlphaBaseDir      = "namespaces/dev-alpha.cloud-platform.service.justice.gov.uk"
 	envTemplateLocation  = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template"
+	numRoutines          = 1
+	mojOwner             = "ministryofjustice"
 )
 
 // namespaceBaseFolder is the base folder for the cloud-platform-environments repository.
