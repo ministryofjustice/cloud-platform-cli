@@ -65,7 +65,7 @@ Run `make` to create a `cloud-platform` binary.
 
 There are two types of tests in this repository:
 
-- integration: tests the output of a command. For example, `cloud-platform version` will output `testBuild` we use a package called [go-testcmd](https://github.com/google/go-cmdtest) to perform these tests. Integration tests are tagged with `ingretration` so won't run using the normal `go test -v ./...` command. You'll have to pass the `integration` as a build tag, like `go test -v ./... --tags integration`.
+- integration: tests the output of a command. For example, `cloud-platform version` will output `testBuild` using a package called [go-testcmd](https://github.com/google/go-cmdtest). Integration tests are tagged with `integration` so won't run using the normal `go test -v ./...` command. You'll have to pass the `integration` keyword as a build tag, i.e. `go test -v ./... --tags integration`
 
 If you'd like to create a new integration test, add the following to the top of your test file: `//go:build integration`.
 
