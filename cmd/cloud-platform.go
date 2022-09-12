@@ -31,7 +31,7 @@ func RootCmdRunE(cmd *cobra.Command, args []string) error {
 		return cmd.Help()
 	}
 
-	return errors.New("I don't recognise that command. Try `cloud-platform --help`")
+	return errors.New("unrecognised command. Try `cloud-platform --help`")
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
