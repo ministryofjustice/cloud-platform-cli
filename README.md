@@ -14,13 +14,13 @@ User documentation is here: https://user-guide.cloud-platform.service.justice.go
 
 ## Install
 
-### Homebrew
+### via Homebrew
 
 ```
 brew install ministryofjustice/cloud-platform-tap/cloud-platform-cli
 ```
 
-### Manual
+### Manually
 
 These installation instructions are for a Mac. If you have a different kind of
 computer, please amend the steps appropriately.
@@ -61,11 +61,19 @@ Run `make` to create a `cloud-platform` binary.
 
 [note] Something worth noting when building locally. You'll need to pass the `--skip-version-check` command to avoid a message about upgrading.
 
-### Testing
+### Test
 
-Run `make test` to run the unit tests.
+There are two types of tests in this repository:
 
-### Updating / Publishing
+- integration: tests the output of a command. For example, `cloud-platform version` will output `testBuild` we use a package called [go-testcmd](https://github.com/google/go-cmdtest) to perform these tests. Integration tests are tagged with `ingretration` so won't run using the normal `go test -v ./...` command. You'll have to pass the `integration` as a build tag, like `go test -v ./... --tags integration`.
+
+If you'd like to create a new integration test, add the following to the top of your test file: `//go:build integration`.
+
+- unit: These tests live next to the code, they have no build tag and will run regardless of the flag you on build.
+
+  Run `make test` to run the unit tests.
+
+### Release
 
 This project includes a [github action](.github/workflows/build-release.yml) which
 will automatically do the following steps:
