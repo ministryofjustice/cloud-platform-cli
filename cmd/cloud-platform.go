@@ -3,7 +3,6 @@ package cmd
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"strings"
 	"testing"
 
@@ -60,16 +59,13 @@ func init() {
 }
 
 func ExecuteCommand(t *testing.T, cmd *cobra.Command, args ...string) (string, error) {
-	// t.Helper()
-	fmt.Printf("Start ExecuteCommand with args: %v", args)
-	fmt.Println("Creating object")
+	t.Helper()
 	buf := new(bytes.Buffer)
 	cmd.SetOut(buf)
 	cmd.SetErr(buf)
 	cmd.SetArgs(args)
-	fmt.Println(cmd)
 
-	// args = append([]string{"--skip-version-check"}, args...)
+	args = append([]string{"--skip-version-check"}, args...)
 
 	err := cmd.Execute()
 	if err != nil {
