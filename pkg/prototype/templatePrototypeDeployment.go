@@ -100,7 +100,7 @@ func createPrototypeDeploymentFiles(branch string, skipDockerFiles bool) error {
 
 	output := bytes.Replace(input, []byte("branch-name"), []byte(branch), -1)
 
-	if err = os.WriteFile(ghActionFile, output, 0666); err != nil {
+	if err = os.WriteFile(ghActionFile, output, 0o666); err != nil {
 		return err
 	}
 
