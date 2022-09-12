@@ -5,7 +5,7 @@ Add a serviceaccount to a namespace
 ### Examples
 
 ```
-$ cloud-platform environment serviceaccount
+> cloud-platform environment serviceaccount
 
 ```
 

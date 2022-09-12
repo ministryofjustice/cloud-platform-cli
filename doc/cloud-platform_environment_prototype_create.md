@@ -20,7 +20,7 @@ cloud-platform environment prototype create [flags]
 ### Examples
 
 ```
-$ cloud-platform environment prototype create
+> cloud-platform environment prototype create
 
 ```
 

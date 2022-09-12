@@ -22,7 +22,7 @@ cloud-platform prototype deploy create [flags]
 ### Examples
 
 ```
-$ cloud-platform prototype deploy
+> cloud-platform prototype deploy
 
 ```
 

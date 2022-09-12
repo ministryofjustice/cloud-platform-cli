@@ -9,7 +9,7 @@ cloud-platform environment serviceaccount create [flags]
 ### Examples
 
 ```
-$ cloud-platform environment serviceaccount create
+> cloud-platform environment serviceaccount create
 
 ```
 
