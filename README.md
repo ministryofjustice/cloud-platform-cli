@@ -61,7 +61,7 @@ Run `make` to create a `cloud-platform` binary.
 
 [note] Something worth noting when building locally. You'll need to pass the `--skip-version-check` command to avoid a message about upgrading.
 
-### Test
+### Testing
 
 There are two types of tests in this repository:
 
@@ -79,7 +79,7 @@ These tests live next to the code, they have no build tag and will run regardles
 
 Run `make test` to run the unit tests.
 
-### Release
+### Releasing a new version
 
 This project includes a [github action](.github/workflows/build-release.yml) which
 will automatically do the following steps:
