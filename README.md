@@ -79,6 +79,13 @@ These tests live next to the code, they have no build tag and will run regardles
 
 Run `make test` to run the unit tests.
 
+There are Dockerfile structure tests that run automatically in a pipeline. If you want to run these locally, install the [container-structure-test](https://github.com/GoogleContainerTools/container-structure-test#installation) binary and run:
+
+```bash
+container-structure-test test --image my-image-name \
+--config docker-test.yaml
+```
+
 ### Releasing a new version
 
 This project includes a [github action](.github/workflows/build-release.yml) which
