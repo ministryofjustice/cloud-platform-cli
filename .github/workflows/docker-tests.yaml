@@ -1,0 +1,29 @@
+name: Test Dockerfile
+on: pull_request
+
+jobs:
+  dockerfile-test:
+    name: Install and run container-structure-test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Build
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: false
+          tags: test-cli
+
+      - name: Run docker tests
+        uses: gcr.io/gcp-runtimes/container-structure-test:latest
+        with:
+          args: "test --image cli-test --config docker-test.yaml"
