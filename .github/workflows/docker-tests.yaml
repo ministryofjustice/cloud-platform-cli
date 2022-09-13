@@ -24,6 +24,6 @@ jobs:
           tags: test-cli
 
       - name: Run docker tests
-        uses: gcr.io/gcp-runtimes/container-structure-test:latest
+        uses: docker://gcr.io/gcp-runtimes/container-structure-test:latest
         with:
           args: "test --image cli-test --config docker-test.yaml"
