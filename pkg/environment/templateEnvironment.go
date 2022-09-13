@@ -21,15 +21,13 @@ func CreateTemplateNamespace(skipEnvCheck bool, answersFile string) error {
 		}
 	}
 
-	var nsValues *Namespace
+	nsValues := &Namespace{}
 	var err error
 	if answersFile != "" {
 		nsValues, err = readAnswersFile(answersFile)
 		if err != nil {
 			return err
 		}
-
-		fmt.Println("Using the following answers file: "+answersFile, "\n", nsValues)
 	} else {
 		nsValues, err = promptUserForNamespaceValues()
 		if err != nil {
@@ -307,27 +305,17 @@ func reviewAfter() string {
 	return string(time.Now().AddDate(0, 3, 0).Format("2006-01-02"))
 }
 
-func readAnswersFile(answersFile string) (*Namespace, error) {
-	nsValues := &Namespace{}
-	err := readYamlFile(answersFile, nsValues)
+func readAnswersFile(fileName string) (*Namespace, error) {
+	ns := &Namespace{}
+	f, err := os.ReadFile(fileName)
 	if err != nil {
 		return nil, err
 	}
 
-	return nsValues, nil
-}
-
-func readYamlFile(fileName string, nsValues *Namespace) error {
-	f, err := os.Open(fileName)
+	err = yaml.Unmarshal(f, ns)
 	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	err = yaml.NewDecoder(f).Decode(nsValues)
-	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return ns, err
 }
