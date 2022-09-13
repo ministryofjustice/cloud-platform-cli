@@ -1,0 +1,12 @@
+application: testApp
+businessUnit: HQ
+environment: development
+githubTeam: test
+infrastructureSupport: test.test
+isProduction: "true"
+namespace: test-test
+owner: test
+ownerEmail: test@test
+slackChannel: test
+sourceCode: test
+reviewAfter: test

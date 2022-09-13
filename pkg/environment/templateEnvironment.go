@@ -8,20 +8,33 @@ import (
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/gookit/color"
-	"github.com/spf13/cobra"
 	dir "golang.org/x/mod/sumdb/dirhash"
+	"gopkg.in/yaml.v2"
 )
 
-func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
-	re := RepoEnvironment{}
-	err := re.mustBeInCloudPlatformEnvironments()
-	if err != nil {
-		return err
+func CreateTemplateNamespace(skipEnvCheck bool, answersFile string) error {
+	if !skipEnvCheck {
+		re := RepoEnvironment{}
+		err := re.mustBeInCloudPlatformEnvironments()
+		if err != nil {
+			return err
+		}
 	}
 
-	nsValues, err := promptUserForNamespaceValues()
-	if err != nil {
-		return (err)
+	var nsValues *Namespace
+	var err error
+	if answersFile != "" {
+		nsValues, err = readAnswersFile(answersFile)
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("Using the following answers file: "+answersFile, "\n", nsValues)
+	} else {
+		nsValues, err = promptUserForNamespaceValues()
+		if err != nil {
+			return (err)
+		}
 	}
 
 	err = createNamespaceFiles(nsValues)
@@ -292,4 +305,29 @@ func createDirHash(nsValues *Namespace) error {
 
 func reviewAfter() string {
 	return string(time.Now().AddDate(0, 3, 0).Format("2006-01-02"))
+}
+
+func readAnswersFile(answersFile string) (*Namespace, error) {
+	nsValues := &Namespace{}
+	err := readYamlFile(answersFile, nsValues)
+	if err != nil {
+		return nil, err
+	}
+
+	return nsValues, nil
+}
+
+func readYamlFile(fileName string, nsValues *Namespace) error {
+	f, err := os.Open(fileName)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	err = yaml.NewDecoder(f).Decode(nsValues)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

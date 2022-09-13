@@ -17,6 +17,13 @@ import (
 var module, moduleVersion string
 var optFlags environment.Options
 
+// skipEnvCheck is a flag to skip the environments repository check.
+// This is useful for testing.
+var skipEnvCheck bool
+
+// answersFile is a flag to specify the path to the answers file.
+var answersFile string
+
 func addEnvironmentCmd(topLevel *cobra.Command) {
 	topLevel.AddCommand(environmentCmd)
 	environmentCmd.AddCommand(environmentEcrCmd)
@@ -55,6 +62,9 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 
 	environmentBumpModuleCmd.Flags().StringVarP(&module, "module", "m", "", "Module to upgrade the version")
 	environmentBumpModuleCmd.Flags().StringVarP(&moduleVersion, "module-version", "v", "", "Semantic version to bump a module to")
+
+	environmentCreateCmd.Flags().BoolVarP(&skipEnvCheck, "skip-env-check", "s", false, "Skip the environment check")
+	environmentCreateCmd.Flags().StringVarP(&answersFile, "answers-file", "a", "", "Path to the answers file")
 }
 
 var environmentCmd = &cobra.Command{
@@ -70,7 +80,9 @@ var environmentCreateCmd = &cobra.Command{
 	> cloud-platform environment create
 	`),
 	PreRun: upgradeIfNotLatest,
-	RunE:   environment.CreateTemplateNamespace,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return environment.CreateTemplateNamespace(skipEnvCheck, answersFile)
+	},
 }
 
 var environmentEcrCmd = &cobra.Command{
