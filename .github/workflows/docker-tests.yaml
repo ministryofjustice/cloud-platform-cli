@@ -12,17 +12,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
       - name: Build
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          push: false
-          tags: cli-test
-      - name: Check image actually exists
+        run: docker built -t cli-test .
+      - name: Check it exists
         run: docker images
 
       - name: Run docker tests
