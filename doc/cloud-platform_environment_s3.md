@@ -5,7 +5,7 @@ Add a S3 bucket to a namespace
 ### Examples
 
 ```
-$ cloud-platform environment s3 create
+> cloud-platform environment s3 create
 
 ```
 

@@ -67,7 +67,7 @@ var environmentCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: `Create an environment`,
 	Example: heredoc.Doc(`
-	$ cloud-platform environment create
+	> cloud-platform environment create
 	`),
 	PreRun: upgradeIfNotLatest,
 	RunE:   environment.CreateTemplateNamespace,
@@ -77,7 +77,7 @@ var environmentEcrCmd = &cobra.Command{
 	Use:   "ecr",
 	Short: `Add an ECR to a namespace`,
 	Example: heredoc.Doc(`
-	$ cloud-platform environment ecr create
+	> cloud-platform environment ecr create
 	`),
 	PreRun: upgradeIfNotLatest,
 }
@@ -177,7 +177,7 @@ var environmentRdsCmd = &cobra.Command{
 	Use:   "rds",
 	Short: `Add an RDS instance to a namespace`,
 	Example: heredoc.Doc(`
-	$ cloud-platform environment rds create
+	> cloud-platform environment rds create
 	`),
 	PreRun: upgradeIfNotLatest,
 }
@@ -193,7 +193,7 @@ var environmentS3Cmd = &cobra.Command{
 	Use:   "s3",
 	Short: `Add a S3 bucket to a namespace`,
 	Example: heredoc.Doc(`
-	$ cloud-platform environment s3 create
+	> cloud-platform environment s3 create
 	`),
 	PreRun: upgradeIfNotLatest,
 }
@@ -209,7 +209,7 @@ var environmentSvcCmd = &cobra.Command{
 	Use:   "serviceaccount",
 	Short: `Add a serviceaccount to a namespace`,
 	Example: heredoc.Doc(`
-	$ cloud-platform environment serviceaccount
+	> cloud-platform environment serviceaccount
 	`),
 	PreRun: upgradeIfNotLatest,
 }
@@ -218,7 +218,7 @@ var environmentSvcCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: `Creates a serviceaccount in your chosen namespace`,
 	Example: heredoc.Doc(`
-	$ cloud-platform environment serviceaccount create
+	> cloud-platform environment serviceaccount create
 	`),
 	PreRun: upgradeIfNotLatest,
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -234,7 +234,7 @@ var environmentPrototypeCmd = &cobra.Command{
 	Use:   "prototype",
 	Short: `Create a gov.uk prototype kit site on the cloud platform`,
 	Example: heredoc.Doc(`
-	$ cloud-platform environment prototype
+	> cloud-platform environment prototype
 	`),
 	PreRun: upgradeIfNotLatest,
 }
@@ -251,7 +251,7 @@ The namespace name should be your prototype github repository name:
   https://github.com/ministryofjustice/[repository name]
 	`,
 	Example: heredoc.Doc(`
-	$ cloud-platform environment prototype create
+	> cloud-platform environment prototype create
 	`),
 	PreRun: upgradeIfNotLatest,
 	RunE: func(cmd *cobra.Command, args []string) error {

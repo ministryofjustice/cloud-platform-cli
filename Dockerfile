@@ -22,7 +22,7 @@ COPY go.mod .
 COPY go.sum .
 RUN go mod download
 COPY . .
-RUN go build -o cloud-platform ./cmd/cloud-platform/main.go
+RUN go build -o cloud-platform .
 
 # Install kubectl
 RUN curl -sLo ./kubectl https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl

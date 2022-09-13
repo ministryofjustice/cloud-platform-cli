@@ -5,7 +5,7 @@ Add an RDS instance to a namespace
 ### Examples
 
 ```
-$ cloud-platform environment rds create
+> cloud-platform environment rds create
 
 ```
 

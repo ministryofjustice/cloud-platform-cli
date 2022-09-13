@@ -14,9 +14,9 @@ jobs:
         with:
           go-version: ">=1.19.0"
       - run: go install
-        working-directory: cmd/cloud-platform
+        working-directory: ./
       - run: rm -r doc/ && mkdir -p doc
-      - run: go run cmd/cloud-platform/main.go generate-docs --skip-version-check
+      - run: go run main.go generate-docs --skip-version-check
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
-          commit_message: "docs(automated) update generated documentation"
+          commit_message: "docs(cobra): update auto-generated documentation"

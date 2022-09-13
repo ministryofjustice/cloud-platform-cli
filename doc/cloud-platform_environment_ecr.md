@@ -5,7 +5,7 @@ Add an ECR to a namespace
 ### Examples
 
 ```
-$ cloud-platform environment ecr create
+> cloud-platform environment ecr create
 
 ```
 

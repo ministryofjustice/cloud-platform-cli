@@ -5,7 +5,7 @@ Create a gov.uk prototype kit site on the cloud platform
 ### Examples
 
 ```
-$ cloud-platform environment prototype
+> cloud-platform environment prototype
 
 ```
 

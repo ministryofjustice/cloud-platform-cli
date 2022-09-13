@@ -9,7 +9,7 @@ cloud-platform environment create [flags]
 ### Examples
 
 ```
-$ cloud-platform environment create
+> cloud-platform environment create
 
 ```
 
