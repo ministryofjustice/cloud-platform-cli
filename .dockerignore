@@ -1,7 +1,8 @@
 .git
 .github
+.gitignore
+.goreleaser.yml
 LICENCE
 Dockerfile
-.build-docker-image
 makefile
-install.sh
+README.md
