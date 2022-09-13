@@ -3,7 +3,7 @@ on: pull_request
 
 jobs:
   dockerfile-test:
-    name: Install and run container-structure-test
+    name: container-structure-test
     runs-on: ubuntu-latest
 
     steps:
@@ -21,7 +21,7 @@ jobs:
         with:
           context: .
           push: false
-          tags: test-cli
+          tags: cli-test
 
       - name: Run docker tests
         uses: docker://gcr.io/gcp-runtimes/container-structure-test:latest
