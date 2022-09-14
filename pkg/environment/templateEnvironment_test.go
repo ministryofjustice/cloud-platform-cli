@@ -22,6 +22,39 @@ func TestCreateNamespaceWithAnswersFile(t *testing.T) {
 	if err != nil {
 		t.Errorf("Namespace created with answersFile errored: %s", err)
 	}
+
+	dir := namespaceBaseFolder + "/testNamespace/"
+	namespaceFile := dir + "00-namespace.yaml"
+	rbacFile := dir + "01-rbac.yaml"
+	variablesTfFile := dir + "resources/variables.tf"
+
+	filenames := []string{
+		namespaceFile,
+		rbacFile,
+		dir + "02-limitrange.yaml",
+		dir + "03-resourcequota.yaml",
+		dir + "04-networkpolicy.yaml",
+		dir + "resources/main.tf",
+		variablesTfFile,
+		dir + "resources/versions.tf",
+	}
+
+	for _, f := range filenames {
+		if _, err := os.Stat(f); os.IsNotExist(err) {
+			t.Errorf("Expected file %s to be created", f)
+		}
+	}
+
+	stringsInFiles := map[string]string{
+		namespaceFile: "name: testNamespace",
+	}
+
+	for filename, searchString := range stringsInFiles {
+		util.FileContainsString(t, filename, searchString)
+	}
+
+	defer cleanUpNamespacesFolder("testNamespace")
+	defer os.RemoveAll(".checksum")
 }
 
 func TestReadAnswersFile(t *testing.T) {
