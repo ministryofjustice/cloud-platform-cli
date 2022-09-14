@@ -28,7 +28,7 @@ jobs:
       - name: Run tests
         run: |
           set -euo pipefail
-          go test --flags integration -json -race -covermode=atomic -coverprofile=coverage.out -v ./... 2>&1 | tee ~/gotest.log
+          go test --tags integration -json -race -covermode=atomic -coverprofile=coverage.out -v ./... 2>&1 | tee ~/gotest.log
 
       # Upload the original go test log as anhaveyoudebuggedit/gotestfmt-action@v2haveyoudebuggedit/gotestfmt-action@v2 artifact for later review.
       - name: Upload test log
