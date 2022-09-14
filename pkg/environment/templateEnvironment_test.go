@@ -16,6 +16,27 @@ func cleanUpNamespacesFolder(namespace string) {
 	os.Remove("namespaces")
 }
 
+func TestCreateNamespaceWithAnswersFile(t *testing.T) {
+	answersFile := "../../testdata/environments-answers.yaml"
+	err := CreateTemplateNamespace(true, answersFile)
+	if err != nil {
+		t.Errorf("Namespace created with answersFile errored: %s", err)
+	}
+}
+
+func TestReadAnswersFile(t *testing.T) {
+	answersFile := "../../testdata/environments-answers.yaml"
+	ns := &Namespace{}
+	err := ns.readAnswersFile(answersFile)
+	if err != nil {
+		t.Errorf("Unexpected error: %s", err)
+	}
+
+	if ns.Namespace != "testNamespace" {
+		t.Errorf("Expected namespace to be testNamespace, got %s", ns.Namespace)
+	}
+}
+
 func TestCreateNamespace(t *testing.T) {
 	ns := Namespace{
 		Namespace:             "foobar",
