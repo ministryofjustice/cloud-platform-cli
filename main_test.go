@@ -83,7 +83,6 @@ func checkFilePath(t *testing.T, path string) error {
 
 	projectRootDir := filepath.Dir(testFileName)
 	filePath := filepath.Join(projectRootDir, path)
-	fmt.Println(filePath)
 
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		return fmt.Errorf("file %s does not exist", filePath)
