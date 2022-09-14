@@ -22,20 +22,17 @@ func CreateTemplateNamespace(skipEnvCheck bool, answersFile string) error {
 	}
 
 	nsValues := &Namespace{}
-	var err error
 	if answersFile != "" {
-		nsValues, err = readAnswersFile(answersFile)
-		if err != nil {
+		if err := nsValues.readAnswersFile(answersFile); err != nil {
 			return err
 		}
 	} else {
-		nsValues, err = promptUserForNamespaceValues()
-		if err != nil {
-			return (err)
+		if err := nsValues.promptUserForNamespaceValues(); err != nil {
+			return err
 		}
 	}
 
-	err = createNamespaceFiles(nsValues)
+	err := createNamespaceFiles(nsValues)
 	if err != nil {
 		return err
 	}
@@ -53,9 +50,7 @@ func CreateTemplateNamespace(skipEnvCheck bool, answersFile string) error {
 
 //------------------------------------------------------------------------------
 
-func promptUserForNamespaceValues() (*Namespace, error) {
-	values := Namespace{}
-
+func (values *Namespace) promptUserForNamespaceValues() error {
 	q := userQuestion{
 		description: heredoc.Doc(`
 			 What is the name of your namespace?
@@ -198,7 +193,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 	_ = q.getAnswer()
 	values.Owner = q.value
 
-	return &values, nil
+	return nil
 }
 
 func downloadAndInitialiseTemplates(namespace string) ([]*templateFromUrl, error) {
@@ -305,17 +300,16 @@ func reviewAfter() string {
 	return string(time.Now().AddDate(0, 3, 0).Format("2006-01-02"))
 }
 
-func readAnswersFile(fileName string) (*Namespace, error) {
-	ns := &Namespace{}
+func (ns *Namespace) readAnswersFile(fileName string) error {
 	f, err := os.ReadFile(fileName)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	err = yaml.Unmarshal(f, ns)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return ns, err
+	return err
 }
