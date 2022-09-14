@@ -15,7 +15,10 @@ import (
 	"github.com/ministryofjustice/cloud-platform-cli/cmd"
 )
 
-var update = flag.Bool("update", false, "update test files with results")
+var (
+	update  = flag.Bool("update", false, "update test files with results")
+	logging = flag.Bool("disable-golden-logging", true, "disable the long output of the golden file test")
+)
 
 // TestCmdOutput runs a command and compares its output to the expected output. It uses the go-cmdtest package to do this.
 // The testdata directory contains the "golden" files, which are the expected outputs of the commands.
@@ -29,6 +32,8 @@ func TestCmdOutput(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	ts.DisableLogging = *logging
 
 	path, err := os.Getwd()
 	if err != nil {
