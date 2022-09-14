@@ -20,3 +20,4 @@ Error: current directory is not in a git repo working copy
 $ cloud-platform environment create --skip-version-check --skip-env-check --answers-file ${ANSWERS_FILE}
 Namespace files generated under namespaces/live.cloud-platform.service.justice.gov.uk/testNamespace
 [0;32mINFO: [0mPlease review before raising PR
+
