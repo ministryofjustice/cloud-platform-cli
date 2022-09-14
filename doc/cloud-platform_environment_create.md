@@ -16,7 +16,9 @@ cloud-platform environment create [flags]
 ### Options
 
 ```
-  -h, --help   help for create
+  -a, --answers-file string   Path to the answers file
+  -h, --help                  help for create
+  -s, --skip-env-check        Skip the environment check
 ```
 
 ### Options inherited from parent commands
