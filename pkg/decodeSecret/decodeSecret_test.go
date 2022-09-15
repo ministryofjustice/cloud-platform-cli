@@ -1,7 +1,6 @@
 package decodeSecret
 
 import (
-	"encoding/json"
 	"strings"
 	"testing"
 )
@@ -80,30 +79,5 @@ func TestRawPrintEmpty(t *testing.T) {
 	_, err := sd.processJson(jsn, true)
 	if err == nil {
 		t.Error("Expected an error when passing an empty string")
-	}
-}
-
-func TestFormatJson(t *testing.T) {
-	var result map[string]interface{}
-	jsnGood := `{ "data": { "key1": "1", "key2": "2" } }`
-	err := json.Unmarshal([]byte(jsnGood), &result)
-	if err != nil {
-		t.Fatalf("Unexpected error %s", err)
-	}
-
-	data := result["data"].(map[string]interface{})
-
-	str, err := formatJson(data)
-	if err != nil {
-		t.Fatalf("Unexpected error")
-	}
-	if !strings.Contains(str, "key1") {
-		t.Errorf("Expected key1")
-	}
-
-	jsnBad := "This is bad data"
-	err = json.Unmarshal([]byte(jsnBad), &result)
-	if err == nil {
-		t.Fatal("Expected error and received nil")
 	}
 }
