@@ -8,7 +8,7 @@ require (
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/go-cmp v0.5.8 // indirect
-	github.com/gookit/color v1.5.1
+	github.com/gookit/color v1.5.2
 	github.com/hashicorp/hcl/v2 v2.14.0
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
