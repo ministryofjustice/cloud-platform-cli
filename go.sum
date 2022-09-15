@@ -453,6 +453,8 @@ github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182aff
 github.com/miekg/dns v1.0.14/go.mod h1:W1PPwlIAgtquWBMBEV9nkV9Cazfe8ScdGz/Lj7v3Nrg=
 github.com/ministryofjustice/cloud-platform-environments/pkg/authenticate v0.0.0-20210923104034-4b61cc95504b h1:gX5ZjodpWkm5cIlna9tHPHRr2jsENTeI/ziERbC4Qb8=
 github.com/ministryofjustice/cloud-platform-environments/pkg/authenticate v0.0.0-20210923104034-4b61cc95504b/go.mod h1:bMmV6JzG6/E7PbSKlqivGXtsa+rAC+UIFmh/FAODsKQ=
+github.com/ministryofjustice/cloud-platform-go-library v0.0.0-20220803122921-1ca1153b1730 h1:4u9OcC1NTIARZjKBdop1qY3hxC2DGaHEE+i43BFh+aI=
+github.com/ministryofjustice/cloud-platform-go-library v0.0.0-20220803122921-1ca1153b1730/go.mod h1:53gzeRuRULbIkftuejJrv41aJl8ps35D9qKX2rtkwOc=
 github.com/mitchellh/cli v1.0.0/go.mod h1:hNIlj7HEI86fIcpObd7a0FcrxTWetlwJDGcceTlRvqc=
 github.com/mitchellh/copystructure v1.2.0/go.mod h1:qLl+cE2AmVv+CoeAwDPye/v+N2HKCj9FbZEVFJRxO9s=
 github.com/mitchellh/go-homedir v1.0.0/go.mod h1:SfyaCUpYCn1Vlf4IUYiD9fPX4A5wJrkLzIz1N1q0pr0=
@@ -1214,6 +1216,7 @@ k8s.io/kube-openapi v0.0.0-20220803164354-a70c9af30aea h1:3QOH5+2fGsY8e1qf+GIFpg
 k8s.io/kube-openapi v0.0.0-20220803164354-a70c9af30aea/go.mod h1:C/N6wCaBHeBHkHUesQOQy2/MZqGgMAFPqGsGQLdbZBU=
 k8s.io/kubectl v0.24.4 h1:fPEBkAV3/cu3BQVIUCXNngCCY62AlZ+2rkRVHcmJPn0=
 k8s.io/kubectl v0.24.4/go.mod h1:AVyJzxUwA5UMGTDyKGL6nd6RRW36FbmAdtIDMhrZtW0=
+k8s.io/metrics v0.24.4 h1:vJ480Uv0NZa4+GEOqRdc3ExnMJ9hYldevT3Z/5FB7RA=
 k8s.io/metrics v0.24.4/go.mod h1:7D8Xm3DGZoJaiCS8+QA2EzdMuDlq0Y8SiOPUB/1BaGU=
 k8s.io/utils v0.0.0-20210802155522-efc7438f0176/go.mod h1:jPW/WVKK9YHAvNhRxK0md/EJ228hCsBRufyofKtW8HA=
 k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9/go.mod h1:jPW/WVKK9YHAvNhRxK0md/EJ228hCsBRufyofKtW8HA=
