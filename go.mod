@@ -31,7 +31,7 @@ require (
 require (
 	github.com/aws/aws-sdk-go v1.44.98
 	github.com/google/go-cmdtest v0.4.0
-	github.com/hashicorp/terraform-exec v0.17.2
+	github.com/hashicorp/terraform-exec v0.17.3
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/ministryofjustice/cloud-platform-environments/pkg/authenticate v0.0.0-20210923104034-4b61cc95504b
 	github.com/rs/zerolog v1.28.0
