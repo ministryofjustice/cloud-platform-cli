@@ -22,9 +22,13 @@ func TestWorkingRepository(t *testing.T) {
 // If we aren't in a git repo, we get an Error
 func TestRepoErrorRepository(t *testing.T) {
 	// Get the current working directory
-	wd, _ := os.Getwd()
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Errorf("Something went wrong: %s", err)
+	}
+
 	// Change to a directory which isn't a git repo
-	err := os.Chdir("/tmp")
+	err = os.Chdir("/tmp")
 	if err != nil {
 		t.Errorf("Something went wrong: %s", err)
 	}
