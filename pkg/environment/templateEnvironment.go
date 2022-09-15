@@ -8,23 +8,31 @@ import (
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/gookit/color"
-	"github.com/spf13/cobra"
 	dir "golang.org/x/mod/sumdb/dirhash"
+	"gopkg.in/yaml.v2"
 )
 
-func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
-	re := RepoEnvironment{}
-	err := re.mustBeInCloudPlatformEnvironments()
-	if err != nil {
-		return err
+func CreateTemplateNamespace(skipEnvCheck bool, answersFile string) error {
+	if !skipEnvCheck {
+		re := RepoEnvironment{}
+		err := re.mustBeInCloudPlatformEnvironments()
+		if err != nil {
+			return err
+		}
 	}
 
-	nsValues, err := promptUserForNamespaceValues()
-	if err != nil {
-		return (err)
+	nsValues := &Namespace{}
+	if answersFile != "" {
+		if err := nsValues.readAnswersFile(answersFile); err != nil {
+			return err
+		}
+	} else {
+		if err := nsValues.promptUserForNamespaceValues(); err != nil {
+			return err
+		}
 	}
 
-	err = createNamespaceFiles(nsValues)
+	err := createNamespaceFiles(nsValues)
 	if err != nil {
 		return err
 	}
@@ -42,9 +50,7 @@ func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 
 //------------------------------------------------------------------------------
 
-func promptUserForNamespaceValues() (*Namespace, error) {
-	values := Namespace{}
-
+func (values *Namespace) promptUserForNamespaceValues() error {
 	q := userQuestion{
 		description: heredoc.Doc(`
 			 What is the name of your namespace?
@@ -187,7 +193,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 	_ = q.getAnswer()
 	values.Owner = q.value
 
-	return &values, nil
+	return nil
 }
 
 func downloadAndInitialiseTemplates(namespace string) ([]*templateFromUrl, error) {
@@ -292,4 +298,18 @@ func createDirHash(nsValues *Namespace) error {
 
 func reviewAfter() string {
 	return string(time.Now().AddDate(0, 3, 0).Format("2006-01-02"))
+}
+
+func (ns *Namespace) readAnswersFile(fileName string) error {
+	f, err := os.ReadFile(fileName)
+	if err != nil {
+		return err
+	}
+
+	err = yaml.Unmarshal(f, ns)
+	if err != nil {
+		return err
+	}
+
+	return err
 }

@@ -1,7 +1,10 @@
 package cmd
 
 import (
+	"bytes"
 	"errors"
+	"strings"
+	"testing"
 
 	commands "github.com/ministryofjustice/cloud-platform-cli/pkg/commands"
 	"github.com/spf13/cobra"
@@ -53,4 +56,21 @@ func RootCmdFlags(cmd *cobra.Command) {
 }
 func init() {
 	RootCmdFlags(rootCmd)
+}
+
+func ExecuteCommand(t *testing.T, args ...string) (string, error) {
+	t.Helper()
+
+	c := rootCmd
+	commands.AddCommands(c)
+	c.AddCommand(docs)
+	args = append([]string{"--skip-version-check"}, args...)
+
+	buf := new(bytes.Buffer)
+	c.SetOut(buf)
+	c.SetErr(buf)
+	c.SetArgs(args)
+
+	err := c.Execute()
+	return strings.TrimSpace(buf.String()), err
 }

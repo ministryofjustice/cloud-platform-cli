@@ -16,6 +16,60 @@ func cleanUpNamespacesFolder(namespace string) {
 	os.Remove("namespaces")
 }
 
+func TestCreateNamespaceWithAnswersFile(t *testing.T) {
+	answersFile := "../../testdata/environments-answers.yaml"
+	err := CreateTemplateNamespace(true, answersFile)
+	if err != nil {
+		t.Errorf("Namespace created with answersFile errored: %s", err)
+	}
+
+	dir := namespaceBaseFolder + "/testNamespace/"
+	namespaceFile := dir + "00-namespace.yaml"
+	rbacFile := dir + "01-rbac.yaml"
+	variablesTfFile := dir + "resources/variables.tf"
+
+	filenames := []string{
+		namespaceFile,
+		rbacFile,
+		dir + "02-limitrange.yaml",
+		dir + "03-resourcequota.yaml",
+		dir + "04-networkpolicy.yaml",
+		dir + "resources/main.tf",
+		variablesTfFile,
+		dir + "resources/versions.tf",
+	}
+
+	for _, f := range filenames {
+		if _, err := os.Stat(f); os.IsNotExist(err) {
+			t.Errorf("Expected file %s to be created", f)
+		}
+	}
+
+	stringsInFiles := map[string]string{
+		namespaceFile: "name: testNamespace",
+	}
+
+	for filename, searchString := range stringsInFiles {
+		util.FileContainsString(t, filename, searchString)
+	}
+
+	defer cleanUpNamespacesFolder("testNamespace")
+	defer os.RemoveAll(".checksum")
+}
+
+func TestReadAnswersFile(t *testing.T) {
+	answersFile := "../../testdata/environments-answers.yaml"
+	ns := &Namespace{}
+	err := ns.readAnswersFile(answersFile)
+	if err != nil {
+		t.Errorf("Unexpected error: %s", err)
+	}
+
+	if ns.Namespace != "testNamespace" {
+		t.Errorf("Expected namespace to be testNamespace, got %s", ns.Namespace)
+	}
+}
+
 func TestCreateNamespace(t *testing.T) {
 	ns := Namespace{
 		Namespace:             "foobar",
@@ -78,7 +132,7 @@ func TestCreateNamespace(t *testing.T) {
 }
 
 func TestRunningOutsideEnvironmentsWorkingCopy(t *testing.T) {
-	err := CreateTemplateNamespace(nil, nil)
+	err := CreateTemplateNamespace(false, "")
 	if err.Error() != "this command may only be run from within a working copy of the cloud-platform-environments repository" {
 		t.Errorf("Unexpected error: %s", err)
 	}

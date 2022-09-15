@@ -8,7 +8,9 @@ Examples:
 
 
 Flags:
-  -h, --help   help for create
+  -a, --answers-file string   Path to the answers file
+  -h, --help                  help for create
+  -s, --skip-env-check        Skip the environment check
 
 Global Flags:
       --skip-version-check   don't check for updates
