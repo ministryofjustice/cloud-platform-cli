@@ -87,11 +87,16 @@ func TestRepoErrorBranch(t *testing.T) {
 	if err != nil {
 		t.Errorf("Something went wrong: %s", err)
 	}
-	defer os.Chdir(wd)
 
 	re := Repository{}
 	_, err = re.GetBranch()
 	if err == nil {
 		t.Errorf("Expected an error, got nil")
+	}
+
+	// Change back to the original directory
+	err = os.Chdir(wd)
+	if err != nil {
+		t.Errorf("Something went wrong: %s", err)
 	}
 }
