@@ -36,9 +36,9 @@ require (
 	github.com/ministryofjustice/cloud-platform-environments/pkg/authenticate v0.0.0-20210923104034-4b61cc95504b
 	github.com/rs/zerolog v1.27.0
 	github.com/stretchr/testify v1.8.0
-	k8s.io/api v0.24.4
-	k8s.io/apimachinery v0.24.4
-	k8s.io/client-go v0.24.4
+	k8s.io/api v0.25.0
+	k8s.io/apimachinery v0.25.0
+	k8s.io/client-go v0.25.0
 	k8s.io/kubectl v0.24.4
 )
 
