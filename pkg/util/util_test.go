@@ -28,16 +28,19 @@ func TestRepoErrorRepository(t *testing.T) {
 	}
 
 	// Change to a directory which isn't a git repo
-	err = os.Chdir("/tmp")
-	if err != nil {
+	if err = os.Chdir("/tmp"); err != nil {
 		t.Errorf("Something went wrong: %s", err)
 	}
-	defer os.Chdir(wd)
 
 	re := Repository{}
 	_, err = re.Repository()
 	if err == nil {
 		t.Errorf("Expected an error, got nil")
+	}
+
+	// Change back to the original directory
+	if err := os.Chdir(wd); err != nil {
+		t.Errorf("Something went wrong: %s", err)
 	}
 }
 
@@ -81,10 +84,13 @@ func TestRepoDefaultBranch(t *testing.T) {
 // If we aren't in a git repo, we get an Error
 func TestRepoErrorBranch(t *testing.T) {
 	// Get the current working directory
-	wd, _ := os.Getwd()
-	// Change to a directory which isn't a git repo
-	err := os.Chdir("/tmp")
+	wd, err := os.Getwd()
 	if err != nil {
+		t.Errorf("Something went wrong: %s", err)
+	}
+
+	// Change to a directory which isn't a git repo
+	if err = os.Chdir("/tmp"); err != nil {
 		t.Errorf("Something went wrong: %s", err)
 	}
 
@@ -95,8 +101,7 @@ func TestRepoErrorBranch(t *testing.T) {
 	}
 
 	// Change back to the original directory
-	err = os.Chdir(wd)
-	if err != nil {
+	if err := os.Chdir(wd); err != nil {
 		t.Errorf("Something went wrong: %s", err)
 	}
 }
