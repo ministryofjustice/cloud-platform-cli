@@ -9,7 +9,7 @@ require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/go-cmp v0.5.8 // indirect
 	github.com/gookit/color v1.5.1
-	github.com/hashicorp/hcl/v2 v2.13.0
+	github.com/hashicorp/hcl/v2 v2.14.0
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
@@ -34,7 +34,7 @@ require (
 	github.com/hashicorp/terraform-exec v0.17.2
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/ministryofjustice/cloud-platform-environments/pkg/authenticate v0.0.0-20210923104034-4b61cc95504b
-	github.com/rs/zerolog v1.27.0
+	github.com/rs/zerolog v1.28.0
 	github.com/stretchr/testify v1.8.0
 	k8s.io/api v0.24.4
 	k8s.io/apimachinery v0.24.4
