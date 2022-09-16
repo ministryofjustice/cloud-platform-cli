@@ -5,4 +5,5 @@ coverage:
         branches:
           - main
         ignore:
-          - "pkg/commmands/*" # Cobra commands
+          - "pkg/commmands/*"
+          - "cmd/*"
