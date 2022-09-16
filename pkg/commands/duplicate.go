@@ -14,16 +14,16 @@ import (
 
 var ns string
 
-var kubeconfig *string
+var kubeconfig string
 
 func addDuplicateCmd(topLevel *cobra.Command) {
 	topLevel.AddCommand(duplicateCmd)
 	duplicateCmd.AddCommand(duplicateIngressCmd)
 
 	if home := homedir.HomeDir(); home != "" {
-		duplicateIngressCmd.Flags().StringVarP(kubeconfig, "kubeconfig", "n", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+		duplicateIngressCmd.Flags().StringVar(&kubeconfig, "kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
 	} else {
-		duplicateIngressCmd.Flags().StringVarP(kubeconfig, "kubeconfig", "n", "", "absolute path to the kubeconfig file")
+		duplicateIngressCmd.Flags().StringVar(&kubeconfig, "kubeconfig", "", "absolute path to the kubeconfig file")
 	}
 
 	duplicateIngressCmd.Flags().StringVarP(&ns, "namespace", "n", "", "Namespace which you want to perform the duplicate resource")
@@ -57,7 +57,7 @@ To access the cluster, it assumes that the user has either set the env variable 
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Create clientset
-		clientset, err := client.NewKubeClientWithValues(*kubeconfig, "")
+		clientset, err := client.NewKubeClientWithValues(kubeconfig, "")
 		if err != nil {
 			return fmt.Errorf("error creating clientset: %v", err)
 		}
