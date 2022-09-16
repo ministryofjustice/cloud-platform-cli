@@ -8,7 +8,7 @@ require (
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/go-cmp v0.5.8 // indirect
-	github.com/gookit/color v1.5.1
+	github.com/gookit/color v1.5.2
 	github.com/hashicorp/hcl/v2 v2.14.0
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
@@ -37,10 +37,10 @@ require (
 	github.com/ministryofjustice/cloud-platform-go-library v0.0.0-20220803122921-1ca1153b1730
 	github.com/rs/zerolog v1.28.0
 	github.com/stretchr/testify v1.8.0
-	k8s.io/api v0.24.4
-	k8s.io/apimachinery v0.24.4
-	k8s.io/client-go v0.24.4
-	k8s.io/kubectl v0.24.4
+	k8s.io/api v0.24.5
+	k8s.io/apimachinery v0.24.5
+	k8s.io/client-go v0.24.5
+	k8s.io/kubectl v0.24.5
 )
 
 require (
@@ -116,11 +116,11 @@ require (
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/cli-runtime v0.24.4 // indirect
-	k8s.io/component-base v0.24.4 // indirect
+	k8s.io/cli-runtime v0.24.5 // indirect
+	k8s.io/component-base v0.24.5 // indirect
 	k8s.io/klog/v2 v2.70.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20220803164354-a70c9af30aea // indirect
-	k8s.io/metrics v0.24.4 // indirect
+	k8s.io/metrics v0.24.5 // indirect
 	k8s.io/utils v0.0.0-20220728103510-ee6ede2d64ed // indirect
 	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
 	sigs.k8s.io/kustomize/api v0.12.1 // indirect
