@@ -3,61 +3,47 @@ package duplicate
 import (
 	"context"
 	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
 
 	v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/util/homedir"
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 )
 
-// DuplicateTestIngress is the function run when a user performs
-// cloud-platform duplicate ingress -n <namespace> <resource>
-// It requires a namespace name, the name of an ingress resource
-// and will:
-//   - inspect the cluster
-//   - copy the ingress rule defined
-//   - make relevant changes
-//   - create a new rule
-func DuplicateIngress(namespace, resourceName string) error {
-	// Set the filepath of the kubeconfig file. This assumes
-	// the user has either the envname set or stores their config file
-	// in the default location.
-	configFile := os.Getenv("KUBECONFIG")
-	if configFile == "" {
-		configFile = filepath.Join(homedir.HomeDir(), ".kube", "config")
+// Ingress is a struct that allows us to store the ingress resource and the clientset
+type Ingress struct {
+	Clientset *kubernetes.Interface
+	Namespace string
+	Resource  *v1.Ingress
+}
+
+// NewIngress takes a clientset, namespace and ingress resource and returns a new ingress resource.
+func NewIngress(clientset *kubernetes.Interface, namespace, resourceName string) (*Ingress, error) {
+	ing := &Ingress{
+		Clientset: clientset,
+		Namespace: namespace,
 	}
 
-	// Build the Kubernetes client using the default context (user set).
-	config, err := clientcmd.BuildConfigFromFlags("", configFile)
+	ingress, err := getIngressResource(*clientset, namespace, resourceName)
+	if err != nil {
+		return nil, err
+	}
+
+	ing.Resource = ingress
+
+	return ing, nil
+}
+
+// CreateDuplicateIngress takes an ingress resource and creates the Kubernetes Resource Object in the same namespace.
+func (ing *Ingress) CreateDuplicate() error {
+	duplicateIngress, err := copyAndChangeIngress(ing.Resource)
 	if err != nil {
 		return err
 	}
 
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return err
-	}
-
-	// Get the specified ingress resource
-	ing, err := getIngressResource(clientset, namespace, resourceName)
-	if err != nil {
-		return err
-	}
-
-	// Duplicate the specified ingress resource
-	duplicateIngress, err := copyAndChangeIngress(ing)
-	if err != nil {
-		return err
-	}
-
-	// Apply the duplicate ingress resource to the same namespace
-	err = applyIngress(clientset, duplicateIngress)
+	err = applyIngress(*ing.Clientset, duplicateIngress)
 	if err != nil {
 		return err
 	}
@@ -68,7 +54,7 @@ func DuplicateIngress(namespace, resourceName string) error {
 // getIngressResource takes a Kubernetes clientset, the name of the users namespace and ingress resource and inspect the
 // cluster, returning a v1 ingress resource. There is no need to search for v1beta1 Ingress as the v1 API is backward
 // compatible and would also fetch ingress resource with API version v1beta1.
-func getIngressResource(clientset *kubernetes.Clientset, namespace, resourceName string) (*v1.Ingress, error) {
+func getIngressResource(clientset kubernetes.Interface, namespace, resourceName string) (*v1.Ingress, error) {
 	ingress, err := clientset.NetworkingV1().Ingresses(namespace).Get(context.TODO(), resourceName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
@@ -79,6 +65,14 @@ func getIngressResource(clientset *kubernetes.Clientset, namespace, resourceName
 
 // copyAndChangeIngress gets an ingress, do a deep copy and change the values to the one needed for duplicating
 func copyAndChangeIngress(inIngress *v1.Ingress) (*v1.Ingress, error) {
+	if inIngress == nil {
+		return nil, fmt.Errorf("Ingress is nil")
+	}
+
+	if inIngress.Spec.TLS == nil {
+		return nil, fmt.Errorf("Ingress does not have TLS")
+	}
+
 	duplicateIngress := inIngress.DeepCopy()
 
 	// loop over Spec.Rules from the original ingress, add -duplicate string to the sub-domain i.e first part of domain
@@ -120,7 +114,7 @@ func copyAndChangeIngress(inIngress *v1.Ingress) (*v1.Ingress, error) {
 
 // applyIngress takes a clientset and an ingress resource (which has been duplicated) and applies
 // to the current cluster and namespace.
-func applyIngress(clientset *kubernetes.Clientset, duplicateIngress *v1.Ingress) error {
+func applyIngress(clientset kubernetes.Interface, duplicateIngress *v1.Ingress) error {
 	_, err := clientset.NetworkingV1().Ingresses(duplicateIngress.Namespace).Create(context.TODO(), duplicateIngress, metav1.CreateOptions{})
 	if err != nil {
 		return err

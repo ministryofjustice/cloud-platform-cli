@@ -5,7 +5,7 @@ Duplicate ingress for the given ingress resource name and namespace
 ### Synopsis
 
 Gets the ingress resource for the given name and namespace from the cluster,
-copies it, change the ingress name and external-dns annotations for the weighted policy and 
+copies it, change the ingress name and external-dns annotations for the weighted policy and
 apply the duplicated ingress to the same namespace.
 
 This command will access the cluster to get the ingress resource and to create the duplicate ingress.
@@ -27,8 +27,9 @@ $ cloud-platform duplicate ingress myingressname -n mynamespace
 ### Options
 
 ```
-  -h, --help               help for ingress
-  -n, --namespace string   Namespace which you want to perform the duplicate resource
+  -h, --help                help for ingress
+      --kubeconfig string   (optional) absolute path to the kubeconfig file (default "/home/runner/.kube/config")
+  -n, --namespace string    Namespace which you want to perform the duplicate resource
 ```
 
 ### Options inherited from parent commands
