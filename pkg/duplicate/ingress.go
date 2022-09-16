@@ -65,6 +65,14 @@ func getIngressResource(clientset kubernetes.Interface, namespace, resourceName 
 
 // copyAndChangeIngress gets an ingress, do a deep copy and change the values to the one needed for duplicating
 func copyAndChangeIngress(inIngress *v1.Ingress) (*v1.Ingress, error) {
+	if inIngress == nil {
+		return nil, fmt.Errorf("Ingress is nil")
+	}
+
+	if inIngress.Spec.TLS == nil {
+		return nil, fmt.Errorf("Ingress does not have TLS")
+	}
+
 	duplicateIngress := inIngress.DeepCopy()
 
 	// loop over Spec.Rules from the original ingress, add -duplicate string to the sub-domain i.e first part of domain
