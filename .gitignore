@@ -4,7 +4,8 @@
 *.dll
 *.so
 *.dylib
-cloud-platform
+# Cloud platform binaries built with the makefile
+cloud-platform-*
 
 # Test binary, built with `go test -c`
 *.test
@@ -13,4 +14,7 @@ cloud-platform
 *.out
 
 .DS_Store
-# Dependency directories (remove the comment below to include it)
+completions
+
+# Go test output
+coverage.out

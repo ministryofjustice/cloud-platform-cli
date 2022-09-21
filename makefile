@@ -1,12 +1,32 @@
-SOURCE_FILES := $(shell find * -name '*.go')
+TAG_COMMIT := $(shell git rev-list --abbrev-commit --tags --max-count=1)
+TAG := $(shell git describe --abbrev=0 --tags ${TAG_COMMIT} 2>/dev/null || true)
+COMMIT := $(shell git rev-parse --short HEAD)
+DATE := $(shell git log -1 --format=%cd --date=format:"%Y%m%d")
+VERSION := $(TAG:v%=%)
+ifneq ($(COMMIT), $(TAG_COMMIT))
+	VERSION := $(VERSION)-next-$(COMMIT)-$(DATE)
+endif
+ifeq ($(VERSION),)
+	VERSION := $(COMMIT)-$(DATE)
+endif
+ifneq ($(shell git status --porcelain),)
+	VERSION := $(VERSION)-dirty
+endif
 
-cloud-platform: $(SOURCE_FILES)
-	export GO111MODULE=on
-	go mod download
-	go build -o cloud-platform ./cmd/cloud-platform/main.go
+FLAGS := -ldflags "-X github.com/ministryofjustice/cloud-platform-cli/pkg/commands.Version=$(VERSION)"
+
+build:
+	go build $(FLAGS) -o cloud-platform-$(VERSION) .
+
+run:
+	go run $(FLAGS) .
 
 test:
-	go test ./...
+	go test -race -covermode=atomic -coverprofile=coverage.out -v ./...
+
+integration-test:
+	go test --tags integration -race -covermode=atomic -coverprofile=coverage.out -v ./...
+
 
 fmt:
 	go fmt ./...

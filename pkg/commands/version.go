@@ -12,8 +12,14 @@ import (
 	"github.com/spf13/viper"
 )
 
-// This MUST match the number of the latest release on github
-var Version = "1.15.1"
+// This value is set at build time. If it doesn't equal the latest
+// version, the user will be prompted to upgrade.
+// To build your binary you must pass
+// the -ldflags "-X github.com/ministryofjustice/cloud-platform-cli/pkg/commands.Version=<version>"
+var (
+	Version      = "testBuild"
+	Commit, Date string
+)
 
 const (
 	owner      = "ministryofjustice"
@@ -24,6 +30,7 @@ const (
 func addVersion(topLevel *cobra.Command) {
 	topLevel.AddCommand(&cobra.Command{
 		Use:    "version",
+		Hidden: true,
 		Short:  `Print version`,
 		PreRun: upgradeIfNotLatest,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -41,7 +48,7 @@ func version() string {
 	if Version == "" {
 		i, ok := debug.ReadBuildInfo()
 		if !ok {
-			return ""
+			return "testBuild"
 		}
 		Version = i.Main.Version
 	}

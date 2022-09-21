@@ -1,0 +1,4 @@
+$ cloud-platform invalid --> FAIL
+Error: unknown command "invalid" for "cloud-platform"
+Run 'cloud-platform --help' for usage.
+Error: unknown command "invalid" for "cloud-platform"

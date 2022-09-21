@@ -71,7 +71,7 @@ func promptUserForPrototypeValues() (*Prototype, error) {
 		prompt:    "Name",
 		validator: new(namespaceNameValidator),
 	}
-	q.getAnswer()
+	_ = q.getAnswer()
 	// TODO: check that there isn't already a namespace or github repository with this name
 	values.Namespace = q.value
 
@@ -89,7 +89,7 @@ func promptUserForPrototypeValues() (*Prototype, error) {
 		prompt:    "GitHub Team",
 		validator: new(githubTeamNameValidator),
 	}
-	q.getAnswer()
+	_ = q.getAnswer()
 	values.GithubTeam = q.value
 
 	q = userQuestion{
@@ -98,7 +98,7 @@ func promptUserForPrototypeValues() (*Prototype, error) {
 		prompt:    "Business Unit",
 		validator: new(businessUnitValidator),
 	}
-	q.getAnswer()
+	_ = q.getAnswer()
 	values.BusinessUnit = q.value
 
 	q = userQuestion{
@@ -109,7 +109,7 @@ func promptUserForPrototypeValues() (*Prototype, error) {
 		prompt:    "Team Slack Channel",
 		validator: new(slackChannelValidator),
 	}
-	q.getAnswer()
+	_ = q.getAnswer()
 	values.SlackChannel = q.value
 
 	q = userQuestion{
@@ -119,7 +119,7 @@ func promptUserForPrototypeValues() (*Prototype, error) {
 		prompt:    "Team",
 		validator: new(notEmptyValidator),
 	}
-	q.getAnswer()
+	_ = q.getAnswer()
 	values.Owner = q.value
 
 	// We can infer all the following, for a prototype
@@ -145,7 +145,7 @@ sensitive values here.`)
 		prompt:    "Username",
 		validator: new(notEmptyValidator),
 	}
-	q.getAnswer()
+	_ = q.getAnswer()
 	proto.BasicAuthUsername = q.value
 
 	q = userQuestion{
@@ -154,7 +154,7 @@ sensitive values here.`)
 		prompt:    "Password",
 		validator: new(notEmptyValidator),
 	}
-	q.getAnswer()
+	_ = q.getAnswer()
 	proto.BasicAuthPassword = q.value
 
 	proto.Namespace = values
@@ -168,13 +168,25 @@ func createPrototypeFiles(p *Prototype) error {
 		return err
 	}
 
-	p.appendBasicAuthVariables()
+	err = p.appendBasicAuthVariables()
+	if err != nil {
+		return err
+	}
 
 	nsdir := namespaceBaseFolder + "/" + p.Namespace.Namespace
 
-	CopyUrlToFile(prototypeTemplateUrl+"/ecr.tf", nsdir+"/resources/ecr.tf")
-	CopyUrlToFile(prototypeTemplateUrl+"/serviceaccount.tf", nsdir+"/resources/serviceaccount.tf")
-	CopyUrlToFile(prototypeTemplateUrl+"/basic-auth.tf", nsdir+"/resources/basic-auth.tf")
+	err = CopyUrlToFile(prototypeTemplateUrl+"/ecr.tf", nsdir+"/resources/ecr.tf")
+	if err != nil {
+		return err
+	}
+	err = CopyUrlToFile(prototypeTemplateUrl+"/serviceaccount.tf", nsdir+"/resources/serviceaccount.tf")
+	if err != nil {
+		return err
+	}
+	err = CopyUrlToFile(prototypeTemplateUrl+"/basic-auth.tf", nsdir+"/resources/basic-auth.tf")
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

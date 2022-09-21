@@ -1,13 +1,13 @@
 package release
 
 import (
-	"io/ioutil"
+	"os"
 	"testing"
 )
 
 func TestRunningCurrentVersion(t *testing.T) {
 	r := New("owner", "reponame", "9.10.11", "myapp")
-	json, _ := ioutil.ReadFile("fixtures/9.10.11-version.json")
+	json, _ := os.ReadFile("fixtures/9.10.11-version.json")
 	r.innerStruct.releaseJson = json
 
 	_, latest := r.isLatestVersion()
@@ -18,7 +18,7 @@ func TestRunningCurrentVersion(t *testing.T) {
 
 func TestNotLatest(t *testing.T) {
 	r := New("owner", "reponame", "8.8.8", "myapp")
-	json, _ := ioutil.ReadFile("fixtures/9.10.11-version.json")
+	json, _ := os.ReadFile("fixtures/9.10.11-version.json")
 	r.innerStruct.releaseJson = json
 
 	_, latest := r.isLatestVersion()

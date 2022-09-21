@@ -33,8 +33,8 @@ func targetDirs(file string) ([]string, error) {
 		// The first condition evaluates if the element already exists in the slice (why to execute
 		// plan twice against the same dir?). The second condition evaluates if the element is in
 		// the desired list to execute Plan (we don't want to execute Plan against everything)
-		if contains(dirs, filepath.Dir(scanner.Text())) != true &&
-			contains(dirsAllowed, filepath.Dir(scanner.Text())) == true {
+		if !contains(dirs, filepath.Dir(scanner.Text())) &&
+			contains(dirsAllowed, filepath.Dir(scanner.Text())) {
 			dirs = append(dirs, filepath.Dir(scanner.Text()))
 		}
 	}

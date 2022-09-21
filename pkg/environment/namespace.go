@@ -2,7 +2,7 @@ package environment
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"gopkg.in/yaml.v2"
@@ -31,12 +31,16 @@ func (ns *Namespace) ReadYaml() error {
 }
 
 func (ns *Namespace) readYamlFile(filename string) error {
-	contents, err := ioutil.ReadFile(filename)
+	contents, err := os.ReadFile(filename)
 	if err != nil {
 		fmt.Printf("Failed to read namespace YAML file: %s", filename)
 		return err
 	}
-	ns.parseYaml(contents)
+	err = ns.parseYaml(contents)
+	if err != nil {
+		fmt.Printf("Failed to parse namespace YAML file: %s", filename)
+		return err
+	}
 	return nil
 }
 

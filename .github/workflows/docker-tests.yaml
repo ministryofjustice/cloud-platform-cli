@@ -1,0 +1,23 @@
+name: Test Dockerfile
+on: pull_request
+
+jobs:
+  dockerfile-test:
+    name: container-structure-test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Build
+        run: docker build -t cli-test .
+      - name: Check it exists
+        run: docker images
+
+      - name: Run docker tests
+        uses: docker://gcr.io/gcp-runtimes/container-structure-test:latest
+        with:
+          args: "test --image cli-test --config docker-test.yaml"

@@ -3,7 +3,7 @@ package release
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 )
@@ -44,7 +44,7 @@ func (r *Release) UpgradeIfNotLatest() {
 		err = r.informUserToUpgrade()
 	}
 
-	fmt.Printf(err.Error())
+	fmt.Println(err.Error())
 	os.Exit(1)
 }
 
@@ -61,37 +61,40 @@ func (r *Release) isLatestVersion() (error, bool) {
 
 func (r *Release) informUserToUpgrade() error {
 	fmt.Printf("Update required. Current version: %s, Latest version: %s\n\n", r.innerStruct.CurrentVersion, r.innerStruct.LatestTag)
-	return fmt.Errorf("To upgrade the cloud platform cli, run `brew update && brew upgrade cloud-platform-cli` or grab the latest version from https://github.com/ministryofjustice/cloud-platform-cli/releases")
+	return fmt.Errorf("to upgrade the cloud platform cli, run `brew update && brew upgrade cloud-platform-cli` or grab the latest version from https://github.com/ministryofjustice/cloud-platform-cli/releases")
 }
 
 func (r *myRelease) getLatestReleaseInfo() error {
-	err, body := r.getLatestReleaseJson()
+	body, err := r.getLatestReleaseJson()
 	if err != nil {
 		return err
 	}
 
-	json.Unmarshal(body, r)
+	err = json.Unmarshal(body, r)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 
-func (r *myRelease) getLatestReleaseJson() (error, []byte) {
+func (r *myRelease) getLatestReleaseJson() ([]byte, error) {
 	body := r.releaseJson
 
 	if len(body) == 0 {
 		response, err := http.Get(r.latestReleaseUrl())
 		if err != nil {
-			return err, nil
+			return nil, err
 		}
-		body, err := ioutil.ReadAll(response.Body)
+		body, err := io.ReadAll(response.Body)
 		if err != nil {
-			return err, nil
+			return nil, err
 		}
 
 		r.releaseJson = body
 	}
 
-	return nil, r.releaseJson
+	return r.releaseJson, nil
 }
 
 func (r *myRelease) latestReleaseUrl() string {

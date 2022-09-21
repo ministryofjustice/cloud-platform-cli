@@ -1,10 +1,14 @@
 package util
 
 import (
+	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"os/exec"
 	"strings"
+
+	"github.com/ministryofjustice/cloud-platform-environments/pkg/authenticate"
 )
 
 type Repository struct {
@@ -45,4 +49,61 @@ func (re *Repository) GetBranch() (string, error) {
 		re.branch = strings.Trim(string(branch), "\n")
 	}
 	return re.branch, nil
+}
+
+// Get the latest changes form the origin remove and merge into current branch
+// It is assumed the current working directory is a git repo so ensure you check before calling this method
+func GetLatestGitPull() error {
+	// git pull of the repo
+	cmd := exec.Command("git", "pull")
+
+	var out bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+	if err != nil {
+		fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
+		return err
+	}
+	fmt.Println("Executing git pull")
+
+	return nil
+}
+
+func ChangedInPR(token, repo, owner string, prNumber int) ([]string, error) {
+	client, err := authenticate.GitHubClient(token)
+	if err != nil {
+		return nil, err
+	}
+	repos, _, err := client.PullRequests.ListFiles(context.Background(), owner, repo, prNumber, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var namespaceNames []string
+	for _, repo := range repos {
+		// namespaces filepaths are assumed to come in
+		// the format: namespaces/<cluster>.cloud-platform.service.justice.gov.uk/<namespaceName>
+		s := strings.Split(*repo.Filename, "/")
+		namespaceNames = append(namespaceNames, s[2])
+	}
+
+	return deduplicateList(namespaceNames), nil
+}
+
+// deduplicateList will simply take a slice of strings and
+// return a deduplicated version.
+func deduplicateList(s []string) (list []string) {
+	keys := make(map[string]bool)
+
+	for _, entry := range s {
+		if _, value := keys[entry]; !value {
+			keys[entry] = true
+			list = append(list, entry)
+		}
+	}
+
+	return
 }

@@ -3,27 +3,36 @@ package environment
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/gookit/color"
-	"github.com/spf13/cobra"
 	dir "golang.org/x/mod/sumdb/dirhash"
+	"gopkg.in/yaml.v2"
 )
 
-func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
-	re := RepoEnvironment{}
-	err := re.mustBeInCloudPlatformEnvironments()
-	if err != nil {
-		return err
+func CreateTemplateNamespace(skipEnvCheck bool, answersFile string) error {
+	if !skipEnvCheck {
+		re := RepoEnvironment{}
+		err := re.mustBeInCloudPlatformEnvironments()
+		if err != nil {
+			return err
+		}
 	}
 
-	nsValues, err := promptUserForNamespaceValues()
-	if err != nil {
-		return (err)
+	nsValues := &Namespace{}
+	if answersFile != "" {
+		if err := nsValues.readAnswersFile(answersFile); err != nil {
+			return err
+		}
+	} else {
+		if err := nsValues.promptUserForNamespaceValues(); err != nil {
+			return err
+		}
 	}
 
-	err = createNamespaceFiles(nsValues)
+	err := createNamespaceFiles(nsValues)
 	if err != nil {
 		return err
 	}
@@ -41,9 +50,7 @@ func CreateTemplateNamespace(cmd *cobra.Command, args []string) error {
 
 //------------------------------------------------------------------------------
 
-func promptUserForNamespaceValues() (*Namespace, error) {
-	values := Namespace{}
-
+func (values *Namespace) promptUserForNamespaceValues() error {
 	q := userQuestion{
 		description: heredoc.Doc(`
 			 What is the name of your namespace?
@@ -53,7 +60,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 		prompt:    "Name",
 		validator: new(namespaceNameValidator),
 	}
-	q.getAnswer()
+	_ = q.getAnswer()
 	values.Namespace = q.value
 
 	q = userQuestion{
@@ -64,8 +71,14 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 		prompt:    "Environment",
 		validator: new(lowercaseStringValidator),
 	}
-	q.getAnswer()
+	_ = q.getAnswer()
 	values.Environment = q.value
+
+	// If the user requests a namespace for a dev-alpha environment,
+	// we need to create the namespace in the dev-alpha directory.
+	if strings.ToLower(q.value) == "dev-alpha" {
+		namespaceBaseFolder = devAlphaBaseDir
+	}
 
 	if q.value == "development" || q.value == "dev" {
 		values.IsProduction = "false"
@@ -78,7 +91,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 			prompt:    "Sandbox?",
 			validator: new(yesNoValidator),
 		}
-		q.getAnswer()
+		_ = q.getAnswer()
 		if q.value == "yes" {
 			values.ReviewAfter = reviewAfter()
 		}
@@ -91,7 +104,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 			prompt:    "Production?",
 			validator: new(yesNoValidator),
 		}
-		q.getAnswer()
+		_ = q.getAnswer()
 		if q.value == "yes" {
 			values.IsProduction = "true"
 		} else {
@@ -107,7 +120,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 		prompt:    "Application",
 		validator: new(notEmptyValidator),
 	}
-	q.getAnswer()
+	_ = q.getAnswer()
 	values.Application = q.value
 
 	q = userQuestion{
@@ -121,7 +134,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 		prompt:    "GitHub Team",
 		validator: new(githubTeamNameValidator),
 	}
-	q.getAnswer()
+	_ = q.getAnswer()
 	values.GithubTeam = q.value
 
 	q = userQuestion{
@@ -131,7 +144,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 		prompt:    "Business Unit",
 		validator: new(businessUnitValidator),
 	}
-	q.getAnswer()
+	_ = q.getAnswer()
 	values.BusinessUnit = q.value
 
 	q = userQuestion{
@@ -143,7 +156,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 		prompt:    "Team Slack Channel",
 		validator: new(slackChannelValidator),
 	}
-	q.getAnswer()
+	_ = q.getAnswer()
 	values.SlackChannel = q.value
 
 	q = userQuestion{
@@ -155,7 +168,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 		prompt:    "Team Email",
 		validator: new(teamEmailValidator),
 	}
-	q.getAnswer()
+	_ = q.getAnswer()
 	values.InfrastructureSupport = q.value
 
 	q = userQuestion{
@@ -166,7 +179,7 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 		prompt:    "Github Repo",
 		validator: new(githubUrlValidator),
 	}
-	q.getAnswer()
+	_ = q.getAnswer()
 	values.SourceCode = q.value
 
 	q = userQuestion{
@@ -177,13 +190,13 @@ func promptUserForNamespaceValues() (*Namespace, error) {
 		prompt:    "Team",
 		validator: new(notEmptyValidator),
 	}
-	q.getAnswer()
+	_ = q.getAnswer()
 	values.Owner = q.value
 
-	return &values, nil
+	return nil
 }
 
-func downloadAndInitialiseTemplates(namespace string) (error, []*templateFromUrl) {
+func downloadAndInitialiseTemplates(namespace string) ([]*templateFromUrl, error) {
 	templates := []*templateFromUrl{
 		{
 			name: "00-namespace.yaml",
@@ -221,13 +234,13 @@ func downloadAndInitialiseTemplates(namespace string) (error, []*templateFromUrl
 
 	err := downloadTemplateContents(templates)
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 
 	for _, s := range templates {
 		s.outputPath = fmt.Sprintf("%s/%s/", namespaceBaseFolder, namespace) + s.name
 	}
-	return nil, templates
+	return templates, nil
 }
 
 func createNamespaceFiles(nsValues *Namespace) error {
@@ -236,7 +249,7 @@ func createNamespaceFiles(nsValues *Namespace) error {
 		return err
 	}
 
-	err, templates := downloadAndInitialiseTemplates(nsValues.Namespace)
+	templates, err := downloadAndInitialiseTemplates(nsValues.Namespace)
 	if err != nil {
 		return err
 	}
@@ -284,5 +297,19 @@ func createDirHash(nsValues *Namespace) error {
 }
 
 func reviewAfter() string {
-	return fmt.Sprintf(time.Now().AddDate(0, 3, 0).Format("2006-01-02"))
+	return string(time.Now().AddDate(0, 3, 0).Format("2006-01-02"))
+}
+
+func (ns *Namespace) readAnswersFile(fileName string) error {
+	f, err := os.ReadFile(fileName)
+	if err != nil {
+		return err
+	}
+
+	err = yaml.Unmarshal(f, ns)
+	if err != nil {
+		return err
+	}
+
+	return err
 }

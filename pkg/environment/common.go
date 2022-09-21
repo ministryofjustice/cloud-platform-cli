@@ -1,7 +1,7 @@
 package environment
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"text/template"
@@ -9,24 +9,22 @@ import (
 
 const (
 	cloudPlatformEnvRepo = "cloud-platform-environments"
-	namespaceBaseFolder  = "namespaces/live.cloud-platform.service.justice.gov.uk"
+	liveBaseDir          = "namespaces/live.cloud-platform.service.justice.gov.uk"
+	devAlphaBaseDir      = "namespaces/dev-alpha.cloud-platform.service.justice.gov.uk"
 	envTemplateLocation  = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template"
+	numRoutines          = 1
+	mojOwner             = "ministryofjustice"
 )
+
+// namespaceBaseFolder is the base folder for the cloud-platform-environments repository.
+// we set this as a global variable so it can be used to define the cluster directory later on.
+var namespaceBaseFolder = liveBaseDir
 
 type templateFromUrl struct {
 	outputPath string
 	content    string
 	name       string
 	url        string
-}
-
-func outputFileWriter(fileName string) (*os.File, error) {
-	f, err := os.Create(fileName)
-	if err != nil {
-		return nil, err
-	}
-
-	return f, nil
 }
 
 func downloadTemplateContents(t []*templateFromUrl) error {
@@ -46,18 +44,10 @@ func downloadTemplate(url string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	data, _ := ioutil.ReadAll(response.Body)
+	data, _ := io.ReadAll(response.Body)
 	content := string(data)
 
 	return content, nil
-}
-
-func directoryExists(path string) bool {
-	if stat, err := os.Stat(path); err == nil && stat.IsDir() {
-		return true
-	} else {
-		return false
-	}
 }
 
 func CopyUrlToFile(url string, targetFilename string) error {
@@ -70,7 +60,12 @@ func CopyUrlToFile(url string, targetFilename string) error {
 	if err != nil {
 		return err
 	}
-	f.WriteString(str)
+
+	_, err = f.WriteString(str)
+	if err != nil {
+		return err
+	}
+
 	f.Close()
 
 	return nil

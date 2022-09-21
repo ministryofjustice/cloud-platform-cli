@@ -75,7 +75,7 @@ func (r *Recycler) Node() (err error) {
 	log.Debug().Msg("Checking AWS credentials work")
 	err = r.checkAwsCreds()
 	if err != nil {
-		return fmt.Errorf("Unable to validate AWS credentials: %s", err)
+		return fmt.Errorf("unable to validate AWS credentials: %s", err)
 	}
 
 	log.Info().Msgf("Checking cluster: %s is in a valid state to recycle node", r.Cluster.Name)

@@ -1,9 +1,8 @@
 package environment
 
 import (
-	"bytes"
-	"fmt"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -60,34 +59,18 @@ func TestBumpModule(t *testing.T) {
 
 // createTestFile creates a test file with the given version.
 func createTestFile() os.File {
-	f, err := os.Create("test.tf")
-	if err != nil {
-		fmt.Errorf("Error creating file: %e", err)
-	}
+	f, _ := os.Create("test.tf")
 
 	defer f.Close()
-	f.WriteString("module test { source = \"test=1.0.0\" }")
+	_, _ = f.WriteString("module test { source = \"test=1.0.0\" }")
 
 	return *f
 }
 
-const chunkSize = 64000
-
 // checkModuleChange checks if the file has been changed and contains
 // the string passed to it.
 func checkModuleChange(v, f string) bool {
-	file, err := os.Open(f)
-	if err != nil {
-		fmt.Errorf("Error reading file: %e", err)
-	}
-	defer file.Close()
+	contents, _ := os.ReadFile(f)
 
-	b := make([]byte, chunkSize)
-	_, err = file.Read(b)
-
-	if err != nil {
-		fmt.Errorf("Error reading file: %e", err)
-	}
-
-	return bytes.Contains(b, []byte(v))
+	return strings.Contains(string(contents), v)
 }

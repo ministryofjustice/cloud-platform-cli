@@ -1,0 +1,51 @@
+project_name: cloud-platform-cli
+before:
+  hooks:
+    - go mod download
+    - scripts/completions.sh
+archives:
+  - files:
+      - README.md
+      - LICENSE
+      - completions/*
+builds:
+  - env:
+      - CGO_ENABLED=0
+    main: ./cmd/cloud-platform
+    binary: cloud-platform
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - "386"
+      - amd64
+      - arm
+      - arm64
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X github.com/ministryofjustice/cloud-platform-cli/pkg/commands.Version={{.Version}} -X github.com/ministryofjustice/cloud-platform-cli/pkg/commands.Commit={{.Commit}} -X github.com/ministryofjustice/cloud-platform-cli/pkg/commands.Date={{ .CommitDate }}
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - Merge pull request
+      - Merge branch
+      - go mod tidy
+brews:
+  - tap:
+      owner: ministryofjustice
+      name: homebrew-cloud-platform-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    folder: Formula
+    homepage: https://user-guide.cloud-platform.service.justice.gov.uk/#cloud-platform-user-guide
+    description: Multi-purpose CLI for Ministry of Justice Cloud Platform.
+    license: MIT
+    install: |-
+      bin.install "cloud-platform"
+      bash_completion.install "completions/cloud-platform.bash" => "cloud-platform"
+      zsh_completion.install "completions/cloud-platform.zsh" => "_cloud-platform"
+      fish_completion.install "completions/cloud-platform.fish"
+    dependencies:
+      - name: go

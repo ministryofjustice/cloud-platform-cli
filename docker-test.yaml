@@ -1,0 +1,21 @@
+schemaVersion: "2.0.0"
+fileExistenceTests:
+  - name: "cloud-platform binary"
+    path: "/usr/local/bin/cloud-platform"
+    shouldExist: true
+  - name: "terraform binary"
+    path: "/usr/local/bin/terraform"
+    shouldExist: true
+  - name: "kubectl binary"
+    path: "/usr/local/bin/kubectl"
+    shouldExist: true
+commandTests:
+  - name: "cloud-platform bad command"
+    command: "cloud-platform"
+    args: ["bad-command"]
+    expectedError: [".*Error.*"]
+    exitCode: 1
+  - name: "cloud-platform good command"
+    command: "cloud-platform"
+    args: ["version", "--skip-version-check"]
+    exitCode: 0

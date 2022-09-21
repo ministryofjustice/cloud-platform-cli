@@ -1,25 +1,26 @@
 # Cloud Platform Tool CLI
 
 [![Releases](https://img.shields.io/github/release/ministryofjustice/cloud-platform-cli/all.svg?style=flat-square)](https://github.com/ministryofjustice/cloud-platform-cli/releases)
+[![codecov](https://codecov.io/gh/ministryofjustice/cloud-platform-cli/branch/main/graph/badge.svg?token=BUF45279MY)](https://codecov.io/gh/ministryofjustice/cloud-platform-cli)
 
 `cloud-platform` is a command-line tool used by the cloud-platform team and tenants to perform actions on the platform, for example:
 
-   - Create environment configuration using a template
-   - Divergences in terraform states
-   - Terraform apply
-   - Others
+- Create environment configuration using a template
+- Divergences in terraform states
+- Terraform apply
+- Others
 
 User documentation is here: https://user-guide.cloud-platform.service.justice.gov.uk/documentation/getting-started/cloud-platform-cli.html
 
 ## Install
 
-### Homebrew
+### via Homebrew
 
 ```
 brew install ministryofjustice/cloud-platform-tap/cloud-platform-cli
 ```
 
-### Manual
+### Manually
 
 These installation instructions are for a Mac. If you have a different kind of
 computer, please amend the steps appropriately.
@@ -42,81 +43,56 @@ be able to run the command as normal.
 
 ## Usage
 
-`cloud-platform` has different subcommands. Execute: `cloud-platform --help` in order to check them out. Remember some of the subcommands requires `AWS_*` keys.
+The `/doc` directory should contain usage instructions, otherwise, please see the output of `cloud-platform --help` or the [user-guide](https://user-guide.cloud-platform.service.justice.gov.uk/documentation/getting-started/cloud-platform-cli.html) entry for more information.
 
-### `cloud-platform terraform`
+### Autogenerate documentation
 
-`cloud-platform terraform` simply is a terraform wrapper which allows us to execute terraform commands. It also includes `check-divergence` command which fails in case there are pending terraform changes.
+The cli uses the [cobra-docs](https://github.com/spf13/cobra/blob/main/doc/md_docs.md) generator to create automated Markdown pages from Cobra.
 
-Usage example:
-
-```shell
-$ cloud-platform terraform check-divergence --workspace manager --var-file prod.tfvars
-INFO[0000] Executing terraform plan, if there is a drift this program execution will fail  subcommand=check-divergence
-INFO[0002] Initializing modules...
-
-Initializing the backend...
-
-Initializing provider plugins...
-
-...
-...
-...
-Terraform has been successfully initialized!
-
-You may now begin working with Terraform. Try running "terraform plan" to see
-any changes that are required for your infrastructure. All Terraform commands
-should now work.
-
-If you ever set or change modules or backend configuration for Terraform,
-rerun this command to reinitialize your working directory. If you forget, other
-commands will detect it and remind you to do so if necessary.
-INFO[0003]
-INFO[0015] Refreshing Terraform state in-memory prior to plan...
-The refreshed state will be used to calculate this plan, but will not be
-persisted to local or remote state storage.
-
-tls_private_key.worker_key: Refreshing state... [id=1fdf4d57aa5f06668ce94fd60c2a5de657d07de4]
-tls_private_key.session_signing_key: Refreshing state... [id=66e5f736b76f51d26d37c1449b21e89066f369d7]
-tls_private_key.host_key: Refreshing state... [id=4bf29261ec098ddf34c7d3a45d3b460bd6585ed5]
-...
-...
-...
-
-kubernetes_namespace.concourse: Refreshing state... [id=concourse]
-kubernetes_namespace.concourse_main: Refreshing state... [id=concourse-main]
-kubernetes_secret.concourse_aws_credentials: Refreshing state... [id=concourse-main/aws-manager]
-kubernetes_secret.concourse_basic_auth_credentials: Refreshing state... [id=concourse-main/concourse-basic-auth]
-
-------------------------------------------------------------------------
-
-No changes. Infrastructure is up-to-date.
-
-This means that Terraform did not detect any differences between your
-configuration and real physical resources that exist. As a result, no
-actions need to be performed.
-
-```
+When a pull-request is opened, a GitHub Action will trigger and autogenerate the documentation. The action will commit these changes back to the remote branch.
 
 ## Develop
 
-You will need golang installed (version 1.13 or greater).
+You will need Go installed.
 
 ### Build locally
 
 Run `make` to create a `cloud-platform` binary.
 
+[note] Something worth noting when building locally. You'll need to pass the `--skip-version-check` command to avoid a message about upgrading.
+
 ### Testing
+
+There are two types of tests in this repository:
+
+#### Integration
+
+These tests build the root binary and test the output of a command. For example, `cloud-platform version` will output `testBuild` using a package called [go-testcmd](https://github.com/google/go-cmdtest). Integration tests are tagged with `integration` so won't run using the normal `go test -v ./...` command. You'll have to pass the `integration` keyword as a build tag, i.e. `go test -v ./... --tags integration`
+
+If you'd like to create a new integration test, add the following to the top of your test file: `//go:build integration`.
+
+If the output of a command changes and the tests start failing, simply add the `-update` flag to your test command and they'll automatically update on your behalf. For example: `go test . --tags integration -update`
+
+#### Unit
+
+These tests live next to the code, they have no build tag and will run regardless of the flag you on build.
 
 Run `make test` to run the unit tests.
 
-### Updating / Publishing
+There are Dockerfile structure tests that run automatically in a pipeline. If you want to run these locally, install the [container-structure-test](https://github.com/GoogleContainerTools/container-structure-test#installation) binary and run:
+
+```bash
+container-structure-test test --image my-image-name \
+--config docker-test.yaml
+```
+
+### Releasing a new version
 
 This project includes a [github action](.github/workflows/build-release.yml) which
 will automatically do the following steps:
 
-* build a new release and make it available in the [github ui]
-* build a new docker image and push it to [docker hub], tagged with the version number
+- build a new release and make it available in the [github ui]
+- build a new docker image and push it to [docker hub], tagged with the version number
 
 In order to trigger this action, push a new tag version like this:
 
@@ -125,7 +101,7 @@ git tag [my new version]
 git push --tags
 ```
 
-The value of this tag **must** be the same as the string value of `Version` in the file `pkg/commands/version.go`
+The value of this tag **must** be built into the binary `Version` in the file `pkg/commands/version.go`. This will happen automatically on release.
 
 #### `PreRun` hook
 

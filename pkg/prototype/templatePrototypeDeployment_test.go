@@ -23,8 +23,10 @@ func cleanUpPrototypeDockerFiles() {
 }
 
 func TestCreateDeploymentPrototype(t *testing.T) {
-
-	createPrototypeDeploymentFiles("branch-01", false)
+	err := createPrototypeDeploymentFiles("branch-01", false)
+	if err != nil {
+		t.Error(err)
+	}
 
 	githubActionFile := "./.github/workflows/cd-branch-01.yaml"
 	deploymentFile := "./kubernetes-deploy-branch-01.tpl"
@@ -47,7 +49,6 @@ func TestCreateDeploymentPrototype(t *testing.T) {
 	}
 
 	stringsInFiles := map[string]string{
-
 		githubActionFile: "branch-01",
 		deploymentFile:   "{BRANCH}",
 	}
@@ -60,8 +61,10 @@ func TestCreateDeploymentPrototype(t *testing.T) {
 }
 
 func TestCreateDeploymentPrototypeWithSkip(t *testing.T) {
-
-	createPrototypeDeploymentFiles("branch-02", true)
+	err := createPrototypeDeploymentFiles("branch-02", true)
+	if err != nil {
+		t.Error(err)
+	}
 
 	githubActionFile := "./.github/workflows/cd-branch-02.yaml"
 	deploymentFile := "./kubernetes-deploy-branch-02.tpl"
@@ -93,7 +96,6 @@ func TestCreateDeploymentPrototypeWithSkip(t *testing.T) {
 	}
 
 	stringsInFiles := map[string]string{
-
 		githubActionFile: "branch-02",
 		deploymentFile:   "{BRANCH}",
 	}

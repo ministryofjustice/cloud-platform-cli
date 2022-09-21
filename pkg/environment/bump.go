@@ -2,7 +2,6 @@ package environment
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -24,7 +23,7 @@ func BumpModule(m, v string) error {
 		}
 
 		if filepath.Ext(path) == ".tf" {
-			data, err := ioutil.ReadFile(path)
+			data, err := os.ReadFile(path)
 			if err != nil {
 				return fmt.Errorf("error reading file %s", err)
 			}
@@ -62,7 +61,7 @@ func BumpModule(m, v string) error {
 
 					blockBody.SetAttributeValue("source", cty.StringVal(val))
 				}
-				err = os.WriteFile(path, f.Bytes(), 0644)
+				err = os.WriteFile(path, f.Bytes(), 0o644)
 				if err != nil {
 					return err
 				}

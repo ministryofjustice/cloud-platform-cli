@@ -41,7 +41,7 @@ A continuous deployment workflow will be created in the github repository such
 that any changes to the branch are deployed to the cloud platform.
 	`,
 	Example: heredoc.Doc(`
-	$ cloud-platform prototype deploy
+	> cloud-platform prototype deploy
 	`),
 	PreRun: upgradeIfNotLatest,
 	RunE: func(cmd *cobra.Command, args []string) error {
