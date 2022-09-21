@@ -10,6 +10,7 @@ cloud-platform [flags]
 
 ```
   -h, --help                 help for cloud-platform
+      --kubeconfig string    (optional) absolute path to the kubeconfig file (default "/home/runner/.kube/config")
       --skip-version-check   don't check for updates
 ```
 

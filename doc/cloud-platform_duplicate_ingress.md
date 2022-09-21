@@ -27,9 +27,8 @@ $ cloud-platform duplicate ingress myingressname -n mynamespace
 ### Options
 
 ```
-  -h, --help                help for ingress
-      --kubeconfig string   (optional) absolute path to the kubeconfig file (default "/home/runner/.kube/config")
-  -n, --namespace string    Namespace which you want to perform the duplicate resource
+  -h, --help               help for ingress
+  -n, --namespace string   Namespace which you want to perform the duplicate resource
 ```
 
 ### Options inherited from parent commands
