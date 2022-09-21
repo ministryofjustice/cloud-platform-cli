@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -20,7 +19,9 @@ import (
 	"github.com/hashicorp/hc-install/releases"
 	"github.com/hashicorp/hc-install/src"
 	"github.com/hashicorp/terraform-exec/tfexec"
+	"github.com/ministryofjustice/cloud-platform-go-library/client"
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // CreateOptions struct represents the options passed to the Create method.
@@ -70,7 +71,19 @@ type TerraformOptions struct {
 	Workspace string
 	// FilePath is the location of the cloud-platform-infrastructure repository.
 	// This repository contains all the Terraform used to create the cluster.
-	FilePath string
+	FilePath     string
+	DirStructure TerraformDirStructure
+}
+
+type TerraformDirStructure struct {
+	// ComponentDir is the directory path in the cloud-platform-infrastructure repository.
+	ComponentDir string
+	// VpcDir is the directory path in the cloud-platform-infrastructure repository.
+	VpcDir string
+	// ClusterDir is the directory path in the cloud-platform-infrastructure repository.
+	ClusterDir string
+	// Directories is a slice of strings of the directory paths in the cloud-platform-infrastructure repository.
+	Directories []string
 }
 
 // AuthOpts represents the options for Auth0.
@@ -84,60 +97,58 @@ type AuthOpts struct {
 }
 
 // Create creates a new Kubernetes cluster using the options passed to it.
-func (cluster *Cluster) Create(create *CreateOptions, terraform *TerraformOptions, awsCred *AwsCredentials) error {
-	// Ensure the executor is running the command in the correct directory.
-	repoName, err := findTopLevelGitDir(".")
-	if err != nil {
-		return fmt.Errorf("cannot find top level git dir: %s", err)
+func (terraform *TerraformOptions) CreateCluster(options *CreateOptions, awsCred *AwsCredentials) error {
+	fmt.Println("Creating cluster", options.Name)
+	if err := terraform.setup(); err != nil {
+		return fmt.Errorf("failed to setup terraform: %w", err)
 	}
 
-	if !strings.Contains(repoName, "cloud-platform-infrastructure") {
-		return errors.New("must be run from the cloud-platform-infrastructure repository")
+	if err := terraform.build(awsCred, options.Fast); err != nil {
+		return fmt.Errorf("failed to run terraform: %w", err)
 	}
-
-	fmt.Println("Creating cluster")
-	err = terraform.Run(awsCred, create.Fast)
-	if err != nil {
-		return err
-	}
-
-	// TODO: Build the cluster object and perform general cluster readiness checks.
-	// TODO: Display a nice table of the cluster status.
 
 	return nil
 }
 
-func (terraform *TerraformOptions) Run(creds *AwsCredentials, fast bool) error {
-	// Directory paths in the cloud-platform-infrastructure repository.
+func (terraform *TerraformOptions) setup() error {
 	const baseDir = "./terraform/aws-accounts/cloud-platform-aws/"
 	var (
 		vpcDir        = baseDir + "vpc/"
 		clusterDir    = vpcDir + "eks/"
 		componentsDir = clusterDir + "components/"
 	)
-
 	directories := []string{
 		vpcDir,
 		clusterDir,
 		componentsDir,
 	}
 
-	// Create Terraform object to use throught method.
-	fmt.Println("Creating Terraform object")
+	structure := TerraformDirStructure{
+		VpcDir:       vpcDir,
+		ClusterDir:   clusterDir,
+		ComponentDir: componentsDir,
+		Directories:  directories,
+	}
+
+	terraform.DirStructure = structure
+
 	err := terraform.CreateTerraformObj()
 	if err != nil {
 		return fmt.Errorf("error creating terraform obj: %s", err)
 	}
+	return nil
+}
 
-	for _, dir := range directories {
+func (terraform *TerraformOptions) build(creds *AwsCredentials, fast bool) error {
+	for _, dir := range terraform.DirStructure.Directories {
 		fmt.Println("Applying in dir", dir)
-		if dir == componentsDir {
+		if dir == terraform.DirStructure.ComponentDir {
 			err := authToCluster(terraform.Workspace)
 			if err != nil {
 				return fmt.Errorf("error authenticating to cluster: %s", err)
 			}
 		}
-		err := terraform.Apply(dir, creds, fast)
+		err := terraform.apply(dir, creds, fast)
 		if err != nil {
 			return fmt.Errorf("error applying terraform in dir: %s %s", dir, err)
 		}
@@ -151,7 +162,7 @@ func (terraform *TerraformOptions) CreateTerraformObj() error {
 	i := install.NewInstaller()
 	v := version.Must(version.NewVersion(terraform.Version))
 
-	execPath, err := i.Ensure(context.Background(), []src.Source{
+	execPath, err := i.Ensure(context.TODO(), []src.Source{
 		&fs.ExactVersion{
 			Product: product.Terraform,
 			Version: v,
@@ -165,7 +176,7 @@ func (terraform *TerraformOptions) CreateTerraformObj() error {
 		return err
 	}
 
-	defer i.Remove(context.Background())
+	defer i.Remove(context.TODO())
 
 	terraform.ExecPath = execPath
 	terraform.ApplyVars = []tfexec.ApplyOption{
@@ -191,7 +202,7 @@ func (terraform *TerraformOptions) InitAndApply(tf *tfexec.Terraform, creds *Aws
 	return nil
 }
 
-func (terraform *TerraformOptions) HealthCheck(tf *tfexec.Terraform, creds *AwsCredentials) error {
+func (terraform *TerraformOptions) output(tf *tfexec.Terraform) (map[string]tfexec.OutputMeta, error) {
 	// We don't want terraform to print out the output here as the package doesn't respect the secret flag.
 	tf.SetStdout(nil)
 	tf.SetStderr(nil)
@@ -201,43 +212,35 @@ func (terraform *TerraformOptions) HealthCheck(tf *tfexec.Terraform, creds *AwsC
 			fmt.Println("Init again, due to failure")
 			err = tf.Init(context.TODO(), terraform.InitVars...)
 			if err != nil {
-				return fmt.Errorf("failed to init: %w", err)
+				return nil, fmt.Errorf("failed to init: %w", err)
 			}
-			output, err = tf.Output(context.Background())
+			output, err = tf.Output(context.TODO())
 			if err != nil {
-				return fmt.Errorf("failed to create output: %w", err)
+				return nil, fmt.Errorf("failed to create output: %w", err)
 			}
-			return fmt.Errorf("failed to show terraform output: %w", err)
+			return nil, fmt.Errorf("failed to show terraform output: %w", err)
 		}
 	}
+	return output, nil
+}
 
-	// Get VPC ID from terraform output.
-	vpcID := output["vpc_id"]
-	if vpcID.Value == nil {
-		return errors.New("vpc_id not found in terraform output")
-	}
-	fmt.Println("VPC ID:", string(vpcID.Value))
-
-	fmt.Println("Check terraform")
+func (terraform *TerraformOptions) HealthCheck(tf *tfexec.Terraform, creds *AwsCredentials) error {
 	// switch case for checking which directory we are in
 	switch {
-	case strings.Contains(tf.WorkingDir(), "vpc"):
-		err = checkVpc(string(vpcID.Value), terraform.Workspace, creds.Session)
+	case tf.WorkingDir() == "./terraform/aws-accounts/cloud-platform-aws/":
+		err := terraform.checkVpc(tf, creds.Session)
 		if err != nil {
 			return fmt.Errorf("failed to check vpc: %w", err)
 		}
-		fmt.Println("Check complete")
 	case strings.Contains(tf.WorkingDir(), "eks"):
 		err := checkCluster(terraform.Workspace, creds.Session)
 		if err != nil {
 			return fmt.Errorf("failed to check cluster: %w", err)
 		}
-		err = authToCluster(terraform.Workspace)
-		if err != nil {
-			return fmt.Errorf("failed to auth to cluster: %w", err)
-		}
 	case strings.Contains(tf.WorkingDir(), "components"):
-		// TODO: Check components health
+		if err := applyTacticalPspFix(); err != nil {
+			return fmt.Errorf("failed to apply tactical psp fix: %w", err)
+		}
 	}
 	return nil
 }
@@ -258,7 +261,7 @@ func (terraform *TerraformOptions) ApplyAndCheck(tf *tfexec.Terraform, creds *Aw
 
 // intialise performs the `terraform init` function.
 func (terraform *TerraformOptions) Initialise(tf *tfexec.Terraform, creds *AwsCredentials) error {
-	err := tf.Init(context.Background())
+	err := tf.Init(context.TODO())
 	if err != nil {
 		return err
 	}
@@ -266,11 +269,14 @@ func (terraform *TerraformOptions) Initialise(tf *tfexec.Terraform, creds *AwsCr
 }
 
 func (terraform *TerraformOptions) SetWorkspace(tf *tfexec.Terraform, creds *AwsCredentials) error {
-	list, _, err := tf.WorkspaceList(context.Background())
+	list, _, err := tf.WorkspaceList(context.TODO())
+	if err != nil {
+		return err
+	}
 
 	for _, ws := range list {
 		if ws == terraform.Workspace {
-			err = tf.WorkspaceSelect(context.Background(), terraform.Workspace)
+			err = tf.WorkspaceSelect(context.TODO(), terraform.Workspace)
 			if err != nil {
 				return err
 			}
@@ -278,35 +284,11 @@ func (terraform *TerraformOptions) SetWorkspace(tf *tfexec.Terraform, creds *Aws
 		}
 	}
 
-	err = tf.WorkspaceNew(context.Background(), terraform.Workspace)
+	err = tf.WorkspaceNew(context.TODO(), terraform.Workspace)
 	if err != nil {
 		return err
 	}
 
-	return nil
-}
-
-func createKubeconfig(workspace string, session *session.Session) error {
-	// Check if the cluster exists
-	clusterName := fmt.Sprintf("%s", workspace)
-	fmt.Printf("Checking if cluster %s exists\n", clusterName)
-	clusters, err := eks.New(session).ListClusters(&eks.ListClustersInput{})
-	if err != nil {
-		return err
-	}
-
-	for _, cluster := range clusters.Clusters {
-		if *cluster == clusterName {
-			fmt.Printf("Cluster %s exists, creating kubeconfig\n", clusterName)
-			err = authToCluster(workspace)
-			if err != nil {
-				return err
-			}
-			return nil
-		}
-	}
-
-	fmt.Println("Cluster not found, skipping kubeconfig creation")
 	return nil
 }
 
@@ -322,7 +304,7 @@ func authToCluster(cluster string) error {
 func (terraform *TerraformOptions) ExecuteApply(tf *tfexec.Terraform, fast bool) error {
 	// I've found to ensure parallelism you need to execute init once more.
 	terraform.InitVars = append(terraform.InitVars, tfexec.Reconfigure(true))
-	err := tf.Init(context.Background(), terraform.InitVars...)
+	err := tf.Init(context.TODO(), terraform.InitVars...)
 	if err != nil {
 		return fmt.Errorf("failed to init: %w", err)
 	}
@@ -336,11 +318,11 @@ func (terraform *TerraformOptions) ExecuteApply(tf *tfexec.Terraform, fast bool)
 	if err != nil {
 		if errors.As(err, &tfexec.ErrNoInit{}) {
 			fmt.Println("Init again, due to failure")
-			err = tf.Init(context.Background(), terraform.InitVars...)
+			err = tf.Init(context.TODO(), terraform.InitVars...)
 			if err != nil {
 				return fmt.Errorf("failed to init: %w", err)
 			}
-			err = tf.Apply(context.Background(), terraform.ApplyVars...)
+			err = tf.Apply(context.TODO(), terraform.ApplyVars...)
 			if err != nil {
 				return fmt.Errorf("failed to apply: %w", err)
 			}
@@ -352,16 +334,26 @@ func (terraform *TerraformOptions) ExecuteApply(tf *tfexec.Terraform, fast bool)
 }
 
 // CheckVpc asserts that the vpc is up and running. It tests the vpc state and id.
-func checkVpc(vpcId, workspace string, sess *session.Session) error {
+func (terraform *TerraformOptions) checkVpc(tf *tfexec.Terraform, sess *session.Session) error {
+	output, err := terraform.output(tf)
+	if err != nil {
+		return fmt.Errorf("failed to get output: %w", err)
+	}
+
+	vpcID := output["vpc_id"]
+	if vpcID.Value == nil {
+		return errors.New("vpc_id not found in terraform output")
+	}
+
 	// Trim the vpcId to remove quotes
-	trimVpc := strings.Trim(vpcId, "\"")
+	trimVpc := strings.Trim(string(vpcID.Value), "\"")
 	svc := ec2.New(sess)
 
 	vpc, err := svc.DescribeVpcs(&ec2.DescribeVpcsInput{
 		Filters: []*ec2.Filter{
 			{
 				Name:   aws.String("tag:Cluster"),
-				Values: []*string{aws.String(workspace)},
+				Values: []*string{aws.String(terraform.Workspace)},
 			},
 		},
 	})
@@ -384,7 +376,7 @@ func checkVpc(vpcId, workspace string, sess *session.Session) error {
 	return nil
 }
 
-func (terraform *TerraformOptions) Apply(directory string, creds *AwsCredentials, fast bool) error {
+func (terraform *TerraformOptions) apply(directory string, creds *AwsCredentials, fast bool) error {
 	fmt.Println("Creating terraform object")
 	tf, err := tfexec.NewTerraform(directory, terraform.ExecPath)
 	if err != nil {
@@ -402,29 +394,29 @@ func (terraform *TerraformOptions) Apply(directory string, creds *AwsCredentials
 	return terraform.ApplyAndCheck(tf, creds, fast)
 }
 
-// ApplyTacticalPspFix deletes the current eks.privileged psp in the cluster.
+// applyTacticalPspFix deletes the current eks.privileged psp in the cluster.
 // This allows the cluster to be created with a different psp. All pods are recycled
 // so the new psp will be applied.
-// func (c *Cluster) ApplyTacticalPspFix() error {
-// 	client, err := client.NewKubeClientWithValues("", "")
-// 	if err != nil {
-// 		return fmt.Errorf("failed to create kubernetes client: %w", err)
-// 	}
+func applyTacticalPspFix() error {
+	client, err := client.NewKubeClientWithValues("", "")
+	if err != nil {
+		return fmt.Errorf("failed to create kubernetes client: %w", err)
+	}
 
-// 	// Delete the eks.privileged psp
-// 	err = client.Clientset.PolicyV1beta1().PodSecurityPolicies().Delete(context.Background(), "eks.privileged", metav1.DeleteOptions{})
-// 	if err != nil {
-// 		return fmt.Errorf("failed to delete eks.privileged psp: %w", err)
-// 	}
+	// Delete the eks.privileged psp
+	err = client.Clientset.PolicyV1beta1().PodSecurityPolicies().Delete(context.TODO(), "eks.privileged", metav1.DeleteOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to delete eks.privileged psp: %w", err)
+	}
 
-// 	// Delete all pods in the cluster
-// 	err = client.Clientset.CoreV1().Pods("").DeleteCollection(context.Background(), metav1.DeleteOptions{}, metav1.ListOptions{})
-// 	if err != nil {
-// 		return fmt.Errorf("failed to recycle pods: %w", err)
-// 	}
+	// Delete all pods in the cluster
+	err = client.Clientset.CoreV1().Pods("").DeleteCollection(context.TODO(), metav1.DeleteOptions{}, metav1.ListOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to recycle pods: %w", err)
+	}
 
-// 	return nil
-// }
+	return nil
+}
 
 // checkCluster checks the cluster is created and exists.
 func checkCluster(name string, session *session.Session) error {
@@ -434,7 +426,8 @@ func checkCluster(name string, session *session.Session) error {
 		return err
 	}
 
-	if cluster.Status != aws.String("ACTIVE") {
+	fmt.Println("Cluster status", *cluster.Status)
+	if *cluster.Status != "ACTIVE" {
 		return fmt.Errorf("cluster is not active")
 	}
 
@@ -465,23 +458,4 @@ func deleteLocalState(dir string, paths ...string) error {
 	}
 
 	return nil
-}
-
-func findTopLevelGitDir(workingDir string) (string, error) {
-	dir, err := filepath.Abs(workingDir)
-	if err != nil {
-		return "", errors.Wrap(err, "invalid working dir")
-	}
-
-	for {
-		if _, err := os.Stat(filepath.Join(dir, ".git")); err == nil {
-			return dir, nil
-		}
-
-		parent := filepath.Dir(dir)
-		if parent == dir {
-			return "", errors.New("no git repository found")
-		}
-		dir = parent
-	}
 }
