@@ -21,9 +21,9 @@ func addDuplicateCmd(topLevel *cobra.Command) {
 	duplicateCmd.AddCommand(duplicateIngressCmd)
 
 	if home := homedir.HomeDir(); home != "" {
-		duplicateIngressCmd.Flags().StringVar(&kubeconfig, "kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+		topLevel.Flags().StringVar(&kubeconfig, "kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
 	} else {
-		duplicateIngressCmd.Flags().StringVar(&kubeconfig, "kubeconfig", "", "absolute path to the kubeconfig file")
+		topLevel.Flags().StringVar(&kubeconfig, "kubeconfig", "", "absolute path to the kubeconfig file")
 	}
 
 	duplicateIngressCmd.Flags().StringVarP(&ns, "namespace", "n", "", "Namespace which you want to perform the duplicate resource")
