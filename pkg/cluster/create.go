@@ -68,8 +68,8 @@ type TerraformOptions struct {
 	ExecPath string
 	// Workspace is the name of the Terraform workspace to use.
 	Workspace string
-	// FilePath is the location of the cloud-platform-infrastructure reporisitory.
-	// This reporisitory contains all the Terraform used to create the cluster.
+	// FilePath is the location of the cloud-platform-infrastructure repository.
+	// This repository contains all the Terraform used to create the cluster.
 	FilePath string
 }
 
@@ -101,8 +101,6 @@ func (cluster *Cluster) Create(create *CreateOptions, terraform *TerraformOption
 		return err
 	}
 
-	// TODO: create a clientset for the cluster.
-
 	// TODO: Build the cluster object and perform general cluster readiness checks.
 	// TODO: Display a nice table of the cluster status.
 
@@ -124,9 +122,6 @@ func (terraform *TerraformOptions) Run(creds *AwsCredentials, fast bool) error {
 		componentsDir,
 	}
 
-	// TODO: Remove prints
-	fmt.Println("Creating directories...", vpcDir, clusterDir, componentsDir)
-
 	// Create Terraform object to use throught method.
 	fmt.Println("Creating Terraform object")
 	err := terraform.CreateTerraformObj()
@@ -136,6 +131,12 @@ func (terraform *TerraformOptions) Run(creds *AwsCredentials, fast bool) error {
 
 	for _, dir := range directories {
 		fmt.Println("Applying in dir", dir)
+		if dir == componentsDir {
+			err := authToCluster(terraform.Workspace)
+			if err != nil {
+				return fmt.Errorf("error authenticating to cluster: %s", err)
+			}
+		}
 		err := terraform.Apply(dir, creds, fast)
 		if err != nil {
 			return fmt.Errorf("error applying terraform in dir: %s %s", dir, err)
@@ -273,11 +274,6 @@ func (terraform *TerraformOptions) SetWorkspace(tf *tfexec.Terraform, creds *Aws
 			if err != nil {
 				return err
 			}
-			// does my cluster exits?
-			if createKubeconfig(terraform.Workspace, creds.Session); err != nil {
-				return err
-			}
-			// then auth to it using the aws cli
 			return nil
 		}
 	}
@@ -332,8 +328,7 @@ func (terraform *TerraformOptions) ExecuteApply(tf *tfexec.Terraform, fast bool)
 	}
 
 	if strings.Contains(tf.WorkingDir(), "eks") && fast {
-		terraform.ApplyVars = append(terraform.ApplyVars, tfexec.Var(fmt.Sprintf("%s=%v", "auth0_count", false)))
-		terraform.ApplyVars = append(terraform.ApplyVars, tfexec.Var(fmt.Sprintf("%s=%v", "aws_eks_identity_provider_config_oidc_associate", false)))
+		terraform.ApplyVars = append(terraform.ApplyVars, tfexec.Var(fmt.Sprintf("%s=%v", "enable_oidc_associate", false)))
 	}
 
 	err = tf.Apply(context.TODO(), terraform.ApplyVars...)
@@ -398,7 +393,6 @@ func (terraform *TerraformOptions) Apply(directory string, creds *AwsCredentials
 
 	tf.SetStdout(log.Writer())
 	tf.SetStderr(log.Writer())
-	fmt.Println("object looks like:", tf)
 
 	err = deleteLocalState(directory, ".terraform", ".terraform.lock.hcl")
 	if err != nil {
@@ -465,7 +459,7 @@ func deleteLocalState(dir string, paths ...string) error {
 		if _, err := os.Stat(path); err == nil {
 			err = os.RemoveAll(path)
 			if err != nil {
-				return fmt.Errorf("failed to delete %s/%s local state: %w", dir, paths, err)
+				return fmt.Errorf("failed to delete local state: %w", err)
 			}
 		}
 	}
