@@ -226,6 +226,7 @@ func (terraform *TerraformOptions) output(tf *tfexec.Terraform) (map[string]tfex
 
 func (terraform *TerraformOptions) HealthCheck(tf *tfexec.Terraform, creds *AwsCredentials) error {
 	// switch case for checking which directory we are in
+	fmt.Println(tf.WorkingDir())
 	switch {
 	case tf.WorkingDir() == "./terraform/aws-accounts/cloud-platform-aws/":
 		err := terraform.checkVpc(tf, creds.Session)
@@ -237,7 +238,8 @@ func (terraform *TerraformOptions) HealthCheck(tf *tfexec.Terraform, creds *AwsC
 		if err != nil {
 			return fmt.Errorf("failed to check cluster: %w", err)
 		}
-	case strings.Contains(tf.WorkingDir(), "components"):
+	case tf.WorkingDir() == "./terraform/aws-accounts/cloud-platform-aws/":
+		fmt.Println("Applying tactical fix to get psp working")
 		if err := applyTacticalPspFix(); err != nil {
 			return fmt.Errorf("failed to apply tactical psp fix: %w", err)
 		}
@@ -409,10 +411,18 @@ func applyTacticalPspFix() error {
 		return fmt.Errorf("failed to delete eks.privileged psp: %w", err)
 	}
 
-	// Delete all pods in the cluster
-	err = client.Clientset.CoreV1().Pods("").DeleteCollection(context.TODO(), metav1.DeleteOptions{}, metav1.ListOptions{})
+	// Get all pods in the cluster
+	pods, err := client.Clientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to recycle pods: %w", err)
+		return fmt.Errorf("failed to list pods: %w", err)
+	}
+
+	// Delete all pods in the cluster
+	for _, pod := range pods.Items {
+		err = client.Clientset.CoreV1().Pods(pod.Namespace).Delete(context.TODO(), pod.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to delete pod: %w", err)
+		}
 	}
 
 	return nil
@@ -426,7 +436,6 @@ func checkCluster(name string, session *session.Session) error {
 		return err
 	}
 
-	fmt.Println("Cluster status", *cluster.Status)
 	if *cluster.Status != "ACTIVE" {
 		return fmt.Errorf("cluster is not active")
 	}
