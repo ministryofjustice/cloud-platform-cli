@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -19,9 +20,11 @@ import (
 	"github.com/hashicorp/hc-install/releases"
 	"github.com/hashicorp/hc-install/src"
 	"github.com/hashicorp/terraform-exec/tfexec"
-	"github.com/ministryofjustice/cloud-platform-go-library/client"
+	cpclient "github.com/ministryofjustice/cloud-platform-cli/pkg/client"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/util/homedir"
 )
 
 // CreateOptions struct represents the options passed to the Create method.
@@ -48,6 +51,11 @@ type CreateOptions struct {
 	// Fast creates the fastest possible cluster.
 	Fast bool
 
+	// TfVersion is the version of Terraform to use.
+	TfVersion string
+	// TfDirectories is a list of directories to run Terraform in.
+	TfDirectories []string
+
 	// Auth0 is the Auth0 domain and secret information.
 	Auth0 AuthOpts
 }
@@ -56,13 +64,8 @@ type CreateOptions struct {
 type TerraformOptions struct {
 	// Apply allows you to group apply options passed to Terraform.
 	ApplyVars []tfexec.ApplyOption
-	// Plan allows you to group plan options passed to Terraform.
-	// Plan []tfexec.PlanOption
 	// Init allows you to group init options passed to Terraform.
 	InitVars []tfexec.InitOption
-	// PlanPath is a string of the path to the Terraform plan file.
-	// This is used to both save the output of plan and to pass to apply.
-	// PlanPath string
 	// Version is the version of Terraform to use.
 	Version string
 	// ExecPath is the path to the Terraform executable.
@@ -72,18 +75,18 @@ type TerraformOptions struct {
 	// FilePath is the location of the cloud-platform-infrastructure repository.
 	// This repository contains all the Terraform used to create the cluster.
 	FilePath     string
-	DirStructure TerraformDirStructure
+	DirStructure DirectoryStructure
 }
 
-type TerraformDirStructure struct {
+type DirectoryStructure struct {
 	// ComponentDir is the directory path in the cloud-platform-infrastructure repository.
 	ComponentDir string
 	// VpcDir is the directory path in the cloud-platform-infrastructure repository.
 	VpcDir string
 	// ClusterDir is the directory path in the cloud-platform-infrastructure repository.
 	ClusterDir string
-	// Directories is a slice of strings of the directory paths in the cloud-platform-infrastructure repository.
-	Directories []string
+	// List is a slice of strings of the directory paths in the cloud-platform-infrastructure repository.
+	List []string
 }
 
 // AuthOpts represents the options for Auth0.
@@ -96,21 +99,128 @@ type AuthOpts struct {
 	ClientSecret string
 }
 
-// Create creates a new Kubernetes cluster using the options passed to it.
-func (terraform *TerraformOptions) CreateCluster(options *CreateOptions, awsCred *AwsCredentials) error {
-	fmt.Println("Creating cluster", options.Name)
-	if err := terraform.setup(); err != nil {
-		return fmt.Errorf("failed to setup terraform: %w", err)
+func (cluster *Cluster) Build(options *CreateOptions, credentials *AwsCredentials) error {
+	// Set environment
+	fmt.Println("Setting environment")
+	if err := setEnvironment(options, credentials); err != nil {
+		return err
 	}
 
-	if err := terraform.build(awsCred, options.Fast); err != nil {
+	// Create Terraform object
+	fmt.Println("Creating Terraform object")
+	terraform, err := newTerraformOptions(options)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Creating cluster")
+	if err := cluster.create(terraform, credentials, options.Fast); err != nil {
 		return fmt.Errorf("failed to run terraform: %w", err)
 	}
 
 	return nil
 }
 
-func (terraform *TerraformOptions) setup() error {
+func (cluster *Cluster) create(terraform *TerraformOptions, creds *AwsCredentials, fast bool) error {
+	fmt.Println("Creating VPC")
+	vpc, err := terraform.applyVpc(creds)
+	if err != nil {
+		return fmt.Errorf("failed to create VPC: %w", err)
+	}
+
+	cluster.VpcId = vpc
+
+	fmt.Println("Creating EKS")
+	err = terraform.applyEks(creds, fast)
+	if err != nil {
+		return fmt.Errorf("failed to create EKS: %w", err)
+	}
+
+	err = terraform.applyComponents(creds)
+	if err != nil {
+		return fmt.Errorf("failed to apply components: %w", err)
+	}
+
+	return nil
+}
+
+func (terraform *TerraformOptions) applyComponents(creds *AwsCredentials) error {
+	// There is a requirement for the aws binary to exist at this point.
+	if err := authToCluster(terraform.Workspace); err != nil {
+		return err
+	}
+
+	_, err := terraform.apply(terraform.DirStructure.ComponentDir, creds, false)
+	if err != nil {
+		return err
+	}
+
+	var path string
+	if home := homedir.HomeDir(); home != "" {
+		path = filepath.Join(home, ".kube", "config")
+	}
+
+	kube, err := cpclient.GetClientset(path)
+	if err != nil {
+		return err
+	}
+
+	if err := applyTacticalPspFix(kube); err != nil {
+		return err
+	}
+
+	return nil
+}
+func (terraform *TerraformOptions) applyEks(creds *AwsCredentials, fast bool) error {
+	fmt.Println("Applying Terraform against EKS")
+	_, err := terraform.apply(terraform.DirStructure.ClusterDir, creds, fast)
+	if err != nil {
+		return err
+	}
+
+	if err := checkCluster(terraform.Workspace, creds.Session); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (terraform *TerraformOptions) applyVpc(creds *AwsCredentials) (string, error) {
+	output, err := terraform.apply(terraform.DirStructure.VpcDir, creds, false)
+	if err != nil {
+		return "", err
+	}
+
+	vpcID := output["vpc_id"]
+	if vpcID.Value == nil {
+		return "", errors.New("vpc_id not found in terraform output")
+	}
+
+	fmt.Println("VPC ID:", string(vpcID.Value))
+	fmt.Println("Starting to check vpc")
+	// Trim the vpcId to remove quotes
+	vpc := strings.Trim(string(vpcID.Value), "\"")
+	return vpc, terraform.checkVpc(vpc, creds.Session)
+}
+
+func newTerraformOptions(options *CreateOptions) (*TerraformOptions, error) {
+	tf := &TerraformOptions{
+		Version:   options.TfVersion,
+		Workspace: options.Name,
+	}
+	if options.TfDirectories == nil {
+		tf.DefaultDirSetup()
+	}
+
+	if err := tf.CreateTerraformObj(); err != nil {
+		return nil, err
+	}
+
+	return tf, nil
+}
+
+// DefaultDirSetup sets the default directory structure for the cloud-platform-infrastructure repository.
+func (terraform *TerraformOptions) DefaultDirSetup() {
 	const baseDir = "./terraform/aws-accounts/cloud-platform-aws/"
 	var (
 		vpcDir        = baseDir + "vpc/"
@@ -123,38 +233,13 @@ func (terraform *TerraformOptions) setup() error {
 		componentsDir,
 	}
 
-	structure := TerraformDirStructure{
+	structure := DirectoryStructure{
 		VpcDir:       vpcDir,
 		ClusterDir:   clusterDir,
 		ComponentDir: componentsDir,
-		Directories:  directories,
+		List:         directories,
 	}
-
 	terraform.DirStructure = structure
-
-	err := terraform.CreateTerraformObj()
-	if err != nil {
-		return fmt.Errorf("error creating terraform obj: %s", err)
-	}
-	return nil
-}
-
-func (terraform *TerraformOptions) build(creds *AwsCredentials, fast bool) error {
-	for _, dir := range terraform.DirStructure.Directories {
-		fmt.Println("Applying in dir", dir)
-		if dir == terraform.DirStructure.ComponentDir {
-			err := authToCluster(terraform.Workspace)
-			if err != nil {
-				return fmt.Errorf("error authenticating to cluster: %s", err)
-			}
-		}
-		err := terraform.apply(dir, creds, fast)
-		if err != nil {
-			return fmt.Errorf("error applying terraform in dir: %s %s", dir, err)
-		}
-	}
-
-	return nil
 }
 
 // createTerraformObj creates a Terraform object using the version passed as a string.
@@ -186,15 +271,15 @@ func (terraform *TerraformOptions) CreateTerraformObj() error {
 	return nil
 }
 
-func (terraform *TerraformOptions) InitAndApply(tf *tfexec.Terraform, creds *AwsCredentials, fast bool) error {
+func (terraform *TerraformOptions) initAndApply(tf *tfexec.Terraform, creds *AwsCredentials, fast bool) error {
 	fmt.Printf("Init terraform on directory %s\n", tf.WorkingDir())
-	err := terraform.Initialise(tf, creds)
+	err := terraform.initialise(tf)
 	if err != nil {
 		return fmt.Errorf("failed to init terraform: %w", err)
 	}
 
 	fmt.Printf("Apply terraform on directory %s\n", tf.WorkingDir())
-	err = terraform.ExecuteApply(tf, fast)
+	err = terraform.executeApply(tf, fast)
 	if err != nil {
 		return fmt.Errorf("failed to apply: %w", err)
 	}
@@ -224,53 +309,17 @@ func (terraform *TerraformOptions) output(tf *tfexec.Terraform) (map[string]tfex
 	return output, nil
 }
 
-func (terraform *TerraformOptions) HealthCheck(tf *tfexec.Terraform, creds *AwsCredentials) error {
-	// switch case for checking which directory we are in
-	fmt.Println(tf.WorkingDir())
-	switch {
-	case tf.WorkingDir() == "./terraform/aws-accounts/cloud-platform-aws/":
-		err := terraform.checkVpc(tf, creds.Session)
-		if err != nil {
-			return fmt.Errorf("failed to check vpc: %w", err)
-		}
-	case strings.Contains(tf.WorkingDir(), "eks"):
-		err := checkCluster(terraform.Workspace, creds.Session)
-		if err != nil {
-			return fmt.Errorf("failed to check cluster: %w", err)
-		}
-	case tf.WorkingDir() == "./terraform/aws-accounts/cloud-platform-aws/":
-		fmt.Println("Applying tactical fix to get psp working")
-		if err := applyTacticalPspFix(); err != nil {
-			return fmt.Errorf("failed to apply tactical psp fix: %w", err)
-		}
-	}
-	return nil
-}
-
-func (terraform *TerraformOptions) ApplyAndCheck(tf *tfexec.Terraform, creds *AwsCredentials, fast bool) error {
-	err := terraform.InitAndApply(tf, creds, fast)
-	if err != nil {
-		return fmt.Errorf("an error occurred attempting to init and apply %w", err)
-	}
-
-	err = terraform.HealthCheck(tf, creds)
-	if err != nil {
-		return fmt.Errorf("an error occurred attempting to perform a healthcheck %w", err)
-	}
-
-	return nil
-}
-
 // intialise performs the `terraform init` function.
-func (terraform *TerraformOptions) Initialise(tf *tfexec.Terraform, creds *AwsCredentials) error {
-	err := tf.Init(context.TODO())
+func (terraform *TerraformOptions) initialise(tf *tfexec.Terraform) error {
+	err := tf.Init(context.TODO(), terraform.InitVars...)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to init: %w", err)
 	}
-	return terraform.SetWorkspace(tf, creds)
+
+	return terraform.setWorkspace(tf)
 }
 
-func (terraform *TerraformOptions) SetWorkspace(tf *tfexec.Terraform, creds *AwsCredentials) error {
+func (terraform *TerraformOptions) setWorkspace(tf *tfexec.Terraform) error {
 	list, _, err := tf.WorkspaceList(context.TODO())
 	if err != nil {
 		return err
@@ -303,7 +352,7 @@ func authToCluster(cluster string) error {
 	return nil
 }
 
-func (terraform *TerraformOptions) ExecuteApply(tf *tfexec.Terraform, fast bool) error {
+func (terraform *TerraformOptions) executeApply(tf *tfexec.Terraform, fast bool) error {
 	// I've found to ensure parallelism you need to execute init once more.
 	terraform.InitVars = append(terraform.InitVars, tfexec.Reconfigure(true))
 	err := tf.Init(context.TODO(), terraform.InitVars...)
@@ -336,19 +385,7 @@ func (terraform *TerraformOptions) ExecuteApply(tf *tfexec.Terraform, fast bool)
 }
 
 // CheckVpc asserts that the vpc is up and running. It tests the vpc state and id.
-func (terraform *TerraformOptions) checkVpc(tf *tfexec.Terraform, sess *session.Session) error {
-	output, err := terraform.output(tf)
-	if err != nil {
-		return fmt.Errorf("failed to get output: %w", err)
-	}
-
-	vpcID := output["vpc_id"]
-	if vpcID.Value == nil {
-		return errors.New("vpc_id not found in terraform output")
-	}
-
-	// Trim the vpcId to remove quotes
-	trimVpc := strings.Trim(string(vpcID.Value), "\"")
+func (terraform *TerraformOptions) checkVpc(vpcId string, sess *session.Session) error {
 	svc := ec2.New(sess)
 
 	vpc, err := svc.DescribeVpcs(&ec2.DescribeVpcsInput{
@@ -367,8 +404,8 @@ func (terraform *TerraformOptions) checkVpc(tf *tfexec.Terraform, sess *session.
 		return fmt.Errorf("no vpc found")
 	}
 
-	if vpc.Vpcs[0].VpcId != nil && *vpc.Vpcs[0].VpcId != trimVpc {
-		return fmt.Errorf("vpc id mismatch: %s != %s", *vpc.Vpcs[0].VpcId, trimVpc)
+	if vpc.Vpcs[0].VpcId != nil && *vpc.Vpcs[0].VpcId != vpcId {
+		return fmt.Errorf("vpc id mismatch: %s != %s", *vpc.Vpcs[0].VpcId, vpcId)
 	}
 
 	if vpc.Vpcs[0].State != nil && *vpc.Vpcs[0].State != "available" {
@@ -378,48 +415,52 @@ func (terraform *TerraformOptions) checkVpc(tf *tfexec.Terraform, sess *session.
 	return nil
 }
 
-func (terraform *TerraformOptions) apply(directory string, creds *AwsCredentials, fast bool) error {
-	fmt.Println("Creating terraform object")
+func (terraform *TerraformOptions) apply(directory string, creds *AwsCredentials, fast bool) (map[string]tfexec.OutputMeta, error) {
 	tf, err := tfexec.NewTerraform(directory, terraform.ExecPath)
 	if err != nil {
-		return fmt.Errorf("failed to create terraform object: %w", err)
+		return nil, fmt.Errorf("failed to create terraform object: %w", err)
 	}
+	fmt.Println(tf)
 
 	tf.SetStdout(log.Writer())
 	tf.SetStderr(log.Writer())
 
-	err = deleteLocalState(directory, ".terraform", ".terraform.lock.hcl")
-	if err != nil {
-		return fmt.Errorf("failed to delete temp directory: %w", err)
+	if err = deleteLocalState(directory, ".terraform", ".terraform.lock.hcl"); err != nil {
+		return nil, fmt.Errorf("failed to delete temp directory: %w", err)
 	}
 
-	return terraform.ApplyAndCheck(tf, creds, fast)
+	err = terraform.initAndApply(tf, creds, fast)
+	if err != nil {
+		return nil, fmt.Errorf("an error occurred attempting to init and apply %w", err)
+	}
+
+	output, err := terraform.output(tf)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get output: %w", err)
+	}
+
+	return output, nil
 }
 
 // applyTacticalPspFix deletes the current eks.privileged psp in the cluster.
 // This allows the cluster to be created with a different psp. All pods are recycled
 // so the new psp will be applied.
-func applyTacticalPspFix() error {
-	client, err := client.NewKubeClientWithValues("", "")
-	if err != nil {
-		return fmt.Errorf("failed to create kubernetes client: %w", err)
-	}
-
+func applyTacticalPspFix(clientset kubernetes.Interface) error {
 	// Delete the eks.privileged psp
-	err = client.Clientset.PolicyV1beta1().PodSecurityPolicies().Delete(context.TODO(), "eks.privileged", metav1.DeleteOptions{})
+	err := clientset.PolicyV1beta1().PodSecurityPolicies().Delete(context.TODO(), "eks.privileged", metav1.DeleteOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to delete eks.privileged psp: %w", err)
 	}
 
 	// Get all pods in the cluster
-	pods, err := client.Clientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
+	pods, err := clientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to list pods: %w", err)
 	}
 
 	// Delete all pods in the cluster
 	for _, pod := range pods.Items {
-		err = client.Clientset.CoreV1().Pods(pod.Namespace).Delete(context.TODO(), pod.Name, metav1.DeleteOptions{})
+		err = clientset.CoreV1().Pods(pod.Namespace).Delete(context.TODO(), pod.Name, metav1.DeleteOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to delete pod: %w", err)
 		}
@@ -465,6 +506,33 @@ func deleteLocalState(dir string, paths ...string) error {
 			}
 		}
 	}
+
+	return nil
+}
+
+func setEnvironment(options *CreateOptions, cred *AwsCredentials) error {
+	// Set environment variables
+	if err := os.Setenv("AWS_PROFILE", cred.Profile); err != nil {
+		return fmt.Errorf("error setting AWS_PROFILE: %s", err)
+	}
+
+	if err := os.Setenv("AWS_REGION", cred.Region); err != nil {
+		return fmt.Errorf("error setting AWS_REGION: %s", err)
+	}
+
+	if err := os.Setenv("AUTH0_DOMAIN", options.Auth0.Domain); err != nil {
+		return fmt.Errorf("error setting AUTH0_DOMAIN: %s", err)
+	}
+
+	if err := os.Setenv("AUTH0_CLIENT_ID", options.Auth0.ClientId); err != nil {
+		return fmt.Errorf("error setting AUTH0_CLIENT_ID: %s", err)
+	}
+
+	if err := os.Setenv("AUTH0_CLIENT_SECRET", options.Auth0.ClientSecret); err != nil {
+		return fmt.Errorf("error setting AUTH0_CLIENT_SECRET: %s", err)
+	}
+
+	fmt.Println("Finished setting environment variables")
 
 	return nil
 }

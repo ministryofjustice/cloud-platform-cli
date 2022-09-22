@@ -17,18 +17,12 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
-// infraRepository is the repository used to store Terraform and other configuration files.
-const infraRepository = "github.com/ministryofjustice/cloud-platform-infrastructure"
-
 // Global variables used for cluster creation
 var (
 	createOptions = &cluster.CreateOptions{
 		MaxNameLength: 12,
 	}
-	auth = &cluster.AuthOpts{}
-	tf   = &cluster.TerraformOptions{
-		FilePath: infraRepository,
-	}
+	auth    = &cluster.AuthOpts{}
 	date    = time.Now().Format("0201")
 	minHour = time.Now().Format("1504")
 )
@@ -37,13 +31,14 @@ var recycleOptions recycle.Options
 
 var awsSecret, awsAccessKey, awsProfile, awsRegion string
 
-func createClusterFlags(cmd *cobra.Command) {
-	// Global cluster flags
+func clusterFlags() {
 	clusterCmd.Flags().StringVar(&awsAccessKey, "aws-access-key", os.Getenv("AWS_ACCESS_KEY_ID"), "[required] aws access key to use")
 	clusterCmd.Flags().StringVar(&awsSecret, "aws-secret-key", os.Getenv("AWS_SECRET_ACCESS_KEY"), "[required] aws secret to use")
 	clusterCmd.Flags().StringVar(&awsProfile, "aws-profile", os.Getenv("AWS_PROFILE"), "[required] aws profile to use")
 	clusterCmd.Flags().StringVar(&awsRegion, "aws-region", os.Getenv("AWS_REGION"), "[required] aws region to use")
+}
 
+func createClusterFlags() {
 	// Add cluster flags
 	clusterCreateCmd.Flags().StringVar(&auth.ClientId, "auth0-client-id", os.Getenv("AUTH0_CLIENT_ID"), "[required] auth0 client id to use")
 	clusterCreateCmd.Flags().StringVar(&auth.ClientSecret, "auth0-client-secret", os.Getenv("AUTH0_CLIENT_SECRET"), "[required] auth0 client secret to use")
@@ -59,10 +54,10 @@ func createClusterFlags(cmd *cobra.Command) {
 	clusterCreateCmd.Flags().BoolVar(&createOptions.Fast, "fast", false, "[optional] enable fast mode - this creates a cluster as quickly as possible. [default] false")
 
 	// Terraform options
-	clusterCreateCmd.Flags().StringVar(&tf.Version, "terraformVersion", "0.14.8", "[optional] the terraform version to use. [default] 0.14.8")
+	clusterCreateCmd.Flags().StringVar(&createOptions.TfVersion, "terraformVersion", "0.14.8", "[optional] the terraform version to use. [default] 0.14.8")
 }
 
-func recycleFlags(cmd *cobra.Command) {
+func recycleFlags() {
 	// recycle node flags
 	clusterRecycleNodeCmd.Flags().StringVarP(&recycleOptions.ResourceName, "name", "n", "", "name of the resource to recycle")
 	clusterRecycleNodeCmd.Flags().BoolVarP(&recycleOptions.Force, "force", "f", true, "force the pods to drain")
@@ -82,8 +77,9 @@ func addClusterCmd(topLevel *cobra.Command) {
 	clusterCmd.AddCommand(clusterCreateCmd)
 
 	// add flags to sub commands
-	createClusterFlags(clusterCreateCmd)
-	recycleFlags(clusterRecycleNodeCmd)
+	clusterFlags()
+	createClusterFlags()
+	recycleFlags()
 }
 
 var clusterCmd = &cobra.Command{
@@ -105,7 +101,10 @@ var clusterCreateCmd = &cobra.Command{
 		contextLogger := log.WithFields(log.Fields{"subcommand": "create-cluster"})
 		createOptions.Auth0 = *auth
 
-		if err := validate(cmd); err != nil {
+		c := cluster.Cluster{
+			Name: createOptions.Name,
+		}
+		if err := validateClusterOpts(cmd); err != nil {
 			contextLogger.Fatal(err)
 		}
 
@@ -114,14 +113,11 @@ var clusterCreateCmd = &cobra.Command{
 			contextLogger.Fatal(err)
 		}
 
-		tf.Workspace = createOptions.Name
-		if err = tf.CreateCluster(createOptions, creds); err != nil {
+		err = c.Build(createOptions, creds)
+		if err != nil {
 			contextLogger.Fatalf("An error occurred creating the cluster: %s", err)
 		}
 		// Cluster object
-		// c := cluster.Cluster{
-		// 	Name: createOptions.Name,
-		// }
 		// TODO: Build the cluster object and perform general cluster readiness checks.
 		// TODO: Display a nice table of the cluster status.
 	},
@@ -234,7 +230,7 @@ func findTopLevelGitDir(workingDir string) (string, error) {
 	}
 }
 
-func validate(cmd *cobra.Command) error {
+func validateClusterOpts(cmd *cobra.Command) error {
 	if err := checkFlags(); err != nil {
 		return err
 	}
