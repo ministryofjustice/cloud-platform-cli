@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/eks"
+	"github.com/aws/aws-sdk-go/service/eks/eksiface"
 	"github.com/hashicorp/go-version"
 	install "github.com/hashicorp/hc-install"
 	"github.com/hashicorp/hc-install/fs"
@@ -27,15 +28,16 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
-// CreateOptions struct represents the options passed to the Create method.
+// CreateOptions struct represents the options passed to the Create method
+// by the `cloud-platform create cluster` command.
 type CreateOptions struct {
-	// Name is the name of the cluster.
+	// Name is the name of the cluster you wish to create/amend.
 	Name string
 	// ClusterSuffix is the suffix to append to the cluster name.
 	// This will be used to create the cluster ingress, such as "live.service.justice.gov.uk".
 	ClusterSuffix string
 
-	// NodeCount is the number of nodes to create in the cluster.
+	// NodeCount is the number of nodes to create in the new cluster.
 	NodeCount int
 	// VpcName is the name of the VPC to create the cluster in.
 	// Often clusters will be built in a single VPC.
@@ -44,19 +46,17 @@ type CreateOptions struct {
 	// MaxNameLength is the maximum length of the cluster name.
 	// This limit exists due to the length of the name of the ingress.
 	MaxNameLength int
-	// TimeOut is the maximum time to wait for the cluster to be created.
-	TimeOut int
 	// Debug is true if the cluster should be created in debug mode.
 	Debug bool
 	// Fast creates the fastest possible cluster.
 	Fast bool
 
-	// TfVersion is the version of Terraform to use.
+	// TfVersion is the version of Terraform to use to create the cluster and components.
 	TfVersion string
 	// TfDirectories is a list of directories to run Terraform in.
 	TfDirectories []string
 
-	// Auth0 is the Auth0 domain and secret information.
+	// Auth0 the Auth0 client ID and secret to use for the cluster.
 	Auth0 AuthOpts
 }
 
@@ -78,6 +78,12 @@ type TerraformOptions struct {
 	DirStructure DirectoryStructure
 }
 
+// DirectoryStructure represents the directory structure of the terraform to install.
+// This is fairly unique to the cloud-platform-infrastructure repository, but can be amended.
+// The structure is as follows:
+// - VpcDir == "vpc"
+// - ClusterDir == "EKS cluster"
+// - ComponentsDir == "kubernetes components that bootstrap a cloud-platform cluster"
 type DirectoryStructure struct {
 	// ComponentDir is the directory path in the cloud-platform-infrastructure repository.
 	ComponentDir string
@@ -85,7 +91,7 @@ type DirectoryStructure struct {
 	VpcDir string
 	// ClusterDir is the directory path in the cloud-platform-infrastructure repository.
 	ClusterDir string
-	// List is a slice of strings of the directory paths in the cloud-platform-infrastructure repository.
+	// List is a collection of directory paths in the cloud-platform-infrastructure repository.
 	List []string
 }
 
@@ -99,12 +105,14 @@ type AuthOpts struct {
 	ClientSecret string
 }
 
+// Build is the entrypoint for the `cloud-platform create cluster` command. This method takes
+// a cluster type and a set of options, and creates a cluster.
 func (cluster *Cluster) Build(options *CreateOptions, credentials *AwsCredentials) error {
 	// Set environment
-	fmt.Println("Setting environment")
-	if err := setEnvironment(options, credentials); err != nil {
-		return err
-	}
+	fmt.Println("Setting environment variables")
+	// if err := setEnvironment(options, credentials); err != nil {
+	// 	return err
+	// }
 
 	// Create Terraform object
 	fmt.Println("Creating Terraform object")
@@ -155,6 +163,8 @@ func (terraform *TerraformOptions) applyComponents(creds *AwsCredentials) error 
 		return err
 	}
 
+	// This makes a rather large assumption that the users kubeconfig is in the default location.
+	// TODO: Have this passed as an argument.
 	var path string
 	if home := homedir.HomeDir(); home != "" {
 		path = filepath.Join(home, ".kube", "config")
@@ -178,7 +188,7 @@ func (terraform *TerraformOptions) applyEks(creds *AwsCredentials, fast bool) er
 		return err
 	}
 
-	if err := checkCluster(terraform.Workspace, creds.Session); err != nil {
+	if err := checkCluster(terraform.Workspace, creds.Eks); err != nil {
 		return err
 	}
 
@@ -196,7 +206,6 @@ func (terraform *TerraformOptions) applyVpc(creds *AwsCredentials) (string, erro
 		return "", errors.New("vpc_id not found in terraform output")
 	}
 
-	fmt.Println("VPC ID:", string(vpcID.Value))
 	fmt.Println("Starting to check vpc")
 	// Trim the vpcId to remove quotes
 	vpc := strings.Trim(string(vpcID.Value), "\"")
@@ -204,12 +213,19 @@ func (terraform *TerraformOptions) applyVpc(creds *AwsCredentials) (string, erro
 }
 
 func newTerraformOptions(options *CreateOptions) (*TerraformOptions, error) {
+	if options.TfVersion == "" {
+		return nil, errors.New("terraform version is required")
+	}
 	tf := &TerraformOptions{
 		Version:   options.TfVersion,
 		Workspace: options.Name,
 	}
 	if options.TfDirectories == nil {
 		tf.DefaultDirSetup()
+	} else {
+		for _, dir := range options.TfDirectories {
+			tf.DirStructure.List = append(tf.DirStructure.List, dir)
+		}
 	}
 
 	if err := tf.CreateTerraformObj(); err != nil {
@@ -272,13 +288,13 @@ func (terraform *TerraformOptions) CreateTerraformObj() error {
 }
 
 func (terraform *TerraformOptions) initAndApply(tf *tfexec.Terraform, creds *AwsCredentials, fast bool) error {
-	fmt.Printf("Init terraform on directory %s\n", tf.WorkingDir())
+	fmt.Printf("Init terraform in directory %s\n", tf.WorkingDir())
 	err := terraform.initialise(tf)
 	if err != nil {
 		return fmt.Errorf("failed to init terraform: %w", err)
 	}
 
-	fmt.Printf("Apply terraform on directory %s\n", tf.WorkingDir())
+	fmt.Printf("Apply terraform in directory %s\n", tf.WorkingDir())
 	err = terraform.executeApply(tf, fast)
 	if err != nil {
 		return fmt.Errorf("failed to apply: %w", err)
@@ -311,9 +327,13 @@ func (terraform *TerraformOptions) output(tf *tfexec.Terraform) (map[string]tfex
 
 // intialise performs the `terraform init` function.
 func (terraform *TerraformOptions) initialise(tf *tfexec.Terraform) error {
+	terraform.InitVars = append(terraform.InitVars, tfexec.Reconfigure(true))
 	err := tf.Init(context.TODO(), terraform.InitVars...)
+	// Handle no plugin error
 	if err != nil {
-		return fmt.Errorf("failed to init: %w", err)
+		if err := tf.Init(context.TODO(), terraform.InitVars...); err != nil {
+			return fmt.Errorf("failed to init: %w", err)
+		}
 	}
 
 	return terraform.setWorkspace(tf)
@@ -353,31 +373,21 @@ func authToCluster(cluster string) error {
 }
 
 func (terraform *TerraformOptions) executeApply(tf *tfexec.Terraform, fast bool) error {
-	// I've found to ensure parallelism you need to execute init once more.
-	terraform.InitVars = append(terraform.InitVars, tfexec.Reconfigure(true))
-	err := tf.Init(context.TODO(), terraform.InitVars...)
-	if err != nil {
-		return fmt.Errorf("failed to init: %w", err)
-	}
-
 	if strings.Contains(tf.WorkingDir(), "eks") && fast {
 		terraform.ApplyVars = append(terraform.ApplyVars, tfexec.Var(fmt.Sprintf("%s=%v", "enable_oidc_associate", false)))
 	}
 
-	err = tf.Apply(context.TODO(), terraform.ApplyVars...)
+	err := tf.Apply(context.TODO(), terraform.ApplyVars...)
 	// handle a case where you need to init again
 	if err != nil {
-		if errors.As(err, &tfexec.ErrNoInit{}) {
-			fmt.Println("Init again, due to failure")
-			err = tf.Init(context.TODO(), terraform.InitVars...)
-			if err != nil {
-				return fmt.Errorf("failed to init: %w", err)
-			}
-			err = tf.Apply(context.TODO(), terraform.ApplyVars...)
-			if err != nil {
-				return fmt.Errorf("failed to apply: %w", err)
-			}
-			return err
+		fmt.Println("Init again, due to failure")
+		err = tf.Init(context.TODO(), terraform.InitVars...)
+		if err != nil {
+			return fmt.Errorf("failed to init: %w", err)
+		}
+		err = tf.Apply(context.TODO(), terraform.ApplyVars...)
+		if err != nil {
+			return fmt.Errorf("failed to apply: %w", err)
 		}
 	}
 
@@ -422,9 +432,11 @@ func (terraform *TerraformOptions) apply(directory string, creds *AwsCredentials
 	}
 	fmt.Println(tf)
 
+	// Write the output to the terminal.
 	tf.SetStdout(log.Writer())
 	tf.SetStderr(log.Writer())
 
+	// Start fresh and remove any local state.
 	if err = deleteLocalState(directory, ".terraform", ".terraform.lock.hcl"); err != nil {
 		return nil, fmt.Errorf("failed to delete temp directory: %w", err)
 	}
@@ -470,9 +482,8 @@ func applyTacticalPspFix(clientset kubernetes.Interface) error {
 }
 
 // checkCluster checks the cluster is created and exists.
-func checkCluster(name string, session *session.Session) error {
-	// Check the cluster is created and exists.
-	cluster, err := getCluster(name, session)
+func checkCluster(name string, eks eksiface.EKSAPI) error {
+	cluster, err := getCluster(name, eks)
 	if err != nil {
 		return err
 	}
@@ -484,8 +495,7 @@ func checkCluster(name string, session *session.Session) error {
 	return nil
 }
 
-func getCluster(name string, session *session.Session) (*eks.Cluster, error) {
-	svc := eks.New(session)
+func getCluster(name string, svc eksiface.EKSAPI) (*eks.Cluster, error) {
 	cluster, err := svc.DescribeCluster(&eks.DescribeClusterInput{
 		Name: aws.String(name),
 	})
@@ -498,9 +508,9 @@ func getCluster(name string, session *session.Session) (*eks.Cluster, error) {
 
 func deleteLocalState(dir string, paths ...string) error {
 	for _, path := range paths {
-		path := strings.Join([]string{dir, path}, "/")
-		if _, err := os.Stat(path); err == nil {
-			err = os.RemoveAll(path)
+		p := strings.Join([]string{dir, path}, "/")
+		if _, err := os.Stat(p); err == nil {
+			err = os.RemoveAll(p)
 			if err != nil {
 				return fmt.Errorf("failed to delete local state: %w", err)
 			}
@@ -531,8 +541,6 @@ func setEnvironment(options *CreateOptions, cred *AwsCredentials) error {
 	if err := os.Setenv("AUTH0_CLIENT_SECRET", options.Auth0.ClientSecret); err != nil {
 		return fmt.Errorf("error setting AUTH0_CLIENT_SECRET: %s", err)
 	}
-
-	fmt.Println("Finished setting environment variables")
 
 	return nil
 }

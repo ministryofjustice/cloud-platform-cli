@@ -50,7 +50,6 @@ func createClusterFlags() {
 	clusterCreateCmd.Flags().StringVar(&createOptions.ClusterSuffix, "cluster-suffix", "cloud-platform.service.justice.gov.uk", "[optional] suffix to append to the cluster name")
 	clusterCreateCmd.Flags().BoolVar(&createOptions.Debug, "debug", false, "[optional] enable debug logging")
 	clusterCreateCmd.Flags().IntVar(&createOptions.NodeCount, "nodes", 3, "[optional] number of nodes to create. [default] 3")
-	clusterCreateCmd.Flags().IntVar(&createOptions.TimeOut, "timeout", 600, "[optional] amount of time to wait for the command to complete. [default] 600s")
 	clusterCreateCmd.Flags().BoolVar(&createOptions.Fast, "fast", false, "[optional] enable fast mode - this creates a cluster as quickly as possible. [default] false")
 
 	// Terraform options

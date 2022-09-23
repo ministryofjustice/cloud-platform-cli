@@ -3,6 +3,7 @@ package cluster
 import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/eks"
 
 	// with go modules enabled (GO111MODULE=on or outside GOPATH)
 
@@ -34,6 +35,7 @@ type Snapshot struct {
 type AwsCredentials struct {
 	Session *session.Session
 	Profile string
+	Eks     *eks.EKS
 	Region  string
 }
 
@@ -83,9 +85,12 @@ func NewAwsCreds(region string) (*AwsCredentials, error) {
 		return nil, err
 	}
 
+	eks := eks.New(sess)
+
 	return &AwsCredentials{
 		Session: sess,
 		Region:  region,
+		Eks:     eks,
 	}, nil
 }
 
