@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -74,15 +75,15 @@ func GetLatestGitPull() error {
 	return nil
 }
 
-func Redacted(output string) {
-	re := regexp.MustCompile(`(?i)password|secret|token|key|https://hooks\\.slack\\.com|user|arn|ssh-rsa|clientid`)
+func Redacted(w io.Writer, output string) {
+	re := regexp.MustCompile(`(?i)password|secret|token|key|https://hooks\.slack\.com|user|arn|ssh-rsa|clientid`)
 	scanner := bufio.NewScanner(strings.NewReader(output))
 
 	for scanner.Scan() {
 		if re.Match([]byte(scanner.Text())) {
-			fmt.Println("REDACTED")
+			fmt.Fprintln(w, "REDACTED")
 		} else {
-			fmt.Println(scanner.Text())
+			fmt.Fprintln(w, scanner.Text())
 		}
 	}
 }
