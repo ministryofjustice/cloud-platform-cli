@@ -23,11 +23,10 @@ $ cloud-platform cluster create --name my-cluster
       --debug                        [optional] enable debug logging
       --fast                         [optional] enable fast mode - this creates a cluster as quickly as possible. [default] false
   -h, --help                         help for create
-      --name string                  [optional] name of the cluster (default "jb-2209-1806")
+      --name string                  [optional] name of the cluster (default "jb-2309-1719")
       --nodes int                    [optional] number of nodes to create. [default] 3 (default 3)
       --terraformVersion string      [optional] the terraform version to use. [default] 0.14.8 (default "0.14.8")
-      --timeout int                  [optional] amount of time to wait for the command to complete. [default] 600s (default 600)
-      --vpc string                   [optional] name of the vpc to use (default "jb-2209-1806")
+      --vpc string                   [optional] name of the vpc to use (default "jb-2309-1719")
 ```
 
 ### Options inherited from parent commands
