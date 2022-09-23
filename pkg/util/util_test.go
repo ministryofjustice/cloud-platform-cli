@@ -105,3 +105,55 @@ func TestRepoErrorBranch(t *testing.T) {
 		t.Errorf("Something went wrong: %s", err)
 	}
 }
+
+func TestRedacted(t *testing.T) {
+	type args struct {
+		output string
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			name: "Redacted Password Content",
+			args: args{
+				output: "password: 1234567890",
+			},
+		},
+		{
+			name: "Redacted Sercet Content",
+			args: args{
+				output: "secret: 1234567890",
+			},
+		},
+		{
+			name: "Redacted Token Content",
+			args: args{
+				output: "token: 1234567890",
+			},
+		},
+		{
+			name: "Redacted Key Content",
+			args: args{
+				output: "key: 1234567890",
+			},
+		},
+		{
+			name: "Redacted Webhook Content",
+			args: args{
+				output: "https://hooks.slack.com",
+			},
+		},
+		{
+			name: "Unredacted Content",
+			args: args{
+				output: "This test should not be redacted",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			Redacted(tt.args.output)
+		})
+	}
+}
