@@ -1,11 +1,14 @@
 package util
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os/exec"
+	"regexp"
 	"strings"
 
 	"github.com/ministryofjustice/cloud-platform-environments/pkg/authenticate"
@@ -70,6 +73,19 @@ func GetLatestGitPull() error {
 	fmt.Println("Executing git pull")
 
 	return nil
+}
+
+func Redacted(w io.Writer, output string) {
+	re := regexp.MustCompile(`(?i)password|secret|token|key|https://hooks\.slack\.com|user|arn|ssh-rsa|clientid`)
+	scanner := bufio.NewScanner(strings.NewReader(output))
+
+	for scanner.Scan() {
+		if re.Match([]byte(scanner.Text())) {
+			fmt.Fprintln(w, "REDACTED")
+		} else {
+			fmt.Fprintln(w, scanner.Text())
+		}
+	}
 }
 
 func ChangedInPR(token, repo, owner string, prNumber int) ([]string, error) {
