@@ -253,7 +253,9 @@ func (a *Apply) planNamespace() error {
 		return err
 	}
 
-	fmt.Println("\nOutput of kubectl:", outputKubectl, "\nOutput of terraform", outputTerraform)
+	fmt.Println("\nOutput of kubectl:", outputKubectl)
+	fmt.Println("\nOutput of terraform:")
+	util.Redacted(outputTerraform)
 	return nil
 }
 
@@ -272,6 +274,8 @@ func (a *Apply) applyNamespace() error {
 		return err
 	}
 
-	fmt.Println("\nOutput of kubectl:", outputKubectl, "\nOutput of terraform", outputTerraform)
+	fmt.Println("\nOutput of kubectl:", outputKubectl)
+	fmt.Println("\nOutput of terraform:")
+	util.Redacted(outputTerraform)
 	return nil
 }
