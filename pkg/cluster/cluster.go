@@ -24,6 +24,8 @@ type Cluster struct {
 	StuckPods []v1.Pod
 
 	Namespaces v1.NamespaceList
+
+	HealthStatus string
 }
 
 // Snapshot represents a snapshot of a Kubernetes cluster object
