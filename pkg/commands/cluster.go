@@ -54,32 +54,34 @@ func addCreateClusterCmd(toplevel *cobra.Command) {
 		opt = createCluster{
 			MaxNameLength: 12,
 		}
-		auth    = &cluster.AuthOpts{}
-		date    = time.Now().Format("0201")
-		minHour = time.Now().Format("1504")
+		auth = &cluster.AuthOpts{}
+		// date    = time.Now().Format("0201")
+		// minHour = time.Now().Format("1504")
 	)
 
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: `create a new cloud-platform cluster`,
 		Long: heredoc.Doc(`
-Running this command will create a new eks cluster in the cloud-platform aws account. It will create you a VPC, a cluster and the components the cloud-platform team defines as being required for a cluster to function.
+
+			Running this command will create a new eks cluster in the cloud-platform aws account.
+			It will create you a VPC, a cluster and the components the cloud-platform team defines as being required for a cluster to function.
 
 			You must have the following environment variables set, or passed via arguments:
-			- a valid AWS profile or access key and secret.
-			- a valid auth0 client id and secret.
-			- a valid auth0 domain.
+				- a valid AWS profile or access key and secret.
+				- a valid auth0 client id and secret.
+				- a valid auth0 domain.
 
 			You must also be in the infrastructure repository, and have decrypted the repository before running this command.
 `),
-		Example: heredoc.Doc(`
-		$ cloud-platform cluster create --name jb-test-01
-	`),
 		PreRun: upgradeIfNotLatest,
 		Run: func(cmd *cobra.Command, args []string) {
 			contextLogger := log.WithFields(log.Fields{"subcommand": "create-cluster"})
 			opt.Auth0 = *auth
 
+			if err := checkCreateDirectory(); err != nil {
+				contextLogger.Fatal(err)
+			}
 			c := cluster.Cluster{
 				Name:         opt.Name,
 				VpcId:        opt.VpcName,
@@ -120,12 +122,8 @@ Running this command will create a new eks cluster in the cloud-platform aws acc
 		log.Fatal(err)
 	}
 
-	// Ensure the flags passed to the command are valid
-	if err := opt.validateClusterOpts(cmd, date, minHour); err != nil {
-		log.Fatal(err)
-	}
-
 	toplevel.AddCommand(cmd)
+
 }
 
 var recycleOptions recycle.Options
@@ -136,7 +134,7 @@ var (
 
 var kubePath string
 
-func clusterFlags() {
+func addClusterFlags(clusterCmd *cobra.Command) {
 	clusterCmd.Flags().StringVar(&awsAccessKey, "aws-access-key", os.Getenv("AWS_ACCESS_KEY_ID"), "[required] aws access key to use")
 	clusterCmd.Flags().StringVar(&awsSecret, "aws-secret-key", os.Getenv("AWS_SECRET_ACCESS_KEY"), "[required] aws secret to use")
 	clusterCmd.Flags().StringVar(&awsProfile, "aws-profile", os.Getenv("AWS_PROFILE"), "[required] aws profile to use")
@@ -145,8 +143,13 @@ func clusterFlags() {
 }
 
 func (opt *createCluster) addCreateClusterFlags(cmd *cobra.Command, auth *cluster.AuthOpts) error {
+	var (
+		date    = time.Now().Format("0201")
+		minHour = time.Now().Format("1504")
+	)
+
 	cmd.Flags().StringVar(&opt.Auth0.ClientId, "auth0-client-id", os.Getenv("AUTH0_CLIENT_ID"), "[required] auth0 client id to use")
-	cmd.Flags().StringVar(&opt.Auth0.ClientSecret, "auth0-client-secret", os.Getenv("AUTH0_CLIENT_SECRET"), "[required] auth0 client secret to use")
+	cmd.Flags().StringVar(&opt.Auth0.ClientSecret, "auth0-client-secret", "", "[required] auth0 client secret to use")
 	cmd.Flags().StringVar(&opt.Auth0.Domain, "auth0-domain", os.Getenv("AUTH0_DOMAIN"), "[required] auth0 domain to use")
 
 	cmd.Flags().StringVar(&opt.Name, "name", "", "[optional] name of the cluster")
@@ -157,9 +160,9 @@ func (opt *createCluster) addCreateClusterFlags(cmd *cobra.Command, auth *cluste
 	cmd.Flags().BoolVar(&opt.Fast, "fast", false, "[optional] enable fast mode - this creates a cluster as quickly as possible. [default] false")
 
 	// Terraform options
-	cmd.Flags().StringVar(&opt.TfVersion, "terraformVersion", "0.14.8", "[optional] the terraform version to use. [default] 0.14.8")
+	cmd.Flags().StringVar(&opt.TfVersion, "terraform-version", "0.14.8", "[optional] the terraform version to use. [default] 0.14.8")
 
-	return nil
+	return opt.validateClusterOpts(cmd, date, minHour)
 }
 
 func recycleFlags() {
@@ -174,21 +177,20 @@ func recycleFlags() {
 }
 
 func addClusterCmd(topLevel *cobra.Command) {
-	topLevel.AddCommand(clusterCmd)
+	clusterCmd := &cobra.Command{
+		Use:    "cluster",
+		Short:  `Cloud Platform cluster actions`,
+		PreRun: upgradeIfNotLatest,
+	}
 
-	clusterFlags()
+	topLevel.AddCommand(clusterCmd)
+	addClusterFlags(clusterCmd)
 	// sub cobra commands
 	recycleFlags()
 	clusterCmd.AddCommand(clusterRecycleNodeCmd)
 
 	// add flags to sub commands
 	addCreateClusterCmd(clusterCmd)
-}
-
-var clusterCmd = &cobra.Command{
-	Use:    "cluster",
-	Short:  `Cloud Platform cluster actions`,
-	PreRun: upgradeIfNotLatest,
 }
 
 var clusterRecycleNodeCmd = &cobra.Command{
@@ -258,6 +260,10 @@ func (o *createCluster) checkCreateFlags() error {
 		return errors.New("AWS credentials are required, please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY or an AWS_PROFILE")
 	}
 
+	if o.Auth0.ClientSecret == "" {
+		o.Auth0.ClientSecret = os.Getenv("AUTH0_CLIENT_SECRET")
+	}
+
 	if o.Auth0.ClientId == "" || o.Auth0.ClientSecret == "" || o.Auth0.Domain == "" {
 		return errors.New("Auth0 credentials are required, please set AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET and AUTH0_DOMAIN")
 	}
@@ -283,7 +289,7 @@ func (o *createCluster) checkClusterName(date, minHour string) error {
 	return nil
 }
 
-func (o *createCluster) checkCreateDirectory() error {
+func checkCreateDirectory() error {
 	// Ensure the executor is running the command in the correct directory.
 	repoName, err := findTopLevelGitDir(".")
 	if err != nil {
@@ -325,8 +331,5 @@ func (o *createCluster) validateClusterOpts(cmd *cobra.Command, date, minHour st
 		return err
 	}
 
-	if err := o.checkCreateDirectory(); err != nil {
-		return err
-	}
 	return nil
 }
