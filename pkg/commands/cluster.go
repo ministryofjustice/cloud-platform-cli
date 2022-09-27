@@ -12,6 +12,7 @@ import (
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/cluster"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/recycle"
+	terraform "github.com/ministryofjustice/cloud-platform-cli/pkg/terraform"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/util/homedir"
@@ -19,7 +20,7 @@ import (
 
 // CreateOptions struct represents the options passed to the Create method
 // by the `cloud-platform create cluster` command.
-type createCluster struct {
+type clusterOptions struct {
 	// Name is the name of the cluster you wish to create/amend.
 	Name string
 	// ClusterSuffix is the suffix to append to the cluster name.
@@ -42,21 +43,28 @@ type createCluster struct {
 
 	// TfVersion is the version of Terraform to use to create the cluster and components.
 	TfVersion string
-	// TfDirectories is a list of directories to run Terraform in.
-	TfDirectories []string
 
 	// Auth0 the Auth0 client ID and secret to use for the cluster.
-	Auth0 cluster.AuthOpts
+	Auth0 authOpts
+}
+
+// AuthOpts represents the options for Auth0.
+type authOpts struct {
+	// Domain is the Auth0 domain.
+	Domain string
+	// ClientID is the Auth0 client ID.
+	ClientId string
+	// ClientSecret is the Auth0 client secret.
+	ClientSecret string
 }
 
 func addCreateClusterCmd(toplevel *cobra.Command) {
 	var (
-		opt = createCluster{
+		auth = authOpts{}
+		opt  = clusterOptions{
 			MaxNameLength: 12,
+			Auth0:         auth,
 		}
-		auth = &cluster.AuthOpts{}
-		// date    = time.Now().Format("0201")
-		// minHour = time.Now().Format("1504")
 	)
 
 	cmd := &cobra.Command{
@@ -77,7 +85,6 @@ func addCreateClusterCmd(toplevel *cobra.Command) {
 		PreRun: upgradeIfNotLatest,
 		Run: func(cmd *cobra.Command, args []string) {
 			contextLogger := log.WithFields(log.Fields{"subcommand": "create-cluster"})
-			opt.Auth0 = *auth
 
 			if err := checkCreateDirectory(); err != nil {
 				contextLogger.Fatal(err)
@@ -88,7 +95,7 @@ func addCreateClusterCmd(toplevel *cobra.Command) {
 				HealthStatus: "Creating",
 			}
 
-			tf, err := cluster.NewTerraformOptions(opt.TfVersion, c.Name, nil)
+			tf, err := terraform.NewOptions(opt.TfVersion, c.Name)
 			if err != nil {
 				contextLogger.Fatal(err)
 			}
@@ -98,32 +105,47 @@ func addCreateClusterCmd(toplevel *cobra.Command) {
 				contextLogger.Fatal(err)
 			}
 
-			if err := c.ApplyVpc(tf, awsCreds); err != nil {
+			if err := createCluster(&c, &opt, tf, awsCreds); err != nil {
 				contextLogger.Fatal(err)
 			}
-
-			if err := c.ApplyEks(tf, awsCreds, opt.Fast); err != nil {
-				contextLogger.Fatal(err)
-			}
-
-			clientset, err := client.GetClientset(kubePath)
-			if err != nil {
-				contextLogger.Fatal(err)
-			}
-
-			if err := c.ApplyComponents(tf, awsCreds, &clientset); err != nil {
-				contextLogger.Fatal(err)
-			}
-
-			// TODO: Display a nice table of the cluster status.
 		},
 	}
-	if err := opt.addCreateClusterFlags(cmd, auth); err != nil {
+	if err := opt.addCreateClusterFlags(cmd, &auth); err != nil {
 		log.Fatal(err)
 	}
 
 	toplevel.AddCommand(cmd)
+}
 
+func createCluster(c *cluster.Cluster, opt *clusterOptions, tf *terraform.Options, awsCreds *client.AwsCredentials) error {
+	const baseDir = "./terraform/aws-accounts/cloud-platform-aws/"
+	var (
+		vpcDir        = baseDir + "vpc/"
+		clusterDir    = vpcDir + "eks/"
+		componentsDir = clusterDir + "components/"
+	)
+
+	if err := c.ApplyVpc(tf, awsCreds, vpcDir); err != nil {
+		return err
+	}
+
+	if err := c.ApplyEks(tf, awsCreds, clusterDir); err != nil {
+		return err
+	}
+
+	clientset, err := client.GetClientset(kubePath)
+	if err != nil {
+		return err
+	}
+
+	if err := c.ApplyComponents(tf, awsCreds, &clientset, componentsDir); err != nil {
+		return err
+	}
+
+	// TODO: Display a nice table of the cluster status.
+	// Display the cluster in a nice table
+
+	return nil
 }
 
 var recycleOptions recycle.Options
@@ -142,7 +164,7 @@ func addClusterFlags(clusterCmd *cobra.Command) {
 	clusterCmd.Flags().StringVar(&kubePath, "kubecfg", filepath.Join(homedir.HomeDir(), ".kube", "config"), "path to kubeconfig file")
 }
 
-func (opt *createCluster) addCreateClusterFlags(cmd *cobra.Command, auth *cluster.AuthOpts) error {
+func (opt *clusterOptions) addCreateClusterFlags(cmd *cobra.Command, auth *authOpts) error {
 	var (
 		date    = time.Now().Format("0201")
 		minHour = time.Now().Format("1504")
@@ -220,11 +242,11 @@ var clusterRecycleNodeCmd = &cobra.Command{
 		}
 
 		recycle := &recycle.Recycler{
-			Client:  &client.Client{Clientset: clientset},
+			Client:  &client.KubeClient{Clientset: clientset},
 			Options: &recycleOptions,
 		}
 
-		recycle.Cluster, err = cluster.NewCluster(recycle.Client)
+		recycle.Cluster, err = cluster.NewClusterWithValues(recycle.Client)
 		if err != nil {
 			contextLogger.Fatal(err)
 		}
@@ -232,7 +254,7 @@ var clusterRecycleNodeCmd = &cobra.Command{
 		// Create a snapshot for comparison later.
 		recycle.Snapshot = recycle.Cluster.NewSnapshot()
 
-		recycle.AwsCreds, err = cluster.NewAwsCreds(recycleOptions.AwsRegion)
+		recycle.AwsCreds, err = client.NewAwsCreds(recycleOptions.AwsRegion)
 		if err != nil {
 			contextLogger.Fatal(err)
 		}
@@ -246,8 +268,8 @@ var clusterRecycleNodeCmd = &cobra.Command{
 	},
 }
 
-func getCredentials(awsRegion string) (*cluster.AwsCredentials, error) {
-	creds, err := cluster.NewAwsCreds(awsRegion)
+func getCredentials(awsRegion string) (*client.AwsCredentials, error) {
+	creds, err := client.NewAwsCreds(awsRegion)
 	if err != nil {
 		return nil, err
 	}
@@ -255,7 +277,7 @@ func getCredentials(awsRegion string) (*cluster.AwsCredentials, error) {
 	return creds, nil
 }
 
-func (o *createCluster) checkCreateFlags() error {
+func (o *clusterOptions) checkCreateFlags() error {
 	if awsProfile == "" && awsAccessKey == "" && awsSecret == "" {
 		return errors.New("AWS credentials are required, please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY or an AWS_PROFILE")
 	}
@@ -271,7 +293,7 @@ func (o *createCluster) checkCreateFlags() error {
 	return nil
 }
 
-func (o *createCluster) checkClusterName(date, minHour string) error {
+func (o *clusterOptions) checkClusterName(date, minHour string) error {
 	if o.Name == "" {
 		name := fmt.Sprintf("cp-%s-%s", date, minHour)
 
@@ -322,7 +344,7 @@ func findTopLevelGitDir(workingDir string) (string, error) {
 	}
 }
 
-func (o *createCluster) validateClusterOpts(cmd *cobra.Command, date, minHour string) error {
+func (o *clusterOptions) validateClusterOpts(cmd *cobra.Command, date, minHour string) error {
 	if err := o.checkCreateFlags(); err != nil {
 		return err
 	}
