@@ -11,7 +11,7 @@ import (
 
 func TestCluster_DeleteStuckPods(t *testing.T) {
 	type args struct {
-		c    *client.Client
+		c    *client.KubeClient
 		node *v1.Node
 	}
 	tests := []struct {
@@ -44,7 +44,7 @@ func TestCluster_DeleteStuckPods(t *testing.T) {
 
 func Test_getNodePods(t *testing.T) {
 	type args struct {
-		c *client.Client
+		c *client.KubeClient
 		n *v1.Node
 	}
 	tests := []struct {
@@ -79,7 +79,7 @@ func Test_getNodePods(t *testing.T) {
 
 func Test_getPods(t *testing.T) {
 	type args struct {
-		c *client.Client
+		c *client.KubeClient
 	}
 	tests := []struct {
 		name    string

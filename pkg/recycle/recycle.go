@@ -41,13 +41,13 @@ type Options struct {
 // Recycler is used to store objects used in a recycle session.
 type Recycler struct {
 	// Client represents the kubernetes client.
-	Client *client.Client
+	Client *client.KubeClient
 	// Cluster is the cluster object obtained from the current context.
 	Cluster *cluster.Cluster
 	// Snapshot is the snapshot of the cluster. Used for comparison of cluster state.
 	Snapshot *cluster.Snapshot
 	// AwsCreds is the AWS credentials to use for resource termination.
-	AwsCreds *cluster.AwsCredentials
+	AwsCreds *client.AwsCredentials
 
 	// Options are used to configure the recycle session.
 	Options *Options

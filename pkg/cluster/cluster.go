@@ -1,8 +1,6 @@
 package cluster
 
 import (
-
-
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
 
 	v1 "k8s.io/api/core/v1"
@@ -31,7 +29,7 @@ type Snapshot struct {
 
 // NewCluster creates a new Cluster object and populates its
 // fields with the values from the Kubernetes cluster in the client passed to it.
-func NewCluster(c *client.Client) (*Cluster, error) {
+func NewClusterWithValues(c *client.KubeClient) (*Cluster, error) {
 	pods, err := getPods(c)
 	if err != nil {
 		return nil, err
@@ -61,6 +59,13 @@ func NewCluster(c *client.Client) (*Cluster, error) {
 	}, nil
 }
 
+// NewCluster returns a cluster object with the name populated.
+func NewCluster(name string) *Cluster {
+	return &Cluster{
+		Name: name,
+	}
+}
+
 // NewSnapshot constructs a Snapshot cluster object
 func (c *Cluster) NewSnapshot() *Snapshot {
 	return &Snapshot{
@@ -70,7 +75,7 @@ func (c *Cluster) NewSnapshot() *Snapshot {
 
 // RefreshStatus performs a value overwrite of the cluster status.
 // This is useful for when the cluster is being updated.
-func (c *Cluster) RefreshStatus(client *client.Client) (err error) {
+func (c *Cluster) RefreshStatus(client *client.KubeClient) (err error) {
 	c.Nodes, err = GetAllNodes(client)
 	if err != nil {
 		return err
