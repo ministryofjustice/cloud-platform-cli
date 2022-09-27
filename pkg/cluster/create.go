@@ -21,15 +21,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-// AuthOpts represents the options for Auth0.
-type AuthOpts struct {
-	// Domain is the Auth0 domain.
-	Domain string
-	// ClientID is the Auth0 client ID.
-	ClientId string
-	// ClientSecret is the Auth0 client secret.
-	ClientSecret string
-}
 	}
 
 	if err := tf.CreateTerraformObj(); err != nil {
