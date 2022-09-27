@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"strings"
@@ -14,52 +13,13 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
-	"github.com/hashicorp/go-version"
-	install "github.com/hashicorp/hc-install"
-	"github.com/hashicorp/hc-install/fs"
-	"github.com/hashicorp/hc-install/product"
-	"github.com/hashicorp/hc-install/releases"
-	"github.com/hashicorp/hc-install/src"
 	"github.com/hashicorp/terraform-exec/tfexec"
+	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
+	"github.com/ministryofjustice/cloud-platform-cli/pkg/terraform"
 	kubeErr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
-
-// TerraformOptions are the options to pass to Terraform plan and apply.
-type TerraformOptions struct {
-	// Apply allows you to group apply options passed to Terraform.
-	ApplyVars []tfexec.ApplyOption
-	// Init allows you to group init options passed to Terraform.
-	InitVars []tfexec.InitOption
-	// Version is the version of Terraform to use.
-	Version string
-	// ExecPath is the path to the Terraform executable.
-	ExecPath string
-	// Workspace is the name of the Terraform workspace to use.
-	Workspace string
-	// FilePath is the location of the cloud-platform-infrastructure repository.
-	// This repository contains all the Terraform used to create the cluster.
-	FilePath     string
-	DirStructure DirectoryStructure
-}
-
-// DirectoryStructure represents the directory structure of the terraform to install.
-// This is fairly unique to the cloud-platform-infrastructure repository, but can be amended.
-// The structure is as follows:
-// - VpcDir == "vpc"
-// - ClusterDir == "EKS cluster"
-// - ComponentsDir == "kubernetes components that bootstrap a cloud-platform cluster"
-type DirectoryStructure struct {
-	// ComponentDir is the directory path in the cloud-platform-infrastructure repository.
-	ComponentDir string
-	// VpcDir is the directory path in the cloud-platform-infrastructure repository.
-	VpcDir string
-	// ClusterDir is the directory path in the cloud-platform-infrastructure repository.
-	ClusterDir string
-	// List is a collection of directory paths in the cloud-platform-infrastructure repository.
-	List []string
-}
 
 // AuthOpts represents the options for Auth0.
 type AuthOpts struct {
@@ -70,22 +30,6 @@ type AuthOpts struct {
 	// ClientSecret is the Auth0 client secret.
 	ClientSecret string
 }
-
-func NewTerraformOptions(version, workspace string, directories []string) (*TerraformOptions, error) {
-	if version == "" {
-		return nil, fmt.Errorf("terraform version is required")
-	}
-	tf := &TerraformOptions{
-		Version:   version,
-		Workspace: workspace,
-	}
-	// If the directory structure is not set, assume the user wants to use the cloud-platform-infrastructure setup.
-	if directories == nil {
-		tf.infrastructureDirectory()
-	} else {
-		for _, dir := range directories {
-			tf.DirStructure.List = append(tf.DirStructure.List, dir)
-		}
 	}
 
 	if err := tf.CreateTerraformObj(); err != nil {
@@ -146,128 +90,31 @@ func (c *Cluster) ApplyComponents(terraform *TerraformOptions, awsCreds *AwsCred
 	return nil
 }
 
-// DefaultDirSetup sets the default directory structure for the cloud-platform-infrastructure repository.
-func (terraform *TerraformOptions) infrastructureDirectory() {
-	const baseDir = "./terraform/aws-accounts/cloud-platform-aws/"
-	var (
-		vpcDir        = baseDir + "vpc/"
-		clusterDir    = vpcDir + "eks/"
-		componentsDir = clusterDir + "components/"
-	)
-	directories := []string{
-		vpcDir,
-		clusterDir,
-		componentsDir,
-	}
-
-	structure := DirectoryStructure{
-		VpcDir:       vpcDir,
-		ClusterDir:   clusterDir,
-		ComponentDir: componentsDir,
-		List:         directories,
-	}
-	terraform.DirStructure = structure
-}
-
-// createTerraformObj creates a Terraform object using the version passed as a string.
-func (terraform *TerraformOptions) CreateTerraformObj() error {
-	i := install.NewInstaller()
-	v := version.Must(version.NewVersion(terraform.Version))
-
-	execPath, err := i.Ensure(context.TODO(), []src.Source{
-		&fs.ExactVersion{
-			Product: product.Terraform,
-			Version: v,
-		},
-		&releases.ExactVersion{
-			Product: product.Terraform,
-			Version: v,
-		},
-	})
-	if err != nil {
+	if err := checkCluster(tf.Workspace, creds.Eks); err != nil {
 		return err
 	}
 
-	defer i.Remove(context.TODO())
-
-	terraform.ExecPath = execPath
-	terraform.ApplyVars = []tfexec.ApplyOption{
-		tfexec.Parallelism(1),
-	}
+	c.HealthStatus = "Good"
 
 	return nil
 }
 
-func (terraform *TerraformOptions) initAndApply(tf *tfexec.Terraform, creds *AwsCredentials, fast bool) error {
-	fmt.Printf("Init terraform in directory %s\n", tf.WorkingDir())
-	err := terraform.initialise(tf)
-	if err != nil {
-		return fmt.Errorf("failed to init terraform: %w", err)
 	}
 
-	fmt.Printf("Apply terraform in directory %s\n", tf.WorkingDir())
-	err = terraform.executeApply(tf, fast)
+	exec, err := tfexec.NewTerraform(dir, tf.ExecPath)
 	if err != nil {
-		return fmt.Errorf("failed to apply: %w", err)
+		return fmt.Errorf("failed to create terraform object: %w", err)
 	}
-
-	return nil
-}
-
-func (terraform *TerraformOptions) output(tf *tfexec.Terraform) (map[string]tfexec.OutputMeta, error) {
-	// We don't want terraform to print out the output here as the package doesn't respect the secret flag.
-	tf.SetStdout(nil)
-	tf.SetStderr(nil)
-	output, err := tf.Output(context.TODO())
-	if err != nil {
-		if strings.Contains(err.Error(), "plugin") || strings.Contains(err.Error(), "init") {
-			fmt.Println("Init again, due to failure")
-			err = tf.Init(context.TODO(), terraform.InitVars...)
-			if err != nil {
-				return nil, fmt.Errorf("failed to init: %w", err)
-			}
-			output, err = tf.Output(context.TODO())
-			if err != nil {
-				return nil, fmt.Errorf("failed to create output: %w", err)
-			}
-			return nil, fmt.Errorf("failed to show terraform output: %w", err)
-		}
+	// Start fresh and remove any local state.
+	if err := deleteLocalState(dir, ".terraform", ".terraform.lock.hcl"); err != nil {
+		return fmt.Errorf("failed to delete temp directory: %w", err)
 	}
-	return output, nil
-}
-
-// intialise performs the `terraform init` function.
-func (terraform *TerraformOptions) initialise(tf *tfexec.Terraform) error {
-	terraform.InitVars = append(terraform.InitVars, tfexec.Reconfigure(true))
-	err := tf.Init(context.TODO(), terraform.InitVars...)
-	// Handle no plugin error
-	if err != nil {
-		if err := tf.Init(context.TODO(), terraform.InitVars...); err != nil {
-			return fmt.Errorf("failed to init: %w", err)
-		}
-	}
-
-	return terraform.setWorkspace(tf)
-}
-
-func (terraform *TerraformOptions) setWorkspace(tf *tfexec.Terraform) error {
-	list, _, err := tf.WorkspaceList(context.TODO())
+	_, err = tf.Apply(exec, awsCreds)
 	if err != nil {
 		return err
 	}
 
-	for _, ws := range list {
-		if ws == terraform.Workspace {
-			err = tf.WorkspaceSelect(context.TODO(), terraform.Workspace)
-			if err != nil {
-				return err
-			}
-			return nil
-		}
-	}
-
-	err = tf.WorkspaceNew(context.TODO(), terraform.Workspace)
-	if err != nil {
+	if err := applyTacticalPspFix(*clientset); err != nil {
 		return err
 	}
 
@@ -278,28 +125,6 @@ func authToCluster(cluster string) error {
 	_, err := exec.Command("aws", "eks", "--region", "eu-west-2", "update-kubeconfig", "--name", cluster).Output()
 	if err != nil {
 		return err
-	}
-
-	return nil
-}
-
-func (terraform *TerraformOptions) executeApply(tf *tfexec.Terraform, fast bool) error {
-	if strings.Contains(tf.WorkingDir(), "eks") && fast {
-		terraform.ApplyVars = append(terraform.ApplyVars, tfexec.Var(fmt.Sprintf("%s=%v", "enable_oidc_associate", false)))
-	}
-
-	err := tf.Apply(context.TODO(), terraform.ApplyVars...)
-	// handle a case where you need to init again
-	if err != nil {
-		fmt.Println("Init again, due to failure")
-		err = tf.Init(context.TODO(), terraform.InitVars...)
-		if err != nil {
-			return fmt.Errorf("failed to init: %w", err)
-		}
-		err = tf.Apply(context.TODO(), terraform.ApplyVars...)
-		if err != nil {
-			return fmt.Errorf("failed to apply: %w", err)
-		}
 	}
 
 	return nil
@@ -334,35 +159,6 @@ func (terraform *TerraformOptions) checkVpc(vpcId string, sess *session.Session)
 	}
 
 	return nil
-}
-
-func (terraform *TerraformOptions) apply(directory string, creds *AwsCredentials, fast bool) (map[string]tfexec.OutputMeta, error) {
-	tf, err := tfexec.NewTerraform(directory, terraform.ExecPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create terraform object: %w", err)
-	}
-	fmt.Println(tf)
-
-	// Write the output to the terminal.
-	tf.SetStdout(log.Writer())
-	tf.SetStderr(log.Writer())
-
-	// Start fresh and remove any local state.
-	if err = deleteLocalState(directory, ".terraform", ".terraform.lock.hcl"); err != nil {
-		return nil, fmt.Errorf("failed to delete temp directory: %w", err)
-	}
-
-	err = terraform.initAndApply(tf, creds, fast)
-	if err != nil {
-		return nil, fmt.Errorf("an error occurred attempting to init and apply %w", err)
-	}
-
-	output, err := terraform.output(tf)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get output: %w", err)
-	}
-
-	return output, nil
 }
 
 // applyTacticalPspFix deletes the current eks.privileged psp in the cluster.
