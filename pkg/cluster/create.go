@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
 	"github.com/hashicorp/terraform-exec/tfexec"
@@ -43,7 +43,7 @@ func (c *Cluster) ApplyVpc(tf *terraform.Options, creds *client.AwsCredentials, 
 	fmt.Println("Starting to check vpc")
 	// Trim the vpcId to remove quotes
 	vpc := strings.Trim(string(vpcID.Value), "\"")
-	return checkVpc(*tf, vpc, creds.Session)
+	return checkVpc(*tf, vpc, creds.Ec2)
 }
 
 func (c *Cluster) ApplyEks(tf *terraform.Options, creds *client.AwsCredentials, dir string) error {
@@ -108,17 +108,8 @@ func authToCluster(cluster string) error {
 }
 
 // CheckVpc asserts that the vpc is up and running. It tests the vpc state and id.
-func checkVpc(tf terraform.Options, vpcId string, sess *session.Session) error {
-	svc := ec2.New(sess)
-
-	vpc, err := svc.DescribeVpcs(&ec2.DescribeVpcsInput{
-		Filters: []*ec2.Filter{
-			{
-				Name:   aws.String("tag:Cluster"),
-				Values: []*string{aws.String(tf.Workspace)},
-			},
-		},
-	})
+func checkVpc(tf terraform.Options, vpcId string, svc ec2iface.EC2API) error {
+	vpc, err := getVpc(tf.Workspace, svc)
 	if err != nil {
 		return fmt.Errorf("error describing vpc: %v", err)
 	}
@@ -136,6 +127,17 @@ func checkVpc(tf terraform.Options, vpcId string, sess *session.Session) error {
 	}
 
 	return nil
+}
+
+func getVpc(name string, svc ec2iface.EC2API) (*ec2.DescribeVpcsOutput, error) {
+	return svc.DescribeVpcs(&ec2.DescribeVpcsInput{
+		Filters: []*ec2.Filter{
+			{
+				Name:   aws.String("tag:Cluster"),
+				Values: []*string{aws.String(name)},
+			},
+		},
+	})
 }
 
 // applyTacticalPspFix deletes the current eks.privileged psp in the cluster.

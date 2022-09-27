@@ -1,104 +1,138 @@
 package cluster
 
 import (
+	"context"
+	"errors"
 	"os"
 	"testing"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
+	"github.com/ministryofjustice/cloud-platform-cli/pkg/terraform"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/policy/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/fake"
 )
 
 type mockEKSClient struct {
 	eksiface.EKSAPI
 }
 
-func (m *mockEKSClient) getName(name string) (*eks.Cluster, error) {
-	// mock response/functionality
-	return &eks.Cluster{
-		Name: &name,
-		// Status: aws.String("ACTIVE"),
+type mockEC2Client struct {
+	ec2iface.EC2API
+}
+
+func (m *mockEC2Client) DescribeVpcs(input *ec2.DescribeVpcsInput) (*ec2.DescribeVpcsOutput, error) {
+	if *input.Filters[0].Values[0] != "test" {
+		return nil, errors.New("bad vpc")
+	}
+
+	return &ec2.DescribeVpcsOutput{
+		Vpcs: []*ec2.Vpc{
+			{
+				VpcId: aws.String("test"),
+			},
+		},
+	}, nil
+
+}
+
+func (m *mockEKSClient) DescribeCluster(input *eks.DescribeClusterInput) (*eks.DescribeClusterOutput, error) {
+	if *input.Name != "test" {
+		return nil, errors.New("cluster not found")
+	}
+
+	return &eks.DescribeClusterOutput{
+		Cluster: &eks.Cluster{
+			Name:   aws.String("test"),
+			Status: aws.String("ACTIVE"),
+		},
 	}, nil
 }
 
-// func TestCheckCluster(t *testing.T) {
-// 	mockSvc := &mockEKSClient{}
-// 	mockSvc.getName("test")
+func TestCheckVpc(t *testing.T) {
+	mockSvc := &mockEC2Client{}
 
-// 	err := checkCluster("test", mockSvc)
-// 	if err != nil {
-// 		t.Errorf("checkCluster() error = %v", err)
-// 	}
-// }
+	testOpt := terraform.Options{
+		Workspace: "test",
+	}
 
-func TestGetCluster(t *testing.T) {
-	// Setup Test
+	// Good path
+	err := checkVpc(testOpt, "test", mockSvc)
+	if err != nil {
+		t.Errorf("checkVpc() error = %v", err)
+	}
+
+	// Bad path
+	err = checkVpc(testOpt, "obviouslyWrong", mockSvc)
+	if err == nil {
+		t.Errorf("checkVpc() error = %v", err)
+	}
+
+	testOpt.Workspace = "incorrectWorkspace"
+	err = checkVpc(testOpt, "test", mockSvc)
+	if err == nil {
+		t.Error("we expected an error here checkVpc() error")
+	}
+}
+
+func TestGetVpc(t *testing.T) {
+	mockSvc := &mockEC2Client{}
+
+	out, err := getVpc("test", mockSvc)
+	if err != nil {
+		t.Errorf("checkVpc() error = %v", err)
+	}
+
+	if *out.Vpcs[0].VpcId != "test" {
+		t.Errorf("checkVpc() error = %v", "vpc not found")
+	}
+
+	_, err = getVpc("bad", mockSvc)
+	if err == nil {
+		t.Errorf("was expecting an error. checkVpc() error = %v", "expected error")
+	}
+
+}
+
+func TestCheckCluster(t *testing.T) {
 	mockSvc := &mockEKSClient{}
 
-	mockSvc.getName("test")
+	// Good path
+	err := checkCluster("test", mockSvc)
+	if err != nil {
+		t.Errorf("checkCluster() error = %v", err)
+	}
 
-	_, err := getCluster("test", mockSvc)
+	// Bad path
+	err = checkCluster("bad", mockSvc)
+	if err == nil {
+		t.Errorf("checkCluster() error = %v", "expected error")
+	}
+}
+
+func TestGetCluster(t *testing.T) {
+	mockSvc := &mockEKSClient{}
+
+	// Good path
+	mockCluster, err := getCluster("test", mockSvc)
 	if err != nil {
 		t.Errorf("getCluster() error = %v", err)
 	}
 
-	// if *c.Name != "test" {
-	// 	t.Errorf("getCluster() error = %v", "cluster name not set")
-	// }
-
-	// Verify myFunc's functionality
-}
-func Test_setEnvironment(t *testing.T) {
-	auth := &AuthOpts{
-		ClientId:     "test",
-		ClientSecret: "test",
-		Domain:       "test",
+	if *mockCluster.Name != "test" {
+		t.Errorf("getCluster() error = %v", "cluster name not set")
 	}
 
-	options := &CreateOptions{
-		Name:  "test",
-		Auth0: *auth,
+	// Bad path
+	_, err = getCluster("bad", mockSvc)
+	if err == nil {
+		t.Errorf("was expecting an error here. getCluster() error = %v", "expected error")
 	}
-
-	fakeCredentials := &AwsCredentials{
-		Profile: "test",
-		Region:  "test",
-	}
-
-	if err := setEnvironment(options, fakeCredentials); err != nil {
-		t.Errorf("setEnvironment() error = %v", err)
-	}
-
-	defer removeTestEnvVars(t)
-
-	if os.Getenv("AUTH0_CLIENT_ID") != "test" {
-		t.Errorf("setEnvironment() error = %v", "AUTH0_CLIENT_ID not set")
-	}
-
-	if os.Getenv("AUTH0_CLIENT_SECRET") != "test" {
-		t.Errorf("setEnvironment() error = %v", "AUTH0_CLIENT_SECRET not set")
-	}
-
-	if os.Getenv("AUTH0_DOMAIN") != "test" {
-		t.Errorf("setEnvironment() error = %v", "AUTH0_DOMAIN not set")
-	}
-
-	if os.Getenv("AWS_PROFILE") != "test" {
-		t.Errorf("setEnvironment() error = %v", "AWS_PROFILE not set")
-	}
-
-	if os.Getenv("AWS_REGION") != "test" {
-		t.Errorf("setEnvironment() error = %v", "AWS_REGION not set")
-	}
-}
-
-func removeTestEnvVars(t *testing.T) {
-	t.Helper()
-	os.Unsetenv("AUTH0_CLIENT_ID")
-	os.Unsetenv("AUTH0_CLIENT_SECRET")
-	os.Unsetenv("AUTH0_DOMAIN")
-
-	os.Unsetenv("AWS_PROFILE")
-	os.Unsetenv("AWS_REGION")
 }
 
 func Test_deleteLocalState(t *testing.T) {
@@ -138,37 +172,29 @@ func Test_deleteLocalState(t *testing.T) {
 	}
 }
 
-func TestTerraformOptions_DefaultDirSetup(t *testing.T) {
-	testTfOptions := &TerraformOptions{}
+func TestApplyTacticalPspFix(t *testing.T) {
+	fakeClientset := fake.NewSimpleClientset(
+		&v1beta1.PodSecurityPolicy{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "eks.privileged",
+			},
+		},
+		// Add pods
+		&v1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "FakePod",
+			},
+		},
+	)
 
-	testTfOptions.DefaultDirSetup()
-
-	if testTfOptions.DirStructure.List == nil {
-		t.Errorf("DefaultDirSetup() error = %v", "Dir not set")
-	}
-}
-
-func TestNewTerraformOptions(t *testing.T) {
-	testCreateOptions := &CreateOptions{
-		Name: "test",
-	}
-	_, err := newTerraformOptions(testCreateOptions)
-	if err == nil {
-		t.Errorf("newTerraformOptions() error = %v", "expected error")
-	}
-
-	testCreateOptions.TfVersion = "0.14.8"
-	testCreateOptions.TfDirectories = []string{"test"}
-	testTf, err := newTerraformOptions(testCreateOptions)
+	// Good path
+	err := applyTacticalPspFix(fakeClientset)
 	if err != nil {
-		t.Errorf("newTerraformOptions() error = %v", err)
+		t.Errorf("applyTacticalPspFix() error = %v", err)
 	}
 
-	if testTf.Version != "0.14.8" {
-		t.Errorf("newTerraformOptions() error = %v", "terraform version not set")
-	}
-
-	if testTf.DirStructure.List == nil {
-		t.Errorf("newTerraformOptions() error = %v", "Dir not set")
+	err = fakeClientset.PolicyV1beta1().PodSecurityPolicies().Delete(context.Background(), "eks.privileged", metav1.DeleteOptions{})
+	if err == nil {
+		t.Errorf("we wanted to delete the eks.privileged psp. applyTacticalPspFix() error = %v", err)
 	}
 }
