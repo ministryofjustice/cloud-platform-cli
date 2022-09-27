@@ -21,17 +21,16 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+func (c *Cluster) ApplyVpc(tf *terraform.Options, creds *client.AwsCredentials, dir string) error {
+	exec, err := tfexec.NewTerraform(dir, tf.ExecPath)
+	if err != nil {
+		return fmt.Errorf("failed to create terraform object: %w", err)
 	}
-
-	if err := tf.CreateTerraformObj(); err != nil {
-		return nil, err
+	// Start fresh and remove any local state.
+	if err := deleteLocalState(dir, ".terraform", ".terraform.lock.hcl"); err != nil {
+		return fmt.Errorf("failed to delete temp directory: %w", err)
 	}
-
-	return tf, nil
-}
-
-func (c *Cluster) ApplyVpc(terraform *TerraformOptions, creds *AwsCredentials) error {
-	output, err := terraform.apply(terraform.DirStructure.VpcDir, creds, false)
+	output, err := tf.Apply(exec, creds)
 	if err != nil {
 		return err
 	}
@@ -44,42 +43,25 @@ func (c *Cluster) ApplyVpc(terraform *TerraformOptions, creds *AwsCredentials) e
 	fmt.Println("Starting to check vpc")
 	// Trim the vpcId to remove quotes
 	vpc := strings.Trim(string(vpcID.Value), "\"")
-	return terraform.checkVpc(vpc, creds.Session)
+	return checkVpc(*tf, vpc, creds.Session)
 }
 
-func (c *Cluster) ApplyEks(terraform *TerraformOptions, creds *AwsCredentials, fast bool) error {
+func (c *Cluster) ApplyEks(tf *terraform.Options, creds *client.AwsCredentials, dir string) error {
 	fmt.Println("Applying Terraform against EKS")
-	_, err := terraform.apply(terraform.DirStructure.ClusterDir, creds, fast)
+	exec, err := tfexec.NewTerraform(dir, tf.ExecPath)
+	if err != nil {
+		return fmt.Errorf("failed to create terraform object: %w", err)
+	}
+
+	// Start fresh and remove any local state.
+	if err := deleteLocalState(dir, ".terraform", ".terraform.lock.hcl"); err != nil {
+		return fmt.Errorf("failed to delete temp directory: %w", err)
+	}
+
+	_, err = tf.Apply(exec, creds)
 	if err != nil {
 		return err
 	}
-
-	if err := checkCluster(terraform.Workspace, creds.Eks); err != nil {
-		return err
-	}
-
-	c.HealthStatus = "Good"
-
-	return nil
-}
-
-func (c *Cluster) ApplyComponents(terraform *TerraformOptions, awsCreds *AwsCredentials, clientset *kubernetes.Interface) error {
-	// There is a requirement for the aws binary to exist at this point.
-	if err := authToCluster(terraform.Workspace); err != nil {
-		return err
-	}
-
-	_, err := terraform.apply(terraform.DirStructure.ComponentDir, awsCreds, false)
-	if err != nil {
-		return err
-	}
-
-	if err := applyTacticalPspFix(*clientset); err != nil {
-		return err
-	}
-
-	return nil
-}
 
 	if err := checkCluster(tf.Workspace, creds.Eks); err != nil {
 		return err
@@ -90,6 +72,10 @@ func (c *Cluster) ApplyComponents(terraform *TerraformOptions, awsCreds *AwsCred
 	return nil
 }
 
+func (c *Cluster) ApplyComponents(tf *terraform.Options, awsCreds *client.AwsCredentials, clientset *kubernetes.Interface, dir string) error {
+	// There is a requirement for the aws binary to exist at this point.
+	if err := authToCluster(tf.Workspace); err != nil {
+		return err
 	}
 
 	exec, err := tfexec.NewTerraform(dir, tf.ExecPath)
@@ -122,14 +108,14 @@ func authToCluster(cluster string) error {
 }
 
 // CheckVpc asserts that the vpc is up and running. It tests the vpc state and id.
-func (terraform *TerraformOptions) checkVpc(vpcId string, sess *session.Session) error {
+func checkVpc(tf terraform.Options, vpcId string, sess *session.Session) error {
 	svc := ec2.New(sess)
 
 	vpc, err := svc.DescribeVpcs(&ec2.DescribeVpcsInput{
 		Filters: []*ec2.Filter{
 			{
 				Name:   aws.String("tag:Cluster"),
-				Values: []*string{aws.String(terraform.Workspace)},
+				Values: []*string{aws.String(tf.Workspace)},
 			},
 		},
 	})
