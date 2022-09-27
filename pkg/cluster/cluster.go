@@ -1,11 +1,7 @@
 package cluster
 
 import (
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/eks"
 
-	// with go modules enabled (GO111MODULE=on or outside GOPATH)
 
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
 
@@ -31,14 +27,6 @@ type Cluster struct {
 // Snapshot represents a snapshot of a Kubernetes cluster object
 type Snapshot struct {
 	Cluster Cluster
-}
-
-// AwsCredentials represents the AWS credentials used to connect to an AWS account.
-type AwsCredentials struct {
-	Session *session.Session
-	Profile string
-	Eks     *eks.EKS
-	Region  string
 }
 
 // NewCluster creates a new Cluster object and populates its
@@ -78,22 +66,6 @@ func (c *Cluster) NewSnapshot() *Snapshot {
 	return &Snapshot{
 		Cluster: *c,
 	}
-}
-
-// NewAwsCredentials constructs and populates a new AwsCredentials object
-func NewAwsCreds(region string) (*AwsCredentials, error) {
-	sess, err := session.NewSession(&aws.Config{Region: aws.String(region)})
-	if err != nil {
-		return nil, err
-	}
-
-	eks := eks.New(sess)
-
-	return &AwsCredentials{
-		Session: sess,
-		Region:  region,
-		Eks:     eks,
-	}, nil
 }
 
 // RefreshStatus performs a value overwrite of the cluster status.
