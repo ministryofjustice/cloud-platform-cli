@@ -7,13 +7,69 @@ package terraform
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"fmt"
 	"os/exec"
+	"path/filepath"
+	"regexp"
 	"strings"
 	"syscall"
 
+	"github.com/hashicorp/go-version"
+	install "github.com/hashicorp/hc-install"
+	"github.com/hashicorp/hc-install/fs"
+	"github.com/hashicorp/hc-install/product"
+	"github.com/hashicorp/hc-install/releases"
+	"github.com/hashicorp/hc-install/src"
+	"github.com/hashicorp/terraform-exec/tfexec"
 	log "github.com/sirupsen/logrus"
 )
+
+//go:generate mockery --name=terraformExec  --structname=TerraformExec --output=../mocks/client
+var _ terraformExec = (*tfexec.Terraform)(nil)
+
+var (
+	wsFailedToSelectRegexp = regexp.MustCompile(`Failed to select workspace`)
+	wsDoesNotExistRegexp   = regexp.MustCompile(`workspace ".*" does not exist`)
+)
+
+// terraformExec describes the interface for terraform-exec, the SDK for
+// Terraform CLI: https://github.com/hashicorp/terraform-exec
+type terraformExec interface {
+	Init(ctx context.Context, opts ...tfexec.InitOption) error
+	Apply(ctx context.Context, opts ...tfexec.ApplyOption) error
+	Plan(ctx context.Context, opts ...tfexec.PlanOption) (bool, error)
+	WorkspaceNew(ctx context.Context, workspace string, opts ...tfexec.WorkspaceNewCmdOption) error
+	WorkspaceSelect(ctx context.Context, workspace string) error
+}
+
+// TerraformCLI is the client that wraps around terraform-exec
+// to execute Terraform cli commands
+type TerraformCLI struct {
+	tf         terraformExec
+	workingDir string
+	workspace  string
+	logger     log.Logger
+	// Apply allows you to group apply options passed to Terraform.
+	applyVars []tfexec.ApplyOption
+	// Init allows you to group init options passed to Terraform.
+	initVars []tfexec.InitOption
+}
+
+// TerraformCLIConfig configures the Terraform client
+type TerraformCLIConfig struct {
+	ExecPath   string
+	WorkingDir string
+	Workspace  string
+	// Apply allows you to group apply options passed to Terraform.
+	ApplyVars []tfexec.ApplyOption
+	// Init allows you to group init options passed to Terraform.
+	InitVars []tfexec.InitOption
+	// Version is the version of Terraform to use.
+	Version string
+	// ExecPath is the path to the Terraform executable.
+}
 
 // Commander struct holds all data required to execute terraform.
 type Commander struct {
@@ -25,6 +81,110 @@ type Commander struct {
 	VarFile         string
 	DisplayTfOutput bool
 	BulkTfPaths     string
+}
+
+// NewTerraformCLI creates a terraform-exec client and configures and
+// initializes a new Terraform client
+func NewTerraformCLI(config *TerraformCLIConfig) (*TerraformCLI, error) {
+	if config == nil {
+		return nil, errors.New("TerraformCLIConfig cannot be nil - no meaningful default values")
+	}
+
+	if config.ExecPath != "" {
+		config.ExecPath = filepath.Join(config.ExecPath, "terraform")
+	} else {
+		i := install.NewInstaller()
+		v := version.Must(version.NewVersion(config.Version))
+
+		execPath, err := i.Ensure(context.TODO(), []src.Source{
+			&fs.ExactVersion{
+				Product: product.Terraform,
+				Version: v,
+			},
+			&releases.ExactVersion{
+				Product: product.Terraform,
+				Version: v,
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		config.ExecPath = execPath
+
+		defer i.Remove(context.TODO())
+	}
+
+	tf, err := tfexec.NewTerraform(config.WorkingDir, config.ExecPath)
+	if err != nil {
+		return nil, err
+	}
+
+	client := &TerraformCLI{
+		tf:         tf,
+		workingDir: config.WorkingDir,
+		workspace:  config.Workspace,
+		applyVars:  config.ApplyVars,
+		initVars:   config.InitVars,
+	}
+
+	return client, nil
+}
+
+// Init initializes by executing the cli command `terraform init` and
+// `terraform workspace new <name>`
+func (t *TerraformCLI) Init(ctx context.Context) error {
+	var wsCreated bool
+
+	// This is special handling for when the workspace has been detected in
+	// .terraform/environment with a non-existing state. This case is common
+	// when the state for the workspace has been deleted.
+	// https://github.com/hashicorp/terraform/issues/21393
+TF_INIT_AGAIN:
+	if err := t.tf.Init(ctx); err != nil {
+		var wsErr *tfexec.ErrNoWorkspace
+		matchedFailedToSelect := wsFailedToSelectRegexp.MatchString(err.Error())
+		matchedDoesNotExist := wsDoesNotExistRegexp.MatchString(err.Error())
+		if matchedFailedToSelect || matchedDoesNotExist || errors.As(err, &wsErr) {
+			t.logger.Info("workspace was detected without state, " +
+				"creating new workspace and attempting Terraform init again")
+			if err := t.tf.WorkspaceNew(ctx, t.workspace); err != nil {
+				return err
+			}
+
+			if !wsCreated {
+				wsCreated = true
+				goto TF_INIT_AGAIN
+			}
+		}
+		return err
+	}
+
+	if !wsCreated {
+		err := t.tf.WorkspaceNew(ctx, t.workspace)
+		if err != nil {
+			var wsErr *tfexec.ErrWorkspaceExists
+			if !errors.As(err, &wsErr) {
+				return err
+			}
+		}
+	}
+
+	if err := t.tf.WorkspaceSelect(ctx, t.workspace); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Apply executes the cli command `terraform apply` for a given workspace
+func (t *TerraformCLI) Apply(ctx context.Context) error {
+	return t.tf.Apply(ctx, t.applyVars...)
+}
+
+// Plan executes the cli command `terraform plan` for a given workspace
+func (t *TerraformCLI) Plan(ctx context.Context) (bool, error) {
+	return t.tf.Plan(ctx)
 }
 
 // Terraform creates terraform command to be executed
