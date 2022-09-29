@@ -1,6 +1,7 @@
 package util
 
 import (
+	"bytes"
 	"os"
 	"os/exec"
 	"strings"
@@ -103,5 +104,68 @@ func TestRepoErrorBranch(t *testing.T) {
 	// Change back to the original directory
 	if err := os.Chdir(wd); err != nil {
 		t.Errorf("Something went wrong: %s", err)
+	}
+}
+
+func TestRedacted(t *testing.T) {
+	type args struct {
+		output string
+	}
+	tests := []struct {
+		name   string
+		args   args
+		expect string
+	}{
+		{
+			name: "Redacted Password Content",
+			args: args{
+				output: "password: 1234567890",
+			},
+			expect: "REDACTED\n",
+		},
+		{
+			name: "Redacted Sercet Content",
+			args: args{
+				output: "secret: 1234567890",
+			},
+			expect: "REDACTED\n",
+		},
+		{
+			name: "Redacted Token Content",
+			args: args{
+				output: "token: 1234567890",
+			},
+			expect: "REDACTED\n",
+		},
+		{
+			name: "Redacted Key Content",
+			args: args{
+				output: "key: 1234567890",
+			},
+			expect: "REDACTED\n",
+		},
+		{
+			name: "Redacted Webhook Content",
+			args: args{
+				output: "https://hooks.slack.com",
+			},
+			expect: "REDACTED\n",
+		},
+		{
+			name: "Unredacted Content",
+			args: args{
+				output: "This test should not be redacted",
+			},
+			expect: "This test should not be redacted\n",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var output bytes.Buffer
+			Redacted(&output, tt.args.output)
+			if tt.expect != output.String() {
+				t.Errorf("got %s but expected %s", output.String(), tt.expect)
+			}
+		})
 	}
 }

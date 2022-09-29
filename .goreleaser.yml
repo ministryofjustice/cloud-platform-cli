@@ -11,7 +11,7 @@ archives:
 builds:
   - env:
       - CGO_ENABLED=0
-    main: ./cmd/cloud-platform
+    main: ./main.go
     binary: cloud-platform
     goos:
       - linux

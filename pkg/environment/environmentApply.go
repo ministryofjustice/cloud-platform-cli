@@ -3,6 +3,7 @@ package environment
 import (
 	"fmt"
 	"log"
+	"os"
 	"strings"
 
 	"github.com/kelseyhightower/envconfig"
@@ -253,7 +254,9 @@ func (a *Apply) planNamespace() error {
 		return err
 	}
 
-	fmt.Println("\nOutput of kubectl:", outputKubectl, "\nOutput of terraform", outputTerraform)
+	fmt.Println("\nOutput of kubectl:", outputKubectl)
+	fmt.Println("\nOutput of terraform:")
+	util.Redacted(os.Stdout, outputTerraform)
 	return nil
 }
 
@@ -272,6 +275,8 @@ func (a *Apply) applyNamespace() error {
 		return err
 	}
 
-	fmt.Println("\nOutput of kubectl:", outputKubectl, "\nOutput of terraform", outputTerraform)
+	fmt.Println("\nOutput of kubectl:", outputKubectl)
+	fmt.Println("\nOutput of terraform:")
+	util.Redacted(os.Stdout, outputTerraform)
 	return nil
 }

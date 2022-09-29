@@ -8,9 +8,11 @@ package terraform
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
-	"os"
 	"os/exec"
+	"path/filepath"
+	"regexp"
 	"strings"
 	"syscall"
 
@@ -21,9 +23,40 @@ import (
 	"github.com/hashicorp/hc-install/releases"
 	"github.com/hashicorp/hc-install/src"
 	"github.com/hashicorp/terraform-exec/tfexec"
-	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
 	log "github.com/sirupsen/logrus"
 )
+
+var (
+	wsFailedToSelectRegexp = regexp.MustCompile(`Failed to select workspace`)
+	wsDoesNotExistRegexp   = regexp.MustCompile(`workspace ".*" does not exist`)
+)
+
+// TerraformCLI is the client that wraps around terraform-exec
+// to execute Terraform cli commands
+type TerraformCLI struct {
+	tf         terraformExec
+	workingDir string
+	workspace  string
+	logger     log.Logger
+	// Apply allows you to group apply options passed to Terraform.
+	applyVars []tfexec.ApplyOption
+	// Init allows you to group init options passed to Terraform.
+	initVars []tfexec.InitOption
+}
+
+// TerraformCLIConfig configures the Terraform client
+type TerraformCLIConfig struct {
+	ExecPath   string
+	WorkingDir string
+	Workspace  string
+	// Apply allows you to group apply options passed to Terraform.
+	ApplyVars []tfexec.ApplyOption
+	// Init allows you to group init options passed to Terraform.
+	InitVars []tfexec.InitOption
+	// Version is the version of Terraform to use.
+	Version string
+	// ExecPath is the path to the Terraform executable.
+}
 
 // Commander struct holds all data required to execute terraform.
 type Commander struct {
@@ -37,38 +70,118 @@ type Commander struct {
 	BulkTfPaths     string
 }
 
-// Options are the options to pass to Terraform plan and apply.
-type Options struct {
-	// Apply allows you to group apply options passed to Terraform.
-	ApplyVars []tfexec.ApplyOption
-	// Init allows you to group init options passed to Terraform.
-	InitVars []tfexec.InitOption
-	// Version is the version of Terraform to use.
-	Version string
-	// ExecPath is the path to the Terraform executable.
-	ExecPath string
-	// Workspace is the name of the Terraform workspace to use.
-	Workspace string
-	// FilePath is the location of the cloud-platform-infrastructure repository.
-	// This repository contains all the Terraform used to create the cluster.
-	FilePath     string
-	DirStructure []string
-}
-
-func NewOptions(version, workspace string) (*Options, error) {
-	if version == "" {
-		return nil, fmt.Errorf("terraform version is required")
-	}
-	tf := &Options{
-		Version:   version,
-		Workspace: workspace,
+// NewTerraformCLI creates a terraform-exec client and configures and
+// initializes a new Terraform client
+func NewTerraformCLI(config *TerraformCLIConfig) (*TerraformCLI, error) {
+	if config == nil {
+		return nil, errors.New("TerraformCLIConfig cannot be nil - no meaningful default values")
 	}
 
-	if err := tf.CreateTerraformObj(); err != nil {
+	if config.ExecPath != "" {
+		config.ExecPath = filepath.Join(config.ExecPath, "terraform")
+	} else {
+		i := install.NewInstaller()
+		v := version.Must(version.NewVersion(config.Version))
+
+		execPath, err := i.Ensure(context.TODO(), []src.Source{
+			&fs.ExactVersion{
+				Product: product.Terraform,
+				Version: v,
+			},
+			&releases.ExactVersion{
+				Product: product.Terraform,
+				Version: v,
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		config.ExecPath = execPath
+
+		defer func() {
+			if err := i.Remove(context.TODO()); err != nil {
+				return
+			}
+		}()
+
+	}
+
+	tf, err := tfexec.NewTerraform(config.WorkingDir, config.ExecPath)
+	if err != nil {
 		return nil, err
 	}
 
-	return tf, nil
+	client := &TerraformCLI{
+		tf:         tf,
+		workingDir: config.WorkingDir,
+		workspace:  config.Workspace,
+		applyVars:  config.ApplyVars,
+		initVars:   config.InitVars,
+	}
+
+	return client, nil
+}
+
+// Init initializes by executing the cli command `terraform init` and
+// `terraform workspace new <name>`
+func (t *TerraformCLI) Init(ctx context.Context) error {
+	var wsCreated bool
+
+	// This is special handling for when the workspace has been detected in
+	// .terraform/environment with a non-existing state. This case is common
+	// when the state for the workspace has been deleted.
+	// https://github.com/hashicorp/terraform/issues/21393
+TF_INIT_AGAIN:
+	if err := t.tf.Init(ctx); err != nil {
+		var wsErr *tfexec.ErrNoWorkspace
+		matchedFailedToSelect := wsFailedToSelectRegexp.MatchString(err.Error())
+		matchedDoesNotExist := wsDoesNotExistRegexp.MatchString(err.Error())
+		if matchedFailedToSelect || matchedDoesNotExist || errors.As(err, &wsErr) {
+			t.logger.Info("workspace was detected without state, " +
+				"creating new workspace and attempting Terraform init again")
+			if err := t.tf.WorkspaceNew(ctx, t.workspace); err != nil {
+				return err
+			}
+
+			if !wsCreated {
+				wsCreated = true
+				goto TF_INIT_AGAIN
+			}
+		}
+		return err
+	}
+
+	if !wsCreated {
+		err := t.tf.WorkspaceNew(ctx, t.workspace)
+		if err != nil {
+			var wsErr *tfexec.ErrWorkspaceExists
+			if !errors.As(err, &wsErr) {
+				return err
+			}
+		}
+	}
+
+	if err := t.tf.WorkspaceSelect(ctx, t.workspace); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Apply executes the cli command `terraform apply` for a given workspace
+func (t *TerraformCLI) Apply(ctx context.Context) error {
+	return t.tf.Apply(ctx, t.applyVars...)
+}
+
+// Plan executes the cli command `terraform plan` for a given workspace
+func (t *TerraformCLI) Plan(ctx context.Context) (bool, error) {
+	return t.tf.Plan(ctx)
+}
+
+// Plan executes the cli command `terraform plan` for a given workspace
+func (t *TerraformCLI) Output(ctx context.Context) (map[string]tfexec.OutputMeta, error) {
+	return t.tf.Output(ctx)
 }
 
 // Terraform creates terraform command to be executed
@@ -310,150 +423,4 @@ func (c *Commander) workspaces() ([]string, error) {
 	}
 
 	return ws, nil
-}
-
-// createTerraformObj creates a Terraform object using the version passed as a string.
-func (terraform *Options) CreateTerraformObj() error {
-	i := install.NewInstaller()
-	v := version.Must(version.NewVersion(terraform.Version))
-
-	execPath, err := i.Ensure(context.TODO(), []src.Source{
-		&fs.ExactVersion{
-			Product: product.Terraform,
-			Version: v,
-		},
-		&releases.ExactVersion{
-			Product: product.Terraform,
-			Version: v,
-		},
-	})
-	if err != nil {
-		return err
-	}
-
-	defer i.Remove(context.TODO())
-
-	terraform.ExecPath = execPath
-	terraform.ApplyVars = []tfexec.ApplyOption{
-		tfexec.Parallelism(1),
-	}
-
-	return nil
-}
-
-func (terraform *Options) initAndApply(tf *tfexec.Terraform, creds *client.AwsCredentials) error {
-	fmt.Printf("Init terraform in directory %s\n", tf.WorkingDir())
-	err := terraform.initialise(tf)
-	if err != nil {
-		return fmt.Errorf("failed to init terraform: %w", err)
-	}
-
-	fmt.Printf("Apply terraform in directory %s\n", tf.WorkingDir())
-	err = terraform.executeApply(tf)
-	if err != nil {
-		return fmt.Errorf("failed to apply: %w", err)
-	}
-
-	return nil
-}
-
-func (terraform *Options) output(tf *tfexec.Terraform) (map[string]tfexec.OutputMeta, error) {
-	// We don't want terraform to print out the output here as the package doesn't respect the secret flag.
-	tf.SetStdout(nil)
-	tf.SetStderr(nil)
-	output, err := tf.Output(context.TODO())
-	if err != nil {
-		if strings.Contains(err.Error(), "plugin") || strings.Contains(err.Error(), "init") {
-			fmt.Println("Init again, due to failure")
-			err = tf.Init(context.TODO(), terraform.InitVars...)
-			if err != nil {
-				return nil, fmt.Errorf("failed to init: %w", err)
-			}
-			output, err = tf.Output(context.TODO())
-			if err != nil {
-				return nil, fmt.Errorf("failed to create output: %w", err)
-			}
-			return nil, fmt.Errorf("failed to show terraform output: %w", err)
-		}
-	}
-	return output, nil
-}
-
-// intialise performs the `terraform init` function.
-func (terraform *Options) initialise(tf *tfexec.Terraform) error {
-	terraform.InitVars = append(terraform.InitVars, tfexec.Reconfigure(true))
-	err := tf.Init(context.TODO(), terraform.InitVars...)
-	// Handle no plugin error
-	if err != nil {
-		if err := tf.Init(context.TODO(), terraform.InitVars...); err != nil {
-			return fmt.Errorf("failed to init: %w", err)
-		}
-	}
-
-	return terraform.setWorkspace(tf)
-}
-
-func (terraform *Options) setWorkspace(tf *tfexec.Terraform) error {
-	list, _, err := tf.WorkspaceList(context.TODO())
-	if err != nil {
-		return err
-	}
-
-	for _, ws := range list {
-		if ws == terraform.Workspace {
-			err = tf.WorkspaceSelect(context.TODO(), terraform.Workspace)
-			if err != nil {
-				return err
-			}
-			return nil
-		}
-	}
-
-	err = tf.WorkspaceNew(context.TODO(), terraform.Workspace)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (terraform *Options) executeApply(tf *tfexec.Terraform) error {
-	// TODO: Pass the argumnet via the cluster package
-	// if strings.Contains(tf.WorkingDir(), "eks") && fast {
-	// 	terraform.ApplyVars = append(terraform.ApplyVars, tfexec.Var(fmt.Sprintf("%s=%v", "enable_oidc_associate", false)))
-	// }
-
-	err := tf.Apply(context.TODO(), terraform.ApplyVars...)
-	// handle a case where you need to init again
-	if err != nil {
-		fmt.Println("Init again, due to failure")
-		err = tf.Init(context.TODO(), terraform.InitVars...)
-		if err != nil {
-			return fmt.Errorf("failed to init: %w", err)
-		}
-		err = tf.Apply(context.TODO(), terraform.ApplyVars...)
-		if err != nil {
-			return fmt.Errorf("failed to apply: %w", err)
-		}
-	}
-
-	return nil
-}
-
-func (terraform *Options) Apply(exec *tfexec.Terraform, creds *client.AwsCredentials) (map[string]tfexec.OutputMeta, error) {
-	// Write the output to the terminal.
-	exec.SetStdout(os.Stdout)
-	exec.SetStdout(os.Stderr)
-
-	err := terraform.initAndApply(exec, creds)
-	if err != nil {
-		return nil, fmt.Errorf("an error occurred attempting to init and apply %w", err)
-	}
-
-	output, err := terraform.output(exec)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get output: %w", err)
-	}
-
-	return output, nil
 }
