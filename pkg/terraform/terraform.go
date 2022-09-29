@@ -10,8 +10,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"os/exec"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"syscall"
@@ -23,12 +23,13 @@ import (
 	"github.com/hashicorp/hc-install/releases"
 	"github.com/hashicorp/hc-install/src"
 	"github.com/hashicorp/terraform-exec/tfexec"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 var (
 	wsFailedToSelectRegexp = regexp.MustCompile(`Failed to select workspace`)
 	wsDoesNotExistRegexp   = regexp.MustCompile(`workspace ".*" does not exist`)
+	pluginNotFound         = regexp.MustCompile(`Unrecognized remote plugin message`)
 )
 
 // TerraformCLI is the client that wraps around terraform-exec
@@ -37,7 +38,6 @@ type TerraformCLI struct {
 	tf         terraformExec
 	workingDir string
 	workspace  string
-	logger     log.Logger
 	// Apply allows you to group apply options passed to Terraform.
 	applyVars []tfexec.ApplyOption
 	// Init allows you to group init options passed to Terraform.
@@ -77,40 +77,38 @@ func NewTerraformCLI(config *TerraformCLIConfig) (*TerraformCLI, error) {
 		return nil, errors.New("TerraformCLIConfig cannot be nil - no meaningful default values")
 	}
 
-	if config.ExecPath != "" {
-		config.ExecPath = filepath.Join(config.ExecPath, "terraform")
-	} else {
-		i := install.NewInstaller()
-		v := version.Must(version.NewVersion(config.Version))
+	i := install.NewInstaller()
+	v := version.Must(version.NewVersion(config.Version))
 
-		execPath, err := i.Ensure(context.TODO(), []src.Source{
-			&fs.ExactVersion{
-				Product: product.Terraform,
-				Version: v,
-			},
-			&releases.ExactVersion{
-				Product: product.Terraform,
-				Version: v,
-			},
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		config.ExecPath = execPath
-
-		defer func() {
-			if err := i.Remove(context.TODO()); err != nil {
-				return
-			}
-		}()
-
+	execPath, err := i.Ensure(context.TODO(), []src.Source{
+		&fs.ExactVersion{
+			Product: product.Terraform,
+			Version: v,
+		},
+		&releases.ExactVersion{
+			Product: product.Terraform,
+			Version: v,
+		},
+	})
+	if err != nil {
+		return nil, err
 	}
+
+	defer func() {
+		if err := i.Remove(context.TODO()); err != nil {
+			return
+		}
+	}()
+
+	config.ExecPath = execPath
 
 	tf, err := tfexec.NewTerraform(config.WorkingDir, config.ExecPath)
 	if err != nil {
 		return nil, err
 	}
+
+	tf.SetStdout(log.Writer())
+	tf.SetStderr(log.Writer())
 
 	client := &TerraformCLI{
 		tf:         tf,
@@ -137,9 +135,8 @@ TF_INIT_AGAIN:
 		var wsErr *tfexec.ErrNoWorkspace
 		matchedFailedToSelect := wsFailedToSelectRegexp.MatchString(err.Error())
 		matchedDoesNotExist := wsDoesNotExistRegexp.MatchString(err.Error())
-		if matchedFailedToSelect || matchedDoesNotExist || errors.As(err, &wsErr) {
-			t.logger.Info("workspace was detected without state, " +
-				"creating new workspace and attempting Terraform init again")
+		pluginErr := pluginNotFound.MatchString(err.Error())
+		if matchedFailedToSelect || matchedDoesNotExist || pluginErr || errors.As(err, &wsErr) {
 			if err := t.tf.WorkspaceNew(ctx, t.workspace); err != nil {
 				return err
 			}
@@ -191,7 +188,7 @@ func (s *Commander) Terraform(args ...string) (*CmdOutput, error) {
 	var exitCode int
 	var err error
 
-	contextLogger := log.WithFields(log.Fields{
+	contextLogger := logrus.WithFields(logrus.Fields{
 		"err":    err,
 		"stdout": stdoutBuf.String(),
 		"stderr": stderrBuf.String(),
@@ -248,12 +245,12 @@ func (s *Commander) Terraform(args ...string) (*CmdOutput, error) {
 func (s *Commander) Init(p bool) error {
 	output, err := s.Terraform("init")
 	if err != nil {
-		log.Error(output.Stderr)
+		logrus.Error(output.Stderr)
 		return err
 	}
 
 	if p {
-		log.Info(output.Stdout)
+		logrus.Info(output.Stdout)
 	}
 
 	return nil
@@ -266,7 +263,7 @@ func (s *Commander) SelectWs(ws string) error {
 		return err
 	}
 
-	log.Info(output.Stdout)
+	logrus.Info(output.Stdout)
 
 	return nil
 }
