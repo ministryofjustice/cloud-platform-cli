@@ -13,7 +13,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
-	"github.com/hashicorp/terraform-exec/tfexec"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/terraform"
 	kubeErr "k8s.io/apimachinery/pkg/api/errors"
@@ -21,18 +20,31 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func (c *Cluster) ApplyVpc(tf *terraform.Options, creds *client.AwsCredentials, dir string) error {
-	exec, err := tfexec.NewTerraform(dir, tf.ExecPath)
-	if err != nil {
-		return fmt.Errorf("failed to create terraform object: %w", err)
+func (c *Cluster) ApplyVpc(tf *terraform.TerraformCLIConfig, creds *client.AwsCredentials, dir string) error {
+	tf.WorkingDir = dir
+
+	terraform, error := terraform.NewTerraformCLI(tf)
+	if error != nil {
+		return error
 	}
+
 	// Start fresh and remove any local state.
 	if err := deleteLocalState(dir, ".terraform", ".terraform.lock.hcl"); err != nil {
 		return fmt.Errorf("failed to delete temp directory: %w", err)
 	}
-	output, err := tf.Apply(exec, creds)
+
+	err := terraform.Init(context.Background())
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to init terraform: %w", err)
+	}
+
+	if err = terraform.Apply(context.Background()); err != nil {
+		return fmt.Errorf("failed to apply terraform: %w", err)
+	}
+
+	output, err := terraform.Output(context.Background())
+	if err != nil {
+		return fmt.Errorf("failed to get terraform output: %w", err)
 	}
 
 	vpcID := output["vpc_id"]
@@ -43,14 +55,14 @@ func (c *Cluster) ApplyVpc(tf *terraform.Options, creds *client.AwsCredentials, 
 	fmt.Println("Starting to check vpc")
 	// Trim the vpcId to remove quotes
 	vpc := strings.Trim(string(vpcID.Value), "\"")
-	return checkVpc(*tf, vpc, creds.Ec2)
+	return checkVpc(tf.Workspace, vpc, creds.Ec2)
 }
 
-func (c *Cluster) ApplyEks(tf *terraform.Options, creds *client.AwsCredentials, dir string) error {
-	fmt.Println("Applying Terraform against EKS")
-	exec, err := tfexec.NewTerraform(dir, tf.ExecPath)
-	if err != nil {
-		return fmt.Errorf("failed to create terraform object: %w", err)
+func (c *Cluster) ApplyEks(tf *terraform.TerraformCLIConfig, creds *client.AwsCredentials, dir string) error {
+	tf.WorkingDir = dir
+	terraform, error := terraform.NewTerraformCLI(tf)
+	if error != nil {
+		return error
 	}
 
 	// Start fresh and remove any local state.
@@ -58,9 +70,12 @@ func (c *Cluster) ApplyEks(tf *terraform.Options, creds *client.AwsCredentials, 
 		return fmt.Errorf("failed to delete temp directory: %w", err)
 	}
 
-	_, err = tf.Apply(exec, creds)
-	if err != nil {
-		return err
+	if err := terraform.Init(context.Background()); err != nil {
+		return fmt.Errorf("failed to init terraform: %w", err)
+	}
+
+	if err := terraform.Apply(context.Background()); err != nil {
+		return fmt.Errorf("failed to apply terraform: %w", err)
 	}
 
 	if err := checkCluster(tf.Workspace, creds.Eks); err != nil {
@@ -72,23 +87,34 @@ func (c *Cluster) ApplyEks(tf *terraform.Options, creds *client.AwsCredentials, 
 	return nil
 }
 
-func (c *Cluster) ApplyComponents(tf *terraform.Options, awsCreds *client.AwsCredentials, clientset *kubernetes.Interface, dir string) error {
+func (c *Cluster) ApplyComponents(tf *terraform.TerraformCLIConfig, awsCreds *client.AwsCredentials, clientset *kubernetes.Interface, dir string) error {
 	// There is a requirement for the aws binary to exist at this point.
 	if err := authToCluster(tf.Workspace); err != nil {
 		return err
 	}
 
-	exec, err := tfexec.NewTerraform(dir, tf.ExecPath)
-	if err != nil {
-		return fmt.Errorf("failed to create terraform object: %w", err)
+	tf.WorkingDir = dir
+	terraform, error := terraform.NewTerraformCLI(tf)
+	if error != nil {
+		return error
 	}
+
 	// Start fresh and remove any local state.
 	if err := deleteLocalState(dir, ".terraform", ".terraform.lock.hcl"); err != nil {
 		return fmt.Errorf("failed to delete temp directory: %w", err)
 	}
-	_, err = tf.Apply(exec, awsCreds)
-	if err != nil {
-		return err
+
+	if err := terraform.Init(context.Background()); err != nil {
+		return fmt.Errorf("failed to init terraform: %w", err)
+	}
+
+	if err := terraform.Apply(context.Background()); err != nil {
+		return fmt.Errorf("failed to apply terraform: %w", err)
+	}
+
+	// Start fresh and remove any local state.
+	if err := deleteLocalState(dir, ".terraform", ".terraform.lock.hcl"); err != nil {
+		return fmt.Errorf("failed to delete temp directory: %w", err)
 	}
 
 	if err := applyTacticalPspFix(*clientset); err != nil {
@@ -108,8 +134,8 @@ func authToCluster(cluster string) error {
 }
 
 // CheckVpc asserts that the vpc is up and running. It tests the vpc state and id.
-func checkVpc(tf terraform.Options, vpcId string, svc ec2iface.EC2API) error {
-	vpc, err := getVpc(tf.Workspace, svc)
+func checkVpc(name, vpcId string, svc ec2iface.EC2API) error {
+	vpc, err := getVpc(name, svc)
 	if err != nil {
 		return fmt.Errorf("error describing vpc: %v", err)
 	}

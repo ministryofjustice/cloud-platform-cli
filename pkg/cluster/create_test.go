@@ -11,7 +11,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
-	"github.com/ministryofjustice/cloud-platform-cli/pkg/terraform"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/policy/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -57,9 +56,7 @@ func (m *mockEKSClient) DescribeCluster(input *eks.DescribeClusterInput) (*eks.D
 func TestCheckVpc(t *testing.T) {
 	mockSvc := &mockEC2Client{}
 
-	testOpt := terraform.Options{
-		Workspace: "test",
-	}
+	testOpt := "test"
 
 	// Good path
 	err := checkVpc(testOpt, "test", mockSvc)
@@ -73,7 +70,7 @@ func TestCheckVpc(t *testing.T) {
 		t.Errorf("checkVpc() error = %v", err)
 	}
 
-	testOpt.Workspace = "incorrectWorkspace"
+	testOpt = "incorrectWorkspace"
 	err = checkVpc(testOpt, "test", mockSvc)
 	if err == nil {
 		t.Error("we expected an error here checkVpc() error")

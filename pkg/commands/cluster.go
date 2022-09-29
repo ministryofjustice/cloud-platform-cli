@@ -11,6 +11,7 @@ import (
 	"github.com/MakeNowJust/heredoc"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/cluster"
+	cloudPlatform "github.com/ministryofjustice/cloud-platform-cli/pkg/cluster"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/recycle"
 	terraform "github.com/ministryofjustice/cloud-platform-cli/pkg/terraform"
 	log "github.com/sirupsen/logrus"
@@ -92,15 +93,15 @@ func addCreateClusterCmd(toplevel *cobra.Command) {
 			if err := checkCreateDirectory(); err != nil {
 				contextLogger.Fatal(err)
 			}
-			c := cluster.Cluster{
+			cluster := cloudPlatform.Cluster{
 				Name:         opt.Name,
 				VpcId:        opt.VpcName,
 				HealthStatus: "Creating",
 			}
 
-			tf, err := terraform.NewOptions(opt.TfVersion, c.Name)
-			if err != nil {
-				contextLogger.Fatal(err)
+			tfOptions := terraform.TerraformCLIConfig{
+				Workspace: opt.Name,
+				Version:   opt.TfVersion,
 			}
 
 			awsCreds, err := getCredentials(awsRegion)
@@ -108,7 +109,7 @@ func addCreateClusterCmd(toplevel *cobra.Command) {
 				contextLogger.Fatal(err)
 			}
 
-			if err := createCluster(&c, tf, awsCreds); err != nil {
+			if err := createCluster(&cluster, &tfOptions, awsCreds); err != nil {
 				contextLogger.Fatal(err)
 			}
 
@@ -121,7 +122,7 @@ func addCreateClusterCmd(toplevel *cobra.Command) {
 	toplevel.AddCommand(cmd)
 }
 
-func createCluster(c *cluster.Cluster, tf *terraform.Options, awsCreds *client.AwsCredentials) error {
+func createCluster(cluster *cloudPlatform.Cluster, tf *terraform.TerraformCLIConfig, awsCreds *client.AwsCredentials) error {
 	const baseDir = "./terraform/aws-accounts/cloud-platform-aws/"
 	var (
 		vpcDir        = baseDir + "vpc/"
@@ -129,11 +130,11 @@ func createCluster(c *cluster.Cluster, tf *terraform.Options, awsCreds *client.A
 		componentsDir = clusterDir + "components/"
 	)
 
-	if err := c.ApplyVpc(tf, awsCreds, vpcDir); err != nil {
+	if err := cluster.ApplyVpc(tf, awsCreds, vpcDir); err != nil {
 		return err
 	}
 
-	if err := c.ApplyEks(tf, awsCreds, clusterDir); err != nil {
+	if err := cluster.ApplyEks(tf, awsCreds, clusterDir); err != nil {
 		return err
 	}
 
@@ -142,22 +143,22 @@ func createCluster(c *cluster.Cluster, tf *terraform.Options, awsCreds *client.A
 		return err
 	}
 
-	if err := c.ApplyComponents(tf, awsCreds, &clientset.Clientset, componentsDir); err != nil {
+	if err := cluster.ApplyComponents(tf, awsCreds, &clientset.Clientset, componentsDir); err != nil {
 		return err
 	}
 
-	if err := c.GetStuckPods(clientset); err != nil {
+	if err := cluster.GetStuckPods(clientset); err != nil {
 		return err
 	}
 
-	nodes, err := cluster.GetAllNodes(clientset)
+	nodes, err := cloudPlatform.GetAllNodes(clientset)
 	if err != nil {
 		return err
 	}
 
-	c.Nodes = nodes
+	cluster.Nodes = nodes
 
-	printOutTable(*c)
+	printOutTable(*cluster)
 
 	return nil
 }
