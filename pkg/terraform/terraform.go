@@ -26,23 +26,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-//go:generate mockery --name=terraformExec  --structname=TerraformExec --output=../mocks/client
-var _ terraformExec = (*tfexec.Terraform)(nil)
-
 var (
 	wsFailedToSelectRegexp = regexp.MustCompile(`Failed to select workspace`)
 	wsDoesNotExistRegexp   = regexp.MustCompile(`workspace ".*" does not exist`)
 )
-
-// terraformExec describes the interface for terraform-exec, the SDK for
-// Terraform CLI: https://github.com/hashicorp/terraform-exec
-type terraformExec interface {
-	Init(ctx context.Context, opts ...tfexec.InitOption) error
-	Apply(ctx context.Context, opts ...tfexec.ApplyOption) error
-	Plan(ctx context.Context, opts ...tfexec.PlanOption) (bool, error)
-	WorkspaceNew(ctx context.Context, workspace string, opts ...tfexec.WorkspaceNewCmdOption) error
-	WorkspaceSelect(ctx context.Context, workspace string) error
-}
 
 // TerraformCLI is the client that wraps around terraform-exec
 // to execute Terraform cli commands
@@ -112,7 +99,12 @@ func NewTerraformCLI(config *TerraformCLIConfig) (*TerraformCLI, error) {
 
 		config.ExecPath = execPath
 
-		defer i.Remove(context.TODO())
+		defer func() {
+			if err := i.Remove(context.TODO()); err != nil {
+				return
+			}
+		}()
+
 	}
 
 	tf, err := tfexec.NewTerraform(config.WorkingDir, config.ExecPath)
