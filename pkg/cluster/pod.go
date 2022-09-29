@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// DeleteNode deletes a all pods on a node that are considered "stuck",
+// DeleteStuckPods deletes a all pods on a node that are considered "stuck",
 // essentially stuck pods are pods that are in a state that is not
 // "Ready" or "Succeeded".
 func (cluster *Cluster) DeleteStuckPods(c *client.KubeClient, node *v1.Node) error {
@@ -32,6 +32,28 @@ func (cluster *Cluster) DeleteStuckPods(c *client.KubeClient, node *v1.Node) err
 			}
 		}
 	}
+
+	return nil
+}
+
+// getStuckPods returns a slice of all pods in a cluster that are considered "stuck"
+func (cluster *Cluster) GetStuckPods(c *client.KubeClient) error {
+	p := make([]v1.Pod, 0)
+	pods, err := getPods(c)
+	if err != nil {
+		return err
+	}
+
+	states := stuckStates()
+	for _, pod := range pods {
+		for _, state := range states {
+			if pod.Status.Phase == state {
+				p = append(p, pod)
+			}
+		}
+	}
+
+	cluster.StuckPods = p
 
 	return nil
 }

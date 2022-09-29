@@ -16,6 +16,9 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/util/homedir"
+
+	"github.com/jedib0t/go-pretty/v6/list"
+	"github.com/jedib0t/go-pretty/v6/table"
 )
 
 // CreateOptions struct represents the options passed to the Create method
@@ -105,9 +108,10 @@ func addCreateClusterCmd(toplevel *cobra.Command) {
 				contextLogger.Fatal(err)
 			}
 
-			if err := createCluster(&c, &opt, tf, awsCreds); err != nil {
+			if err := createCluster(&c, tf, awsCreds); err != nil {
 				contextLogger.Fatal(err)
 			}
+
 		},
 	}
 	if err := opt.addCreateClusterFlags(cmd, &auth); err != nil {
@@ -117,7 +121,7 @@ func addCreateClusterCmd(toplevel *cobra.Command) {
 	toplevel.AddCommand(cmd)
 }
 
-func createCluster(c *cluster.Cluster, opt *clusterOptions, tf *terraform.Options, awsCreds *client.AwsCredentials) error {
+func createCluster(c *cluster.Cluster, tf *terraform.Options, awsCreds *client.AwsCredentials) error {
 	const baseDir = "./terraform/aws-accounts/cloud-platform-aws/"
 	var (
 		vpcDir        = baseDir + "vpc/"
@@ -133,19 +137,51 @@ func createCluster(c *cluster.Cluster, opt *clusterOptions, tf *terraform.Option
 		return err
 	}
 
-	clientset, err := client.GetClientset(kubePath)
+	clientset, err := client.NewKubeClient(kubePath)
 	if err != nil {
 		return err
 	}
 
-	if err := c.ApplyComponents(tf, awsCreds, &clientset, componentsDir); err != nil {
+	if err := c.ApplyComponents(tf, awsCreds, &clientset.Clientset, componentsDir); err != nil {
 		return err
 	}
 
-	// TODO: Display a nice table of the cluster status.
-	// Display the cluster in a nice table
+	if err := c.GetStuckPods(clientset); err != nil {
+		return err
+	}
+
+	nodes, err := cluster.GetAllNodes(clientset)
+	if err != nil {
+		return err
+	}
+
+	c.Nodes = nodes
+
+	printOutTable(*c)
 
 	return nil
+}
+
+func printOutTable(c cluster.Cluster) {
+	stuckPods := list.NewWriter()
+	for _, pod := range c.StuckPods {
+		stuckPods.AppendItem(pod.Name)
+	}
+
+	nodes := list.NewWriter()
+	for _, node := range c.Nodes {
+		nodes.AppendItem(node.Name)
+	}
+
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+	t.AppendHeader(table.Row{"#", "Cluster Name", "VPC ID", "Cluster Status", "Stuck Pods", "Nodes"})
+	t.AppendRows([]table.Row{
+		{1, c.Name, c.VpcId, c.HealthStatus, stuckPods.Render(), nodes.Render()},
+	})
+	t.AppendSeparator()
+	t.SetStyle(table.StyleBold)
+	t.Render()
 }
 
 var recycleOptions recycle.Options

@@ -25,10 +25,15 @@ type AwsCredentials struct {
 }
 
 // New will construct a Client struct to interact with a kubernetes cluster
-func NewKubeClient() *KubeClient {
-	return &KubeClient{
-		Clientset: &kubernetes.Clientset{},
+func NewKubeClient(p string) (*KubeClient, error) {
+	clientset, err := GetClientset(p)
+	if err != nil {
+		return nil, err
 	}
+
+	return &KubeClient{
+		Clientset: clientset,
+	}, nil
 }
 
 // NewAwsCredentials constructs and populates a new AwsCredentials object

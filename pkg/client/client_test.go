@@ -41,27 +41,6 @@ func TestGetClientset(t *testing.T) {
 	}
 }
 
-func TestNew(t *testing.T) {
-	tests := []struct {
-		name string
-		want *KubeClient
-	}{
-		{
-			name: "grabClient",
-			want: &KubeClient{
-				Clientset: &kubernetes.Clientset{},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := NewKubeClient(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("New() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestNewAwsCreds(t *testing.T) {
 	type args struct {
 		region string
@@ -85,6 +64,46 @@ func TestNewAwsCreds(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewAwsCreds() error = %v, wantErr %v", err, tt.wantErr)
 				return
+			}
+		})
+	}
+}
+
+func TestNewKubeClient(t *testing.T) {
+	type args struct {
+		p string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *KubeClient
+		wantErr bool
+	}{
+		{
+			name: "Pass empty path",
+			args: args{
+				p: "",
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		// {
+		// 	name: "Pass path with a bad context",
+		// 	args: args{
+		// 		p: file.Name(),
+		// 	},
+		// 	wantErr: true,
+		// },
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := NewKubeClient(tt.args.p)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NewKubeClient() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewKubeClient() = %v, want %v", got, tt.want)
 			}
 		})
 	}
