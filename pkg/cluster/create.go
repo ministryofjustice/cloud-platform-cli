@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
+	"github.com/hashicorp/terraform-exec/tfexec"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/terraform"
 	kubeErr "k8s.io/apimachinery/pkg/api/errors"
@@ -20,31 +21,14 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+// ApplyVpc when executed will Apply terraform code to create a Cloud Platform VPC and ensure it is up and running.
+// It will return an error if the VPC is not up and running or the terraform commands fail.
 func (c *Cluster) ApplyVpc(tf *terraform.TerraformCLIConfig, creds *client.AwsCredentials, dir string) error {
 	tf.WorkingDir = dir
 
-	terraform, error := terraform.NewTerraformCLI(tf)
-	if error != nil {
-		return error
-	}
-
-	// Start fresh and remove any local state.
-	if err := deleteLocalState(dir, ".terraform", ".terraform.lock.hcl"); err != nil {
-		return fmt.Errorf("failed to delete temp directory: %w", err)
-	}
-
-	err := terraform.Init(context.Background())
+	output, err := terraformApply(tf)
 	if err != nil {
-		return fmt.Errorf("failed to init terraform: %w", err)
-	}
-
-	if err = terraform.Apply(context.Background()); err != nil {
-		return fmt.Errorf("failed to apply terraform: %w", err)
-	}
-
-	output, err := terraform.Output(context.Background())
-	if err != nil {
-		return fmt.Errorf("failed to get terraform output: %w", err)
+		return err
 	}
 
 	vpcID := output["vpc_id"]
@@ -52,30 +36,19 @@ func (c *Cluster) ApplyVpc(tf *terraform.TerraformCLIConfig, creds *client.AwsCr
 		return errors.New("vpc_id not found in terraform output")
 	}
 
-	fmt.Println("Starting to check vpc")
 	// Trim the vpcId to remove quotes
 	vpc := strings.Trim(string(vpcID.Value), "\"")
 	return checkVpc(tf.Workspace, vpc, creds.Ec2)
 }
 
+// ApplyEks will apply the terraform code to create a Cloud Platform EKS cluster and ensure it is up and running.
+// It will return an error if the EKS cluster is not up and running or the terraform commands fail.
 func (c *Cluster) ApplyEks(tf *terraform.TerraformCLIConfig, creds *client.AwsCredentials, dir string) error {
 	tf.WorkingDir = dir
-	terraform, error := terraform.NewTerraformCLI(tf)
-	if error != nil {
-		return error
-	}
 
-	// Start fresh and remove any local state.
-	if err := deleteLocalState(dir, ".terraform", ".terraform.lock.hcl"); err != nil {
-		return fmt.Errorf("failed to delete temp directory: %w", err)
-	}
-
-	if err := terraform.Init(context.Background()); err != nil {
-		return fmt.Errorf("failed to init terraform: %w", err)
-	}
-
-	if err := terraform.Apply(context.Background()); err != nil {
-		return fmt.Errorf("failed to apply terraform: %w", err)
+	_, err := terraformApply(tf)
+	if err != nil {
+		return err
 	}
 
 	if err := checkCluster(tf.Workspace, creds.Eks); err != nil {
@@ -87,6 +60,10 @@ func (c *Cluster) ApplyEks(tf *terraform.TerraformCLIConfig, creds *client.AwsCr
 	return nil
 }
 
+// ApplyComponents will apply the Cloud Platform specific components on top of a running cluster. At this point your
+// cluster should be up and running and you should be able to connect to it.
+
+// Unfortunaltey the AWS SDK does not provide a nice method to grab the kube-config for a cluster so we use a raw aws command.
 func (c *Cluster) ApplyComponents(tf *terraform.TerraformCLIConfig, awsCreds *client.AwsCredentials, clientset *kubernetes.Interface, dir string) error {
 	// There is a requirement for the aws binary to exist at this point.
 	if err := authToCluster(tf.Workspace); err != nil {
@@ -94,22 +71,10 @@ func (c *Cluster) ApplyComponents(tf *terraform.TerraformCLIConfig, awsCreds *cl
 	}
 
 	tf.WorkingDir = dir
-	terraform, error := terraform.NewTerraformCLI(tf)
-	if error != nil {
-		return error
-	}
 
-	// Start fresh and remove any local state.
-	if err := deleteLocalState(dir, ".terraform", ".terraform.lock.hcl"); err != nil {
-		return fmt.Errorf("failed to delete temp directory: %w", err)
-	}
-
-	if err := terraform.Init(context.Background()); err != nil {
-		return fmt.Errorf("failed to init terraform: %w", err)
-	}
-
-	if err := terraform.Apply(context.Background()); err != nil {
-		return fmt.Errorf("failed to apply terraform: %w", err)
+	_, err := terraformApply(tf)
+	if err != nil {
+		return err
 	}
 
 	// Start fresh and remove any local state.
@@ -122,6 +87,29 @@ func (c *Cluster) ApplyComponents(tf *terraform.TerraformCLIConfig, awsCreds *cl
 	}
 
 	return nil
+}
+
+func terraformApply(tf *terraform.TerraformCLIConfig) (map[string]tfexec.OutputMeta, error) {
+	terraform, error := terraform.NewTerraformCLI(tf)
+	if error != nil {
+		return nil, error
+	}
+
+	// Start fresh and remove any local state.
+	if err := deleteLocalState(tf.WorkingDir, ".terraform", ".terraform.lock.hcl"); err != nil {
+		return nil, fmt.Errorf("failed to delete temp directory: %w", err)
+	}
+
+	err := terraform.Init(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed to init terraform: %w", err)
+	}
+
+	if err = terraform.Apply(context.Background()); err != nil {
+		return nil, fmt.Errorf("failed to apply terraform: %w", err)
+	}
+
+	return terraform.Output(context.Background())
 }
 
 func authToCluster(cluster string) error {

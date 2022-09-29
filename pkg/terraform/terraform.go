@@ -29,7 +29,7 @@ import (
 var (
 	wsFailedToSelectRegexp = regexp.MustCompile(`Failed to select workspace`)
 	wsDoesNotExistRegexp   = regexp.MustCompile(`workspace ".*" does not exist`)
-	pluginNotFound         = regexp.MustCompile(`Unrecognized remote plugin message`)
+	pluginNotFound         = regexp.MustCompile(`Error: Unrecognized remote plugin message:`)
 )
 
 // TerraformCLI is the client that wraps around terraform-exec
