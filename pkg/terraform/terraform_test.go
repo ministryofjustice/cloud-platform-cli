@@ -19,10 +19,10 @@ import (
 func NewTestTerraformCLI(config *TerraformCLIConfig, tfMock *mocks.TerraformExec) *TerraformCLI {
 	if tfMock == nil {
 		m := new(mocks.TerraformExec)
-		m.On("SetEnv", mock.Anything).Return(nil)
 		m.On("Init", mock.Anything).Return(nil)
 		m.On("Apply", mock.Anything).Return(nil)
 		m.On("Plan", mock.Anything).Return(true, nil)
+		m.On("Output", mock.Anything).Return(nil, nil)
 		m.On("WorkspaceNew", mock.Anything, mock.Anything).Return(nil)
 		tfMock = m
 	}
@@ -218,6 +218,37 @@ func TestTerraformCLI_Plan(t *testing.T) {
 			tfCli := NewTestTerraformCLI(tc.config, nil)
 			ctx := context.Background()
 			_, err := tfCli.Plan(ctx)
+
+			if tc.expectError {
+				assert.Error(t, err)
+				return
+			}
+
+			assert.NoError(t, err)
+		})
+	}
+}
+
+func TestTerraformCLI_Output(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name        string
+		expectError bool
+		config      *TerraformCLIConfig
+	}{
+		{
+			"happy path",
+			false,
+			&TerraformCLIConfig{},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			tfCli := NewTestTerraformCLI(tc.config, nil)
+			ctx := context.Background()
+			_, err := tfCli.Output(ctx)
 
 			if tc.expectError {
 				assert.Error(t, err)

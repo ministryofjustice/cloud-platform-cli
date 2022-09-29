@@ -179,6 +179,11 @@ func (t *TerraformCLI) Plan(ctx context.Context) (bool, error) {
 	return t.tf.Plan(ctx)
 }
 
+// Plan executes the cli command `terraform plan` for a given workspace
+func (t *TerraformCLI) Output(ctx context.Context) (map[string]tfexec.OutputMeta, error) {
+	return t.tf.Output(ctx)
+}
+
 // Terraform creates terraform command to be executed
 func (s *Commander) Terraform(args ...string) (*CmdOutput, error) {
 	var stdoutBuf bytes.Buffer
