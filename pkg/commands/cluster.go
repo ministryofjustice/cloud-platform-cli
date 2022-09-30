@@ -30,6 +30,8 @@ type clusterOptions struct {
 	// ClusterSuffix is the suffix to append to the cluster name.
 	// This will be used to create the cluster ingress, such as "live.service.justice.gov.uk".
 	ClusterSuffix string
+	// KubePath is the path to the kubeconfig file.
+	KubePath string
 
 	// NodeCount is the number of nodes to create in the new cluster.
 	NodeCount int
@@ -109,7 +111,7 @@ func addCreateClusterCmd(toplevel *cobra.Command) {
 				contextLogger.Fatal(err)
 			}
 
-			if err := createCluster(&cluster, &tfOptions, awsCreds); err != nil {
+			if err := createCluster(&cluster, &tfOptions, awsCreds, &opt); err != nil {
 				contextLogger.Fatal(err)
 			}
 
@@ -122,7 +124,7 @@ func addCreateClusterCmd(toplevel *cobra.Command) {
 	toplevel.AddCommand(cmd)
 }
 
-func createCluster(cluster *cloudPlatform.Cluster, tf *terraform.TerraformCLIConfig, awsCreds *client.AwsCredentials) error {
+func createCluster(cluster *cloudPlatform.Cluster, tf *terraform.TerraformCLIConfig, awsCreds *client.AwsCredentials, opt *clusterOptions) error {
 	const baseDir = "./terraform/aws-accounts/cloud-platform-aws/"
 	var (
 		vpcDir        = baseDir + "vpc/"
@@ -130,33 +132,20 @@ func createCluster(cluster *cloudPlatform.Cluster, tf *terraform.TerraformCLICon
 		componentsDir = clusterDir + "components/"
 	)
 
+	fmt.Println("Creating vpc")
 	if err := cluster.ApplyVpc(tf, awsCreds, vpcDir); err != nil {
 		return err
 	}
 
+	fmt.Printf("Creating cluster %s in %s\n", cluster.Name, cluster.VpcId)
 	if err := cluster.ApplyEks(tf, awsCreds, clusterDir); err != nil {
 		return err
 	}
 
-	clientset, err := client.NewKubeClient(kubePath)
-	if err != nil {
+	fmt.Println("Creating components")
+	if err := cluster.ApplyComponents(tf, awsCreds, componentsDir, opt.KubePath); err != nil {
 		return err
 	}
-
-	if err := cluster.ApplyComponents(tf, awsCreds, &clientset.Clientset, componentsDir); err != nil {
-		return err
-	}
-
-	if err := cluster.GetStuckPods(clientset); err != nil {
-		return err
-	}
-
-	nodes, err := cloudPlatform.GetAllNodes(clientset)
-	if err != nil {
-		return err
-	}
-
-	cluster.Nodes = nodes
 
 	printOutTable(*cluster)
 
@@ -217,10 +206,10 @@ func (opt *clusterOptions) addCreateClusterFlags(cmd *cobra.Command, auth *authO
 	cmd.Flags().BoolVar(&opt.Debug, "debug", false, "[optional] enable debug logging")
 	cmd.Flags().IntVar(&opt.NodeCount, "nodes", 3, "[optional] number of nodes to create. [default] 3")
 	cmd.Flags().BoolVar(&opt.Fast, "fast", false, "[optional] enable fast mode - this creates a cluster as quickly as possible. [default] false")
+	cmd.Flags().StringVar(&opt.KubePath, "kubeconfig", filepath.Join(os.Getenv("HOME"), ".kube", "config"), "[optional] absolute path to the desired kubeconfig location")
 
 	// Terraform options
 	cmd.Flags().StringVar(&opt.TfVersion, "terraform-version", "0.14.8", "[optional] the terraform version to use. [default] 0.14.8")
-
 	return opt.validateClusterOpts(cmd, date, minHour)
 }
 

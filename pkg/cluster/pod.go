@@ -53,8 +53,6 @@ func (cluster *Cluster) GetStuckPods(c *client.KubeClient) error {
 		}
 	}
 
-	cluster.StuckPods = p
-
 	return nil
 }
 
