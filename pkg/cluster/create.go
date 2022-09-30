@@ -2,10 +2,11 @@ package cluster
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
+	"log"
 	"os"
-	"os/exec"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -19,6 +20,10 @@ import (
 	kubeErr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/clientcmd/api"
+	"sigs.k8s.io/aws-iam-authenticator/pkg/token"
 )
 
 // ApplyVpc when executed will Apply terraform code to create a Cloud Platform VPC and ensure it is up and running.
@@ -64,27 +69,39 @@ func (c *Cluster) ApplyEks(tf *terraform.TerraformCLIConfig, creds *client.AwsCr
 // cluster should be up and running and you should be able to connect to it.
 
 // Unfortunaltey the AWS SDK does not provide a nice method to grab the kube-config for a cluster so we use a raw aws command.
-func (c *Cluster) ApplyComponents(tf *terraform.TerraformCLIConfig, awsCreds *client.AwsCredentials, clientset *kubernetes.Interface, dir string) error {
+func (c *Cluster) ApplyComponents(tf *terraform.TerraformCLIConfig, awsCreds *client.AwsCredentials, dir, kubeconf string) error {
 	// There is a requirement for the aws binary to exist at this point.
-	if err := authToCluster(tf.Workspace); err != nil {
-		return err
+	clientset, err := authToCluster(tf.Workspace, awsCreds.Eks, kubeconf)
+	if err != nil {
+		return fmt.Errorf("failed to auth to cluster: %w", err)
 	}
 
 	tf.WorkingDir = dir
 
-	_, err := terraformApply(tf)
+	_, err = terraformApply(tf)
 	if err != nil {
 		return err
 	}
 
-	// Start fresh and remove any local state.
-	if err := deleteLocalState(dir, ".terraform", ".terraform.lock.hcl"); err != nil {
-		return fmt.Errorf("failed to delete temp directory: %w", err)
-	}
-
-	if err := applyTacticalPspFix(*clientset); err != nil {
+	if err := applyTacticalPspFix(clientset); err != nil {
 		return err
 	}
+
+	kube, err := client.NewKubeClient(kubeconf)
+	if err != nil {
+		return err
+	}
+
+	if err := c.GetStuckPods(kube); err != nil {
+		return err
+	}
+
+	nodes, err := GetAllNodes(kube)
+	if err != nil {
+		return err
+	}
+
+	c.Nodes = nodes
 
 	return nil
 }
@@ -112,13 +129,98 @@ func terraformApply(tf *terraform.TerraformCLIConfig) (map[string]tfexec.OutputM
 	return terraform.Output(context.Background())
 }
 
-func authToCluster(cluster string) error {
-	_, err := exec.Command("aws", "eks", "--region", "eu-west-2", "update-kubeconfig", "--name", cluster).Output()
+func authToCluster(name string, eksSvc eksiface.EKSAPI, path string) (*kubernetes.Clientset, error) {
+	input := &eks.DescribeClusterInput{
+		Name: aws.String(name),
+	}
+	result, err := eksSvc.DescribeCluster(input)
 	if err != nil {
-		return err
+		log.Fatalf("Error calling DescribeCluster: %v", err)
 	}
 
-	return nil
+	if err := writeKubeConfig(result.Cluster, path); err != nil {
+		return nil, err
+	}
+
+	clientset, err := newClientset(result.Cluster)
+	if err != nil {
+		log.Fatalf("Error creating clientset: %v", err)
+	}
+	return clientset, nil
+}
+
+func newClientset(cluster *eks.Cluster) (*kubernetes.Clientset, error) {
+	gen, err := token.NewGenerator(true, false)
+	if err != nil {
+		return nil, err
+	}
+	opts := &token.GetTokenOptions{
+		ClusterID: aws.StringValue(cluster.Name),
+	}
+	tok, err := gen.GetWithOptions(opts)
+	if err != nil {
+		return nil, err
+	}
+	ca, err := base64.StdEncoding.DecodeString(aws.StringValue(cluster.CertificateAuthority.Data))
+	if err != nil {
+		return nil, err
+	}
+
+	config := &rest.Config{
+		Host:        aws.StringValue(cluster.Endpoint),
+		BearerToken: tok.Token,
+		TLSClientConfig: rest.TLSClientConfig{
+			CAData: ca,
+		},
+	}
+
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	return clientset, nil
+}
+
+func writeKubeConfig(cluster *eks.Cluster, path string) error {
+	kubePath := path
+	fmt.Printf("Writing kube config to %s", kubePath)
+	fmt.Println(*cluster)
+	clusters := make(map[string]*api.Cluster)
+	clusters[*cluster.Name] = &api.Cluster{
+		Server:                   *cluster.Endpoint,
+		CertificateAuthorityData: []byte(*cluster.CertificateAuthority.Data),
+	}
+
+	contexts := make(map[string]*api.Context)
+	contexts[*cluster.Arn] = &api.Context{
+		Cluster:  *cluster.Arn,
+		AuthInfo: *cluster.Arn,
+	}
+
+	clientConfig := api.Config{
+		Kind:           "Config",
+		APIVersion:     "v1",
+		Clusters:       clusters,
+		Contexts:       contexts,
+		CurrentContext: *cluster.Arn,
+	}
+
+	// prevConfigbytes, err := os.ReadFile(kubePath)
+	// if err != nil {
+	// 	return err
+	// }
+	// fmt.Println(prevConfigbytes)
+	// err = os.MkdirAll(filepath.Dir(kubePath), os.ModePerm)
+	// if err != nil {
+	// 	return err
+	// }
+
+	// err = os.WriteFile(kubePath, prevConfigbytes, 0644)
+	// if err != nil {
+	// 	return err
+	// }
+	fmt.Println("Wrote kube config to ", kubePath)
+	return clientcmd.WriteToFile(clientConfig, kubePath)
 }
 
 // CheckVpc asserts that the vpc is up and running. It tests the vpc state and id.

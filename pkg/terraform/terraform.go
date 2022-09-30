@@ -136,7 +136,7 @@ TF_INIT_AGAIN:
 		matchedFailedToSelect := wsFailedToSelectRegexp.MatchString(err.Error())
 		matchedDoesNotExist := wsDoesNotExistRegexp.MatchString(err.Error())
 		pluginErr := pluginNotFound.MatchString(err.Error())
-		if matchedFailedToSelect || matchedDoesNotExist || pluginErr || errors.As(err, &wsErr) {
+		if errors.As(err, &wsErr) || matchedFailedToSelect || matchedDoesNotExist || pluginErr {
 			if err := t.tf.WorkspaceNew(ctx, t.workspace); err != nil {
 				return err
 			}
@@ -168,6 +168,7 @@ TF_INIT_AGAIN:
 
 // Apply executes the cli command `terraform apply` for a given workspace
 func (t *TerraformCLI) Apply(ctx context.Context) error {
+	t.tf.SetStdout(log.Writer())
 	return t.tf.Apply(ctx, t.applyVars...)
 }
 
@@ -178,6 +179,7 @@ func (t *TerraformCLI) Plan(ctx context.Context) (bool, error) {
 
 // Plan executes the cli command `terraform plan` for a given workspace
 func (t *TerraformCLI) Output(ctx context.Context) (map[string]tfexec.OutputMeta, error) {
+	t.tf.SetStdout(nil)
 	return t.tf.Output(ctx)
 }
 
