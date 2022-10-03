@@ -116,6 +116,11 @@ func (_m *TerraformExec) Plan(ctx context.Context, opts ...tfexec.PlanOption) (b
 	return r0, r1
 }
 
+// SetStderr provides a mock function with given fields: w
+func (_m *TerraformExec) SetStderr(w io.Writer) {
+	_m.Called(w)
+}
+
 // SetStdout provides a mock function with given fields: w
 func (_m *TerraformExec) SetStdout(w io.Writer) {
 	_m.Called(w)
