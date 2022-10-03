@@ -176,6 +176,13 @@ func newClientset(cluster *eks.Cluster, path, awsProfile string) (*kubernetes.Cl
 }
 
 func writeKubeConfig(cluster *eks.Cluster, path, profile string, tok token.Token, ca []byte) error {
+	if path == "" {
+		return errors.New("kubeconfig path is empty")
+	}
+
+	if ca == nil {
+		return errors.New("ca is empty")
+	}
 	kc := api.Config{
 		Clusters: map[string]*api.Cluster{
 			*cluster.Name: {
