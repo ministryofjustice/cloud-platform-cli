@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hashicorp/terraform-exec/tfexec"
 	terraform "github.com/ministryofjustice/cloud-platform-cli/pkg/terraform"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -52,12 +51,10 @@ func addCommonFlags(cmd *cobra.Command, tf *terraform.TerraformCLIConfig) {
 	cmd.PersistentFlags().StringVarP(&awsSecret, "aws-secret-access-key", "", "", "Secret access key of service account to be used by terraform")
 	cmd.PersistentFlags().StringVarP(&awsRegion, "aws-region", "", "", "[required] aws region to use")
 	cmd.PersistentFlags().StringVarP(&tf.Workspace, "workspace", "w", "default", "Default workspace where terraform is going to be executed")
-	cmd.PersistentFlags().StringVarP(&varFile, "var-file", "v", "", "tfvar to be used by terraform")
+	// Terraform options
+	cmd.PersistentFlags().StringVar(&tf.Version, "terraform-version", "0.14.8", "[optional] the terraform version to use. [default] 0.14.8")
+	cmd.PersistentFlags().StringVar(&tf.WorkingDir, "workdir", ".", "[optional] the terraform working directory to perform terraform operation [defaukt] .")
 	cmd.PersistentFlags().BoolVar(&tf.Redacted, "redact", true, "Redact the terraform output before printing")
-
-	planOptions := make([]tfexec.PlanOption, 0)
-	planOptions = append(planOptions, tfexec.VarFile(varFile))
-	tf.PlanVars = planOptions
 
 	_ = cmd.MarkPersistentFlagRequired("aws-access-key-id")
 	_ = cmd.MarkPersistentFlagRequired("aws-secret-access-key")
