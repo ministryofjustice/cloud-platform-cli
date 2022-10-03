@@ -49,6 +49,54 @@ func NewTestTerraformCLI(config *TerraformCLIConfig, tfMock *mocks.TerraformExec
 	return tfCli
 }
 
+func TestNewTerraformCLI(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name        string
+		expectError bool
+		config      *TerraformCLIConfig
+	}{
+		{
+			"error nil config",
+			true,
+			nil,
+		},
+		{
+			"terraform-exec error: no working dir",
+			true,
+			&TerraformCLIConfig{
+				ExecPath:   "path/to/tf",
+				WorkingDir: "",
+				Workspace:  "default",
+			},
+		},
+		{
+			"happy path",
+			false,
+			&TerraformCLIConfig{
+				ExecPath:   "path/to/tf",
+				WorkingDir: "./",
+				Workspace:  "my-workspace",
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			actual, err := NewTerraformCLI(tc.config)
+
+			if tc.expectError {
+				assert.Error(t, err)
+				return
+			}
+
+			assert.NoError(t, err)
+			assert.NotNil(t, actual)
+		})
+	}
+}
+
 func TestTerraformCLI_Init(t *testing.T) {
 	t.Parallel()
 
