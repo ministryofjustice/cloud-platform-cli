@@ -83,7 +83,7 @@ func checkDivergence(tf *terraform.TerraformCLIConfig) error {
 	}
 
 	if diff {
-		return fmt.Errorf("There is a drift when executing terraform plan")
+		return fmt.Errorf("there is a drift when executing terraform plan")
 	}
 
 	return nil
