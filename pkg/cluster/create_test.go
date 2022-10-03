@@ -100,8 +100,28 @@ func TestWriteKubeConfig(t *testing.T) {
 	if err == nil {
 		t.Errorf("WriteKubeConfig() error = %v", "expected error")
 	}
+}
 
-	// remove file
+func TestNewClientset(t *testing.T) {
+	cluster := &eks.Cluster{
+		Name:     aws.String("test"),
+		Endpoint: aws.String("https://test"),
+		CertificateAuthority: &eks.Certificate{
+			Data: aws.String("test"),
+		},
+	}
+
+	_, err := newClientset(cluster, "aws", "test")
+	if err == nil {
+		t.Errorf("newClientset() error = %v", err)
+	}
+
+	defer func() {
+		err := os.Remove("aws")
+		if err != nil {
+			t.Errorf("error removing config file: %v", err)
+		}
+	}()
 }
 
 func (m *mockEKSClient) DescribeCluster(input *eks.DescribeClusterInput) (*eks.DescribeClusterOutput, error) {
