@@ -71,19 +71,18 @@ func (c *Cluster) ApplyEks(tf *terraform.TerraformCLIConfig, creds *client.AwsCr
 // Unfortunaltey the AWS SDK does not provide a nice method to grab the kube-config for a cluster so we use a raw aws command.
 func (c *Cluster) ApplyComponents(tf *terraform.TerraformCLIConfig, awsCreds *client.AwsCredentials, dir, kubeconf string) error {
 	// There is a requirement for the aws binary to exist at this point.
-	clientset, err := authToCluster(tf.Workspace, awsCreds.Eks, kubeconf)
+	clientset, err := AuthToCluster(tf.Workspace, awsCreds.Eks, kubeconf, awsCreds.Profile)
 	if err != nil {
 		return fmt.Errorf("failed to auth to cluster: %w", err)
 	}
 
 	tf.WorkingDir = dir
 
-	_, err = terraformApply(tf)
-	if err != nil {
+	if err := applyTacticalPspFix(clientset); err != nil {
 		return err
 	}
-
-	if err := applyTacticalPspFix(clientset); err != nil {
+	_, err = terraformApply(tf)
+	if err != nil {
 		return err
 	}
 
@@ -96,12 +95,9 @@ func (c *Cluster) ApplyComponents(tf *terraform.TerraformCLIConfig, awsCreds *cl
 		return err
 	}
 
-	nodes, err := GetAllNodes(kube)
-	if err != nil {
+	if err := c.GetAllNodes(kube); err != nil {
 		return err
 	}
-
-	c.Nodes = nodes
 
 	return nil
 }
@@ -129,7 +125,9 @@ func terraformApply(tf *terraform.TerraformCLIConfig) (map[string]tfexec.OutputM
 	return terraform.Output(context.Background())
 }
 
-func authToCluster(name string, eksSvc eksiface.EKSAPI, path string) (*kubernetes.Clientset, error) {
+// AuthToCluster will authenticate to the cluster and return a kubernetes clientset. It will also write the kubeconfig
+// and set the current context to the eks cluster passed to it.
+func AuthToCluster(name string, eksSvc eksiface.EKSAPI, path string, awsProfile string) (*kubernetes.Clientset, error) {
 	input := &eks.DescribeClusterInput{
 		Name: aws.String(name),
 	}
@@ -138,18 +136,14 @@ func authToCluster(name string, eksSvc eksiface.EKSAPI, path string) (*kubernete
 		log.Fatalf("Error calling DescribeCluster: %v", err)
 	}
 
-	if err := writeKubeConfig(result.Cluster, path); err != nil {
-		return nil, err
-	}
-
-	clientset, err := newClientset(result.Cluster)
+	clientset, err := newClientset(result.Cluster, path, awsProfile)
 	if err != nil {
 		log.Fatalf("Error creating clientset: %v", err)
 	}
 	return clientset, nil
 }
 
-func newClientset(cluster *eks.Cluster) (*kubernetes.Clientset, error) {
+func newClientset(cluster *eks.Cluster, path, awsProfile string) (*kubernetes.Clientset, error) {
 	gen, err := token.NewGenerator(true, false)
 	if err != nil {
 		return nil, err
@@ -174,53 +168,37 @@ func newClientset(cluster *eks.Cluster) (*kubernetes.Clientset, error) {
 		},
 	}
 
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
+	if err := writeKubeConfig(cluster, path, awsProfile, tok, ca); err != nil {
 		return nil, err
 	}
-	return clientset, nil
+
+	return kubernetes.NewForConfig(config)
 }
 
-func writeKubeConfig(cluster *eks.Cluster, path string) error {
-	kubePath := path
-	fmt.Printf("Writing kube config to %s", kubePath)
-	fmt.Println(*cluster)
-	clusters := make(map[string]*api.Cluster)
-	clusters[*cluster.Name] = &api.Cluster{
-		Server:                   *cluster.Endpoint,
-		CertificateAuthorityData: []byte(*cluster.CertificateAuthority.Data),
+func writeKubeConfig(cluster *eks.Cluster, path, profile string, tok token.Token, ca []byte) error {
+	kc := api.Config{
+		Clusters: map[string]*api.Cluster{
+			*cluster.Name: {
+				Server:                   *cluster.Endpoint,
+				CertificateAuthorityData: ca,
+			},
+		},
+		Contexts: map[string]*api.Context{
+			*cluster.Name: {
+				Cluster:  *cluster.Name,
+				AuthInfo: *cluster.Name,
+			},
+		},
+		AuthInfos: map[string]*api.AuthInfo{
+			*cluster.Name: {
+				Token: tok.Token,
+			},
+		},
+		CurrentContext: *cluster.Name,
 	}
 
-	contexts := make(map[string]*api.Context)
-	contexts[*cluster.Arn] = &api.Context{
-		Cluster:  *cluster.Arn,
-		AuthInfo: *cluster.Arn,
-	}
-
-	clientConfig := api.Config{
-		Kind:           "Config",
-		APIVersion:     "v1",
-		Clusters:       clusters,
-		Contexts:       contexts,
-		CurrentContext: *cluster.Arn,
-	}
-
-	// prevConfigbytes, err := os.ReadFile(kubePath)
-	// if err != nil {
-	// 	return err
-	// }
-	// fmt.Println(prevConfigbytes)
-	// err = os.MkdirAll(filepath.Dir(kubePath), os.ModePerm)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// err = os.WriteFile(kubePath, prevConfigbytes, 0644)
-	// if err != nil {
-	// 	return err
-	// }
-	fmt.Println("Wrote kube config to ", kubePath)
-	return clientcmd.WriteToFile(clientConfig, kubePath)
+	// write kubeconfig to disk
+	return clientcmd.WriteToFile(kc, path)
 }
 
 // CheckVpc asserts that the vpc is up and running. It tests the vpc state and id.
