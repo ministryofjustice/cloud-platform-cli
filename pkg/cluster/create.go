@@ -183,6 +183,7 @@ func writeKubeConfig(cluster *eks.Cluster, path, profile string, tok token.Token
 	if ca == nil {
 		return errors.New("ca is empty")
 	}
+
 	kc := api.Config{
 		Clusters: map[string]*api.Cluster{
 			*cluster.Name: {
