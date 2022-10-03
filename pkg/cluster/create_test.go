@@ -84,6 +84,23 @@ func TestWriteKubeConfig(t *testing.T) {
 		t.Errorf("WriteKubeConfig() error = %v", "config.yaml not found")
 	}
 
+	// Expect the test to fail from here.
+	err = writeKubeConfig(cluster, "", "aws", tok, []byte{})
+	if err == nil {
+		t.Errorf("WriteKubeConfig() error = %v", "expected error")
+	}
+
+	err = writeKubeConfig(cluster, "badPath", "aws", tok, nil)
+	if err == nil {
+		t.Errorf("WriteKubeConfig() error = %v", "expected error")
+	}
+
+	cluster.Name = nil
+	err = writeKubeConfig(cluster, "badPath", "aws", tok, nil)
+	if err == nil {
+		t.Errorf("WriteKubeConfig() error = %v", "expected error")
+	}
+
 	// remove file
 }
 
