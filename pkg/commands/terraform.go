@@ -66,7 +66,7 @@ func addCommonFlags(cmd *cobra.Command, tf *terraform.TerraformCLIConfig) {
 
 func checkDivergence(tf *terraform.TerraformCLIConfig) error {
 	terraform, error := terraform.NewTerraformCLI(tf)
-	var diff = false
+	var diff bool
 	if error != nil {
 		return error
 	}
@@ -76,7 +76,8 @@ func checkDivergence(tf *terraform.TerraformCLIConfig) error {
 		return fmt.Errorf("failed to init terraform: %w", err)
 	}
 
-	if diff, err = terraform.Plan(context.Background()); err != nil {
+	diff, err = terraform.Plan(context.Background())
+	if err != nil {
 		return fmt.Errorf("failed to plan terraform: %w", err)
 	}
 

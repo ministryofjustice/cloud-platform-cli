@@ -193,7 +193,7 @@ func (t *TerraformCLI) Plan(ctx context.Context) (bool, error) {
 
 	redacted(os.Stdout, out.String(), t.Redacted)
 	if err != nil {
-		return diff, err
+		return false, err
 	}
 
 	return diff, nil
