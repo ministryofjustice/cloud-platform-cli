@@ -3,8 +3,11 @@ package terraform
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 )
 
 // targetDirs return the directories where terraform plan is going to be executed
@@ -62,4 +65,21 @@ func prettyPrint(msg string) {
 	fmt.Print(msg)
 	fmt.Println("#########################################################################")
 	fmt.Printf("\n")
+}
+
+func redacted(w io.Writer, output string, redact bool) {
+	re := regexp.MustCompile(`(?i)password|secret|token|key|https://hooks\.slack\.com|user|arn|ssh-rsa|clientid`)
+	scanner := bufio.NewScanner(strings.NewReader(output))
+
+	for scanner.Scan() {
+		if redact {
+			if re.Match([]byte(scanner.Text())) {
+				fmt.Fprintln(w, "REDACTED")
+			} else {
+				fmt.Fprintln(w, scanner.Text())
+			}
+		} else {
+			fmt.Fprintln(w, scanner.Text())
+		}
+	}
 }

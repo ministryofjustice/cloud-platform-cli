@@ -6,8 +6,11 @@
 package terraform
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"fmt"
+	"os"
 	"path/filepath"
 	"regexp"
 
@@ -18,7 +21,6 @@ import (
 	"github.com/hashicorp/hc-install/releases"
 	"github.com/hashicorp/hc-install/src"
 	"github.com/hashicorp/terraform-exec/tfexec"
-	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -32,13 +34,14 @@ type TerraformCLI struct {
 	tf         terraformExec
 	workingDir string
 	workspace  string
-	logger     log.Logger
 	// Apply allows you to group apply options passed to Terraform.
 	applyVars []tfexec.ApplyOption
 	// Apply allows you to group apply options passed to Terraform.
 	planVars []tfexec.PlanOption
 	// Init allows you to group init options passed to Terraform.
 	initVars []tfexec.InitOption
+	// Redacted is the flag to enable/disable redacting the terraform before printing output.
+	Redacted bool
 }
 
 // TerraformCLIConfig configures the Terraform client
@@ -55,6 +58,8 @@ type TerraformCLIConfig struct {
 	// Version is the version of Terraform to use.
 	Version string
 	// ExecPath is the path to the Terraform executable.
+	Redacted bool
+	// Redacted is the flag to enable/disable redacting the terraform before printing output.
 }
 
 // NewTerraformCLI creates a terraform-exec client and configures and
@@ -106,6 +111,7 @@ func NewTerraformCLI(config *TerraformCLIConfig) (*TerraformCLI, error) {
 		applyVars:  config.ApplyVars,
 		planVars:   config.PlanVars,
 		initVars:   config.InitVars,
+		Redacted:   config.Redacted,
 	}
 
 	return client, nil
@@ -115,7 +121,10 @@ func NewTerraformCLI(config *TerraformCLIConfig) (*TerraformCLI, error) {
 // `terraform workspace new <name>`
 func (t *TerraformCLI) Init(ctx context.Context) error {
 	var wsCreated bool
+	var out bytes.Buffer
 
+	t.tf.SetStdout(&out)
+	t.tf.SetStderr(&out)
 	// This is special handling for when the workspace has been detected in
 	// .terraform/environment with a non-existing state. This case is common
 	// when the state for the workspace has been deleted.
@@ -126,7 +135,7 @@ TF_INIT_AGAIN:
 		matchedFailedToSelect := wsFailedToSelectRegexp.MatchString(err.Error())
 		matchedDoesNotExist := wsDoesNotExistRegexp.MatchString(err.Error())
 		if matchedFailedToSelect || matchedDoesNotExist || errors.As(err, &wsErr) {
-			t.logger.Info("workspace was detected without state, " +
+			fmt.Println("workspace was detected without state, " +
 				"creating new workspace and attempting Terraform init again")
 			if err := t.tf.WorkspaceNew(ctx, t.workspace); err != nil {
 				return err
@@ -154,17 +163,40 @@ TF_INIT_AGAIN:
 		return err
 	}
 
+	redacted(os.Stdout, out.String(), t.Redacted)
 	return nil
 }
 
 // Apply executes the cli command `terraform apply` for a given workspace
 func (t *TerraformCLI) Apply(ctx context.Context) error {
-	return t.tf.Apply(ctx, t.applyVars...)
+	var out bytes.Buffer
+
+	t.tf.SetStdout(&out)
+	t.tf.SetStderr(&out)
+
+	if err := t.tf.Apply(ctx, t.applyVars...); err != nil {
+		return err
+	}
+
+	redacted(os.Stdout, out.String(), t.Redacted)
+	return nil
 }
 
 // Plan executes the cli command `terraform plan` for a given workspace
 func (t *TerraformCLI) Plan(ctx context.Context) (bool, error) {
-	return t.tf.Plan(ctx, t.planVars...)
+	var out bytes.Buffer
+
+	t.tf.SetStdout(&out)
+	t.tf.SetStderr(&out)
+
+	diff, err := t.tf.Plan(ctx, t.planVars...)
+
+	redacted(os.Stdout, out.String(), t.Redacted)
+	if err != nil {
+		return diff, err
+	}
+
+	return diff, nil
 }
 
 // Plan executes the cli command `terraform plan` for a given workspace
