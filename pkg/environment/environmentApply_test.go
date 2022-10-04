@@ -7,61 +7,24 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestApply_ApplyTerraform(t *testing.T) {
-	type fields struct {
-		Options         *Options
-		RequiredEnvVars RequiredEnvVars
-		Applier         Applier
-		Dir             string
-	}
-	tests := []struct {
-		name              string
-		fields            fields
-		TerraformOutputs  string
-		checkExpectations func(t *testing.T, terraform *mocks.Applier, outputs string, err error)
-	}{
-		{
-			name: "Apply foo namespace",
-			fields: fields{
-				Options: &Options{
-					Namespace:   "foobar",
-					KubecfgPath: "/root/.kube/config",
-					ClusterCtx:  "testctx",
-				},
-				RequiredEnvVars: RequiredEnvVars{
-					clustername:        "cluster01",
-					clusterstatebucket: "clusterstatebucket",
-					kubernetescluster:  "kubernetescluster01",
-					githubowner:        "githubowner",
-					githubtoken:        "githubtoken",
-					pingdomapitoken:    "pingdomApikey",
-				},
-				Dir: "/root/foo",
-			},
-			TerraformOutputs: "foo",
-			checkExpectations: func(t *testing.T, apply *mocks.Applier, outputs string, err error) {
-				apply.AssertCalled(t, "TerraformInitAndApply", "foobar", "/root/foo/resources")
-				assert.Nil(t, err)
-				assert.Len(t, outputs, 3)
-			},
-		},
-	}
-	for i := range tests {
-		terraform := new(mocks.Applier)
-		tfFolder := tests[i].fields.Dir + "/resources"
-		terraform.On("TerraformInitAndApply", tests[i].fields.Options.Namespace, tfFolder).Return(tests[i].TerraformOutputs, nil)
-		a := Apply{
-			RequiredEnvVars: tests[i].fields.RequiredEnvVars,
-			Applier:         terraform,
-			Dir:             tests[i].fields.Dir,
-			Options:         tests[i].fields.Options,
-		}
-		outputs, err := a.applyTerraform()
-		t.Run(tests[i].name, func(t *testing.T) {
-			tests[i].checkExpectations(t, terraform, outputs, err)
-		})
-	}
-}
+// func NewTestApply(opt Options, applierMock *mocks.Applier) *Apply {
+
+// 	if applierMock == nil {
+// 		m := new(mocks.Applier)
+// 		m.On("Initialize").Once()
+// 		m.On("ConfigureInit", mock.Anything).Return(nil)
+// 		m.On("KubectlApply", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
+// 		applierMock = m
+// 	}
+
+// 	apply := Apply{
+// 		Options: &Options{},
+// 		Applier: applierMock,
+// 		Dir:     "test-dir",
+// 	}
+
+// 	return &apply
+// }
 
 func TestApply_ApplyKubectl(t *testing.T) {
 	type fields struct {

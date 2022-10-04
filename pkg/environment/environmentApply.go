@@ -1,12 +1,15 @@
 package environment
 
 import (
+	"bytes"
+	"context"
 	"fmt"
 	"log"
 	"os"
 	"strings"
 
 	"github.com/kelseyhightower/envconfig"
+	"github.com/ministryofjustice/cloud-platform-cli/pkg/terraform"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/util"
 )
 
@@ -14,8 +17,12 @@ import (
 // These options are normally passed via flags in a command line.
 type Options struct {
 	Namespace, KubecfgPath, ClusterCtx, GithubToken string
-	PRNumber                                        int
-	AllNamespaces                                   bool
+	// PRNumber is the Pull request number to which the applier will run
+	PRNumber int
+	// AllNamespaces is the flag which set to true will run the applier on all namespaces
+	AllNamespaces bool
+	// TfVersion is the version of Terraform to use to create the cluster and components.
+	TfVersion string
 }
 
 // RequiredEnvVars is used to store values such as TF_VAR_ , github and pingdom tokens
@@ -215,28 +222,69 @@ func (a *Apply) applyKubectl() (string, error) {
 func (a *Apply) planTerraform() (string, error) {
 	log.Printf("Running Terraform Plan for namespace: %v", a.Options.Namespace)
 
-	tfFolder := a.Dir + "/resources"
+	tf := terraform.TerraformCLIConfig{
+		Workspace:  "default",
+		Version:    a.Options.TfVersion,
+		WorkingDir: a.Dir + "/resources",
+	}
 
-	outputTerraform, err := a.Applier.TerraformInitAndPlan(a.Options.Namespace, tfFolder)
+	InitVars := a.Applier.ConfigureInit(a.Options.Namespace)
+	tf.InitVars = InitVars
+
+	tfCli, err := terraform.NewTerraformCLI(&tf)
 	if err != nil {
-		err := fmt.Errorf("error running terraform on namespace %s: %v", a.Options.Namespace, err)
+		err = fmt.Errorf("error running terraform.NewTerraformCLI on namespace %s: %v", a.Options.Namespace, err)
 		return "", err
 	}
-	return outputTerraform, nil
+
+	var out bytes.Buffer
+	err = tfCli.Init(context.Background(), &out)
+	if err != nil {
+		err = fmt.Errorf("error running terraform Init on namespace %s: %v", a.Options.Namespace, err)
+		return "", err
+	}
+
+	// diff - false if there is are changes in the plan
+	_, err = tfCli.Plan(context.Background(), &out)
+	if err != nil {
+		err = fmt.Errorf("error running terraform Plan on namespace %s: %v", a.Options.Namespace, err)
+		return "", err
+	}
+	return out.String(), nil
 }
 
 // applyTerraform calls applier -> TerraformInitAndApply and prints the output from applier
 func (a *Apply) applyTerraform() (string, error) {
 	log.Printf("Running Terraform Apply for namespace: %v", a.Options.Namespace)
 
-	tfFolder := a.Dir + "/resources"
+	tf := terraform.TerraformCLIConfig{
+		Workspace:  "default",
+		Version:    a.Options.TfVersion,
+		WorkingDir: a.Dir + "/resources",
+	}
 
-	outputTerraform, err := a.Applier.TerraformInitAndApply(a.Options.Namespace, tfFolder)
+	InitVars := a.Applier.ConfigureInit(a.Options.Namespace)
+	tf.InitVars = InitVars
+
+	tfCli, err := terraform.NewTerraformCLI(&tf)
 	if err != nil {
-		err := fmt.Errorf("error running terraform on namespace %s: %v", a.Options.Namespace, err)
+		err = fmt.Errorf("error running terraform.NewTerraformCLI on namespace %s: %v", a.Options.Namespace, err)
 		return "", err
 	}
-	return outputTerraform, nil
+
+	var out bytes.Buffer
+	err = tfCli.Init(context.Background(), &out)
+	if err != nil {
+		err = fmt.Errorf("error running terraform Init on namespace %s: %v", a.Options.Namespace, err)
+		return "", err
+	}
+
+	err = tfCli.Apply(context.Background(), &out)
+	if err != nil {
+		err = fmt.Errorf("error running terraform Plan on namespace %s: %v", a.Options.Namespace, err)
+		return "", err
+	}
+	return out.String(), nil
 }
 
 // planNamespace intiates a new Apply object with options and env variables, and calls the

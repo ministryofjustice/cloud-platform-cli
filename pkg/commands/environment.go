@@ -50,6 +50,7 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentApplyCmd.Flags().StringVar(&optFlags.GithubToken, "github-token", os.Getenv("TF_VAR_github_token"), "Personal access Token from Github ")
 	environmentApplyCmd.Flags().StringVar(&optFlags.KubecfgPath, "kubecfg", filepath.Join(homedir.HomeDir(), ".kube", "config"), "path to kubeconfig file")
 	environmentApplyCmd.Flags().StringVar(&optFlags.ClusterCtx, "cluster", "", "folder name under namespaces/ inside cloud-platform-environments repo refering to full cluster name")
+	environmentApplyCmd.Flags().StringVar(&optFlags.TfVersion, "terraform-version", "0.14.8", "[optional] the terraform version to use. [default] 0.14.8")
 
 	// e.g. if this is the Pull rquest to perform the apply: https://github.com/ministryofjustice/cloud-platform-environments/pull/8370, the pr ID is 8370.
 	environmentPlanCmd.Flags().IntVar(&optFlags.PRNumber, "prNumber", 0, "Pull request ID or number to which you want to perform the plan")
@@ -59,6 +60,7 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentPlanCmd.Flags().StringVar(&optFlags.GithubToken, "github-token", os.Getenv("TF_VAR_github_token"), "Personal access Token from Github ")
 	environmentPlanCmd.Flags().StringVar(&optFlags.KubecfgPath, "kubecfg", filepath.Join(homedir.HomeDir(), ".kube", "config"), "path to kubeconfig file")
 	environmentPlanCmd.Flags().StringVar(&optFlags.ClusterCtx, "cluster", "", "folder name under namespaces/ inside cloud-platform-environments repo refering to full cluster name")
+	environmentPlanCmd.Flags().StringVar(&optFlags.TfVersion, "terraform-version", "0.14.8", "[optional] the terraform version to use. [default] 0.14.8")
 
 	environmentBumpModuleCmd.Flags().StringVarP(&module, "module", "m", "", "Module to upgrade the version")
 	environmentBumpModuleCmd.Flags().StringVarP(&moduleVersion, "module-version", "v", "", "Semantic version to bump a module to")
