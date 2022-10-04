@@ -38,13 +38,14 @@ $ cloud-platform environment apply -n <namespace>
 ### Options
 
 ```
-      --all-namespaces        Apply all namespaces with -all-namespaces
-      --cluster string        folder name under namespaces/ inside cloud-platform-environments repo refering to full cluster name
-      --github-token string   Personal access Token from Github 
-  -h, --help                  help for apply
-      --kubecfg string        path to kubeconfig file (default "/home/runner/.kube/config")
-  -n, --namespace string      Namespace which you want to perform the apply
-      --prNumber int          Pull request ID or number to which you want to perform the plan
+      --all-namespaces             Apply all namespaces with -all-namespaces
+      --cluster string             folder name under namespaces/ inside cloud-platform-environments repo refering to full cluster name
+      --github-token string        Personal access Token from Github 
+  -h, --help                       help for apply
+      --kubecfg string             path to kubeconfig file (default "/home/runner/.kube/config")
+  -n, --namespace string           Namespace which you want to perform the apply
+      --prNumber int               Pull request ID or number to which you want to perform the plan
+      --terraform-version string   [optional] the terraform version to use. [default] 0.14.8 (default "0.14.8")
 ```
 
 ### Options inherited from parent commands
