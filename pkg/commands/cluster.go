@@ -313,7 +313,7 @@ func (o *clusterOptions) checkCreateFlags() error {
 	}
 
 	if o.Auth0.ClientId == "" || o.Auth0.ClientSecret == "" || o.Auth0.Domain == "" {
-		return errors.New("Auth0 credentials are required, please set AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET and AUTH0_DOMAIN")
+		return errors.New("auth0 credentials are required, please set AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET and AUTH0_DOMAIN")
 	}
 
 	return nil
@@ -328,11 +328,11 @@ func (o *clusterOptions) checkClusterName(date, minHour string) error {
 	}
 
 	if len(o.Name) > o.MaxNameLength {
-		return errors.New("Cluster name is too long, please use a shorter name")
+		return errors.New("cluster name is too long, please use a shorter name")
 	}
 
 	if strings.Contains(o.Name, "live") || strings.Contains(o.Name, "manager") {
-		return errors.New("Cluster name cannot contain the words 'live' or 'manager'")
+		return errors.New("cluster name cannot contain the words 'live' or 'manager'")
 	}
 	return nil
 }
