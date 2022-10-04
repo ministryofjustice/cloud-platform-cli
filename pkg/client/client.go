@@ -25,7 +25,7 @@ type AwsCredentials struct {
 	Region  string
 }
 
-// New will construct a Client struct to interact with a kubernetes cluster
+// NewKubeClient will construct a Client struct to interact with a kubernetes cluster
 func NewKubeClient(p string) (*KubeClient, error) {
 	clientset, err := GetClientset(p)
 	if err != nil {

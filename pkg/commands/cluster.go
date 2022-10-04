@@ -10,7 +10,6 @@ import (
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
-	"github.com/ministryofjustice/cloud-platform-cli/pkg/cluster"
 	cloudPlatform "github.com/ministryofjustice/cloud-platform-cli/pkg/cluster"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/recycle"
 	terraform "github.com/ministryofjustice/cloud-platform-cli/pkg/terraform"
@@ -69,6 +68,10 @@ func addCreateClusterCmd(toplevel *cobra.Command) {
 			Auth0:         auth,
 		}
 	)
+	var (
+		date    = time.Now().Format("0201")
+		minHour = time.Now().Format("1504")
+	)
 
 	cmd := &cobra.Command{
 		Use:   "create",
@@ -87,6 +90,7 @@ func addCreateClusterCmd(toplevel *cobra.Command) {
 `),
 		PreRun: upgradeIfNotLatest,
 		Run: func(cmd *cobra.Command, args []string) {
+			err := opt.validateClusterOpts(cmd, date, minHour)
 			contextLogger := log.WithFields(log.Fields{"subcommand": "create-cluster"})
 			if err := checkCreateDirectory(); err != nil {
 				contextLogger.Fatal(err)
@@ -102,7 +106,7 @@ func addCreateClusterCmd(toplevel *cobra.Command) {
 				Version:   opt.TfVersion,
 			}
 
-			_, err := getCredentials(awsRegion)
+			_, err = getCredentials(awsRegion)
 			if err != nil {
 				contextLogger.Fatal(err)
 			}
@@ -110,18 +114,12 @@ func addCreateClusterCmd(toplevel *cobra.Command) {
 			// TODO: Business logic to create a cluster
 		},
 	}
-	if err := opt.addCreateClusterFlags(cmd, &auth); err != nil {
-		log.Fatal(err)
-	}
 
+	opt.addCreateClusterFlags(cmd, &auth)
 	toplevel.AddCommand(cmd)
 }
 
-func (opt *clusterOptions) addCreateClusterFlags(cmd *cobra.Command, auth *authOpts) error {
-	var (
-		date    = time.Now().Format("0201")
-		minHour = time.Now().Format("1504")
-	)
+func (opt *clusterOptions) addCreateClusterFlags(cmd *cobra.Command, auth *authOpts) {
 
 	cmd.Flags().StringVar(&opt.Auth0.ClientId, "auth0-client-id", os.Getenv("AUTH0_CLIENT_ID"), "[required] auth0 client id to use")
 	cmd.Flags().StringVar(&opt.Auth0.ClientSecret, "auth0-client-secret", "", "[required] auth0 client secret to use")
@@ -133,7 +131,6 @@ func (opt *clusterOptions) addCreateClusterFlags(cmd *cobra.Command, auth *authO
 
 	// Terraform options
 	cmd.Flags().StringVar(&opt.TfVersion, "terraform-version", "0.14.8", "[optional] the terraform version to use. [default] 0.14.8")
-	return opt.validateClusterOpts(cmd, date, minHour)
 }
 
 func getCredentials(awsRegion string) (*client.AwsCredentials, error) {
@@ -291,7 +288,7 @@ var clusterRecycleNodeCmd = &cobra.Command{
 			Options: &opt,
 		}
 
-		recycle.Cluster, err = cluster.NewCluster(recycle.Client)
+		recycle.Cluster, err = cloudPlatform.NewCluster(recycle.Client)
 		if err != nil {
 			contextLogger.Fatal(err)
 		}
@@ -299,7 +296,7 @@ var clusterRecycleNodeCmd = &cobra.Command{
 		// Create a snapshot for comparison later.
 		recycle.Snapshot = recycle.Cluster.NewSnapshot()
 
-		recycle.AwsCreds, err = cluster.NewAwsCreds(opt.AwsRegion)
+		recycle.AwsCreds, err = cloudPlatform.NewAwsCreds(opt.AwsRegion)
 		if err != nil {
 			contextLogger.Fatal(err)
 		}
