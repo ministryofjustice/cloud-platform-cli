@@ -130,7 +130,6 @@ func (opt *clusterOptions) addCreateClusterFlags(cmd *cobra.Command, auth *authO
 	cmd.Flags().StringVar(&opt.Name, "name", "", "[optional] name of the cluster")
 	cmd.Flags().StringVar(&opt.VpcName, "vpc", "", "[optional] name of the vpc to use")
 	cmd.Flags().StringVar(&opt.ClusterSuffix, "cluster-suffix", "cloud-platform.service.justice.gov.uk", "[optional] suffix to append to the cluster name")
-	cmd.Flags().StringVar(&kubePath, "kubeconfig", filepath.Join(os.Getenv("HOME"), ".kube", "config"), "[optional] absolute path to the desired kubeconfig location")
 
 	// Terraform options
 	cmd.Flags().StringVar(&opt.TfVersion, "terraform-version", "0.14.8", "[optional] the terraform version to use. [default] 0.14.8")
@@ -232,6 +231,16 @@ func addClusterCmd(topLevel *cobra.Command) {
 
 	// sub cobra commands
 	clusterCmd.AddCommand(clusterRecycleNodeCmd)
+
+	// cluster level flags
+	clusterCmd.Flags().StringVar(&awsAccessKey, "aws-access-key", os.Getenv("AWS_ACCESS_KEY_ID"), "[required] aws access key to use")
+	clusterCmd.Flags().StringVar(&awsSecret, "aws-secret-key", os.Getenv("AWS_SECRET_ACCESS_KEY"), "[required] aws secret to use")
+	clusterCmd.Flags().StringVar(&awsProfile, "aws-profile", os.Getenv("AWS_PROFILE"), "[required] aws profile to use")
+	clusterCmd.Flags().StringVar(&awsRegion, "aws-region", os.Getenv("AWS_REGION"), "[required] aws region to use")
+	clusterCmd.Flags().StringVar(&kubePath, "kubecfg", filepath.Join(homedir.HomeDir(), ".kube", "config"), "path to kubeconfig file")
+
+	// create cluster flags
+	addCreateClusterCmd(clusterCmd)
 
 	// recycle node flags
 	clusterRecycleNodeCmd.Flags().StringVarP(&opt.ResourceName, "name", "n", "", "name of the resource to recycle")
