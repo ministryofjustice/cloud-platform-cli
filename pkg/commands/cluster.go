@@ -90,8 +90,12 @@ func addCreateClusterCmd(toplevel *cobra.Command) {
 `),
 		PreRun: upgradeIfNotLatest,
 		Run: func(cmd *cobra.Command, args []string) {
-			err := opt.validateClusterOpts(cmd, date, minHour)
 			contextLogger := log.WithFields(log.Fields{"subcommand": "create-cluster"})
+			err := opt.validateClusterOpts(cmd, date, minHour)
+			if err != nil {
+				contextLogger.Error(err)
+			}
+
 			if err := checkCreateDirectory(); err != nil {
 				contextLogger.Fatal(err)
 			}
