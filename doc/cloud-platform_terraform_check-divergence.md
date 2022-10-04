@@ -10,11 +10,12 @@ cloud-platform terraform check-divergence [flags]
 
 ```
       --aws-access-key-id string       Access key id of service account to be used by terraform
+      --aws-region string              [required] aws region to use
       --aws-secret-access-key string   Secret access key of service account to be used by terraform
-      --dirs-file string               Required for bulk-plans, file path which holds directories where terraform plan is going to be executed
-  -d, --display-tf-output              Display or not terraform plan output (default true)
   -h, --help                           help for check-divergence
-  -v, --var-file string                tfvar to be used by terraform
+      --redact                         Redact the terraform output before printing (default true)
+      --terraform-version string       [optional] the terraform version to use. [default] 0.14.8 (default "0.14.8")
+      --workdir string                 [optional] the terraform working directory to perform terraform operation [defaukt] . (default ".")
   -w, --workspace string               Default workspace where terraform is going to be executed (default "default")
 ```
 

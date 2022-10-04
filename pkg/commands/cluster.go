@@ -86,6 +86,7 @@ func addCreateClusterCmd(toplevel *cobra.Command) {
 				- a valid auth0 client id and secret.
 				- a valid auth0 domain.
 
+
 			You must also be in the infrastructure repository, and have decrypted the repository before running this command.
 `),
 		PreRun: upgradeIfNotLatest,

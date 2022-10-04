@@ -6,6 +6,7 @@
 package terraform
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"testing"
@@ -19,6 +20,8 @@ import (
 func NewTestTerraformCLI(config *TerraformCLIConfig, tfMock *mocks.TerraformExec) *TerraformCLI {
 	if tfMock == nil {
 		m := new(mocks.TerraformExec)
+		m.On("SetStdout", mock.Anything).Once()
+		m.On("SetStderr", mock.Anything).Once()
 		m.On("Init", mock.Anything).Return(nil)
 		m.On("Apply", mock.Anything).Return(nil)
 		m.On("Plan", mock.Anything).Return(true, nil)
@@ -45,6 +48,64 @@ func NewTestTerraformCLI(config *TerraformCLIConfig, tfMock *mocks.TerraformExec
 	}
 
 	return tfCli
+}
+
+func TestNewTerraformCLI(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name        string
+		expectError bool
+		config      *TerraformCLIConfig
+	}{
+		{
+			"error nil config",
+			true,
+			nil,
+		},
+		{
+			"terraform-exec error: no working dir",
+			true,
+			&TerraformCLIConfig{
+				ExecPath:   "path/to/tf",
+				WorkingDir: "",
+				Workspace:  "default",
+			},
+		},
+		{
+			"happy path",
+			false,
+			&TerraformCLIConfig{
+				ExecPath:   "path/to/tf",
+				WorkingDir: "./",
+				Workspace:  "my-workspace",
+			},
+		},
+		{
+			"null execPath path",
+			false,
+			&TerraformCLIConfig{
+				ExecPath:   "",
+				WorkingDir: "./",
+				Workspace:  "my-workspace",
+				Version:    "0.14.8",
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			actual, err := NewTerraformCLI(tc.config)
+
+			if tc.expectError {
+				assert.Error(t, err)
+				return
+			}
+
+			assert.NoError(t, err)
+			assert.NotNil(t, actual)
+		})
+	}
 }
 
 func TestTerraformCLI_Init(t *testing.T) {
@@ -90,13 +151,16 @@ func TestTerraformCLI_Init(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			m := new(mocks.TerraformExec)
+			m.On("SetStdout", mock.Anything).Once()
+			m.On("SetStderr", mock.Anything).Once()
 			m.On("Init", mock.Anything).Return(tc.initErr).Once()
 			m.On("WorkspaceNew", mock.Anything, mock.Anything).Return(tc.wsErr)
 			m.On("WorkspaceSelect", mock.Anything, mock.Anything).Return(nil)
 
 			tfCli := NewTestTerraformCLI(tc.config, m)
 			ctx := context.Background()
-			err := tfCli.Init(ctx)
+			var out bytes.Buffer
+			err := tfCli.Init(ctx, &out)
 
 			if tc.expectError {
 				assert.Error(t, err)
@@ -146,6 +210,8 @@ Error: Currently selected workspace "some-task" does not exist
 		t.Run(tc.name, func(t *testing.T) {
 			m := new(mocks.TerraformExec)
 			var initCount int
+			m.On("SetStdout", mock.Anything).Once()
+			m.On("SetStderr", mock.Anything).Once()
 			m.On("Init", mock.Anything).Return(func(context.Context, ...tfexec.InitOption) error {
 				initCount++
 				if initCount == 1 {
@@ -158,7 +224,8 @@ Error: Currently selected workspace "some-task" does not exist
 
 			tfCli := NewTestTerraformCLI(&TerraformCLIConfig{}, m)
 			ctx := context.Background()
-			err := tfCli.Init(ctx)
+			var out bytes.Buffer
+			err := tfCli.Init(ctx, &out)
 			assert.NoError(t, err)
 			m.AssertExpectations(t)
 		})
@@ -183,9 +250,13 @@ func TestTerraformCLI_Apply(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
+			m := new(mocks.TerraformExec)
+			m.On("SetStdout", mock.Anything).Once()
+			m.On("SetStderr", mock.Anything).Once()
 			tfCli := NewTestTerraformCLI(tc.config, nil)
 			ctx := context.Background()
-			err := tfCli.Apply(ctx)
+			var out bytes.Buffer
+			err := tfCli.Apply(ctx, &out)
 
 			if tc.expectError {
 				assert.Error(t, err)
@@ -216,8 +287,12 @@ func TestTerraformCLI_Plan(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			tfCli := NewTestTerraformCLI(tc.config, nil)
+			m := new(mocks.TerraformExec)
+			m.On("SetStdout", mock.Anything).Once()
+			m.On("SetStderr", mock.Anything).Once()
 			ctx := context.Background()
-			_, err := tfCli.Plan(ctx)
+			var out bytes.Buffer
+			_, err := tfCli.Plan(ctx, &out)
 
 			if tc.expectError {
 				assert.Error(t, err)
