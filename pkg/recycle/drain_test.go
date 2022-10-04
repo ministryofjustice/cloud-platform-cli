@@ -18,7 +18,7 @@ import (
 
 var (
 	mockCluster = cluster.NewMock()
-	mockClient  = client.Client{
+	mockClient  = client.KubeClient{
 		Clientset: fake.NewSimpleClientset(),
 	}
 	mockSnapshot = cluster.Snapshot{
@@ -40,7 +40,7 @@ var (
 
 func TestRecycler_useNode(t *testing.T) {
 	type fields struct {
-		client        *client.Client
+		client        *client.KubeClient
 		cluster       *cluster.Cluster
 		snapshot      *cluster.Snapshot
 		options       *Options

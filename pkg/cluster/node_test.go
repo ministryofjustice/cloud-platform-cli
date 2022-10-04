@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	mockClient = &client.Client{
+	mockClient = &client.KubeClient{
 		Clientset: fake.NewSimpleClientset(),
 	}
 
@@ -22,7 +22,7 @@ var (
 
 func Test_GetAllNodes(t *testing.T) {
 	type args struct {
-		c *client.Client
+		c *client.KubeClient
 	}
 	tests := []struct {
 		name    string
@@ -275,7 +275,7 @@ func Test_oldestNode(t *testing.T) {
 func TestGetNewestNode(t *testing.T) {
 	timeNow := time.Now()
 	type args struct {
-		c     *client.Client
+		c     *client.KubeClient
 		nodes []v1.Node
 	}
 	tests := []struct {
