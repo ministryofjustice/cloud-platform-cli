@@ -64,6 +64,7 @@ func addCommonFlags(cmd *cobra.Command, tf *terraform.TerraformCLIConfig) {
 	})
 }
 
+// checkDivergence creates a new terraformCLI and perform a init, switch workspace and plan
 func checkDivergence(tf *terraform.TerraformCLIConfig) error {
 	terraform, error := terraform.NewTerraformCLI(tf)
 	var diff bool
@@ -76,6 +77,7 @@ func checkDivergence(tf *terraform.TerraformCLIConfig) error {
 		return fmt.Errorf("failed to init terraform: %w", err)
 	}
 
+	// diff - false if there is are changes in the plan
 	diff, err = terraform.Plan(context.Background())
 	if err != nil {
 		return fmt.Errorf("failed to plan terraform: %w", err)
