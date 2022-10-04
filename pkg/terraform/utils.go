@@ -9,7 +9,7 @@ import (
 )
 
 // redacted reads bytes of data for any sensitive strings and print REDACTED
-func redacted(w io.Writer, output string, redact bool) {
+func Redacted(w io.Writer, output string, redact bool) {
 	re := regexp.MustCompile(`(?i)password|secret|token|key|https://hooks\.slack\.com|user|arn|ssh-rsa|clientid`)
 	scanner := bufio.NewScanner(strings.NewReader(output))
 

@@ -6,11 +6,10 @@
 package terraform
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
-	"os"
+	"io"
 	"path/filepath"
 	"regexp"
 
@@ -119,12 +118,11 @@ func NewTerraformCLI(config *TerraformCLIConfig) (*TerraformCLI, error) {
 
 // Init initializes by executing the cli command `terraform init` and
 // `terraform workspace new <name>`
-func (t *TerraformCLI) Init(ctx context.Context) error {
+func (t *TerraformCLI) Init(ctx context.Context, w io.Writer) error {
 	var wsCreated bool
-	var out bytes.Buffer
 
-	t.tf.SetStdout(&out)
-	t.tf.SetStderr(&out)
+	t.tf.SetStdout(w)
+	t.tf.SetStderr(w)
 	// This is special handling for when the workspace has been detected in
 	// .terraform/environment with a non-existing state. This case is common
 	// when the state for the workspace has been deleted.
@@ -163,35 +161,30 @@ TF_INIT_AGAIN:
 		return err
 	}
 
-	redacted(os.Stdout, out.String(), t.Redacted)
 	return nil
 }
 
 // Apply executes the cli command `terraform apply` for a given workspace
-func (t *TerraformCLI) Apply(ctx context.Context) error {
-	var out bytes.Buffer
+func (t *TerraformCLI) Apply(ctx context.Context, w io.Writer) error {
 
-	t.tf.SetStdout(&out)
-	t.tf.SetStderr(&out)
+	t.tf.SetStdout(w)
+	t.tf.SetStderr(w)
 
 	if err := t.tf.Apply(ctx, t.applyVars...); err != nil {
 		return err
 	}
 
-	redacted(os.Stdout, out.String(), t.Redacted)
 	return nil
 }
 
 // Plan executes the cli command `terraform plan` for a given workspace
-func (t *TerraformCLI) Plan(ctx context.Context) (bool, error) {
-	var out bytes.Buffer
+func (t *TerraformCLI) Plan(ctx context.Context, w io.Writer) (bool, error) {
 
-	t.tf.SetStdout(&out)
-	t.tf.SetStderr(&out)
+	t.tf.SetStdout(w)
+	t.tf.SetStderr(w)
 
 	diff, err := t.tf.Plan(ctx, t.planVars...)
 
-	redacted(os.Stdout, out.String(), t.Redacted)
 	if err != nil {
 		return false, err
 	}

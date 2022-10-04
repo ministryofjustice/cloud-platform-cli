@@ -1,8 +1,9 @@
 package commands
 
 import (
+	"bytes"
 	"context"
-	"fmt"
+	"os"
 	"strings"
 
 	terraform "github.com/ministryofjustice/cloud-platform-cli/pkg/terraform"
@@ -14,6 +15,7 @@ import (
 
 func addTerraformCmd(topLevel *cobra.Command) {
 	var tf terraform.TerraformCLIConfig
+	var diff bool
 
 	rootCmd := &cobra.Command{
 		Use:    "terraform",
@@ -30,8 +32,28 @@ func addTerraformCmd(topLevel *cobra.Command) {
 
 			contextLogger.Info("Executing terraform plan, if there is a drift this program execution will fail")
 
-			if err := checkDivergence(&tf); err != nil {
+			tfCli, err := terraform.NewTerraformCLI(&tf)
+			if err != nil {
 				contextLogger.Fatal(err)
+			}
+
+			var out bytes.Buffer
+			err = tfCli.Init(context.Background(), &out)
+			// print terraform init output irrespective of error. out captures both stdout and stderr of terraform
+			terraform.Redacted(os.Stdout, out.String(), tfCli.Redacted)
+			if err != nil {
+				contextLogger.Fatal("Failed to init terraform: %w", err)
+			}
+
+			// diff - false if there is are changes in the plan
+			diff, err = tfCli.Plan(context.Background(), &out)
+			terraform.Redacted(os.Stdout, out.String(), tfCli.Redacted)
+			if err != nil {
+				contextLogger.Fatal("Failed to plan terraform: %w", err)
+			}
+
+			if diff {
+				contextLogger.Fatal("There is a drift when executing terraform plan")
 			}
 		},
 	}
@@ -62,30 +84,4 @@ func addCommonFlags(cmd *cobra.Command, tf *terraform.TerraformCLIConfig) {
 			_ = cmd.PersistentFlags().Set(f.Name, viper.GetString(f.Name))
 		}
 	})
-}
-
-// checkDivergence creates a new terraformCLI and perform a init, switch workspace and plan
-func checkDivergence(tf *terraform.TerraformCLIConfig) error {
-	terraform, error := terraform.NewTerraformCLI(tf)
-	var diff bool
-	if error != nil {
-		return error
-	}
-
-	err := terraform.Init(context.Background())
-	if err != nil {
-		return fmt.Errorf("failed to init terraform: %w", err)
-	}
-
-	// diff - false if there is are changes in the plan
-	diff, err = terraform.Plan(context.Background())
-	if err != nil {
-		return fmt.Errorf("failed to plan terraform: %w", err)
-	}
-
-	if diff {
-		return fmt.Errorf("there is a drift when executing terraform plan")
-	}
-
-	return nil
 }

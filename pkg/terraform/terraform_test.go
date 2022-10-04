@@ -6,6 +6,7 @@
 package terraform
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"testing"
@@ -148,7 +149,8 @@ func TestTerraformCLI_Init(t *testing.T) {
 
 			tfCli := NewTestTerraformCLI(tc.config, m)
 			ctx := context.Background()
-			err := tfCli.Init(ctx)
+			var out bytes.Buffer
+			err := tfCli.Init(ctx, &out)
 
 			if tc.expectError {
 				assert.Error(t, err)
@@ -212,7 +214,8 @@ Error: Currently selected workspace "some-task" does not exist
 
 			tfCli := NewTestTerraformCLI(&TerraformCLIConfig{}, m)
 			ctx := context.Background()
-			err := tfCli.Init(ctx)
+			var out bytes.Buffer
+			err := tfCli.Init(ctx, &out)
 			assert.NoError(t, err)
 			m.AssertExpectations(t)
 		})
@@ -242,7 +245,8 @@ func TestTerraformCLI_Apply(t *testing.T) {
 			m.On("SetStderr", mock.Anything).Once()
 			tfCli := NewTestTerraformCLI(tc.config, nil)
 			ctx := context.Background()
-			err := tfCli.Apply(ctx)
+			var out bytes.Buffer
+			err := tfCli.Apply(ctx, &out)
 
 			if tc.expectError {
 				assert.Error(t, err)
@@ -277,7 +281,8 @@ func TestTerraformCLI_Plan(t *testing.T) {
 			m.On("SetStdout", mock.Anything).Once()
 			m.On("SetStderr", mock.Anything).Once()
 			ctx := context.Background()
-			_, err := tfCli.Plan(ctx)
+			var out bytes.Buffer
+			_, err := tfCli.Plan(ctx, &out)
 
 			if tc.expectError {
 				assert.Error(t, err)

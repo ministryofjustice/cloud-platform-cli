@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func Test_redacted(t *testing.T) {
+func Test_Redacted(t *testing.T) {
 	type args struct {
 		output string
 		redact bool
@@ -75,7 +75,7 @@ func Test_redacted(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			w := &bytes.Buffer{}
-			redacted(w, tt.args.output, tt.args.redact)
+			Redacted(w, tt.args.output, tt.args.redact)
 			if got := w.String(); got != tt.expect {
 				t.Errorf("redacted() = %v, want %v", got, tt.expect)
 			}
