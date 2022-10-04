@@ -81,6 +81,16 @@ func TestNewTerraformCLI(t *testing.T) {
 				Workspace:  "my-workspace",
 			},
 		},
+		{
+			"null execPath path",
+			false,
+			&TerraformCLIConfig{
+				ExecPath:   "",
+				WorkingDir: "./",
+				Workspace:  "my-workspace",
+				Version:    "0.14.8",
+			},
+		},
 	}
 
 	for _, tc := range cases {
