@@ -15,7 +15,7 @@ import (
 
 var opt recycle.Options
 
-var awsSecret, awsAccessKey, awsProfile string
+var awsSecret, awsAccessKey, awsProfile, awsRegion string
 
 func addClusterCmd(topLevel *cobra.Command) {
 	topLevel.AddCommand(clusterCmd)
