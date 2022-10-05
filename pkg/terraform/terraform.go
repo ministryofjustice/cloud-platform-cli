@@ -29,32 +29,30 @@ type TerraformCLI struct {
 	tf         terraformExec
 	workingDir string
 	workspace  string
-	// Apply allows you to group apply options passed to Terraform.
-	applyVars []tfexec.ApplyOption
-	// Apply allows you to group apply options passed to Terraform.
-	planVars []tfexec.PlanOption
-	// Init allows you to group init options passed to Terraform.
-	initVars []tfexec.InitOption
-	// Redacted is the flag to enable/disable redacting the terraform before printing output.
-	Redacted bool
+	applyVars  []tfexec.ApplyOption
+	planVars   []tfexec.PlanOption
+	initVars   []tfexec.InitOption
+	Redacted   bool
 }
 
 // TerraformCLIConfig configures the Terraform client
 type TerraformCLIConfig struct {
-	ExecPath   string
+	// ExecPath is the path to the Terraform executable.
+	ExecPath string
+	// WorkingDir is the path Terraform will execute in.
 	WorkingDir string
-	Workspace  string
-	// Apply allows you to group apply options passed to Terraform.
+	// Worspace is the Terraform workspace to use.
+	Workspace string
+	// ApplyVars allows you to group apply options passed to Terraform.
 	ApplyVars []tfexec.ApplyOption
-	// Init allows you to group init options passed to Terraform.
+	// PlanVars allows you to group plan variables passed to Terraform.
 	PlanVars []tfexec.PlanOption
-	// Init allows you to group init options passed to Terraform.
+	// InitVars allows you to group init variables passed to Terraform.
 	InitVars []tfexec.InitOption
 	// Version is the version of Terraform to use.
 	Version string
-	// ExecPath is the path to the Terraform executable.
-	Redacted bool
 	// Redacted is the flag to enable/disable redacting the terraform before printing output.
+	Redacted bool
 }
 
 // NewTerraformCLI creates a terraform-exec client and configures and
