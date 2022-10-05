@@ -36,6 +36,27 @@ func (cluster *Cluster) DeleteStuckPods(c *client.KubeClient, node *v1.Node) err
 	return nil
 }
 
+// GetStuckPods returns a slice of all pods in a cluster that are considered "stuck"
+func (cluster *Cluster) GetStuckPods(c *client.KubeClient) error {
+	p := make([]v1.Pod, 0)
+	pods, err := getPods(c)
+	if err != nil {
+		return err
+	}
+
+	states := stuckStates()
+	for _, pod := range pods {
+		for _, state := range states {
+			if pod.Status.Phase == state {
+				p = append(p, pod)
+			}
+		}
+	}
+
+	cluster.StuckPods = p
+	return nil
+}
+
 // getNodePods returns a list of pods on a node
 func getNodePods(c *client.KubeClient, n *v1.Node) (pods *v1.PodList, err error) {
 	pods, err = c.Clientset.CoreV1().Pods(n.Namespace).List(context.Background(), metav1.ListOptions{
