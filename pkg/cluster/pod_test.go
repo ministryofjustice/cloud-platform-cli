@@ -176,3 +176,30 @@ func TestCluster_FindNode(t *testing.T) {
 		})
 	}
 }
+
+func TestCluster_GetStuckPods(t *testing.T) {
+	type args struct {
+		c *client.KubeClient
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "getPods",
+			args: args{
+				c: mockClient,
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cluster := &Cluster{}
+			if err := cluster.GetStuckPods(tt.args.c); (err != nil) != tt.wantErr {
+				t.Errorf("Cluster.GetStuckPods() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
