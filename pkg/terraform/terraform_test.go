@@ -190,7 +190,7 @@ This is expected behavior when the selected workspace did not have an
 existing non-empty state. Please enter a number to select a workspace:
 
 1. default
- 
+
 Enter a value:
 
 Error: Failed to select workspace: input not a valid number`),
@@ -323,7 +323,7 @@ func TestTerraformCLI_Output(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			tfCli := NewTestTerraformCLI(tc.config, nil)
 			ctx := context.Background()
-			_, err := tfCli.Output(ctx)
+			_, err := tfCli.Output(ctx, nil)
 
 			if tc.expectError {
 				assert.Error(t, err)

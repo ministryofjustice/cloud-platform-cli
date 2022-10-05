@@ -193,6 +193,6 @@ func (t *TerraformCLI) Plan(ctx context.Context, w io.Writer) (bool, error) {
 }
 
 // Plan executes the cli command `terraform plan` for a given workspace
-func (t *TerraformCLI) Output(ctx context.Context) (map[string]tfexec.OutputMeta, error) {
+func (t *TerraformCLI) Output(ctx context.Context, w io.Writer) (map[string]tfexec.OutputMeta, error) {
 	return t.tf.Output(ctx)
 }
