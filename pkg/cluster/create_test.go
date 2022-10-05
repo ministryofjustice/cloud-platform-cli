@@ -50,17 +50,8 @@ func TestWriteKubeConfig(t *testing.T) {
 		},
 	}
 
-	gen, err := token.NewGenerator(true, false)
-	if err != nil {
-		t.Errorf("error generating token generator: %v", err)
-	}
-	opts := &token.GetTokenOptions{
-		ClusterID: aws.StringValue(cluster.Name),
-	}
-
-	tok, err := gen.GetWithOptions(opts)
-	if err != nil {
-		t.Errorf("error generating token: %v", err)
+	toks := token.Token{
+		Token: "test",
 	}
 
 	ca, err := base64.StdEncoding.DecodeString(aws.StringValue(cluster.CertificateAuthority.Data))
@@ -68,7 +59,7 @@ func TestWriteKubeConfig(t *testing.T) {
 		t.Errorf("error decoding certificate: %v", err)
 	}
 
-	err = writeKubeConfig(cluster, "config.yaml", "aws", tok, ca)
+	err = writeKubeConfig(cluster, "config.yaml", "aws", toks, ca)
 	if err != nil {
 		t.Errorf("WriteKubeConfig() error = %v", err)
 	}
@@ -85,18 +76,18 @@ func TestWriteKubeConfig(t *testing.T) {
 	}
 
 	// Expect the test to fail from here.
-	err = writeKubeConfig(cluster, "", "aws", tok, []byte{})
+	err = writeKubeConfig(cluster, "", "aws", toks, []byte{})
 	if err == nil {
 		t.Errorf("WriteKubeConfig() error = %v", "expected error")
 	}
 
-	err = writeKubeConfig(cluster, "badPath", "aws", tok, nil)
+	err = writeKubeConfig(cluster, "badPath", "aws", toks, nil)
 	if err == nil {
 		t.Errorf("WriteKubeConfig() error = %v", "expected error")
 	}
 
 	cluster.Name = nil
-	err = writeKubeConfig(cluster, "badPath", "aws", tok, nil)
+	err = writeKubeConfig(cluster, "badPath", "aws", toks, nil)
 	if err == nil {
 		t.Errorf("WriteKubeConfig() error = %v", "expected error")
 	}
@@ -115,13 +106,6 @@ func TestNewClientset(t *testing.T) {
 	if err == nil {
 		t.Errorf("newClientset() error = %v", err)
 	}
-
-	defer func() {
-		err := os.Remove("aws")
-		if err != nil {
-			t.Errorf("error removing config file: %v", err)
-		}
-	}()
 }
 
 func (m *mockEKSClient) DescribeCluster(input *eks.DescribeClusterInput) (*eks.DescribeClusterOutput, error) {
