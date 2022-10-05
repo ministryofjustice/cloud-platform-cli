@@ -44,7 +44,7 @@ require (
 	k8s.io/apimachinery v0.25.2
 	k8s.io/client-go v0.25.2
 	k8s.io/kubectl v0.25.2
-	sigs.k8s.io/aws-iam-authenticator v0.5.8-0.20220803211948-538f7f4314ef
+	sigs.k8s.io/aws-iam-authenticator v0.5.9
 )
 
 require (
