@@ -9,7 +9,10 @@ import (
 	"time"
 
 	"github.com/MakeNowJust/heredoc"
+	"github.com/jedib0t/go-pretty/v6/list"
+	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
+	"github.com/ministryofjustice/cloud-platform-cli/pkg/cluster"
 	cloudPlatform "github.com/ministryofjustice/cloud-platform-cli/pkg/cluster"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/recycle"
 	terraform "github.com/ministryofjustice/cloud-platform-cli/pkg/terraform"
@@ -100,23 +103,25 @@ func addCreateClusterCmd(toplevel *cobra.Command) {
 			if err := checkCreateDirectory(); err != nil {
 				contextLogger.Fatal(err)
 			}
-			_ = cloudPlatform.Cluster{
+			cluster := cloudPlatform.Cluster{
 				Name:         opt.Name,
 				VpcId:        opt.VpcName,
 				HealthStatus: "Creating",
 			}
 
-			_ = terraform.TerraformCLIConfig{
+			tf := terraform.TerraformCLIConfig{
 				Workspace: opt.Name,
 				Version:   opt.TfVersion,
 			}
 
-			_, err = getCredentials(awsRegion)
+			creds, err := getCredentials(awsRegion)
 			if err != nil {
 				contextLogger.Fatal(err)
 			}
 
-			// TODO: Business logic to create a cluster
+			if err := createCluster(&cluster, &tf, creds, &opt); err != nil {
+				contextLogger.Fatal(err)
+			}
 		},
 	}
 
@@ -124,6 +129,64 @@ func addCreateClusterCmd(toplevel *cobra.Command) {
 	toplevel.AddCommand(cmd)
 }
 
+// createCluster performs the actual logic of creating a cloud platform cluster. Assuming you're in the infrastructure repo, it will:
+// - create a new terraform Workspace
+// - create a new VPC
+// - create a new EKS cluster
+// - create the components required for the cluster to function
+// - create a new kubeconfig file for the cluster
+
+// It will return an error if at any stage terraform fails or the cluster isn't recognised.
+func createCluster(cluster *cloudPlatform.Cluster, tf *terraform.TerraformCLIConfig, awsCreds *client.AwsCredentials, opt *clusterOptions) error {
+	// NOTE: baseDir is the directory where the terraform files are located in the infrastructure repo. This is subject to change.
+	const baseDir = "./terraform/aws-accounts/cloud-platform-aws/"
+	var (
+		vpcDir        = baseDir + "vpc/"
+		clusterDir    = vpcDir + "eks/"
+		componentsDir = clusterDir + "components/"
+	)
+
+	fmt.Println("Creating vpc")
+	if err := cluster.ApplyVpc(tf, awsCreds, vpcDir); err != nil {
+		return err
+	}
+
+	fmt.Printf("Creating cluster %s in %s\n", cluster.Name, cluster.VpcId)
+	if err := cluster.ApplyEks(tf, awsCreds, clusterDir); err != nil {
+		return err
+	}
+
+	fmt.Println("Creating components")
+	if err := cluster.ApplyComponents(tf, awsCreds, componentsDir, kubePath); err != nil {
+		return err
+	}
+
+	printOutTable(*cluster)
+
+	return nil
+}
+
+func printOutTable(c cluster.Cluster) {
+	stuckPods := list.NewWriter()
+	for _, pod := range c.StuckPods {
+		stuckPods.AppendItem(pod.Name)
+	}
+
+	nodes := list.NewWriter()
+	for _, node := range c.Nodes {
+		nodes.AppendItem(node.Name)
+	}
+
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+	t.AppendHeader(table.Row{"#", "Cluster Name", "VPC ID", "Cluster Status", "Stuck Pods", "Nodes"})
+	t.AppendRows([]table.Row{
+		{1, c.Name, c.VpcId, c.HealthStatus, stuckPods.Render(), nodes.Render()},
+	})
+	t.AppendSeparator()
+	t.SetStyle(table.StyleBold)
+	t.Render()
+}
 func (opt *clusterOptions) addCreateClusterFlags(cmd *cobra.Command, auth *authOpts) {
 
 	cmd.Flags().StringVar(&opt.Auth0.ClientId, "auth0-client-id", os.Getenv("AUTH0_CLIENT_ID"), "[required] auth0 client id to use")
