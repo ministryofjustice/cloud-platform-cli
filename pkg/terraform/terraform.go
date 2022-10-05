@@ -1,8 +1,5 @@
 // Package terraform implements methods and functions for running
 // Terraform commands, such as terraform init/plan/apply.
-//
-// The intention of this package is to call and run inside a CI/CD
-// pipeline.
 package terraform
 
 import (
@@ -10,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"path/filepath"
 	"regexp"
 
 	"github.com/hashicorp/go-version"
@@ -68,9 +64,11 @@ func NewTerraformCLI(config *TerraformCLIConfig) (*TerraformCLI, error) {
 		return nil, errors.New("TerraformCLIConfig cannot be nil - no meaningful default values")
 	}
 
-	if config.ExecPath != "" {
-		config.ExecPath = filepath.Join(config.ExecPath, "terraform")
-	} else {
+	if config.Version == "" {
+		return nil, errors.New("version cannot be empty")
+	}
+
+	if config.ExecPath == "" {
 		i := install.NewInstaller()
 		v := version.Must(version.NewVersion(config.Version))
 
@@ -95,7 +93,6 @@ func NewTerraformCLI(config *TerraformCLIConfig) (*TerraformCLI, error) {
 				return
 			}
 		}()
-
 	}
 
 	tf, err := tfexec.NewTerraform(config.WorkingDir, config.ExecPath)
