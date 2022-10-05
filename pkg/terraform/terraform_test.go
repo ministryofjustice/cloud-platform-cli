@@ -64,12 +64,22 @@ func TestNewTerraformCLI(t *testing.T) {
 			nil,
 		},
 		{
+			"version not set",
+			true,
+			&TerraformCLIConfig{
+				WorkingDir: "",
+				Workspace:  "default",
+				Version:    "",
+			},
+		},
+		{
 			"terraform-exec error: no working dir",
 			true,
 			&TerraformCLIConfig{
 				ExecPath:   "path/to/tf",
 				WorkingDir: "",
 				Workspace:  "default",
+				Version:    "0.14.8",
 			},
 		},
 		{
@@ -79,6 +89,7 @@ func TestNewTerraformCLI(t *testing.T) {
 				ExecPath:   "path/to/tf",
 				WorkingDir: "./",
 				Workspace:  "my-workspace",
+				Version:    "0.14.8",
 			},
 		},
 		{
