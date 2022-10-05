@@ -12,7 +12,6 @@ import (
 	"github.com/jedib0t/go-pretty/v6/list"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
-	"github.com/ministryofjustice/cloud-platform-cli/pkg/cluster"
 	cloudPlatform "github.com/ministryofjustice/cloud-platform-cli/pkg/cluster"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/recycle"
 	terraform "github.com/ministryofjustice/cloud-platform-cli/pkg/terraform"
@@ -166,7 +165,7 @@ func createCluster(cluster *cloudPlatform.Cluster, tf *terraform.TerraformCLICon
 	return nil
 }
 
-func printOutTable(c cluster.Cluster) {
+func printOutTable(c cloudPlatform.Cluster) {
 	stuckPods := list.NewWriter()
 	for _, pod := range c.StuckPods {
 		stuckPods.AppendItem(pod.Name)
