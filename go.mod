@@ -29,7 +29,7 @@ require (
 )
 
 require (
-	github.com/aws/aws-sdk-go v1.44.98
+	github.com/aws/aws-sdk-go v1.44.111
 	github.com/google/go-cmdtest v0.4.0
 	github.com/hashicorp/go-version v1.6.0
 	github.com/hashicorp/hc-install v0.4.0
