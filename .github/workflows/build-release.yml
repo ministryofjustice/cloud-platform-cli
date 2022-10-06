@@ -68,3 +68,4 @@ jobs:
           context: .
           push: true
           tags: ${{ steps.metadata.outputs.tags }}
+          build-args: CLOUD_PLATFORM_CLI_VERSION=${{ steps.metadata.outputs.tags }}

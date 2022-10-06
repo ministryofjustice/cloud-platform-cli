@@ -5,6 +5,7 @@ ENV \
     CGO_ENABLED=0 \
     GOOS=linux \
     KUBECTL_VERSION=1.21.5 \
+	 CLOUD_PLATFORM_CLI_VERSION=DOCKER \
     TERRAFORM_VERSION=0.14.8
 
 WORKDIR /build
@@ -22,7 +23,8 @@ COPY go.mod .
 COPY go.sum .
 RUN go mod download
 COPY . .
-RUN go build -o cloud-platform .
+# To get the latest build tag into the image please build using docker build --build-arg CLOUD_PLATFORM_CLI_VERSION=<latest-tag> .
+RUN go build -ldflags "-X github.com/ministryofjustice/cloud-platform-cli/pkg/commands.Version=${CLOUD_PLATFORM_CLI_VERSION}" -o cloud-platform .
 
 # Install kubectl
 RUN curl -sLo ./kubectl https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl
