@@ -189,5 +189,7 @@ func (t *TerraformCLI) Plan(ctx context.Context, w io.Writer) (bool, error) {
 
 // Plan executes the cli command `terraform plan` for a given workspace
 func (t *TerraformCLI) Output(ctx context.Context, w io.Writer) (map[string]tfexec.OutputMeta, error) {
+	// Often times, the output is not needed, so the caller can specify a null writer to ignore.
+	t.tf.SetStdout(w)
 	return t.tf.Output(ctx)
 }
