@@ -48,8 +48,12 @@ func (c *Cluster) ApplyVpc(tf *terraform.TerraformCLIConfig, creds *client.AwsCr
 
 // ApplyEks will apply the terraform code to create a Cloud Platform EKS cluster and ensure it is up and running.
 // It will return an error if the EKS cluster is not up and running or the terraform commands fail.
-func (c *Cluster) ApplyEks(tf *terraform.TerraformCLIConfig, creds *client.AwsCredentials, dir string) error {
+// You can make the eks terraform creation faster by passing the faenable_oidc_associateenable_oidc_associatest flag.
+func (c *Cluster) ApplyEks(tf *terraform.TerraformCLIConfig, creds *client.AwsCredentials, dir string, fast bool) error {
 	tf.WorkingDir = dir
+	if fast {
+		tf.ApplyVars = append(tf.ApplyVars, tfexec.Var(fmt.Sprintf("%s=%v", "enable_oidc_associate", false)))
+	}
 
 	_, err := terraformApply(tf)
 	if err != nil {
@@ -95,7 +99,6 @@ func (c *Cluster) ApplyComponents(tf *terraform.TerraformCLIConfig, awsCreds *cl
 	if err != nil {
 		return err
 	}
-
 	c.Nodes = nodes
 
 	if err := c.GetStuckPods(kube); err != nil {
@@ -113,7 +116,7 @@ func terraformApply(tf *terraform.TerraformCLIConfig) (map[string]tfexec.OutputM
 
 	// Start fresh and remove any local state.
 	if err := deleteLocalState(tf.WorkingDir, ".terraform", ".terraform.lock.hcl"); err != nil {
-		return nil, fmt.Errorf("failed to delete temp directory: %w", err)
+		fmt.Println("Failed to delete local state, continuing anyway")
 	}
 
 	err := terraform.Init(context.Background(), log.Writer())

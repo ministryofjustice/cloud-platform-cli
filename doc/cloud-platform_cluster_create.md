@@ -28,6 +28,7 @@ cloud-platform cluster create [flags]
       --auth0-client-secret string   [required] auth0 client secret to use
       --auth0-domain string          [required] auth0 domain to use
       --cluster-suffix string        [optional] suffix to append to the cluster name (default "cloud-platform.service.justice.gov.uk")
+      --fast                         [optional] if true, will skip the slow parts of the cluster creation process
   -h, --help                         help for create
       --name string                  [optional] name of the cluster
       --terraform-version string     [optional] the terraform version to use. [default] 0.14.8 (default "0.14.8")
