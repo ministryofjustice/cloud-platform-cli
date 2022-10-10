@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/google/go-github/github"
 	"github.com/ministryofjustice/cloud-platform-environments/pkg/authenticate"
 )
 
@@ -88,12 +89,10 @@ func Redacted(w io.Writer, output string) {
 	}
 }
 
-func ChangedInPR(token, repo, owner string, prNumber int) ([]string, error) {
-	client, err := authenticate.GitHubClient(token)
-	if err != nil {
-		return nil, err
-	}
-	repos, _, err := client.PullRequests.ListFiles(context.Background(), owner, repo, prNumber, nil)
+// ChangedInPR get the list of changed files for a given PR. checks if the namespaces exists in the given cluster
+// folder and return the list of namespaces.
+func ChangedInPR(cluster, token, repo, owner string, prNumber int) ([]string, error) {
+	repos, err := GetChangedFiles(token, repo, owner, prNumber)
 	if err != nil {
 		return nil, err
 	}
@@ -103,10 +102,29 @@ func ChangedInPR(token, repo, owner string, prNumber int) ([]string, error) {
 		// namespaces filepaths are assumed to come in
 		// the format: namespaces/<cluster>.cloud-platform.service.justice.gov.uk/<namespaceName>
 		s := strings.Split(*repo.Filename, "/")
-		namespaceNames = append(namespaceNames, s[2])
+		//only get namespaces from the folder that belong to the given cluster and
+		// ignore changes outside namespace directories
+		if s[1] == cluster {
+			namespaceNames = append(namespaceNames, s[2])
+		}
+
 	}
 
 	return deduplicateList(namespaceNames), nil
+}
+
+func GetChangedFiles(token, repo, owner string, prNumber int) ([]*github.CommitFile, error) {
+
+	client, err := authenticate.GitHubClient(token)
+	if err != nil {
+		return nil, err
+	}
+	repos, _, err := client.PullRequests.ListFiles(context.Background(), owner, repo, prNumber, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return repos, nil
 }
 
 // deduplicateList will simply take a slice of strings and
