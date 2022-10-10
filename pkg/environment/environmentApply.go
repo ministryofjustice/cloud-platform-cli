@@ -83,16 +83,18 @@ func (a *Apply) Plan() error {
 		}
 		return nil
 	} else {
-		changedNamespaces, err := util.ChangedInPR(a.Options.GithubToken, cloudPlatformEnvRepo, mojOwner, a.Options.PRNumber)
+		changedNamespaces, err := util.ChangedInPR(a.Options.ClusterCtx, a.Options.GithubToken, cloudPlatformEnvRepo, mojOwner, a.Options.PRNumber)
 		if err != nil {
 			return err
 		}
 
-		for _, namespace := range changedNamespaces {
-			a.Options.Namespace = namespace
-			err = a.planNamespace()
-			if err != nil {
-				return err
+		if changedNamespaces != nil {
+			for _, namespace := range changedNamespaces {
+				a.Options.Namespace = namespace
+				err = a.planNamespace()
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -119,16 +121,18 @@ func (a *Apply) Apply() error {
 		}
 		return nil
 	} else {
-		changedNamespaces, err := util.ChangedInPR(a.Options.GithubToken, cloudPlatformEnvRepo, mojOwner, a.Options.PRNumber)
+		changedNamespaces, err := util.ChangedInPR(a.Options.ClusterCtx, a.Options.GithubToken, cloudPlatformEnvRepo, mojOwner, a.Options.PRNumber)
 		if err != nil {
 			return err
 		}
 
-		for _, namespace := range changedNamespaces {
-			a.Options.Namespace = namespace
-			err = a.applyNamespace()
-			if err != nil {
-				return err
+		if changedNamespaces != nil {
+			for _, namespace := range changedNamespaces {
+				a.Options.Namespace = namespace
+				err = a.applyNamespace()
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
