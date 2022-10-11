@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	environment "github.com/ministryofjustice/cloud-platform-cli/pkg/environment"
+	"github.com/ministryofjustice/cloud-platform-cli/pkg/github"
 	log "github.com/sirupsen/logrus"
 	"k8s.io/client-go/util/homedir"
 
@@ -163,7 +164,9 @@ var environmentApplyCmd = &cobra.Command{
 		contextLogger := log.WithFields(log.Fields{"subcommand": "apply"})
 		applier := &environment.Apply{
 			Options: &optFlags,
+			Github:  *github.NewGithubClient(optFlags.GithubToken, "cloud-platform-environments", "ministryofjustice"),
 		}
+
 		if optFlags.AllNamespaces {
 			err := applier.ApplyAll()
 			if err != nil {

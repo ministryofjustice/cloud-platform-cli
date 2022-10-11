@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/kelseyhightower/envconfig"
+	"github.com/ministryofjustice/cloud-platform-cli/pkg/github"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/util"
 )
 
@@ -36,6 +37,10 @@ type Apply struct {
 	RequiredEnvVars RequiredEnvVars
 	Applier         Applier
 	Dir             string
+	Github          github.GithubClient
+}
+
+type PullRequest struct {
 }
 
 const (
@@ -89,7 +94,7 @@ func (a *Apply) Plan() error {
 		}
 		return nil
 	} else {
-		changedNamespaces, err := util.NSChangedInPR(a.Options.ClusterCtx, a.Options.GithubToken, cloudPlatformEnvRepo, mojOwner, a.Options.PRNumber)
+		changedNamespaces, err := a.nsChangedInPR(a.Options.ClusterCtx, a.Options.PRNumber)
 		if err != nil {
 			return err
 		}
@@ -128,19 +133,20 @@ func (a *Apply) Apply() error {
 	} else {
 		// get the current and current - 1 minute
 		date := util.GetDateLastMinute()
+
 		// get the list of PRs that are merged in past 1 minute
-		nodes, err := util.GetMergedPRs(date, prCount, a.Options.GithubToken)
+		prURLs, err := a.Github.ListMergedPRs(date, prCount)
 		if err != nil {
 			return err
 		}
 
-		for _, pr := range nodes {
+		for _, pr := range prURLs {
 			url := string(pr.PullRequest.Url)
 			prNumber, err := strconv.Atoi(url[strings.LastIndex(url, "/")+1:])
 			if err != nil {
 				return err
 			}
-			changedNamespaces, err := util.NSChangedInPR(a.Options.ClusterCtx, a.Options.GithubToken, cloudPlatformEnvRepo, mojOwner, prNumber)
+			changedNamespaces, err := a.nsChangedInPR(a.Options.ClusterCtx, prNumber)
 			if err != nil {
 				return err
 			}
@@ -303,4 +309,28 @@ func (a *Apply) applyNamespace() error {
 	fmt.Println("\nOutput of terraform:")
 	util.Redacted(os.Stdout, outputTerraform)
 	return nil
+}
+
+// nsChangedInPR get the list of changed files for a given PR. checks if the namespaces exists in the given cluster
+// folder and return the list of namespaces.
+func (a *Apply) nsChangedInPR(cluster string, prNumber int) ([]string, error) {
+	repos, err := a.Github.GetChangedFiles(prNumber)
+	if err != nil {
+		return nil, err
+	}
+
+	var namespaceNames []string
+	for _, repo := range repos {
+		// namespaces filepaths are assumed to come in
+		// the format: namespaces/<cluster>.cloud-platform.service.justice.gov.uk/<namespaceName>
+		s := strings.Split(*repo.Filename, "/")
+		//only get namespaces from the folder that belong to the given cluster and
+		// ignore changes outside namespace directories
+		if s[1] == cluster {
+			namespaceNames = append(namespaceNames, s[2])
+		}
+
+	}
+
+	return util.DeduplicateList(namespaceNames), nil
 }
