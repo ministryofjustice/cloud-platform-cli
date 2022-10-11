@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/kelseyhightower/envconfig"
@@ -36,6 +37,11 @@ type Apply struct {
 	Applier         Applier
 	Dir             string
 }
+
+const (
+	// Assumption that there are no more than 5 PRs merged in last minute
+	prCount = 5
+)
 
 // NewApply creates a new Apply object and populates its fields with values from options(which are flags),
 // instantiate Applier object which also checks and sets the Backend config variables to do terraform init,
@@ -83,7 +89,7 @@ func (a *Apply) Plan() error {
 		}
 		return nil
 	} else {
-		changedNamespaces, err := util.ChangedInPR(a.Options.ClusterCtx, a.Options.GithubToken, cloudPlatformEnvRepo, mojOwner, a.Options.PRNumber)
+		changedNamespaces, err := util.NSChangedInPR(a.Options.ClusterCtx, a.Options.GithubToken, cloudPlatformEnvRepo, mojOwner, a.Options.PRNumber)
 		if err != nil {
 			return err
 		}
@@ -119,19 +125,33 @@ func (a *Apply) Apply() error {
 		if err != nil {
 			return err
 		}
-		return nil
 	} else {
-		changedNamespaces, err := util.ChangedInPR(a.Options.ClusterCtx, a.Options.GithubToken, cloudPlatformEnvRepo, mojOwner, a.Options.PRNumber)
+		// get the current and current - 1 minute
+		date := util.GetDateLastMinute()
+		// get the list of PRs that are merged in past 1 minute
+		nodes, err := util.GetMergedPRs(date, prCount, a.Options.GithubToken)
 		if err != nil {
 			return err
 		}
 
-		if changedNamespaces != nil {
-			for _, namespace := range changedNamespaces {
-				a.Options.Namespace = namespace
-				err = a.applyNamespace()
-				if err != nil {
-					return err
+		for _, pr := range nodes {
+			url := string(pr.PullRequest.Url)
+			prNumber, err := strconv.Atoi(url[strings.LastIndex(url, "/")+1:])
+			if err != nil {
+				return err
+			}
+			changedNamespaces, err := util.NSChangedInPR(a.Options.ClusterCtx, a.Options.GithubToken, cloudPlatformEnvRepo, mojOwner, prNumber)
+			if err != nil {
+				return err
+			}
+
+			if changedNamespaces != nil {
+				for _, namespace := range changedNamespaces {
+					a.Options.Namespace = namespace
+					err = a.applyNamespace()
+					if err != nil {
+						return err
+					}
 				}
 			}
 		}
