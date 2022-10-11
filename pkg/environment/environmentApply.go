@@ -40,9 +40,6 @@ type Apply struct {
 	Github          github.GithubClient
 }
 
-type PullRequest struct {
-}
-
 const (
 	// Assumption that there are no more than 5 PRs merged in last minute
 	prCount = 5
@@ -95,6 +92,7 @@ func (a *Apply) Plan() error {
 		return nil
 	} else {
 		changedNamespaces, err := a.nsChangedInPR(a.Options.ClusterCtx, a.Options.PRNumber)
+
 		if err != nil {
 			return err
 		}
@@ -133,9 +131,9 @@ func (a *Apply) Apply() error {
 	} else {
 		// get the current and current - 1 minute
 		date := util.GetDateLastMinute()
-
 		// get the list of PRs that are merged in past 1 minute
 		prURLs, err := a.Github.ListMergedPRs(date, prCount)
+
 		if err != nil {
 			return err
 		}

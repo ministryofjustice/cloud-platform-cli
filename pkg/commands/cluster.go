@@ -44,6 +44,8 @@ type clusterOptions struct {
 	// MaxNameLength is the maximum length of the cluster name.
 	// This limit exists due to the length of the name of the ingress.
 	MaxNameLength int
+	// Fast is a flag that will skip the creation non-essential components of the cloud-platform cluster.
+	Fast bool
 
 	// TfVersion is the version of Terraform to use to create the cluster and components.
 	TfVersion string
@@ -151,7 +153,7 @@ func createCluster(cluster *cloudPlatform.Cluster, tf *terraform.TerraformCLICon
 	}
 
 	fmt.Printf("Creating cluster %s in %s\n", cluster.Name, cluster.VpcId)
-	if err := cluster.ApplyEks(tf, awsCreds, clusterDir); err != nil {
+	if err := cluster.ApplyEks(tf, awsCreds, clusterDir, opt.Fast); err != nil {
 		return err
 	}
 
@@ -195,6 +197,7 @@ func (opt *clusterOptions) addCreateClusterFlags(cmd *cobra.Command, auth *authO
 	cmd.Flags().StringVar(&opt.Name, "name", "", "[optional] name of the cluster")
 	cmd.Flags().StringVar(&opt.VpcName, "vpc", "", "[optional] name of the vpc to use")
 	cmd.Flags().StringVar(&opt.ClusterSuffix, "cluster-suffix", "cloud-platform.service.justice.gov.uk", "[optional] suffix to append to the cluster name")
+	cmd.Flags().BoolVar(&opt.Fast, "fast", false, "[optional] if true, will skip the slow parts of the cluster creation process")
 
 	// Terraform options
 	cmd.Flags().StringVar(&opt.TfVersion, "terraform-version", "0.14.8", "[optional] the terraform version to use. [default] 0.14.8")

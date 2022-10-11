@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"os/exec"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -165,6 +166,34 @@ func TestRedacted(t *testing.T) {
 			Redacted(&output, tt.args.output)
 			if tt.expect != output.String() {
 				t.Errorf("got %s but expected %s", output.String(), tt.expect)
+			}
+		})
+	}
+}
+
+func TestNSChangedInPR(t *testing.T) {
+	type args struct {
+		cluster  string
+		token    string
+		repo     string
+		owner    string
+		prNumber int
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    []string
+		wantErr bool
+	}{}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := NSChangedInPR(tt.args.cluster, tt.args.token, tt.args.repo, tt.args.owner, tt.args.prNumber)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NSChangedInPR() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NSChangedInPR() = %v, want %v", got, tt.want)
 			}
 		})
 	}
