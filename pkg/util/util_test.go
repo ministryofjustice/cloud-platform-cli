@@ -171,7 +171,7 @@ func TestRedacted(t *testing.T) {
 	}
 }
 
-func TestChangedInPR(t *testing.T) {
+func TestNSChangedInPR(t *testing.T) {
 	type args struct {
 		cluster  string
 		token    string
@@ -184,18 +184,16 @@ func TestChangedInPR(t *testing.T) {
 		args    args
 		want    []string
 		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
+	}{}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ChangedInPR(tt.args.cluster, tt.args.token, tt.args.repo, tt.args.owner, tt.args.prNumber)
+			got, err := NSChangedInPR(tt.args.cluster, tt.args.token, tt.args.repo, tt.args.owner, tt.args.prNumber)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("ChangedInPR() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("NSChangedInPR() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ChangedInPR() = %v, want %v", got, tt.want)
+				t.Errorf("NSChangedInPR() = %v, want %v", got, tt.want)
 			}
 		})
 	}
