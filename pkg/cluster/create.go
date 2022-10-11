@@ -71,10 +71,19 @@ func (c *Cluster) ApplyEks(tf *terraform.TerraformCLIConfig, creds *client.AwsCr
 
 // ApplyComponents will apply the Cloud Platform specific components on top of a running cluster. At this point your
 // cluster should be up and running and you should be able to connect to it.
-
-// Unfortunaltey the AWS SDK does not provide a nice method to grab the kube-config for a cluster so we use a raw aws command.
 func (c *Cluster) ApplyComponents(tf *terraform.TerraformCLIConfig, awsCreds *client.AwsCredentials, dir, kubeconf string) error {
-	// There is a requirement for the aws binary to exist at this point.
+	// Reset any previous varibles that might've been set.
+	tf.ApplyVars = nil
+
+	// Turn the monitoring options off.
+	vars := []string{
+		fmt.Sprintf("%s=%s", "pagerduty_config", "dummydummy"),
+		fmt.Sprintf("%s=%s", "slack_hook_id", "dummydummy"),
+	}
+	for _, v := range vars {
+		tf.ApplyVars = append(tf.ApplyVars, tfexec.Var(v))
+	}
+
 	clientset, err := AuthToCluster(tf.Workspace, awsCreds.Eks, kubeconf, awsCreds.Profile)
 	if err != nil {
 		return fmt.Errorf("failed to auth to cluster: %w", err)
