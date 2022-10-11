@@ -10,19 +10,16 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// Github for testing purposes.
-
-//go:generate mockery --name=Github  --structname=Github --output=pkg/mocks/github --dir pkg/github
-
-type Github interface {
-	ListMergedPRs(date util.Date, count int) ([]Nodes, error)
-	GetChangedFiles(string, string) error
-}
-
 // GithubClient for handling requests to the Github V3 and V4 APIs.
 type GithubClient struct {
 	V3         *github.Client
 	V4         *githubv4.Client
+	Repository string
+	Owner      string
+}
+
+// GithubClient for handling requests to the Github V3 and V4 APIs.
+type GithubClientConfig struct {
 	Repository string
 	Owner      string
 }
@@ -37,7 +34,7 @@ type Nodes struct {
 }
 
 // NewGithubClient ...
-func NewGithubClient(token, repo, owner string) *GithubClient {
+func NewGithubClient(config *GithubClientConfig, token string) *GithubClient {
 
 	client := oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: token},
@@ -49,14 +46,14 @@ func NewGithubClient(token, repo, owner string) *GithubClient {
 	return &GithubClient{
 		V3:         v3,
 		V4:         v4,
-		Repository: repo,
-		Owner:      owner,
+		Repository: config.Repository,
+		Owner:      config.Owner,
 	}
 }
 
 // ListMergedPRs takes date and number of PRs count as input, search the github using Graphql api for
 //  list of PRs (title,url) between the first and last date provided
-func (m *GithubClient) ListMergedPRs(date util.Date, count int) ([]Nodes, error) {
+func (gh *GithubClient) ListMergedPRs(date util.Date, count int) ([]Nodes, error) {
 
 	var query struct {
 		Search struct {
@@ -71,7 +68,7 @@ func (m *GithubClient) ListMergedPRs(date util.Date, count int) ([]Nodes, error)
 		"count": githubv4.Int(count),
 	}
 
-	err := m.V4.Query(context.Background(), &query, variables)
+	err := gh.V4.Query(context.Background(), &query, variables)
 	if err != nil {
 		return nil, err
 	}
@@ -79,9 +76,9 @@ func (m *GithubClient) ListMergedPRs(date util.Date, count int) ([]Nodes, error)
 	return query.Search.Nodes, nil
 }
 
-func (m *GithubClient) GetChangedFiles(prNumber int) ([]*github.CommitFile, error) {
+func (gh *GithubClient) GetChangedFiles(prNumber int) ([]*github.CommitFile, error) {
 
-	repos, _, err := m.V3.PullRequests.ListFiles(context.Background(), m.Owner, m.Repository, prNumber, nil)
+	repos, _, err := gh.V3.PullRequests.ListFiles(context.Background(), gh.Owner, gh.Repository, prNumber, nil)
 	if err != nil {
 		return nil, err
 	}

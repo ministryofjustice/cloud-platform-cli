@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/kelseyhightower/envconfig"
-	"github.com/ministryofjustice/cloud-platform-cli/pkg/github"
+	"github.com/ministryofjustice/cloud-platform-cli/pkg/githubClient"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/util"
 )
 
@@ -37,7 +37,7 @@ type Apply struct {
 	RequiredEnvVars RequiredEnvVars
 	Applier         Applier
 	Dir             string
-	Github          github.GithubClient
+	Github          githubClient.GithubIface
 }
 
 const (

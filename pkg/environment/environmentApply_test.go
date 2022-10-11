@@ -6,7 +6,8 @@ import (
 
 	"github.com/google/go-github/github"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/environment/mocks"
-	ghMock "github.com/ministryofjustice/cloud-platform-cli/pkg/mocks/github"
+	"github.com/ministryofjustice/cloud-platform-cli/pkg/githubClient"
+	ghMock "github.com/ministryofjustice/cloud-platform-cli/pkg/mocks/githubClient"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -127,6 +128,7 @@ func TestApply_nsChangedInPR(t *testing.T) {
 		RequiredEnvVars RequiredEnvVars
 		Applier         Applier
 		Dir             string
+		Github          githubClient.GithubIface
 	}
 	type args struct {
 		cluster  string
@@ -144,7 +146,7 @@ func TestApply_nsChangedInPR(t *testing.T) {
 			GetChangedFilesOutputs: []*github.CommitFile{
 				{
 					SHA:       github.String("6dcb09b5b57875f334f61aebed695e2e4193db5e"),
-					Filename:  github.String("/namespaces/testctx/ns1/file1.txt"),
+					Filename:  github.String("namespaces/testctx/ns1/file1.txt"),
 					Additions: github.Int(103),
 					Deletions: github.Int(21),
 					Changes:   github.Int(124),
@@ -153,7 +155,7 @@ func TestApply_nsChangedInPR(t *testing.T) {
 				},
 				{
 					SHA:       github.String("f61aebed695e2e4193db5e6dcb09b5b57875f334"),
-					Filename:  github.String("/namespaces/testctx/ns1/file2.txt"),
+					Filename:  github.String("namespaces/testctx/ns1/file2.txt"),
 					Additions: github.Int(5),
 					Deletions: github.Int(3),
 					Changes:   github.Int(103),
@@ -170,8 +172,8 @@ func TestApply_nsChangedInPR(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		ghClient := new(ghMock.Github)
-		ghClient.On("GetChangedFiles", "testctx", 8834).Return(tt.GetChangedFilesOutputs, nil)
+		ghClient := new(ghMock.GithubIface)
+		ghClient.On("GetChangedFiles", 8834).Return(tt.GetChangedFilesOutputs, nil)
 		t.Run(tt.name, func(t *testing.T) {
 			a := &Apply{
 				Github: ghClient,
