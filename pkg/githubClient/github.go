@@ -71,10 +71,12 @@ func (gh *GithubClient) ListMergedPRs(date util.Date, count int) ([]Nodes, error
 
 	variables := map[string]interface{}{
 		"searchQuery": githubv4.String(
-			fmt.Sprintf(`repo:ministryofjustice/cloud-platform-environments is:pr is:closed merged:%s..%s`,
-				date.First.Format("2006-01-02T11:00:00+00:00"), date.Last.Format("2006-01-02T11:00:00+00:00"))),
+			fmt.Sprintf(`repo:%s/%s is:pr is:closed merged:%s..%s`,
+				gh.Owner, gh.Repository, date.Last, date.First)),
 		"count": githubv4.Int(count),
 	}
+
+	fmt.Println("Querying github for query:", &query, variables)
 
 	err := gh.V4.Query(context.Background(), &query, variables)
 	if err != nil {

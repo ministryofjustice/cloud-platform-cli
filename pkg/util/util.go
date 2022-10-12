@@ -18,8 +18,8 @@ type Repository struct {
 }
 
 type Date struct {
-	First time.Time
-	Last  time.Time
+	First string
+	Last  string
 }
 
 // set and return the name of the git repository which the current working
@@ -92,10 +92,10 @@ func Redacted(w io.Writer, output string) {
 }
 
 // GetDateLastMinute returns the current date and date - minute as Date object
-func GetDateLastMinute() Date {
+func GetDatePastMinute(minutes int) Date {
 	var d Date
-	d.First = time.Now()
-	d.Last = time.Now().Add(-time.Minute * 1)
+	d.First = time.Now().Format("2006-01-02T15:04:05")
+	d.Last = time.Now().Add(-time.Minute * time.Duration(minutes)).Format("2006-01-02T15:04:05")
 	return d
 }
 

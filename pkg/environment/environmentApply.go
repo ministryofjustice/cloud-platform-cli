@@ -16,7 +16,7 @@ import (
 // These options are normally passed via flags in a command line.
 type Options struct {
 	Namespace, KubecfgPath, ClusterCtx, GithubToken string
-	PRNumber                                        int
+	PRNumber, NMinutes                              int
 	AllNamespaces                                   bool
 }
 
@@ -121,7 +121,7 @@ func (a *Apply) Apply() error {
 		}
 	} else {
 		// get the current and current - 1 minute
-		date := util.GetDateLastMinute()
+		date := util.GetDatePastMinute(a.Options.NMinutes)
 		// get the list of PRs that are merged in past 1 minute
 		prURLs, err := a.GithubClient.ListMergedPRs(date, prCount)
 
@@ -132,6 +132,7 @@ func (a *Apply) Apply() error {
 		for _, pr := range prURLs {
 			url := string(pr.PullRequest.Url)
 			prNumber, err := strconv.Atoi(url[strings.LastIndex(url, "/")+1:])
+			fmt.Println("Found PR:", prNumber)
 			if err != nil {
 				return err
 			}
@@ -141,6 +142,7 @@ func (a *Apply) Apply() error {
 			}
 			for _, namespace := range changedNamespaces {
 				a.Options.Namespace = namespace
+				fmt.Println("Applying Namespace:", namespace)
 				err = a.applyNamespace()
 				if err != nil {
 					return err
