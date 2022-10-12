@@ -44,7 +44,6 @@ $ cloud-platform environment apply -n <namespace>
   -h, --help                  help for apply
       --kubecfg string        path to kubeconfig file (default "/home/runner/.kube/config")
   -n, --namespace string      Namespace which you want to perform the apply
-      --prNumber int          Pull request ID or number to which you want to perform the plan
 ```
 
 ### Options inherited from parent commands
