@@ -317,7 +317,7 @@ func (a *Apply) nsChangedInPR(cluster string, prNumber int) ([]string, error) {
 		s := strings.Split(*repo.Filename, "/")
 		//only get namespaces from the folder that belong to the given cluster and
 		// ignore changes outside namespace directories
-		if s[1] == cluster {
+		if len(s) > 1 && s[1] == cluster {
 			namespaceNames = append(namespaceNames, s[2])
 		}
 
