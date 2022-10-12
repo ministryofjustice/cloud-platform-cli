@@ -4,7 +4,8 @@ package mocks
 
 import (
 	github "github.com/google/go-github/github"
-	githubClient "github.com/ministryofjustice/cloud-platform-cli/pkg/githubClient"
+	client "github.com/ministryofjustice/cloud-platform-cli/pkg/github/client"
+
 	mock "github.com/stretchr/testify/mock"
 
 	util "github.com/ministryofjustice/cloud-platform-cli/pkg/util"
@@ -39,15 +40,15 @@ func (_m *GithubIface) GetChangedFiles(_a0 int) ([]*github.CommitFile, error) {
 }
 
 // ListMergedPRs provides a mock function with given fields: date, count
-func (_m *GithubIface) ListMergedPRs(date util.Date, count int) ([]githubClient.Nodes, error) {
+func (_m *GithubIface) ListMergedPRs(date util.Date, count int) ([]client.Nodes, error) {
 	ret := _m.Called(date, count)
 
-	var r0 []githubClient.Nodes
-	if rf, ok := ret.Get(0).(func(util.Date, int) []githubClient.Nodes); ok {
+	var r0 []client.Nodes
+	if rf, ok := ret.Get(0).(func(util.Date, int) []client.Nodes); ok {
 		r0 = rf(date, count)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]githubClient.Nodes)
+			r0 = ret.Get(0).([]client.Nodes)
 		}
 	}
 

@@ -1,4 +1,4 @@
-package githubClient
+package client
 
 import (
 	"context"
@@ -75,8 +75,6 @@ func (gh *GithubClient) ListMergedPRs(date util.Date, count int) ([]Nodes, error
 				gh.Owner, gh.Repository, date.Last, date.First)),
 		"count": githubv4.Int(count),
 	}
-
-	fmt.Println("Querying github for query:", &query, variables)
 
 	err := gh.V4.Query(context.Background(), &query, variables)
 	if err != nil {
