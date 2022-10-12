@@ -41,8 +41,8 @@ type Apply struct {
 }
 
 const (
-	// Assumption that there are no more than 5 PRs merged in last minute
-	prCount = 5
+	// Assumption that there are no more than 50 PRs merged in last minute
+	prCount = 50
 )
 
 // NewApply creates a new Apply object and populates its fields with values from options(which are flags),
