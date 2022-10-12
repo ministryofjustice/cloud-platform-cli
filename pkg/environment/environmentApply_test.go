@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/go-github/github"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/environment/mocks"
-	"github.com/ministryofjustice/cloud-platform-cli/pkg/githubClient"
 	ghMock "github.com/ministryofjustice/cloud-platform-cli/pkg/mocks/githubClient"
 	"github.com/stretchr/testify/assert"
 )
@@ -123,13 +122,6 @@ func TestApply_ApplyKubectl(t *testing.T) {
 }
 
 func TestApply_nsChangedInPR(t *testing.T) {
-	type fields struct {
-		Options         *Options
-		RequiredEnvVars RequiredEnvVars
-		Applier         Applier
-		Dir             string
-		Github          githubClient.GithubIface
-	}
 	type args struct {
 		cluster  string
 		prNumber int
@@ -176,7 +168,7 @@ func TestApply_nsChangedInPR(t *testing.T) {
 		ghClient.On("GetChangedFiles", 8834).Return(tt.GetChangedFilesOutputs, nil)
 		t.Run(tt.name, func(t *testing.T) {
 			a := &Apply{
-				Github: ghClient,
+				GithubClient: ghClient,
 			}
 			got, err := a.nsChangedInPR(tt.args.cluster, tt.args.prNumber)
 			if (err != nil) != tt.wantErr {

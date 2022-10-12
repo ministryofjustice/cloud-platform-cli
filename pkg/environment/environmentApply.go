@@ -37,7 +37,7 @@ type Apply struct {
 	RequiredEnvVars RequiredEnvVars
 	Applier         Applier
 	Dir             string
-	Github          githubClient.GithubIface
+	GithubClient    githubClient.GithubIface
 }
 
 const (
@@ -92,18 +92,14 @@ func (a *Apply) Plan() error {
 		return nil
 	} else {
 		changedNamespaces, err := a.nsChangedInPR(a.Options.ClusterCtx, a.Options.PRNumber)
-
 		if err != nil {
 			return err
 		}
-
-		if changedNamespaces != nil {
-			for _, namespace := range changedNamespaces {
-				a.Options.Namespace = namespace
-				err = a.planNamespace()
-				if err != nil {
-					return err
-				}
+		for _, namespace := range changedNamespaces {
+			a.Options.Namespace = namespace
+			err = a.planNamespace()
+			if err != nil {
+				return err
 			}
 		}
 	}
@@ -117,11 +113,6 @@ func (a *Apply) Plan() error {
 // terraform init and apply of all the namespaces merged in the PR
 func (a *Apply) Apply() error {
 
-	if a.Options.PRNumber == 0 && a.Options.Namespace == "" {
-		err := fmt.Errorf("either a PR Id/Number or a namespace is required to perform apply")
-		return err
-	}
-
 	// If a namespace is given as a flag, then perform a apply for the given namespace.
 	if a.Options.Namespace != "" {
 		err := a.applyNamespace()
@@ -132,7 +123,7 @@ func (a *Apply) Apply() error {
 		// get the current and current - 1 minute
 		date := util.GetDateLastMinute()
 		// get the list of PRs that are merged in past 1 minute
-		prURLs, err := a.Github.ListMergedPRs(date, prCount)
+		prURLs, err := a.GithubClient.ListMergedPRs(date, prCount)
 
 		if err != nil {
 			return err
@@ -148,14 +139,11 @@ func (a *Apply) Apply() error {
 			if err != nil {
 				return err
 			}
-
-			if changedNamespaces != nil {
-				for _, namespace := range changedNamespaces {
-					a.Options.Namespace = namespace
-					err = a.applyNamespace()
-					if err != nil {
-						return err
-					}
+			for _, namespace := range changedNamespaces {
+				a.Options.Namespace = namespace
+				err = a.applyNamespace()
+				if err != nil {
+					return err
 				}
 			}
 		}
@@ -312,7 +300,7 @@ func (a *Apply) applyNamespace() error {
 // nsChangedInPR get the list of changed files for a given PR. checks if the namespaces exists in the given cluster
 // folder and return the list of namespaces.
 func (a *Apply) nsChangedInPR(cluster string, prNumber int) ([]string, error) {
-	repos, err := a.Github.GetChangedFiles(prNumber)
+	repos, err := a.GithubClient.GetChangedFiles(prNumber)
 	if err != nil {
 		return nil, err
 	}

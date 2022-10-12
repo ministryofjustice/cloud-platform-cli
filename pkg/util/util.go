@@ -10,8 +10,6 @@ import (
 	"regexp"
 	"strings"
 	"time"
-
-	"github.com/shurcooL/githubv4"
 )
 
 type Repository struct {
@@ -19,12 +17,6 @@ type Repository struct {
 	branch            string
 }
 
-type nodes struct {
-	PullRequest struct {
-		Title githubv4.String
-		Url   githubv4.String
-	} `graphql:"... on PullRequest"`
-}
 type Date struct {
 	First time.Time
 	Last  time.Time

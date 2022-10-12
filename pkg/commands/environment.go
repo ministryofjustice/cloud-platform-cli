@@ -44,8 +44,6 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 
 	// flags
 	environmentApplyCmd.Flags().BoolVar(&optFlags.AllNamespaces, "all-namespaces", false, "Apply all namespaces with -all-namespaces")
-	// e.g. if this is the Pull rquest to perform the plan: https://github.com/ministryofjustice/cloud-platform-environments/pull/8370, the pr ID is 8370.
-	environmentApplyCmd.Flags().IntVar(&optFlags.PRNumber, "prNumber", 0, "Pull request ID or number to which you want to perform the plan")
 	environmentApplyCmd.Flags().StringVarP(&optFlags.Namespace, "namespace", "n", "", "Namespace which you want to perform the apply")
 	// Re-use the environmental variable TF_VAR_github_token to call Github Client which is needed to perform terraform operations on each namespace
 	environmentApplyCmd.Flags().StringVar(&optFlags.GithubToken, "github-token", os.Getenv("TF_VAR_github_token"), "Personal access Token from Github ")
@@ -177,8 +175,8 @@ var environmentApplyCmd = &cobra.Command{
 		}
 
 		applier := &environment.Apply{
-			Options: &optFlags,
-			Github:  githubClient.NewGithubClient(ghConfig, optFlags.GithubToken),
+			Options:      &optFlags,
+			GithubClient: githubClient.NewGithubClient(ghConfig, optFlags.GithubToken),
 		}
 
 		if optFlags.AllNamespaces {
