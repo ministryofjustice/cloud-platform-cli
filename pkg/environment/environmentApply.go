@@ -112,7 +112,10 @@ func (a *Apply) Plan() error {
 // else checks for PR number and get the list of changed namespaces in that merged PR. Then does the kubectl apply and
 // terraform init and apply of all the namespaces merged in the PR
 func (a *Apply) Apply() error {
-
+	if a.Options.NMinutes == 0 && a.Options.Namespace == "" {
+		err := fmt.Errorf("either minutes or a namespace is required to perform apply")
+		return err
+	}
 	// If a namespace is given as a flag, then perform a apply for the given namespace.
 	if a.Options.Namespace != "" {
 		err := a.applyNamespace()
