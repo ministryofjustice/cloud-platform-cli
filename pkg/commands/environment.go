@@ -129,8 +129,8 @@ var environmentPlanCmd = &cobra.Command{
 		}
 
 		applier := &environment.Apply{
-			Options: &optFlags,
-			Github:  githubClient.NewGithubClient(ghConfig, optFlags.GithubToken),
+			Options:      &optFlags,
+			GithubClient: githubClient.NewGithubClient(ghConfig, optFlags.GithubToken),
 		}
 
 		err := applier.Plan()
