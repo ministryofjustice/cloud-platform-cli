@@ -43,6 +43,7 @@ $ cloud-platform environment apply -n <namespace>
       --github-token string   Personal access Token from Github 
   -h, --help                  help for apply
       --kubecfg string        path to kubeconfig file (default "/home/runner/.kube/config")
+      --minutes int           Until the number of minutes to check for merged PRs (default 1)
   -n, --namespace string      Namespace which you want to perform the apply
 ```
 
