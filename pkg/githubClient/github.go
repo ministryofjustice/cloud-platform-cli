@@ -10,12 +10,19 @@ import (
 	"golang.org/x/oauth2"
 )
 
+var _ GithubPullRequestsService = (*github.PullRequestsService)(nil)
+
+type GithubPullRequestsService interface {
+	ListFiles(ctx context.Context, owner string, repo string, number int, opt *github.ListOptions) ([]*github.CommitFile, *github.Response, error)
+}
+
 // GithubClient for handling requests to the Github V3 and V4 APIs.
 type GithubClient struct {
-	V3         *github.Client
-	V4         *githubv4.Client
-	Repository string
-	Owner      string
+	V3           *github.Client
+	V4           *githubv4.Client
+	Repository   string
+	Owner        string
+	PullRequests GithubPullRequestsService
 }
 
 // GithubClient for handling requests to the Github V3 and V4 APIs.
@@ -44,10 +51,11 @@ func NewGithubClient(config *GithubClientConfig, token string) *GithubClient {
 	v4 := githubv4.NewClient(client)
 
 	return &GithubClient{
-		V3:         v3,
-		V4:         v4,
-		Repository: config.Repository,
-		Owner:      config.Owner,
+		V3:           v3,
+		V4:           v4,
+		Repository:   config.Repository,
+		Owner:        config.Owner,
+		PullRequests: v3.PullRequests,
 	}
 }
 
@@ -77,8 +85,7 @@ func (gh *GithubClient) ListMergedPRs(date util.Date, count int) ([]Nodes, error
 }
 
 func (gh *GithubClient) GetChangedFiles(prNumber int) ([]*github.CommitFile, error) {
-
-	repos, _, err := gh.V3.PullRequests.ListFiles(context.Background(), gh.Owner, gh.Repository, prNumber, nil)
+	repos, _, err := gh.PullRequests.ListFiles(context.Background(), gh.Owner, gh.Repository, prNumber, nil)
 	if err != nil {
 		return nil, err
 	}

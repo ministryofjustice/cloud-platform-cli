@@ -1,11 +1,21 @@
 package githubClient
 
 import (
+	"context"
+	"reflect"
 	"testing"
 
+	"github.com/google/go-github/github"
 	"github.com/stretchr/testify/assert"
 )
 
+type mockClient struct {
+	resp []*github.CommitFile
+}
+
+func (m *mockClient) ListFiles(ctx context.Context, owner string, repo string, number int, opt *github.ListOptions) ([]*github.CommitFile, *github.Response, error) {
+	return m.resp, nil, nil
+}
 func TestNewGithubClient(t *testing.T) {
 	type args struct {
 		config *GithubClientConfig
@@ -31,5 +41,42 @@ func TestNewGithubClient(t *testing.T) {
 			actual := NewGithubClient(tt.args.config, tt.args.token)
 			assert.NotNil(t, actual)
 		})
+	}
+}
+
+func TestGithubClient_GetChangedFiles(t *testing.T) {
+
+	mc := &mockClient{
+		resp: []*github.CommitFile{
+			{
+				SHA:       github.String("6dcb09b5b57875f334f61aebed695e2e4193db5e"),
+				Filename:  github.String("/namespaces/testctx/ns1/file1.txt"),
+				Additions: github.Int(103),
+				Deletions: github.Int(21),
+				Changes:   github.Int(124),
+				Status:    github.String("added"),
+				Patch:     github.String("@@ -132,7 +132,7 @@ module Test @@ -1000,7 +1000,7 @@ module Test"),
+			},
+			{
+				SHA:       github.String("f61aebed695e2e4193db5e6dcb09b5b57875f334"),
+				Filename:  github.String("/namespaces/testctx/ns1/file2.txt"),
+				Additions: github.Int(5),
+				Deletions: github.Int(3),
+				Changes:   github.Int(103),
+				Status:    github.String("modified"),
+				Patch:     github.String("@@ -132,7 +132,7 @@ module Test @@ -1000,7 +1000,7 @@ module Test"),
+			},
+		},
+	}
+	gh := &GithubClient{
+		PullRequests: mc,
+	}
+	got, err := gh.GetChangedFiles(8344)
+	if err != nil {
+		t.Errorf("GithubClient.GetChangedFiles() error = %v, wantErr %v", err, nil)
+		return
+	}
+	if !reflect.DeepEqual(got, mc.resp) {
+		t.Errorf("GithubClient.GetChangedFiles() = %v, want %v", got, mc.resp)
 	}
 }
