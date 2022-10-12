@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	environment "github.com/ministryofjustice/cloud-platform-cli/pkg/environment"
+	"github.com/ministryofjustice/cloud-platform-cli/pkg/github/client"
 	log "github.com/sirupsen/logrus"
 	"k8s.io/client-go/util/homedir"
 
@@ -43,9 +44,8 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 
 	// flags
 	environmentApplyCmd.Flags().BoolVar(&optFlags.AllNamespaces, "all-namespaces", false, "Apply all namespaces with -all-namespaces")
-	// e.g. if this is the Pull rquest to perform the plan: https://github.com/ministryofjustice/cloud-platform-environments/pull/8370, the pr ID is 8370.
-	environmentApplyCmd.Flags().IntVar(&optFlags.PRNumber, "prNumber", 0, "Pull request ID or number to which you want to perform the plan")
 	environmentApplyCmd.Flags().StringVarP(&optFlags.Namespace, "namespace", "n", "", "Namespace which you want to perform the apply")
+	environmentApplyCmd.Flags().IntVar(&optFlags.NMinutes, "minutes", 1, "Until the number of minutes to check for merged PRs")
 	// Re-use the environmental variable TF_VAR_github_token to call Github Client which is needed to perform terraform operations on each namespace
 	environmentApplyCmd.Flags().StringVar(&optFlags.GithubToken, "github-token", os.Getenv("TF_VAR_github_token"), "Personal access Token from Github ")
 	environmentApplyCmd.Flags().StringVar(&optFlags.KubecfgPath, "kubecfg", filepath.Join(homedir.HomeDir(), ".kube", "config"), "path to kubeconfig file")
@@ -123,9 +123,17 @@ var environmentPlanCmd = &cobra.Command{
 	PreRun: upgradeIfNotLatest,
 	Run: func(cmd *cobra.Command, args []string) {
 		contextLogger := log.WithFields(log.Fields{"subcommand": "plan"})
-		applier := &environment.Apply{
-			Options: &optFlags,
+
+		ghConfig := &client.GithubClientConfig{
+			Repository: "cloud-platform-environments",
+			Owner:      "ministryofjustice",
 		}
+
+		applier := &environment.Apply{
+			Options:      &optFlags,
+			GithubClient: client.NewGithubClient(ghConfig, optFlags.GithubToken),
+		}
+
 		err := applier.Plan()
 		if err != nil {
 			contextLogger.Fatal(err)
@@ -161,9 +169,17 @@ var environmentApplyCmd = &cobra.Command{
 	PreRun: upgradeIfNotLatest,
 	Run: func(cmd *cobra.Command, args []string) {
 		contextLogger := log.WithFields(log.Fields{"subcommand": "apply"})
-		applier := &environment.Apply{
-			Options: &optFlags,
+
+		ghConfig := &client.GithubClientConfig{
+			Repository: "cloud-platform-environments",
+			Owner:      "ministryofjustice",
 		}
+
+		applier := &environment.Apply{
+			Options:      &optFlags,
+			GithubClient: client.NewGithubClient(ghConfig, optFlags.GithubToken),
+		}
+
 		if optFlags.AllNamespaces {
 			err := applier.ApplyAll()
 			if err != nil {

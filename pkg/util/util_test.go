@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"os"
 	"os/exec"
+	"reflect"
 	"strings"
 	"testing"
+	"time"
 )
 
 // If we assign a string value to 'repository', we get it back
@@ -165,6 +167,35 @@ func TestRedacted(t *testing.T) {
 			Redacted(&output, tt.args.output)
 			if tt.expect != output.String() {
 				t.Errorf("got %s but expected %s", output.String(), tt.expect)
+			}
+		})
+	}
+}
+
+func TestGetDatePastMinute(t *testing.T) {
+	type args struct {
+		minutes int
+	}
+	tests := []struct {
+		name string
+		args args
+		want Date
+	}{
+		{
+			name: "same date with 2 minutes",
+			args: args{
+				minutes: 2,
+			},
+			want: Date{
+				First: time.Now().Format("2006-01-02T15:04:05"),
+				Last:  time.Now().Add(-time.Minute * 2).Format("2006-01-02T15:04:05"),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GetDatePastMinute(tt.args.minutes); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetDatePastMinute() = %v, want %v", got, tt.want)
 			}
 		})
 	}
