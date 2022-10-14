@@ -55,6 +55,12 @@ func (c *Cluster) ApplyEks(tf *terraform.TerraformCLIConfig, creds *client.AwsCr
 		tf.ApplyVars = append(tf.ApplyVars, tfexec.Var(fmt.Sprintf("%s=%v", "enable_oidc_associate", false)))
 	}
 
+	defer func() {
+		if fast {
+			tf.ApplyVars = nil
+		}
+	}()
+
 	_, err := terraformApply(tf)
 	if err != nil {
 		return err
@@ -72,24 +78,24 @@ func (c *Cluster) ApplyEks(tf *terraform.TerraformCLIConfig, creds *client.AwsCr
 // ApplyComponents will apply the Cloud Platform specific components on top of a running cluster. At this point your
 // cluster should be up and running and you should be able to connect to it.
 func (c *Cluster) ApplyComponents(tf *terraform.TerraformCLIConfig, awsCreds *client.AwsCredentials, dir, kubeconf string) error {
-	// Reset any previous varibles that might've been set.
-	tf.ApplyVars = nil
+	// Turn the monitoring options off, unless the workspace is live.
+	if tf.WorkingDir == "live" {
+		tf.VarFile = "terraform.tfvars"
+	} else {
+		tf.VarFile = "test-cluster.tfvars"
+	}
 
-	// Turn the monitoring options off.
-	vars := []string{
-		fmt.Sprintf("%s=%s", "pagerduty_config", "dummydummy"),
-		fmt.Sprintf("%s=%s", "slack_hook_id", "dummydummy"),
-	}
-	for _, v := range vars {
-		tf.ApplyVars = append(tf.ApplyVars, tfexec.Var(v))
-	}
+	// Reset it to nil after we are done.
+	defer func() {
+		tf.VarFile = ""
+	}()
+
+	tf.WorkingDir = dir
 
 	clientset, err := AuthToCluster(tf.Workspace, awsCreds.Eks, kubeconf, awsCreds.Profile)
 	if err != nil {
 		return fmt.Errorf("failed to auth to cluster: %w", err)
 	}
-
-	tf.WorkingDir = dir
 
 	if err := applyTacticalPspFix(clientset); err != nil {
 		return err

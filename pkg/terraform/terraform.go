@@ -32,6 +32,7 @@ type TerraformCLI struct {
 	applyVars  []tfexec.ApplyOption
 	planVars   []tfexec.PlanOption
 	initVars   []tfexec.InitOption
+	varfile    string
 	Redacted   bool
 }
 
@@ -47,6 +48,8 @@ type TerraformCLIConfig struct {
 	ApplyVars []tfexec.ApplyOption
 	// PlanVars allows you to group plan variables passed to Terraform.
 	PlanVars []tfexec.PlanOption
+	// VarFile is a list of paths to variable files.
+	VarFile tfexec.VarFileOption
 	// InitVars allows you to group init variables passed to Terraform.
 	InitVars []tfexec.InitOption
 	// Version is the version of Terraform to use.
@@ -105,6 +108,7 @@ func NewTerraformCLI(config *TerraformCLIConfig) (*TerraformCLI, error) {
 		applyVars:  config.ApplyVars,
 		planVars:   config.PlanVars,
 		initVars:   config.InitVars,
+		varfile:    config.VarFile,
 		Redacted:   config.Redacted,
 	}
 
