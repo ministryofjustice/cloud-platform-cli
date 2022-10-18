@@ -102,7 +102,14 @@ func TestNewClientset(t *testing.T) {
 		},
 	}
 
-	_, err := newClientset(cluster, "aws", "test")
+	defer func() {
+		err := os.Remove("config")
+		if err != nil {
+			t.Errorf("error removing config file: %v", err)
+		}
+	}()
+
+	_, err := newClientset(cluster, "config", "test")
 	if err == nil {
 		t.Errorf("newClientset() error = %v", err)
 	}
