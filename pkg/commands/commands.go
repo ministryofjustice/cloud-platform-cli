@@ -14,4 +14,5 @@ func AddCommands(topLevel *cobra.Command) {
 	addDecodeSecret(topLevel)
 	addDuplicateCmd(topLevel)
 	addClusterCmd(topLevel)
+	addWhereamiCmd(topLevel)
 }
