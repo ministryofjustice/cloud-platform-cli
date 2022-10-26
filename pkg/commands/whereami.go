@@ -5,6 +5,8 @@ import (
 	"os"
 
 	"github.com/MakeNowJust/heredoc"
+	"github.com/ministryofjustice/cloud-platform-environments/pkg/authenticate"
+	"github.com/ministryofjustice/cloud-platform-environments/pkg/namespace"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -35,27 +37,29 @@ $ cloud-platform whereami
 				fmt.Printf("Your KUBECONFIG environment variable is set to %s\n", kubePath)
 			}
 			// Print current context
-			err := printCurrentContext(kubePath)
+			clusterCtx, err := printCurrentContext(kubePath)
 			if err != nil {
 				contextLogger.Fatal("Failed to get current context: %w", err)
 			}
 			// Print cluster-info
 			err = printClusterInfo(kubePath)
-
 			if err != nil {
 				contextLogger.Fatal("Failed to get clusterInfo: %w", err)
 			}
 
 			// print list of namespaces
+			err = printNamespaces(kubePath, clusterCtx)
+			if err != nil {
+				contextLogger.Fatal("Failed to get clusterInfo: %w", err)
+			}
 
 		},
 	}
 
-	whereamiCmd.Flags().StringVar(&kubePath, "kubecfg", os.Getenv("KUBECONFIG"), "path of kubeconfig set as KUBECONFIG environment variable")
 	topLevel.AddCommand(whereamiCmd)
 }
 
-func printCurrentContext(kubepath string) error {
+func printCurrentContext(kubepath string) (string, error) {
 	config, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
 		&clientcmd.ClientConfigLoadingRules{ExplicitPath: kubepath},
 		&clientcmd.ConfigOverrides{
@@ -64,30 +68,13 @@ func printCurrentContext(kubepath string) error {
 
 	if config.CurrentContext == "" {
 		err = fmt.Errorf("current-context is not set")
-		return err
+		return "", err
 	}
 
 	fmt.Printf("Your current context is %s\n", config.CurrentContext)
-	return nil
+	return config.CurrentContext, nil
 
 }
-
-// func printGetContext(kubepath string) error {
-// 	// Print kubeconfig location
-
-// 	contextObj := &config.GetContextsOptions{
-// 		ConfigAccess: clientcmd.NewDefaultPathOptions(),
-// 		IOStreams:    genericclioptions.IOStreams{In: os.Stdin, Out: os.Stdout, ErrOut: os.Stderr},
-// 	}
-
-// 	pathOptions := clientcmd.NewDefaultPathOptions()
-// 	pathOptions.GlobalFile = kubePath
-// 	pathOptions.EnvVar = ""
-// 	contextObj.configAccess = clientcmd.NewDefaultPathOptions()
-
-// 	cmdutil.CheckErr(contextObj.RunGetContexts())
-// 	return nil
-// }
 
 func printClusterInfo(kubePath string) error {
 	kubeConfigFlags := genericclioptions.NewConfigFlags(true).WithDeprecatedPasswordFlag()
@@ -106,5 +93,24 @@ func printClusterInfo(kubePath string) error {
 	}
 	clusterInfoObj.Builder = resource.NewBuilder(f)
 	cmdutil.CheckErr(clusterInfoObj.Run())
+	return nil
+}
+
+func printNamespaces(kubePath, clusterCtx string) error {
+	clientset, err := authenticate.CreateClientFromConfigFile(kubePath, clusterCtx)
+	if err != nil {
+		return err
+	}
+
+	// Get the list of namespaces from the cluster which is set in the kclientset
+	nsList, err := namespace.GetAllNamespacesFromCluster(clientset)
+	if err != nil {
+		log.Fatalln("error in getting all namespaces from cluster", err.Error())
+	}
+
+	fmt.Println("You can access namespaces: ")
+	for _, ns := range nsList {
+		fmt.Println(ns.Name)
+	}
 	return nil
 }
