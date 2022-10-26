@@ -76,7 +76,7 @@ func printCurrentContext(kubepath string) (string, error) {
 
 }
 
-func printClusterInfo(kubePath string) error {
+func printClusterInfo() error {
 	kubeConfigFlags := genericclioptions.NewConfigFlags(true).WithDeprecatedPasswordFlag()
 	matchVersionKubeConfigFlags := cmdutil.NewMatchVersionFlags(kubeConfigFlags)
 
