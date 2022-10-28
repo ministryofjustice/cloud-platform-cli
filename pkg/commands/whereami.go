@@ -42,10 +42,10 @@ $ cloud-platform whereami
 				contextLogger.Fatal("Failed to get current context: %w", err)
 			}
 			// Print cluster-info
-			err = printClusterInfo(kubePath)
-			if err != nil {
-				contextLogger.Fatal("Failed to get clusterInfo: %w", err)
-			}
+			// err = printClusterInfo()
+			// if err != nil {
+			// 	contextLogger.Fatal("Failed to get clusterInfo: %w", err)
+			// }
 
 			// print list of namespaces
 			err = printNamespaces(kubePath, clusterCtx)
