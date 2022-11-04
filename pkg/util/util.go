@@ -9,7 +9,6 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
-	"time"
 )
 
 type Repository struct {
@@ -89,14 +88,6 @@ func Redacted(w io.Writer, output string) {
 			fmt.Fprintln(w, scanner.Text())
 		}
 	}
-}
-
-// GetDateLastMinute returns the current date and date - minute as Date object
-func GetDatePastMinute(minutes int) Date {
-	var d Date
-	d.First = time.Now().Format("2006-01-02T15:04:05")
-	d.Last = time.Now().Add(-time.Minute * time.Duration(minutes)).Format("2006-01-02T15:04:05")
-	return d
 }
 
 // DeduplicateList will simply take a slice of strings and

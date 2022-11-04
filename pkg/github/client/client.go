@@ -11,9 +11,14 @@ import (
 )
 
 var _ GithubPullRequestsService = (*github.PullRequestsService)(nil)
+var _ GithubGitService = (*github.GitService)(nil)
 
 type GithubPullRequestsService interface {
-	ListFiles(ctx context.Context, owner string, repo string, number int, opt *github.ListOptions) ([]*github.CommitFile, *github.Response, error)
+	ListFiles(ctx context.Context, owner string, repo string, number int, opt *github.ListOptions) ([]*github.CommitFile, error)
+}
+
+type GithubGitService interface {
+	GetCommit(ctx context.Context, owner string, repo string, sha string) (*github.Commit, *github.Response, error)
 }
 
 // GithubClient for handling requests to the Github V3 and V4 APIs.
@@ -23,6 +28,7 @@ type GithubClient struct {
 	Repository   string
 	Owner        string
 	PullRequests GithubPullRequestsService
+	Git          GithubGitService
 }
 
 // GithubClient for handling requests to the Github V3 and V4 APIs.
@@ -85,10 +91,18 @@ func (gh *GithubClient) ListMergedPRs(date util.Date, count int) ([]Nodes, error
 }
 
 func (gh *GithubClient) GetChangedFiles(prNumber int) ([]*github.CommitFile, error) {
-	repos, _, err := gh.PullRequests.ListFiles(context.Background(), gh.Owner, gh.Repository, prNumber, nil)
+	repos, err := gh.PullRequests.ListFiles(context.Background(), gh.Owner, gh.Repository, prNumber, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	return repos, nil
+}
+
+func (gh *GithubClient) GetCommit(commitSHA string) (*github.Commit, *github.Response, error) {
+	commit, response, err := gh.Git.GetCommit(context.Background(), gh.Owner, gh.Repository, commitSHA)
+	if err != nil {
+		return nil, nil, err
+	}
+	return commit, response, nil
 }

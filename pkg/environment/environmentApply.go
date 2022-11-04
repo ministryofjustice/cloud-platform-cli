@@ -16,7 +16,9 @@ import (
 // These options are normally passed via flags in a command line.
 type Options struct {
 	Namespace, KubecfgPath, ClusterCtx, GithubToken string
-	PRNumber, NMinutes                              int
+	PRNumber                                        int
+	CurCommitSHA                                    string
+	PrevCommitSHA                                   string
 	AllNamespaces                                   bool
 }
 
@@ -112,7 +114,7 @@ func (a *Apply) Plan() error {
 // else checks for PR number and get the list of changed namespaces in that merged PR. Then does the kubectl apply and
 // terraform init and apply of all the namespaces merged in the PR
 func (a *Apply) Apply() error {
-	if a.Options.NMinutes == 0 && a.Options.Namespace == "" {
+	if a.Options.CurCommitSHA == "" && a.Options.PrevCommitSHA == "" && a.Options.Namespace == "" {
 		err := fmt.Errorf("either minutes or a namespace is required to perform apply")
 		return err
 	}
@@ -124,9 +126,14 @@ func (a *Apply) Apply() error {
 		}
 	} else {
 		// get the current and current - 1 minute
-		date := util.GetDatePastMinute(a.Options.NMinutes)
+		curCommit, _, err := a.GithubClient.GetCommit(a.Options.CurCommitSHA)
+		prevCommit, _, err := a.GithubClient.GetCommit(a.Options.PrevCommitSHA)
+
+		var d util.Date
+		d.First = prevCommit.Committer.Date.Format("2006-01-02T15:04:05")
+		d.Last = curCommit.Committer.Date.Format("2006-01-02T15:04:05")
 		// get the list of PRs that are merged in past 1 minute
-		prURLs, err := a.GithubClient.ListMergedPRs(date, prCount)
+		prURLs, err := a.GithubClient.ListMergedPRs(d, prCount)
 
 		if err != nil {
 			return err
