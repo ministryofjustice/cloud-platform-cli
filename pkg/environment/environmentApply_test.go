@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/go-github/github"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/environment/mocks"
-	ghMock "github.com/ministryofjustice/cloud-platform-cli/pkg/mocks/github/client"
+	ghMock "github.com/ministryofjustice/cloud-platform-cli/pkg/mocks/github"
 	"github.com/stretchr/testify/assert"
 )
 

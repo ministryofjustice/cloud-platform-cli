@@ -1,4 +1,4 @@
-package client
+package github
 
 import (
 	"context"
@@ -9,11 +9,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type mockClient struct {
+type mockGithub struct {
 	resp []*github.CommitFile
 }
 
-func (m *mockClient) ListFiles(ctx context.Context, owner string, repo string, number int, opt *github.ListOptions) ([]*github.CommitFile, *github.Response, error) {
+func (m *mockGithub) ListFiles(ctx context.Context, owner string, repo string, number int, opt *github.ListOptions) ([]*github.CommitFile, *github.Response, error) {
 	return m.resp, nil, nil
 }
 func TestNewGithubClient(t *testing.T) {
@@ -46,7 +46,7 @@ func TestNewGithubClient(t *testing.T) {
 
 func TestGithubClient_GetChangedFiles(t *testing.T) {
 
-	mc := &mockClient{
+	mc := &mockGithub{
 		resp: []*github.CommitFile{
 			{
 				SHA:       github.String("6dcb09b5b57875f334f61aebed695e2e4193db5e"),
