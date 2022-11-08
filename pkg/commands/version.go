@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"runtime/debug"
 
-	release "github.com/ministryofjustice/cloud-platform-cli/pkg/github/release"
+	release "github.com/ministryofjustice/cloud-platform-cli/pkg/release"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

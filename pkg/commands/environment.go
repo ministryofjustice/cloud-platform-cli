@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	environment "github.com/ministryofjustice/cloud-platform-cli/pkg/environment"
-	"github.com/ministryofjustice/cloud-platform-cli/pkg/github/client"
+	"github.com/ministryofjustice/cloud-platform-cli/pkg/github"
 	log "github.com/sirupsen/logrus"
 	"k8s.io/client-go/util/homedir"
 
@@ -124,14 +124,14 @@ var environmentPlanCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		contextLogger := log.WithFields(log.Fields{"subcommand": "plan"})
 
-		ghConfig := &client.GithubClientConfig{
+		ghConfig := &github.GithubClientConfig{
 			Repository: "cloud-platform-environments",
 			Owner:      "ministryofjustice",
 		}
 
 		applier := &environment.Apply{
 			Options:      &optFlags,
-			GithubClient: client.NewGithubClient(ghConfig, optFlags.GithubToken),
+			GithubClient: github.NewGithubClient(ghConfig, optFlags.GithubToken),
 		}
 
 		err := applier.Plan()
@@ -170,14 +170,14 @@ var environmentApplyCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		contextLogger := log.WithFields(log.Fields{"subcommand": "apply"})
 
-		ghConfig := &client.GithubClientConfig{
+		ghConfig := &github.GithubClientConfig{
 			Repository: "cloud-platform-environments",
 			Owner:      "ministryofjustice",
 		}
 
 		applier := &environment.Apply{
 			Options:      &optFlags,
-			GithubClient: client.NewGithubClient(ghConfig, optFlags.GithubToken),
+			GithubClient: github.NewGithubClient(ghConfig, optFlags.GithubToken),
 		}
 
 		if optFlags.AllNamespaces {
