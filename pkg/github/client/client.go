@@ -14,7 +14,7 @@ var _ GithubPullRequestsService = (*github.PullRequestsService)(nil)
 var _ GithubGitService = (*github.GitService)(nil)
 
 type GithubPullRequestsService interface {
-	ListFiles(ctx context.Context, owner string, repo string, number int, opt *github.ListOptions) ([]*github.CommitFile, error)
+	ListFiles(ctx context.Context, owner string, repo string, number int, opt *github.ListOptions) ([]*github.CommitFile, *github.Response, error)
 }
 
 type GithubGitService interface {
@@ -91,7 +91,7 @@ func (gh *GithubClient) ListMergedPRs(date util.Date, count int) ([]Nodes, error
 }
 
 func (gh *GithubClient) GetChangedFiles(prNumber int) ([]*github.CommitFile, error) {
-	repos, err := gh.PullRequests.ListFiles(context.Background(), gh.Owner, gh.Repository, prNumber, nil)
+	repos, _, err := gh.PullRequests.ListFiles(context.Background(), gh.Owner, gh.Repository, prNumber, nil)
 	if err != nil {
 		return nil, err
 	}
