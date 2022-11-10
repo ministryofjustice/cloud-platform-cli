@@ -23,6 +23,8 @@ type Options struct {
 	Debug bool
 	// Force enables the force flag for the kubectl drain command.
 	Force bool
+	// Terminate enables the Terminate flag for the kubectl drain command.
+	Terminate bool
 	// Timeout is the timeout for the kubectl drain command.
 	TimeOut int
 	// Oldest suggests using the oldest resource in a list, such as a node.
@@ -114,11 +116,12 @@ func (r *Recycler) recycleNode() (err error) {
 	if err != nil {
 		return fmt.Errorf("unable to drain node: %s", err)
 	}
-
-	log.Info().Msgf("Terminate node: %s", r.nodeToRecycle.Name)
-	err = r.terminateNode()
-	if err != nil {
-		return err
+	if r.Options.Terminate {
+		log.Info().Msgf("Terminate node: %s", r.nodeToRecycle.Name)
+		err = r.terminateNode()
+		if err != nil {
+			return err
+		}
 	}
 
 	return r.postNodeCheck()
@@ -130,9 +133,13 @@ func (r *Recycler) postNodeCheck() (err error) {
 	// It generally takes about 4 minutes for the node to recycle, but to be sure we'll wait for 7.
 	for i := 0; i < 7; i++ {
 		err := r.validate()
-		if err == nil {
+		if err == nil && r.Options.Terminate {
 			log.Info().Msgf("Finished recycling node %s", r.nodeToRecycle.Name)
 			log.Info().Msgf("New node created: %s", r.Cluster.NewestNode.Name)
+			return nil
+		}
+		if err == nil && !r.Options.Terminate {
+			log.Info().Msgf("Finished draining node %s", r.nodeToRecycle.Name)
 			return nil
 		}
 
@@ -154,12 +161,13 @@ func (r *Recycler) validate() (err error) {
 		return fmt.Errorf("failed to refresh status: %s", err)
 	}
 
-	log.Debug().Msgf("Checking ec2 instance: %s has terminated", r.nodeToRecycle.Name)
-	err = cluster.CheckEc2InstanceTerminated(*r.nodeToRecycle, *r.AwsCreds)
-	if err != nil {
-		return fmt.Errorf("ec2 instance has not terminated: %s", err)
+	if r.Options.Terminate {
+		log.Debug().Msgf("Checking ec2 instance: %s has terminated", r.nodeToRecycle.Name)
+		err = cluster.CheckEc2InstanceTerminated(*r.nodeToRecycle, *r.AwsCreds)
+		if err != nil {
+			return fmt.Errorf("ec2 instance has not terminated: %s", err)
+		}
 	}
-
 	log.Debug().Msg("Comparing old snapshot to new cluster information")
 	err = r.Cluster.CompareNodes(r.Snapshot)
 	if err != nil {
