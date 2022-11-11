@@ -312,7 +312,7 @@ func addClusterCmd(topLevel *cobra.Command) {
 	// recycle node flags
 	clusterRecycleNodeCmd.Flags().StringVarP(&opt.ResourceName, "name", "n", "", "name of the resource to recycle")
 	clusterRecycleNodeCmd.Flags().BoolVarP(&opt.Force, "force", "f", true, "force the pods to drain")
-	clusterRecycleNodeCmd.Flags().BoolVarP(&opt.Force, "terminate", "f", true, "terminate the node after drain")
+	clusterRecycleNodeCmd.Flags().BoolVar(&opt.Terminate, "terminate", true, "terminate the node after drain")
 	clusterRecycleNodeCmd.Flags().BoolVarP(&opt.IgnoreLabel, "ignore-label", "i", false, "whether to ignore the labels on the resource")
 	clusterRecycleNodeCmd.Flags().IntVarP(&opt.TimeOut, "timeout", "t", 360, "amount of time to wait for the drain command to complete")
 	clusterRecycleNodeCmd.Flags().BoolVar(&opt.Oldest, "oldest", false, "whether to recycle the oldest node")

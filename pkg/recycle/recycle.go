@@ -122,6 +122,12 @@ func (r *Recycler) recycleNode() (err error) {
 		if err != nil {
 			return err
 		}
+	} else {
+		log.Info().Msgf("Uncordoning node: %s", r.nodeToRecycle.Name)
+		err = r.unCordonNode(drainHelper)
+		if err != nil {
+			return fmt.Errorf("failed to uncordon node: %s", err)
+		}
 	}
 
 	return r.postNodeCheck()

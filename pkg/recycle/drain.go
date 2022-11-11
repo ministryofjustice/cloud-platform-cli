@@ -44,6 +44,16 @@ func (r *Recycler) cordonNode(helper *drain.Helper) error {
 	return drain.RunCordonOrUncordon(helper, r.nodeToRecycle, true)
 }
 
+func (r *Recycler) unCordonNode(helper *drain.Helper) error {
+	log.Debug().Msgf("Removing 'node-cordon' label to: %s", r.nodeToRecycle.Name)
+	err := r.removeLabel("node-cordon")
+	if err != nil {
+		return err
+	}
+
+	return drain.RunCordonOrUncordon(helper, r.nodeToRecycle, true)
+}
+
 func (r *Recycler) drainNode(helper *drain.Helper) error {
 	log.Debug().Msgf("Adding 'node-drain' label to: %s", r.nodeToRecycle.Name)
 	err := r.addLabel("node-drain", "true")
@@ -105,8 +115,8 @@ func (r *Recycler) checkLabels() error {
 	return nil
 }
 
-// RemoveLabel is called when the recycle-node command fails
-func (r *Recycler) RemoveLabel(key string) error {
+// RemoveLabel is called when the recycle-node command fails or when the node is not terminated
+func (r *Recycler) removeLabel(key string) error {
 	if r.nodeToRecycle.Labels == nil {
 		return nil
 	}
