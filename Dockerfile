@@ -4,7 +4,7 @@ FROM golang:1.19.1-alpine AS cli_builder
 ENV \
     CGO_ENABLED=0 \
     GOOS=linux \
-    KUBECTL_VERSION=1.21.5 \
+    KUBECTL_VERSION=1.22.15 \
     TERRAFORM_VERSION=0.14.8
 
 WORKDIR /build
