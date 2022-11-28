@@ -35,7 +35,7 @@ require (
 	github.com/hashicorp/go-version v1.6.0
 	github.com/hashicorp/hc-install v0.4.0
 	github.com/hashicorp/terraform-exec v0.17.3
-	github.com/jedib0t/go-pretty/v6 v6.4.0
+	github.com/jedib0t/go-pretty/v6 v6.4.2
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/ministryofjustice/cloud-platform-go-library v0.0.0-20220803122921-1ca1153b1730
 	github.com/rs/zerolog v1.28.0
