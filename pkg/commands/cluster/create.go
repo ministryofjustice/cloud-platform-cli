@@ -1,4 +1,4 @@
-package commands
+package clustercmd
 
 import (
 	"errors"
@@ -13,56 +13,10 @@ import (
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
 	cloudPlatform "github.com/ministryofjustice/cloud-platform-cli/pkg/cluster"
-	"github.com/ministryofjustice/cloud-platform-cli/pkg/recycle"
 	terraform "github.com/ministryofjustice/cloud-platform-cli/pkg/terraform"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"k8s.io/client-go/util/homedir"
 )
-
-// Aws credentials are required to communicate with the aws api.kube
-// This is a global variable so it can be used in other commands.
-var (
-	awsSecret, awsAccessKey, awsProfile, awsRegion string
-)
-
-// kubePath is the path to the kubeconfig file
-var kubePath string
-
-// CreateOptions struct represents the options passed to the Create method
-// by the `cloud-platform create cluster` command.
-type clusterOptions struct {
-	// Name is the name of the cluster you wish to create/amend.
-	Name string
-	// ClusterSuffix is the suffix to append to the cluster name.
-	// This will be used to create the cluster ingress, such as "live.service.justice.gov.uk".
-	ClusterSuffix string
-	// VpcName is the name of the VPC to create the cluster in.
-	// Often clusters will be built in a single VPC.
-	VpcName string
-
-	// MaxNameLength is the maximum length of the cluster name.
-	// This limit exists due to the length of the name of the ingress.
-	MaxNameLength int
-	// Fast is a flag that will skip the creation non-essential components of the cloud-platform cluster.
-	Fast bool
-
-	// TfVersion is the version of Terraform to use to create the cluster and components.
-	TfVersion string
-
-	// Auth0 the Auth0 client ID and secret to use for the cluster.
-	Auth0 authOpts
-}
-
-// AuthOpts represents the options for Auth0.
-type authOpts struct {
-	// Domain is the Auth0 domain.
-	Domain string
-	// ClientID is the Auth0 client ID.
-	ClientId string
-	// ClientSecret is the Auth0 client secret.
-	ClientSecret string
-}
 
 func addCreateClusterCmd(toplevel *cobra.Command) {
 	var (
@@ -93,7 +47,6 @@ func addCreateClusterCmd(toplevel *cobra.Command) {
 
 			You must also be in the infrastructure repository, and have decrypted the repository before running this command.
 `),
-		PreRun: upgradeIfNotLatest,
 		Run: func(cmd *cobra.Command, args []string) {
 			contextLogger := log.WithFields(log.Fields{"subcommand": "create-cluster"})
 			err := opt.validateClusterOpts(cmd, date, minHour)
@@ -289,93 +242,4 @@ func findTopLevelGitDir(workingDir string) (string, error) {
 		}
 		dir = parent
 	}
-}
-
-var opt recycle.Options
-
-func addClusterCmd(topLevel *cobra.Command) {
-	topLevel.AddCommand(clusterCmd)
-
-	// sub cobra commands
-	clusterCmd.AddCommand(clusterRecycleNodeCmd)
-
-	// cluster level flags
-	clusterCmd.Flags().StringVar(&awsAccessKey, "aws-access-key", os.Getenv("AWS_ACCESS_KEY_ID"), "[required] aws access key to use")
-	clusterCmd.Flags().StringVar(&awsSecret, "aws-secret-key", os.Getenv("AWS_SECRET_ACCESS_KEY"), "[required] aws secret to use")
-	clusterCmd.Flags().StringVar(&awsProfile, "aws-profile", os.Getenv("AWS_PROFILE"), "[required] aws profile to use")
-	clusterCmd.Flags().StringVar(&awsRegion, "aws-region", os.Getenv("AWS_REGION"), "[required] aws region to use")
-	clusterCmd.Flags().StringVar(&kubePath, "kubecfg", filepath.Join(homedir.HomeDir(), ".kube", "config"), "path to kubeconfig file")
-
-	// create cluster flags
-	addCreateClusterCmd(clusterCmd)
-
-	// recycle node flags
-	clusterRecycleNodeCmd.Flags().StringVarP(&opt.ResourceName, "name", "n", "", "name of the resource to recycle")
-	clusterRecycleNodeCmd.Flags().BoolVarP(&opt.Force, "force", "f", true, "force the pods to drain")
-	clusterRecycleNodeCmd.Flags().BoolVarP(&opt.IgnoreLabel, "ignore-label", "i", false, "whether to ignore the labels on the resource")
-	clusterRecycleNodeCmd.Flags().IntVarP(&opt.TimeOut, "timeout", "t", 360, "amount of time to wait for the drain command to complete")
-	clusterRecycleNodeCmd.Flags().BoolVar(&opt.Oldest, "oldest", false, "whether to recycle the oldest node")
-	clusterRecycleNodeCmd.Flags().StringVar(&opt.KubecfgPath, "kubecfg", filepath.Join(homedir.HomeDir(), ".kube", "config"), "path to kubeconfig file")
-	clusterRecycleNodeCmd.Flags().StringVar(&awsAccessKey, "aws-access-key", os.Getenv("AWS_ACCESS_KEY_ID"), "aws access key to use")
-	clusterRecycleNodeCmd.Flags().StringVar(&awsSecret, "aws-secret-key", os.Getenv("AWS_SECRET_ACCESS_KEY"), "aws secret to use")
-	clusterRecycleNodeCmd.Flags().StringVar(&awsProfile, "aws-profile", os.Getenv("AWS_PROFILE"), "aws profile to use")
-	clusterRecycleNodeCmd.Flags().StringVar(&opt.AwsRegion, "aws-region", "eu-west-2", "aws region to use")
-	clusterRecycleNodeCmd.Flags().BoolVar(&opt.Debug, "debug", false, "enable debug logging")
-}
-
-var clusterCmd = &cobra.Command{
-	Use:    "cluster",
-	Short:  `Cloud Platform cluster actions`,
-	PreRun: upgradeIfNotLatest,
-}
-
-var clusterRecycleNodeCmd = &cobra.Command{
-	Use:   "recycle-node",
-	Short: `recycle a node`,
-	Example: heredoc.Doc(`
-	$ cloud-platform cluster recycle-node
-	`),
-	PreRun: upgradeIfNotLatest,
-	Run: func(cmd *cobra.Command, args []string) {
-		contextLogger := log.WithFields(log.Fields{"subcommand": "recycle-node"})
-		// Check for missing name argument. You must define either a resource
-		// or specify the --oldest flag.
-		if opt.ResourceName == "" && !opt.Oldest {
-			contextLogger.Fatal("--name or --oldest is required")
-		}
-
-		if awsProfile == "" && awsAccessKey == "" && awsSecret == "" {
-			contextLogger.Fatal("AWS credentials are required, please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY or an AWS_PROFILE")
-		}
-
-		clientset, err := client.GetClientset(opt.KubecfgPath)
-		if err != nil {
-			contextLogger.Fatal(err)
-		}
-
-		recycle := &recycle.Recycler{
-			Client:  &client.KubeClient{Clientset: clientset},
-			Options: &opt,
-		}
-
-		recycle.Cluster, err = cloudPlatform.NewCluster(recycle.Client)
-		if err != nil {
-			contextLogger.Fatal(err)
-		}
-
-		// Create a snapshot for comparison later.
-		recycle.Snapshot = recycle.Cluster.NewSnapshot()
-
-		recycle.AwsCreds, err = cloudPlatform.NewAwsCreds(opt.AwsRegion)
-		if err != nil {
-			contextLogger.Fatal(err)
-		}
-
-		err = recycle.Node()
-		if err != nil {
-			// Fail hard so we get an non-zero exit code.
-			// This is mainly for when this is run in a pipeline.
-			contextLogger.Fatal(err)
-		}
-	},
 }

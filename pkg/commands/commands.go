@@ -1,6 +1,7 @@
 package commands
 
 import (
+	cluster "github.com/ministryofjustice/cloud-platform-cli/pkg/commands/cluster"
 	"github.com/spf13/cobra"
 )
 
@@ -13,5 +14,5 @@ func AddCommands(topLevel *cobra.Command) {
 	addPrototypeCmd(topLevel)
 	addDecodeSecret(topLevel)
 	addDuplicateCmd(topLevel)
-	addClusterCmd(topLevel)
+	cluster.AddClusterCmd(topLevel)
 }

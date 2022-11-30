@@ -13,6 +13,12 @@ import (
 	"github.com/spf13/viper"
 )
 
+var (
+	awsAccessKey string
+	awsSecret    string
+	awsRegion    string
+)
+
 func addTerraformCmd(topLevel *cobra.Command) {
 	var tf terraform.TerraformCLIConfig
 	var diff bool
