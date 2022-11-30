@@ -36,7 +36,7 @@ RUN chmod +x kubectl terraform
 
 # ---
 
-FROM alpine:3.16.2
+FROM alpine:3.17.0
 
 ENV AWSCLI_VERSION=2.7.6
 ENV GLIBC_VER=2.31-r0
@@ -60,7 +60,7 @@ RUN apk add --no-cache --virtual .dependencies binutils curl \
     && curl -sLO https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VER}/glibc-${GLIBC_VER}.apk \
     && curl -sLO https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VER}/glibc-bin-${GLIBC_VER}.apk \
     && curl -sLO https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VER}/glibc-i18n-${GLIBC_VER}.apk \
-    && apk add --no-cache --virtual .glibc \
+    && apk add --force-overwrite --no-cache --virtual .glibc \
         glibc-${GLIBC_VER}.apk \
         glibc-bin-${GLIBC_VER}.apk \
         glibc-i18n-${GLIBC_VER}.apk \
