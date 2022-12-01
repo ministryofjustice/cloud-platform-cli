@@ -141,6 +141,7 @@ func printOutTable(c cloudPlatform.Cluster) {
 	t.SetStyle(table.StyleBold)
 	t.Render()
 }
+
 func (opt *clusterOptions) addCreateClusterFlags(cmd *cobra.Command, auth *authOpts) {
 
 	cmd.Flags().StringVar(&opt.Auth0.ClientId, "auth0-client-id", os.Getenv("AUTH0_CLIENT_ID"), "[required] auth0 client id to use")

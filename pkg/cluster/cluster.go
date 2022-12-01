@@ -22,7 +22,7 @@ import (
 )
 
 // Cluster represents useful values and object in a Kubernetes cluster
-type Cluster struct {
+type CloudPlatformCluster struct {
 	// Name is the name of the cluster object
 	Name string
 	// VpcId is the ID of the VPC the cluster is in. This is usually the same
@@ -53,19 +53,53 @@ type Cluster struct {
 
 // Snapshot represents a snapshot of a Kubernetes cluster object
 type Snapshot struct {
-	Cluster Cluster
+	Cluster CloudPlatformCluster
+}
+
+// KubeClient is a wrapper around the kubernetes interface
+type KubeClient struct {
+	Clientset kubernetes.Interface
 }
 
 // AwsCredentials represents the AWS credentials used to connect to an AWS account.
 type AwsCredentials struct {
 	Session *session.Session
 	Profile string
+	Eks     *eks.EKS
+	Ec2     *ec2.EC2
 	Region  string
+}
+
+// NewKubeClient will construct a Client struct to interact with a kubernetes cluster
+func NewKubeClient(p string) (*KubeClient, error) {
+	clientset, err := GetClientset(p)
+	if err != nil {
+		return nil, err
+	}
+
+	return &KubeClient{
+		Clientset: clientset,
+	}, nil
+}
+
+// GetClientset takes the path to a kubeconfig file and returns a clientset
+func GetClientset(p string) (kubernetes.Interface, error) {
+	config, err := clientcmd.BuildConfigFromFlags("", p)
+	if err != nil {
+		return nil, err
+	}
+
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
+	return clientset, nil
 }
 
 // NewCluster creates a new Cluster object and populates its
 // fields with the values from the Kubernetes cluster in the client passed to it.
-func NewCluster(c *client.KubeClient) (*Cluster, error) {
+func NewCluster(c *KubeClient) (*CloudPlatformCluster, error) {
 	pods, err := getPods(c)
 	if err != nil {
 		return nil, err

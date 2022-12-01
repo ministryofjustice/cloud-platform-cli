@@ -81,7 +81,7 @@ func stuckStates() []v1.PodPhase {
 }
 
 // getPods returns a slice of all pods in a cluster
-func getPods(c *client.KubeClient) ([]v1.Pod, error) {
+func getPods(c KubeClient) ([]v1.Pod, error) {
 	p := make([]v1.Pod, 0)
 	pods, err := c.Clientset.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{})
 	if err != nil {
