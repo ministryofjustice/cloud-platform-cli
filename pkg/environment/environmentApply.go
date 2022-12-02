@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/kelseyhightower/envconfig"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/github/client"
@@ -18,8 +19,8 @@ type Options struct {
 	Namespace, KubecfgPath, ClusterCtx, GithubToken string
 	PRNumber                                        int
 	CurCommitSHA                                    string
-	PrevCommitSHA                                   string
-	AllNamespaces                                   bool
+	//PrevCommitSHA                                   string
+	AllNamespaces bool
 }
 
 // RequiredEnvVars is used to store values such as TF_VAR_ , github and pingdom tokens
@@ -114,7 +115,7 @@ func (a *Apply) Plan() error {
 // else checks for PR number and get the list of changed namespaces in that merged PR. Then does the kubectl apply and
 // terraform init and apply of all the namespaces merged in the PR
 func (a *Apply) Apply() error {
-	if a.Options.CurCommitSHA == "" && a.Options.PrevCommitSHA == "" && a.Options.Namespace == "" {
+	if a.Options.CurCommitSHA == "" && a.Options.Namespace == "" {
 		err := fmt.Errorf("either minutes or a namespace is required to perform apply")
 		return err
 	}
@@ -125,13 +126,14 @@ func (a *Apply) Apply() error {
 			return err
 		}
 	} else {
-		// get the current and current - 1 minute
+		// get the current commit and get commits past 1 minute
+		// This is because concourse missed commits when merged within 1 minute as checks happen on every minute
 		curCommit, _, err := a.GithubClient.GetCommit(a.Options.CurCommitSHA)
-		prevCommit, _, err := a.GithubClient.GetCommit(a.Options.PrevCommitSHA)
 
 		var d util.Date
-		d.First = prevCommit.Committer.Date.Format("2006-01-02T15:04:05")
-		d.Last = curCommit.Committer.Date.Format("2006-01-02T15:04:05")
+
+		d.First = curCommit.Committer.Date.Format("2006-01-02T15:04:05")
+		d.Last = curCommit.Committer.Date.Add(-time.Minute * time.Duration(minutes)).Format("2006-01-02T15:04:05")
 		// get the list of PRs that are merged in past 1 minute
 		prURLs, err := a.GithubClient.ListMergedPRs(d, prCount)
 

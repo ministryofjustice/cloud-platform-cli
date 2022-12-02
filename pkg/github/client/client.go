@@ -78,7 +78,7 @@ func (gh *GithubClient) ListMergedPRs(date util.Date, count int) ([]Nodes, error
 	variables := map[string]interface{}{
 		"searchQuery": githubv4.String(
 			fmt.Sprintf(`repo:%s/%s is:pr is:closed merged:%s..%s`,
-				gh.Owner, gh.Repository, date.Last, date.First)),
+				gh.Owner, gh.Repository, date.First, date.Last)),
 		"count": githubv4.Int(count),
 	}
 
