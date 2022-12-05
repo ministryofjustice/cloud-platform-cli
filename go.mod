@@ -5,9 +5,9 @@ go 1.19
 require (
 	github.com/MakeNowJust/heredoc v1.0.0
 	github.com/agext/levenshtein v1.2.3 // indirect
-	github.com/fsnotify/fsnotify v1.5.4 // indirect
+	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible
-	github.com/google/go-cmp v0.5.8 // indirect
+	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/gookit/color v1.5.2
 	github.com/hashicorp/hcl/v2 v2.14.1
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
@@ -17,7 +17,7 @@ require (
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/pflag v1.0.5
-	github.com/spf13/viper v1.13.0
+	github.com/spf13/viper v1.14.0
 	github.com/zclconf/go-cty v1.11.0
 	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4
@@ -41,7 +41,7 @@ require (
 	github.com/rs/zerolog v1.28.0
 	github.com/shurcooL/githubv4 v0.0.0-20220922232305-70b4d362a8cb
 	github.com/stretchr/testify v1.8.1
-	golang.org/x/oauth2 v0.0.0-20220722155238-128564f6959c
+	golang.org/x/oauth2 v0.0.0-20221014153046-6fdb5e3db783
 	k8s.io/api v0.25.2
 	k8s.io/apimachinery v0.25.2
 	k8s.io/client-go v0.25.2
@@ -50,7 +50,8 @@ require (
 )
 
 require (
-	cloud.google.com/go/compute v1.7.0 // indirect
+	cloud.google.com/go/compute v1.12.1 // indirect
+	cloud.google.com/go/compute/metadata v0.2.1 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/Azure/go-autorest v14.2.0+incompatible // indirect
 	github.com/Azure/go-autorest/autorest v0.11.28 // indirect
