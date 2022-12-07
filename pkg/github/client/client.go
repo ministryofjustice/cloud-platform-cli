@@ -11,14 +11,9 @@ import (
 )
 
 var _ GithubPullRequestsService = (*github.PullRequestsService)(nil)
-var _ GithubGitService = (*github.GitService)(nil)
 
 type GithubPullRequestsService interface {
 	ListFiles(ctx context.Context, owner string, repo string, number int, opt *github.ListOptions) ([]*github.CommitFile, *github.Response, error)
-}
-
-type GithubGitService interface {
-	GetCommit(ctx context.Context, owner string, repo string, sha string) (*github.Commit, *github.Response, error)
 }
 
 // GithubClient for handling requests to the Github V3 and V4 APIs.
@@ -28,7 +23,6 @@ type GithubClient struct {
 	Repository   string
 	Owner        string
 	PullRequests GithubPullRequestsService
-	Git          GithubGitService
 }
 
 // GithubClient for handling requests to the Github V3 and V4 APIs.

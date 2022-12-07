@@ -39,38 +39,6 @@ func (_m *GithubIface) GetChangedFiles(_a0 int) ([]*github.CommitFile, error) {
 	return r0, r1
 }
 
-// GetCommit provides a mock function with given fields: _a0
-func (_m *GithubIface) GetCommit(_a0 string) (*github.Commit, *github.Response, error) {
-	ret := _m.Called(_a0)
-
-	var r0 *github.Commit
-	if rf, ok := ret.Get(0).(func(string) *github.Commit); ok {
-		r0 = rf(_a0)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*github.Commit)
-		}
-	}
-
-	var r1 *github.Response
-	if rf, ok := ret.Get(1).(func(string) *github.Response); ok {
-		r1 = rf(_a0)
-	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*github.Response)
-		}
-	}
-
-	var r2 error
-	if rf, ok := ret.Get(2).(func(string) error); ok {
-		r2 = rf(_a0)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
-}
-
 // ListMergedPRs provides a mock function with given fields: date, count
 func (_m *GithubIface) ListMergedPRs(date util.Date, count int) ([]client.Nodes, error) {
 	ret := _m.Called(date, count)

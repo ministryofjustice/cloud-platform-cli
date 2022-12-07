@@ -18,8 +18,7 @@ type Options struct {
 	Namespace, KubecfgPath, ClusterCtx, GithubToken string
 	PRNumber                                        int
 	CommitTimestamp                                 string
-	//PrevCommitSHA                                   string
-	AllNamespaces bool
+	AllNamespaces                                   bool
 }
 
 // RequiredEnvVars is used to store values such as TF_VAR_ , github and pingdom tokens
@@ -45,7 +44,7 @@ type Apply struct {
 const (
 	// Assumption that there are no more than 50 PRs merged in last minute
 	prCount = 50
-	// Get Commits that are merged past 1 minute from given commit
+	// minutes past the current commit timestamp to run the apply
 	minutes = 1
 )
 
@@ -127,7 +126,7 @@ func (a *Apply) Apply() error {
 			return err
 		}
 	} else {
-		// get the current commit and get commits past 1 minute
+		// get date past 1 minute to the given commit timestamp
 		// This is because concourse missed commits when merged within 1 minute as checks happen on every minute
 		// get the current and current - 1 minute
 		date := util.GetDatePastMinute(a.Options.CommitTimestamp, minutes)
