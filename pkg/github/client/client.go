@@ -78,7 +78,7 @@ func (gh *GithubClient) ListMergedPRs(date util.Date, count int) ([]Nodes, error
 	variables := map[string]interface{}{
 		"searchQuery": githubv4.String(
 			fmt.Sprintf(`repo:%s/%s is:pr is:closed merged:%s..%s`,
-				gh.Owner, gh.Repository, date.First, date.Last)),
+				gh.Owner, gh.Repository, date.Last, date.First)),
 		"count": githubv4.Int(count),
 	}
 
@@ -97,12 +97,4 @@ func (gh *GithubClient) GetChangedFiles(prNumber int) ([]*github.CommitFile, err
 	}
 
 	return repos, nil
-}
-
-func (gh *GithubClient) GetCommit(commitSHA string) (*github.Commit, *github.Response, error) {
-	commit, response, err := gh.Git.GetCommit(context.Background(), gh.Owner, gh.Repository, commitSHA)
-	if err != nil {
-		return nil, nil, err
-	}
-	return commit, response, nil
 }

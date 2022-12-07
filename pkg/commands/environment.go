@@ -45,7 +45,7 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	// flags
 	environmentApplyCmd.Flags().BoolVar(&optFlags.AllNamespaces, "all-namespaces", false, "Apply all namespaces with -all-namespaces")
 	environmentApplyCmd.Flags().StringVarP(&optFlags.Namespace, "namespace", "n", "", "Namespace which you want to perform the apply")
-	environmentApplyCmd.Flags().StringVar(&optFlags.CurCommitSHA, "currentCommit", "", "Current commit from the environment repo")
+	environmentApplyCmd.Flags().StringVar(&optFlags.CommitTimestamp, "commit-timestamp", "", "Timestamp of current commit from the environment repo")
 	//environmentApplyCmd.Flags().StringVar(&optFlags.PrevCommitSHA, "previousCommit", "", "Previous commit from the environment repo")
 	// Re-use the environmental variable TF_VAR_github_token to call Github Client which is needed to perform terraform operations on each namespace
 	environmentApplyCmd.Flags().StringVar(&optFlags.GithubToken, "github-token", os.Getenv("TF_VAR_github_token"), "Personal access Token from Github ")

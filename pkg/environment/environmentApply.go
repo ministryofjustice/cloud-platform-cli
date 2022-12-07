@@ -6,7 +6,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/kelseyhightower/envconfig"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/github/client"
@@ -18,7 +17,7 @@ import (
 type Options struct {
 	Namespace, KubecfgPath, ClusterCtx, GithubToken string
 	PRNumber                                        int
-	CurCommitSHA                                    string
+	CommitTimestamp                                 string
 	//PrevCommitSHA                                   string
 	AllNamespaces bool
 }
@@ -46,6 +45,8 @@ type Apply struct {
 const (
 	// Assumption that there are no more than 50 PRs merged in last minute
 	prCount = 50
+	// Get Commits that are merged past 1 minute from given commit
+	minutes = 1
 )
 
 // NewApply creates a new Apply object and populates its fields with values from options(which are flags),
@@ -115,8 +116,8 @@ func (a *Apply) Plan() error {
 // else checks for PR number and get the list of changed namespaces in that merged PR. Then does the kubectl apply and
 // terraform init and apply of all the namespaces merged in the PR
 func (a *Apply) Apply() error {
-	if a.Options.CurCommitSHA == "" && a.Options.Namespace == "" {
-		err := fmt.Errorf("either minutes or a namespace is required to perform apply")
+	if a.Options.CommitTimestamp == "" && a.Options.Namespace == "" {
+		err := fmt.Errorf("either commit timestamp or a namespace is required to perform apply")
 		return err
 	}
 	// If a namespace is given as a flag, then perform a apply for the given namespace.
@@ -128,14 +129,11 @@ func (a *Apply) Apply() error {
 	} else {
 		// get the current commit and get commits past 1 minute
 		// This is because concourse missed commits when merged within 1 minute as checks happen on every minute
-		curCommit, _, err := a.GithubClient.GetCommit(a.Options.CurCommitSHA)
+		// get the current and current - 1 minute
+		date := util.GetDatePastMinute(a.Options.CommitTimestamp, minutes)
 
-		var d util.Date
-
-		d.First = curCommit.Committer.Date.Format("2006-01-02T15:04:05")
-		d.Last = curCommit.Committer.Date.Add(-time.Minute * time.Duration(minutes)).Format("2006-01-02T15:04:05")
 		// get the list of PRs that are merged in past 1 minute
-		prURLs, err := a.GithubClient.ListMergedPRs(d, prCount)
+		prURLs, err := a.GithubClient.ListMergedPRs(date, prCount)
 
 		if err != nil {
 			return err

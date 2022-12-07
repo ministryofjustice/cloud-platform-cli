@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"os/exec"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -165,6 +166,37 @@ func TestRedacted(t *testing.T) {
 			Redacted(&output, tt.args.output)
 			if tt.expect != output.String() {
 				t.Errorf("got %s but expected %s", output.String(), tt.expect)
+			}
+		})
+	}
+}
+
+func TestGetDatePastMinute(t *testing.T) {
+	type args struct {
+		timestamp string
+		minutes   int
+	}
+	tests := []struct {
+		name string
+		args args
+		want Date
+	}{
+		{
+			name: "same date with 1 minutes",
+			args: args{
+				timestamp: "2022-12-07 18:12:46 +0000",
+				minutes:   1,
+			},
+			want: Date{
+				First: "2022-12-07T18:12:46",
+				Last:  "2022-12-07T18:11:46",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GetDatePastMinute(tt.args.timestamp, tt.args.minutes); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetDatePastMinute() = %v, want %v", got, tt.want)
 			}
 		})
 	}
