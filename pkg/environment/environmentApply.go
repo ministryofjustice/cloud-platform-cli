@@ -16,7 +16,8 @@ import (
 // These options are normally passed via flags in a command line.
 type Options struct {
 	Namespace, KubecfgPath, ClusterCtx, GithubToken string
-	PRNumber, NMinutes                              int
+	PRNumber                                        int
+	CommitTimestamp                                 string
 	AllNamespaces                                   bool
 }
 
@@ -43,6 +44,8 @@ type Apply struct {
 const (
 	// Assumption that there are no more than 50 PRs merged in last minute
 	prCount = 50
+	// minutes past the current commit timestamp to run the apply
+	minutes = 1
 )
 
 // NewApply creates a new Apply object and populates its fields with values from options(which are flags),
@@ -79,8 +82,7 @@ func (a *Apply) Initialize() {
 func (a *Apply) Plan() error {
 
 	if a.Options.PRNumber == 0 && a.Options.Namespace == "" {
-		err := fmt.Errorf("either a PR Id/Number or a namespace is required to perform plan")
-		return err
+		return fmt.Errorf("either a PR Id/Number or a namespace is required to perform plan")
 	}
 
 	// If a namespace is given as a flag, then perform a plan for the given namespace.
@@ -112,8 +114,8 @@ func (a *Apply) Plan() error {
 // else checks for PR number and get the list of changed namespaces in that merged PR. Then does the kubectl apply and
 // terraform init and apply of all the namespaces merged in the PR
 func (a *Apply) Apply() error {
-	if a.Options.NMinutes == 0 && a.Options.Namespace == "" {
-		err := fmt.Errorf("either minutes or a namespace is required to perform apply")
+	if a.Options.CommitTimestamp == "" && a.Options.Namespace == "" {
+		err := fmt.Errorf("either commit timestamp or a namespace is required to perform apply")
 		return err
 	}
 	// If a namespace is given as a flag, then perform a apply for the given namespace.
@@ -123,11 +125,16 @@ func (a *Apply) Apply() error {
 			return err
 		}
 	} else {
+		// get date past 1 minute to the given commit timestamp
+		// This is because concourse missed commits when merged within 1 minute as checks happen on every minute
 		// get the current and current - 1 minute
-		date := util.GetDatePastMinute(a.Options.NMinutes)
-		// get the list of PRs that are merged in past 1 minute
-		prURLs, err := a.GithubClient.ListMergedPRs(date, prCount)
+		date, err := util.GetDatePastMinute(a.Options.CommitTimestamp, minutes)
+		if err != nil {
+			return err
+		}
 
+		// get the list of PRs that are merged in past 1 minute
+		prURLs, err := a.GithubClient.ListMergedPRs(*date, prCount)
 		if err != nil {
 			return err
 		}
