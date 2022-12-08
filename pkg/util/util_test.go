@@ -177,9 +177,10 @@ func TestGetDatePastMinute(t *testing.T) {
 		minutes   int
 	}
 	tests := []struct {
-		name string
-		args args
-		want Date
+		name    string
+		args    args
+		want    *Date
+		wantErr bool
 	}{
 		{
 			name: "same date with 1 minutes",
@@ -187,7 +188,7 @@ func TestGetDatePastMinute(t *testing.T) {
 				timestamp: "2022-12-07 18:12:46 +0000",
 				minutes:   1,
 			},
-			want: Date{
+			want: &Date{
 				First: "2022-12-07T18:12:46",
 				Last:  "2022-12-07T18:11:46",
 			},
@@ -195,7 +196,12 @@ func TestGetDatePastMinute(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := GetDatePastMinute(tt.args.timestamp, tt.args.minutes); !reflect.DeepEqual(got, tt.want) {
+			got, err := GetDatePastMinute(tt.args.timestamp, tt.args.minutes)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetDatePastMinute() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("GetDatePastMinute() = %v, want %v", got, tt.want)
 			}
 		})

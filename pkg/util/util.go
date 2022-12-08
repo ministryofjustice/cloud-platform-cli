@@ -91,12 +91,15 @@ func Redacted(w io.Writer, output string) {
 	}
 }
 
-func GetDatePastMinute(timestamp string, minutes int) Date {
-	var d Date
-	curTime, _ := time.Parse("2006-01-02 15:04:05 +0000", timestamp)
+func GetDatePastMinute(timestamp string, minutes int) (*Date, error) {
+	d := &Date{}
+	curTime, err := time.Parse("2006-01-02 15:04:05 +0000", timestamp)
+	if err != nil {
+		return d, err
+	}
 	d.First = curTime.Format("2006-01-02T15:04:05")
 	d.Last = curTime.Add(-time.Minute * time.Duration(minutes)).Format("2006-01-02T15:04:05")
-	return d
+	return d, nil
 }
 
 // DeduplicateList will simply take a slice of strings and

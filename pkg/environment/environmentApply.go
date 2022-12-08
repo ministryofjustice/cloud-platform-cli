@@ -82,8 +82,7 @@ func (a *Apply) Initialize() {
 func (a *Apply) Plan() error {
 
 	if a.Options.PRNumber == 0 && a.Options.Namespace == "" {
-		err := fmt.Errorf("either a PR Id/Number or a namespace is required to perform plan")
-		return err
+		return fmt.Errorf("either a PR Id/Number or a namespace is required to perform plan")
 	}
 
 	// If a namespace is given as a flag, then perform a plan for the given namespace.
@@ -129,11 +128,13 @@ func (a *Apply) Apply() error {
 		// get date past 1 minute to the given commit timestamp
 		// This is because concourse missed commits when merged within 1 minute as checks happen on every minute
 		// get the current and current - 1 minute
-		date := util.GetDatePastMinute(a.Options.CommitTimestamp, minutes)
+		date, err := util.GetDatePastMinute(a.Options.CommitTimestamp, minutes)
+		if err != nil {
+			return err
+		}
 
 		// get the list of PRs that are merged in past 1 minute
-		prURLs, err := a.GithubClient.ListMergedPRs(date, prCount)
-
+		prURLs, err := a.GithubClient.ListMergedPRs(*date, prCount)
 		if err != nil {
 			return err
 		}
