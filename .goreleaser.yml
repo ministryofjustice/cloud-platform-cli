@@ -1,6 +1,5 @@
 project_name: cloud-platform-cli
 env:
-  - CGO_ENABLED=0
   - DOCKERFILE=Dockerfile-goreleaser
 before:
   hooks:
@@ -56,7 +55,7 @@ dockers:
     dockerfile: '{{ .Env.DOCKERFILE }}'
     use: buildx
     build_flag_templates:
-      - --build-arg=COMMAND={{ .ProjectName }}
+      - --build-arg=CLOUD_PLATFORM_CLI_VERSION={{ .Tag}}
       - --platform=linux/amd64
       - --label=org.opencontainers.image.title={{ .ProjectName }}
       - --label=org.opencontainers.image.description={{ .ProjectName }}
@@ -71,7 +70,7 @@ dockers:
     dockerfile: '{{ .Env.DOCKERFILE }}'
     use: buildx
     build_flag_templates:
-      - --build-arg=COMMAND={{ .ProjectName }}
+      - --build-arg=CLOUD_PLATFORM_CLI_VERSION={{ .Tag}}
       - --platform=linux/arm64
       - --label=org.opencontainers.image.title={{ .ProjectName }}
       - --label=org.opencontainers.image.description={{ .ProjectName }}
@@ -86,7 +85,7 @@ dockers:
     dockerfile: '{{ .Env.DOCKERFILE }}'
     use: buildx
     build_flag_templates:
-      - --build-arg=COMMAND={{ .ProjectName }}
+      - --build-arg=CLOUD_PLATFORM_CLI_VERSION={{ .Tag}}
       - --platform=linux/arm
       - --label=org.opencontainers.image.title={{ .ProjectName }}
       - --label=org.opencontainers.image.description={{ .ProjectName }}
@@ -101,7 +100,7 @@ dockers:
     dockerfile: '{{ .Env.DOCKERFILE }}'
     use: buildx
     build_flag_templates:
-      - --build-arg=COMMAND={{ .ProjectName }}
+      - --build-arg=CLOUD_PLATFORM_CLI_VERSION={{ .Tag}}
       - --platform=linux/386
       - --label=org.opencontainers.image.title={{ .ProjectName }}
       - --label=org.opencontainers.image.description={{ .ProjectName }}
@@ -129,4 +128,4 @@ docker_manifests:
 announce:
   slack:
     enabled: true
-    message_template: '{{ .ProjectName }} {{ .Tag }} is now live: {{ .ReleaseURL }}'
+    message_template: '{{ .ProjectName }} {{ .Tag }}: The latest release has been created successfully: {{ .ReleaseURL }}'
