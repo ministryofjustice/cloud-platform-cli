@@ -15,6 +15,7 @@ cloud-platform-*
 
 .DS_Store
 completions
+dist
 
 # Go test output
 coverage.out
