@@ -45,3 +45,18 @@ func TestRdsFileAlreadyExists(t *testing.T) {
 
 	os.RemoveAll("resources")
 }
+
+func TestTfFileExists(t *testing.T) {
+	filename := "testFile"
+
+	_, err := os.Create(filename)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if !tfFileExists(filename) {
+		t.Errorf("Expected %s to exist", filename)
+	}
+
+	os.RemoveAll(filename)
+}
