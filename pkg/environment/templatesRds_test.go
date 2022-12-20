@@ -28,3 +28,20 @@ func TestCreatesRdsTfFile(t *testing.T) {
 	os.Remove(filename)
 	os.Remove("resources")
 }
+
+func TestRdsFileAlreadyExists(t *testing.T) {
+	filename := "resources/rds-postgresql.tf"
+	_ = os.Mkdir("resources", 0o755)
+
+	_, err := os.Create(filename)
+	if err != nil {
+		t.Error(err)
+	}
+
+	_, err = createRdsTfFile("postgresql")
+	if err != nil {
+		t.Errorf("Unexpected error: %s", err)
+	}
+
+	os.RemoveAll("resources")
+}

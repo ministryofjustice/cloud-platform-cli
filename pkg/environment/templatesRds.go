@@ -2,6 +2,9 @@ package environment
 
 import (
 	"fmt"
+	"math/rand"
+	"os"
+	"strconv"
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/gookit/color"
@@ -57,9 +60,24 @@ func createRdsTfFile(engineValues string) (string, error) {
 	// fetch the relevant example file into the user's resources/ directory as `rds-<engine>.tf`
 	rdsTemplateFile := rdsTemplateFilePrefix + "rds-" + engineValues + ".tf"
 	rdsTfFile := rdsTfFilePrefix + "rds-" + engineValues + ".tf"
+
+	if tfFileExists(rdsTfFile) {
+		// generate a random string and append to the filename
+		randomInt := strconv.Itoa(rand.Intn(10))
+		rdsTfFile = rdsTfFilePrefix + "rds-" + engineValues + randomInt + ".tf"
+	}
+
 	err := CopyUrlToFile(rdsTemplateFile, rdsTfFile)
 	if err != nil {
 		return "", err
 	}
 	return rdsTfFile, nil
+}
+
+func tfFileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
 }
