@@ -49,83 +49,32 @@ brews:
       fish_completion.install "completions/cloud-platform.fish"
     dependencies:
       - name: go
-# dockers:
-#   - image_templates: [ "ministryofjustice/{{ .ProjectName }}:{{ .Tag}}-amd64" ]
-#     goarch: amd64
-#     dockerfile: '{{ .Env.DOCKERFILE }}'
-#     use: buildx
-#     build_flag_templates:
-#       - --build-arg=CLOUD_PLATFORM_CLI_VERSION={{ .Tag}}
-#       - --platform=linux/amd64
-#       - --label=org.opencontainers.image.title={{ .ProjectName }}
-#       - --label=org.opencontainers.image.description={{ .ProjectName }}
-#       - --label=org.opencontainers.image.url=https://github.com/ministryofjustice/{{ .ProjectName }}
-#       - --label=org.opencontainers.image.source=https://github.com/ministryofjustice/{{ .ProjectName }}
-#       - --label=org.opencontainers.image.version={{ .Version }}
-#       - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
-#       - --label=org.opencontainers.image.revision={{ .FullCommit }}
-#       - --label=org.opencontainers.image.licenses=MIT License
-#   - image_templates: [ "ministryofjustice/{{ .ProjectName }}:{{ .Tag}}-arm64" ]
-#     goarch: arm64
-#     dockerfile: '{{ .Env.DOCKERFILE }}'
-#     use: buildx
-#     build_flag_templates:
-#       - --build-arg=CLOUD_PLATFORM_CLI_VERSION={{ .Tag}}
-#       - --platform=linux/arm64
-#       - --label=org.opencontainers.image.title={{ .ProjectName }}
-#       - --label=org.opencontainers.image.description={{ .ProjectName }}
-#       - --label=org.opencontainers.image.url=https://github.com/ministryofjustice/{{ .ProjectName }}
-#       - --label=org.opencontainers.image.source=https://github.com/ministryofjustice/{{ .ProjectName }}
-#       - --label=org.opencontainers.image.version={{ .Version }}
-#       - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
-#       - --label=org.opencontainers.image.revision={{ .FullCommit }}
-#       - --label=org.opencontainers.image.licenses=MIT License
-#   - image_templates: [ "ministryofjustice/{{ .ProjectName }}:{{ .Tag}}-arm" ]
-#     goarch: arm
-#     dockerfile: '{{ .Env.DOCKERFILE }}'
-#     use: buildx
-#     build_flag_templates:
-#       - --build-arg=CLOUD_PLATFORM_CLI_VERSION={{ .Tag}}
-#       - --platform=linux/arm
-#       - --label=org.opencontainers.image.title={{ .ProjectName }}
-#       - --label=org.opencontainers.image.description={{ .ProjectName }}
-#       - --label=org.opencontainers.image.url=https://github.com/ministryofjustice/{{ .ProjectName }}
-#       - --label=org.opencontainers.image.source=https://github.com/ministryofjustice/{{ .ProjectName }}
-#       - --label=org.opencontainers.image.version={{ .Version }}
-#       - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
-#       - --label=org.opencontainers.image.revision={{ .FullCommit }}
-#       - --label=org.opencontainers.image.licenses=MIT License
-#   - image_templates: [ "ministryofjustice/{{ .ProjectName }}:{{ .Tag}}-386" ]
-#     goarch: "386"
-#     dockerfile: '{{ .Env.DOCKERFILE }}'
-#     use: buildx
-#     build_flag_templates:
-#       - --build-arg=CLOUD_PLATFORM_CLI_VERSION={{ .Tag}}
-#       - --platform=linux/386
-#       - --label=org.opencontainers.image.title={{ .ProjectName }}
-#       - --label=org.opencontainers.image.description={{ .ProjectName }}
-#       - --label=org.opencontainers.image.url=https://github.com/ministryofjustice/{{ .ProjectName }}
-#       - --label=org.opencontainers.image.source=https://github.com/ministryofjustice/{{ .ProjectName }}
-#       - --label=org.opencontainers.image.version={{ .Version }}
-#       - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
-#       - --label=org.opencontainers.image.revision={{ .FullCommit }}
-#       - --label=org.opencontainers.image.licenses=MIT License
+dockers:
+  - image_templates: [ "ministryofjustice/{{ .ProjectName }}:{{ .Tag}}-amd64" ]
+    goarch: amd64
+    dockerfile: '{{ .Env.DOCKERFILE }}'
+    use: buildx
+    build_flag_templates:
+      - --build-arg=CLOUD_PLATFORM_CLI_VERSION={{ .Tag}}
+      - --platform=linux/amd64
+      - --label=org.opencontainers.image.title={{ .ProjectName }}
+      - --label=org.opencontainers.image.description={{ .ProjectName }}
+      - --label=org.opencontainers.image.url=https://github.com/ministryofjustice/{{ .ProjectName }}
+      - --label=org.opencontainers.image.source=https://github.com/ministryofjustice/{{ .ProjectName }}
+      - --label=org.opencontainers.image.version={{ .Version }}
+      - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+      - --label=org.opencontainers.image.licenses=MIT License
 
-# docker_manifests: 
-#   - name_template: "ministryofjustice/{{ .ProjectName }}:{{ .Tag }}"
-#     image_templates:
-#       - "ministryofjustice/{{ .ProjectName }}:{{ .Tag }}-amd64"
-#       - "ministryofjustice/{{ .ProjectName }}:{{ .Tag }}-arm64"
-#       - "ministryofjustice/{{ .ProjectName }}:{{ .Tag }}-arm"
-#       - "ministryofjustice/{{ .ProjectName }}:{{ .Tag }}-386"
-#   - name_template: "ministryofjustice/{{ .ProjectName }}:latest"
-#     image_templates: 
-#       - "ministryofjustice/{{ .ProjectName }}:{{ .Tag }}-amd64"
-#       - "ministryofjustice/{{ .ProjectName }}:{{ .Tag }}-arm64"
-#       - "ministryofjustice/{{ .ProjectName }}:{{ .Tag }}-arm"
-#       - "ministryofjustice/{{ .ProjectName }}:{{ .Tag }}-386"
+docker_manifests: 
+  - name_template: "ministryofjustice/{{ .ProjectName }}:{{ .Tag }}"
+    image_templates:
+      - "ministryofjustice/{{ .ProjectName }}:{{ .Tag }}-amd64"
+  - name_template: "ministryofjustice/{{ .ProjectName }}:latest"
+    image_templates: 
+      - "ministryofjustice/{{ .ProjectName }}:{{ .Tag }}-amd64"
 
-# announce:
-#   slack:
-#     enabled: true
-#     message_template: '{{ .ProjectName }} {{ .Tag }}: The latest release has been created successfully: {{ .ReleaseURL }}'
+announce:
+  slack:
+    enabled: true
+    message_template: '{{ .ProjectName }} {{ .Tag }}: The latest release has been created successfully: {{ .ReleaseURL }}'
