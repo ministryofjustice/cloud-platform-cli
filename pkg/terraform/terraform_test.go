@@ -64,12 +64,22 @@ func TestNewTerraformCLI(t *testing.T) {
 			nil,
 		},
 		{
+			"version not set",
+			true,
+			&TerraformCLIConfig{
+				WorkingDir: "",
+				Workspace:  "default",
+				Version:    "",
+			},
+		},
+		{
 			"terraform-exec error: no working dir",
 			true,
 			&TerraformCLIConfig{
 				ExecPath:   "path/to/tf",
 				WorkingDir: "",
 				Workspace:  "default",
+				Version:    "0.14.8",
 			},
 		},
 		{
@@ -79,6 +89,7 @@ func TestNewTerraformCLI(t *testing.T) {
 				ExecPath:   "path/to/tf",
 				WorkingDir: "./",
 				Workspace:  "my-workspace",
+				Version:    "0.14.8",
 			},
 		},
 		{
@@ -190,7 +201,7 @@ This is expected behavior when the selected workspace did not have an
 existing non-empty state. Please enter a number to select a workspace:
 
 1. default
- 
+
 Enter a value:
 
 Error: Failed to select workspace: input not a valid number`),
@@ -323,7 +334,7 @@ func TestTerraformCLI_Output(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			tfCli := NewTestTerraformCLI(tc.config, nil)
 			ctx := context.Background()
-			_, err := tfCli.Output(ctx)
+			_, err := tfCli.Output(ctx, nil)
 
 			if tc.expectError {
 				assert.Error(t, err)

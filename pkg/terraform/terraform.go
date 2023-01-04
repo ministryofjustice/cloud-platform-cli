@@ -1,8 +1,5 @@
 // Package terraform implements methods and functions for running
 // Terraform commands, such as terraform init/plan/apply.
-//
-// The intention of this package is to call and run inside a CI/CD
-// pipeline.
 package terraform
 
 import (
@@ -10,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"path/filepath"
 	"regexp"
 
 	"github.com/hashicorp/go-version"
@@ -33,32 +29,30 @@ type TerraformCLI struct {
 	tf         terraformExec
 	workingDir string
 	workspace  string
-	// Apply allows you to group apply options passed to Terraform.
-	applyVars []tfexec.ApplyOption
-	// Apply allows you to group apply options passed to Terraform.
-	planVars []tfexec.PlanOption
-	// Init allows you to group init options passed to Terraform.
-	initVars []tfexec.InitOption
-	// Redacted is the flag to enable/disable redacting the terraform before printing output.
-	Redacted bool
+	applyVars  []tfexec.ApplyOption
+	planVars   []tfexec.PlanOption
+	initVars   []tfexec.InitOption
+	Redacted   bool
 }
 
 // TerraformCLIConfig configures the Terraform client
 type TerraformCLIConfig struct {
-	ExecPath   string
+	// ExecPath is the path to the Terraform executable.
+	ExecPath string
+	// WorkingDir is the path Terraform will execute in.
 	WorkingDir string
-	Workspace  string
-	// Apply allows you to group apply options passed to Terraform.
+	// Worspace is the Terraform workspace to use.
+	Workspace string
+	// ApplyVars allows you to group apply options passed to Terraform.
 	ApplyVars []tfexec.ApplyOption
-	// Init allows you to group init options passed to Terraform.
+	// PlanVars allows you to group plan variables passed to Terraform.
 	PlanVars []tfexec.PlanOption
-	// Init allows you to group init options passed to Terraform.
+	// InitVars allows you to group init variables passed to Terraform.
 	InitVars []tfexec.InitOption
 	// Version is the version of Terraform to use.
 	Version string
-	// ExecPath is the path to the Terraform executable.
-	Redacted bool
 	// Redacted is the flag to enable/disable redacting the terraform before printing output.
+	Redacted bool
 }
 
 // NewTerraformCLI creates a terraform-exec client and configures and
@@ -68,9 +62,11 @@ func NewTerraformCLI(config *TerraformCLIConfig) (*TerraformCLI, error) {
 		return nil, errors.New("TerraformCLIConfig cannot be nil - no meaningful default values")
 	}
 
-	if config.ExecPath != "" {
-		config.ExecPath = filepath.Join(config.ExecPath, "terraform")
-	} else {
+	if config.Version == "" {
+		return nil, errors.New("version cannot be empty")
+	}
+
+	if config.ExecPath == "" {
 		i := install.NewInstaller()
 		v := version.Must(version.NewVersion(config.Version))
 
@@ -95,7 +91,6 @@ func NewTerraformCLI(config *TerraformCLIConfig) (*TerraformCLI, error) {
 				return
 			}
 		}()
-
 	}
 
 	tf, err := tfexec.NewTerraform(config.WorkingDir, config.ExecPath)
@@ -193,6 +188,8 @@ func (t *TerraformCLI) Plan(ctx context.Context, w io.Writer) (bool, error) {
 }
 
 // Plan executes the cli command `terraform plan` for a given workspace
-func (t *TerraformCLI) Output(ctx context.Context) (map[string]tfexec.OutputMeta, error) {
+func (t *TerraformCLI) Output(ctx context.Context, w io.Writer) (map[string]tfexec.OutputMeta, error) {
+	// Often times, the output is not needed, so the caller can specify a null writer to ignore.
+	t.tf.SetStdout(w)
 	return t.tf.Output(ctx)
 }

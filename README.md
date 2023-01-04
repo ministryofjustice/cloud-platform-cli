@@ -101,7 +101,7 @@ git tag [my new version]
 git push --tags
 ```
 
-The value of this tag **must** be built into the binary `Version` in the file `pkg/commands/version.go`. This will happen automatically on release.
+When pushing a new tag, consider following [Semantic Versioning](https://semver.org/#semantic-versioning-200) with version format of `MAJOR.MINOR.PATCH`
 
 #### `PreRun` hook
 

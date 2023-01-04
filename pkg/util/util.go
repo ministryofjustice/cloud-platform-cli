@@ -3,20 +3,23 @@ package util
 import (
 	"bufio"
 	"bytes"
-	"context"
 	"errors"
 	"fmt"
 	"io"
 	"os/exec"
 	"regexp"
 	"strings"
-
-	"github.com/ministryofjustice/cloud-platform-environments/pkg/authenticate"
+	"time"
 )
 
 type Repository struct {
 	currentRepository string
 	branch            string
+}
+
+type Date struct {
+	First string
+	Last  string
 }
 
 // set and return the name of the git repository which the current working
@@ -88,30 +91,20 @@ func Redacted(w io.Writer, output string) {
 	}
 }
 
-func ChangedInPR(token, repo, owner string, prNumber int) ([]string, error) {
-	client, err := authenticate.GitHubClient(token)
+func GetDatePastMinute(timestamp string, minutes int) (*Date, error) {
+	d := &Date{}
+	curTime, err := time.Parse("2006-01-02 15:04:05 +0000", timestamp)
 	if err != nil {
-		return nil, err
+		return d, err
 	}
-	repos, _, err := client.PullRequests.ListFiles(context.Background(), owner, repo, prNumber, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	var namespaceNames []string
-	for _, repo := range repos {
-		// namespaces filepaths are assumed to come in
-		// the format: namespaces/<cluster>.cloud-platform.service.justice.gov.uk/<namespaceName>
-		s := strings.Split(*repo.Filename, "/")
-		namespaceNames = append(namespaceNames, s[2])
-	}
-
-	return deduplicateList(namespaceNames), nil
+	d.First = curTime.Format("2006-01-02T15:04:05")
+	d.Last = curTime.Add(-time.Minute * time.Duration(minutes)).Format("2006-01-02T15:04:05")
+	return d, nil
 }
 
-// deduplicateList will simply take a slice of strings and
+// DeduplicateList will simply take a slice of strings and
 // return a deduplicated version.
-func deduplicateList(s []string) (list []string) {
+func DeduplicateList(s []string) (list []string) {
 	keys := make(map[string]bool)
 
 	for _, entry := range s {

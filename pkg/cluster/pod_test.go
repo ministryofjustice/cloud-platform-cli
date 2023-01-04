@@ -11,7 +11,7 @@ import (
 
 func TestCluster_DeleteStuckPods(t *testing.T) {
 	type args struct {
-		c    *client.Client
+		c    *client.KubeClient
 		node *v1.Node
 	}
 	tests := []struct {
@@ -44,7 +44,7 @@ func TestCluster_DeleteStuckPods(t *testing.T) {
 
 func Test_getNodePods(t *testing.T) {
 	type args struct {
-		c *client.Client
+		c *client.KubeClient
 		n *v1.Node
 	}
 	tests := []struct {
@@ -79,7 +79,7 @@ func Test_getNodePods(t *testing.T) {
 
 func Test_getPods(t *testing.T) {
 	type args struct {
-		c *client.Client
+		c *client.KubeClient
 	}
 	tests := []struct {
 		name    string
@@ -172,6 +172,33 @@ func TestCluster_FindNode(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Cluster.FindNode() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCluster_GetStuckPods(t *testing.T) {
+	type args struct {
+		c *client.KubeClient
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "getPods",
+			args: args{
+				c: mockClient,
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cluster := &Cluster{}
+			if err := cluster.GetStuckPods(tt.args.c); (err != nil) != tt.wantErr {
+				t.Errorf("Cluster.GetStuckPods() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

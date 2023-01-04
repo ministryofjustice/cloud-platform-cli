@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/kelseyhightower/envconfig"
@@ -42,7 +43,15 @@ type Apply struct {
 	RequiredEnvVars RequiredEnvVars
 	Applier         Applier
 	Dir             string
+	GithubClient    github.GithubIface
 }
+
+const (
+	// Assumption that there are no more than 50 PRs merged in last minute
+	prCount = 50
+	// minutes past the current commit timestamp to run the apply
+	minutes = 1
+)
 
 // NewApply creates a new Apply object and populates its fields with values from options(which are flags),
 // instantiate Applier object which also checks and sets the Backend config variables to do terraform init,
@@ -78,8 +87,7 @@ func (a *Apply) Initialize() {
 func (a *Apply) Plan() error {
 
 	if a.Options.PRNumber == 0 && a.Options.Namespace == "" {
-		err := fmt.Errorf("either a PR Id/Number or a namespace is required to perform plan")
-		return err
+		return fmt.Errorf("either a PR Id/Number or a namespace is required to perform plan")
 	}
 
 	// If a namespace is given as a flag, then perform a plan for the given namespace.
@@ -90,11 +98,10 @@ func (a *Apply) Plan() error {
 		}
 		return nil
 	} else {
-		changedNamespaces, err := util.ChangedInPR(a.Options.GithubToken, cloudPlatformEnvRepo, mojOwner, a.Options.PRNumber)
+		changedNamespaces, err := a.nsChangedInPR(a.Options.ClusterCtx, a.Options.PRNumber)
 		if err != nil {
 			return err
 		}
-
 		for _, namespace := range changedNamespaces {
 			a.Options.Namespace = namespace
 			err = a.planNamespace()
@@ -112,30 +119,49 @@ func (a *Apply) Plan() error {
 // else checks for PR number and get the list of changed namespaces in that merged PR. Then does the kubectl apply and
 // terraform init and apply of all the namespaces merged in the PR
 func (a *Apply) Apply() error {
-
-	if a.Options.PRNumber == 0 && a.Options.Namespace == "" {
-		err := fmt.Errorf("either a PR Id/Number or a namespace is required to perform apply")
+	if a.Options.CommitTimestamp == "" && a.Options.Namespace == "" {
+		err := fmt.Errorf("either commit timestamp or a namespace is required to perform apply")
 		return err
 	}
-
 	// If a namespace is given as a flag, then perform a apply for the given namespace.
 	if a.Options.Namespace != "" {
 		err := a.applyNamespace()
 		if err != nil {
 			return err
 		}
-		return nil
 	} else {
-		changedNamespaces, err := util.ChangedInPR(a.Options.GithubToken, cloudPlatformEnvRepo, mojOwner, a.Options.PRNumber)
+		// get date past 1 minute to the given commit timestamp
+		// This is because concourse missed commits when merged within 1 minute as checks happen on every minute
+		// get the current and current - 1 minute
+		date, err := util.GetDatePastMinute(a.Options.CommitTimestamp, minutes)
 		if err != nil {
 			return err
 		}
 
-		for _, namespace := range changedNamespaces {
-			a.Options.Namespace = namespace
-			err = a.applyNamespace()
+		// get the list of PRs that are merged in past 1 minute
+		prURLs, err := a.GithubClient.ListMergedPRs(*date, prCount)
+		if err != nil {
+			return err
+		}
+
+		for _, pr := range prURLs {
+			url := string(pr.PullRequest.Url)
+			prNumber, err := strconv.Atoi(url[strings.LastIndex(url, "/")+1:])
+			fmt.Println("Found PR:", prNumber)
 			if err != nil {
 				return err
+			}
+			changedNamespaces, err := a.nsChangedInPR(a.Options.ClusterCtx, prNumber)
+			if err != nil {
+				return err
+			}
+			for _, namespace := range changedNamespaces {
+				a.Options.Namespace = namespace
+				fmt.Println("Applying Namespace:", namespace)
+				err = a.applyNamespace()
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -327,4 +353,28 @@ func (a *Apply) applyNamespace() error {
 	fmt.Println("\nOutput of terraform:")
 	util.Redacted(os.Stdout, outputTerraform)
 	return nil
+}
+
+// nsChangedInPR get the list of changed files for a given PR. checks if the namespaces exists in the given cluster
+// folder and return the list of namespaces.
+func (a *Apply) nsChangedInPR(cluster string, prNumber int) ([]string, error) {
+	repos, err := a.GithubClient.GetChangedFiles(prNumber)
+	if err != nil {
+		return nil, err
+	}
+
+	var namespaceNames []string
+	for _, repo := range repos {
+		// namespaces filepaths are assumed to come in
+		// the format: namespaces/<cluster>.cloud-platform.service.justice.gov.uk/<namespaceName>
+		s := strings.Split(*repo.Filename, "/")
+		//only get namespaces from the folder that belong to the given cluster and
+		// ignore changes outside namespace directories
+		if len(s) > 1 && s[1] == cluster {
+			namespaceNames = append(namespaceNames, s[2])
+		}
+
+	}
+
+	return util.DeduplicateList(namespaceNames), nil
 }

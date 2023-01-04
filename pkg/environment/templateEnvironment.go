@@ -74,10 +74,10 @@ func (values *Namespace) promptUserForNamespaceValues() error {
 	_ = q.getAnswer()
 	values.Environment = q.value
 
-	// If the user requests a namespace for a dev-alpha environment,
-	// we need to create the namespace in the dev-alpha directory.
-	if strings.ToLower(q.value) == "dev-alpha" {
-		namespaceBaseFolder = devAlphaBaseDir
+	// If the user requests a namespace for a beta environment,
+	// we need to create the namespace in the live-2 directory.
+	if strings.ToLower(q.value) == "beta" {
+		namespaceBaseFolder = betaBaseDir
 	}
 
 	if q.value == "development" || q.value == "dev" {

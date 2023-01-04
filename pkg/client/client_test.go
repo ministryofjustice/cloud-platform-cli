@@ -41,22 +41,62 @@ func TestGetClientset(t *testing.T) {
 	}
 }
 
-func TestNew(t *testing.T) {
+func TestNewAwsCreds(t *testing.T) {
+	type args struct {
+		region string
+	}
 	tests := []struct {
-		name string
-		want *Client
+		name    string
+		args    args
+		wantErr bool
 	}{
 		{
-			name: "grabClient",
-			want: &Client{
-				Clientset: &kubernetes.Clientset{},
+			name: "NewAwsCreds",
+			args: args{
+				region: "us-east-1",
 			},
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := New(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("New() = %v, want %v", got, tt.want)
+			_, err := NewAwsCreds(tt.args.region)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NewAwsCreds() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+		})
+	}
+}
+
+func TestNewKubeClient(t *testing.T) {
+	type args struct {
+		p string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *KubeClient
+		wantErr bool
+	}{
+		{
+			name: "Pass empty path",
+			args: args{
+				p: "",
+			},
+			want:    nil,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := NewKubeClient(tt.args.p)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NewKubeClient() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewKubeClient() = %v, want %v", got, tt.want)
 			}
 		})
 	}
