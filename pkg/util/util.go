@@ -97,7 +97,7 @@ func GetDatePastMinute(timestamp string, minutes int) (*Date, error) {
 	if err != nil {
 		return d, err
 	}
-	d.First = curTime.Format("2006-01-02T15:04:05")
+	d.First = curTime.Truncate(time.Minute).Add(+time.Minute * time.Duration(1)).Format("2006-01-02T15:04:05")
 	d.Last = curTime.Add(-time.Minute * time.Duration(minutes)).Format("2006-01-02T15:04:05")
 	return d, nil
 }

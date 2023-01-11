@@ -189,7 +189,7 @@ func TestGetDatePastMinute(t *testing.T) {
 				minutes:   1,
 			},
 			want: &Date{
-				First: "2022-12-07T18:12:46",
+				First: "2022-12-07T18:13:00",
 				Last:  "2022-12-07T18:11:46",
 			},
 		},
