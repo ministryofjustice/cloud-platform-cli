@@ -68,7 +68,7 @@ func (gh *GithubClient) ListMergedPRs(date util.Date, count int) ([]Nodes, error
 			Nodes []Nodes
 		} `graphql:"search(first: $count, query: $searchQuery, type: ISSUE)"`
 	}
-
+	fmt.Println("Searching Merged PRs from %s to %s", date.Last, date.First)
 	variables := map[string]interface{}{
 		"searchQuery": githubv4.String(
 			fmt.Sprintf(`repo:%s/%s is:pr is:closed merged:%s..%s`,
