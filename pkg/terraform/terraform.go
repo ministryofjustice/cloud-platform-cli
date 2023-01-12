@@ -195,7 +195,7 @@ func (t *TerraformCLI) Output(ctx context.Context, w io.Writer) (map[string]tfex
 	return t.tf.Output(ctx)
 }
 
-// Show executes the cli command `terraform state list` for a given workspace
+// Show reads the default state path and outputs the state
 func (t *TerraformCLI) Show(ctx context.Context, w io.Writer) (*tfjson.State, error) {
 	return t.tf.Show(ctx)
 }
@@ -203,12 +203,13 @@ func (t *TerraformCLI) Show(ctx context.Context, w io.Writer) (*tfjson.State, er
 // StateList loop over the state and builds a state list
 func (t *TerraformCLI) StateList(*tfjson.State state) ([]string, error) {
 	stateList := []string{}
+
 	for _, resource := range state.Values.RootModule.Resources {
 		stateList = append(stateList, resource)
-		for _, childResources := range state.Values.RootModule.ChildModules {
-			for _, modules := range childResources.Resources {
-				stateList = append(stateList, resource)
-			}
+	}
+	for _, childResources := range state.Values.RootModule.ChildModules {
+		for _, modules := range childResources.Resources {
+			stateList = append(stateList, childResources)
 		}
 	}
 	return stateList
