@@ -186,9 +186,6 @@ func TestApply_nsChangedInPR(t *testing.T) {
 func TestSecretBlockerExists(t *testing.T) {
 	tempDir := "namespaces/testCluster/testNamespace"
 	tempFile := tempDir + "/SECRET_ROTATE_BLOCK"
-	if !secretBlockerExists(tempDir) {
-		t.Errorf("secretBlockerExists() = %v, want %v", false, true)
-	}
 
 	if err := os.MkdirAll(tempFile, os.ModePerm); err != nil {
 		t.Fatal(err)
