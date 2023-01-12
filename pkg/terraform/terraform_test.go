@@ -9,9 +9,11 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"reflect"
 	"testing"
 
 	"github.com/hashicorp/terraform-exec/tfexec"
+	tfjson "github.com/hashicorp/terraform-json"
 	mocks "github.com/ministryofjustice/cloud-platform-cli/pkg/mocks/terraform"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -26,6 +28,7 @@ func NewTestTerraformCLI(config *TerraformCLIConfig, tfMock *mocks.TerraformExec
 		m.On("Apply", mock.Anything).Return(nil)
 		m.On("Plan", mock.Anything).Return(true, nil)
 		m.On("Output", mock.Anything).Return(nil, nil)
+		m.On("Show", mock.Anything).Return(nil, nil)
 		m.On("WorkspaceNew", mock.Anything, mock.Anything).Return(nil)
 		tfMock = m
 	}
@@ -342,6 +345,78 @@ func TestTerraformCLI_Output(t *testing.T) {
 			}
 
 			assert.NoError(t, err)
+		})
+	}
+}
+
+func TestTerraformCLI_Show(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name        string
+		expectError bool
+		config      *TerraformCLIConfig
+	}{
+		{
+			"happy path",
+			false,
+			&TerraformCLIConfig{},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			tfCli := NewTestTerraformCLI(tc.config, nil)
+			ctx := context.Background()
+			_, err := tfCli.Show(ctx, nil)
+
+			if tc.expectError {
+				assert.Error(t, err)
+				return
+			}
+
+			assert.NoError(t, err)
+		})
+	}
+}
+
+func TestTerraformCLI_StateList(t *testing.T) {
+
+	type args struct {
+		state *tfjson.State
+	}
+	tests := []struct {
+		name   string
+		config *TerraformCLIConfig
+		args   args
+		want   []string
+	}{
+		{
+			name:   "happy path",
+			config: &TerraformCLIConfig{},
+			args: args{
+				state: &tfjson.State{
+					Values: &tfjson.StateValues{
+						RootModule: &tfjson.StateModule{
+							Resources: []*tfjson.StateResource{{
+								Address:         "null_resource.foo",
+								AttributeValues: map[string]interface{}{},
+							}},
+						},
+					},
+				},
+			},
+
+			want: []string{"null_resource.foo"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := new(mocks.TerraformExec)
+			tfCli := NewTestTerraformCLI(tt.config, m)
+			if got := tfCli.StateList(tt.args.state); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("TerraformCLI.StateList() = %v, want %v", got, tt.want)
+			}
 		})
 	}
 }

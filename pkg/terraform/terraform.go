@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/hc-install/releases"
 	"github.com/hashicorp/hc-install/src"
 	"github.com/hashicorp/terraform-exec/tfexec"
+	tfjson "github.com/hashicorp/terraform-json"
 )
 
 var (
@@ -192,4 +193,24 @@ func (t *TerraformCLI) Output(ctx context.Context, w io.Writer) (map[string]tfex
 	// Often times, the output is not needed, so the caller can specify a null writer to ignore.
 	t.tf.SetStdout(w)
 	return t.tf.Output(ctx)
+}
+
+// Show reads the default state path and outputs the state
+func (t *TerraformCLI) Show(ctx context.Context, w io.Writer) (*tfjson.State, error) {
+	return t.tf.Show(ctx)
+}
+
+// StateList loop over the state and builds a state list
+func (t *TerraformCLI) StateList(state *tfjson.State) []string {
+	stateList := []string{}
+
+	for _, resource := range state.Values.RootModule.Resources {
+		stateList = append(stateList, resource.Address)
+	}
+	for _, childResources := range state.Values.RootModule.ChildModules {
+		for _, modules := range childResources.Resources {
+			stateList = append(stateList, modules.Address)
+		}
+	}
+	return stateList
 }

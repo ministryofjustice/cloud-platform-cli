@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"github.com/hashicorp/terraform-exec/tfexec"
+	tfjson "github.com/hashicorp/terraform-json"
 )
 
 //go:generate mockery --name=terraformExec  --structname=TerraformExec --output=pkg/mocks/terraform --dir pkg/terraform
@@ -22,4 +23,5 @@ type terraformExec interface {
 	Output(ctx context.Context, opts ...tfexec.OutputOption) (map[string]tfexec.OutputMeta, error)
 	WorkspaceNew(ctx context.Context, workspace string, opts ...tfexec.WorkspaceNewCmdOption) error
 	WorkspaceSelect(ctx context.Context, workspace string) error
+	Show(ctx context.Context, opts ...tfexec.ShowOption) (*tfjson.State, error)
 }
