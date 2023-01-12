@@ -197,7 +197,7 @@ func (t *TerraformCLI) Output(ctx context.Context, w io.Writer) (map[string]tfex
 
 // Show executes the cli command `terraform state list` for a given workspace
 func (t *TerraformCLI) Show(ctx context.Context, w io.Writer) (*tfjson.State, error) {
-	return tf.Show(ctx)
+	return t.tf.Show(ctx)
 }
 
 // StateList loop over the state and builds a state list
