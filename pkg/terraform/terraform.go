@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/hc-install/releases"
 	"github.com/hashicorp/hc-install/src"
 	"github.com/hashicorp/terraform-exec/tfexec"
+	tfjson "github.com/hashicorp/terraform-json"
 )
 
 var (
@@ -200,15 +201,15 @@ func (t *TerraformCLI) Show(ctx context.Context, w io.Writer) (*tfjson.State, er
 }
 
 // StateList loop over the state and builds a state list
-func (t *TerraformCLI) StateList(state *tfjson.State) ([]string, error) {
+func (t *TerraformCLI) StateList(state *tfjson.State) []string {
 	stateList := []string{}
 
 	for _, resource := range state.Values.RootModule.Resources {
-		stateList = append(stateList, resource)
+		stateList = append(stateList, resource.Address)
 	}
 	for _, childResources := range state.Values.RootModule.ChildModules {
 		for _, modules := range childResources.Resources {
-			stateList = append(stateList, childResources)
+			stateList = append(stateList, modules.Address)
 		}
 	}
 	return stateList
