@@ -1,6 +1,7 @@
 package environment
 
 import (
+	"os"
 	"reflect"
 	"testing"
 
@@ -180,4 +181,26 @@ func TestApply_nsChangedInPR(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSecretBlockerExists(t *testing.T) {
+	tempDir := "namespaces/testCluster/testNamespace"
+	tempFile := tempDir + "/SECRET_ROTATE_BLOCK"
+	if !secretBlockerExists(tempDir) {
+		t.Errorf("secretBlockerExists() = %v, want %v", false, true)
+	}
+
+	if err := os.MkdirAll(tempFile, os.ModePerm); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := os.RemoveAll(tempFile); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	if secretBlockerExists(tempDir) != true {
+		t.Errorf("secretBlocker should return true as the file does exist")
+	}
+
 }
