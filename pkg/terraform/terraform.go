@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"regexp"
 
 	"github.com/hashicorp/go-version"
@@ -201,7 +200,7 @@ func (t *TerraformCLI) Show(ctx context.Context, w io.Writer) (*tfjson.State, er
 }
 
 // StateList loop over the state and builds a state list
-func (t *TerraformCLI) StateList(*tfjson.State state) ([]string, error) {
+func (t *TerraformCLI) StateList(state *tfjson.State) ([]string, error) {
 	stateList := []string{}
 
 	for _, resource := range state.Values.RootModule.Resources {
@@ -214,4 +213,3 @@ func (t *TerraformCLI) StateList(*tfjson.State state) ([]string, error) {
 	}
 	return stateList
 }
-
