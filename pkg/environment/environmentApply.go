@@ -288,9 +288,33 @@ func (a *Apply) planNamespace() error {
 	return nil
 }
 
+// secretBlockerExists takes a filepath (usually a namespace name i.e. namespaces/live.../mynamespace)
+// and checks if the file SECRET_ROTATE_BLOCK exists.
+func secretBlockerExists(filePath string) bool {
+	// Check if the file contains a secret blocker
+	// If it does, we don't want to apply it
+	// If it doesn't, we do want to apply it
+	secretBlocker := "SECRET_ROTATE_BLOCK"
+	if _, err := os.Stat(filePath + "/" + secretBlocker); err == nil {
+		return true
+	}
+
+	return false
+}
+
 // applyNamespace intiates a new Apply object with options and env variables, and calls the
 // applyKubectl with dry-run disabled and calls applier TerraformInitAndApply and prints the output
 func (a *Apply) applyNamespace() error {
+	// secretBlocker is a file used to control the behaviour of a namespace that will have all
+	// secrets in a namespace rotated. This came out of the requirement to rotate IAM credentials
+	// post circle breach.
+	repoPath := "namespaces/" + a.Options.ClusterCtx + "/" + a.Options.Namespace
+	if secretBlockerExists(repoPath) {
+		log.Println("This namespace has a secret rotation blocker file, skipping apply")
+		// We don't want to return an error here so we softly fail.
+		return nil
+	}
+
 	applier := NewApply(*a.Options)
 
 	outputKubectl, err := applier.applyKubectl()
