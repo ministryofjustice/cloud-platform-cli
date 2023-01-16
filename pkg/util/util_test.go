@@ -185,12 +185,12 @@ func TestGetDatePastMinute(t *testing.T) {
 		{
 			name: "same date with 1 minutes",
 			args: args{
-				timestamp: "2022-12-07 18:12:46 +0000",
+				timestamp: "2023-01-16T16:28:06Z",
 				minutes:   1,
 			},
 			want: &Date{
-				First: "2022-12-07T18:13:00",
-				Last:  "2022-12-07T18:11:46",
+				First: "2023-01-16T16:29:00",
+				Last:  "2023-01-16T16:27:06",
 			},
 		},
 	}
