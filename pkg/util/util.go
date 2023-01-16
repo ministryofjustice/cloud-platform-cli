@@ -93,7 +93,7 @@ func Redacted(w io.Writer, output string) {
 
 func GetDatePastMinute(timestamp string, minutes int) (*Date, error) {
 	d := &Date{}
-	curTime, err := time.Parse("2006-01-02 15:04:05 +0000", timestamp)
+	curTime, err := time.Parse("2006-01-02T15:04:05Z07:00", timestamp)
 	if err != nil {
 		return d, err
 	}
