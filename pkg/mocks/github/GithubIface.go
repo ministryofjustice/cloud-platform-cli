@@ -39,6 +39,27 @@ func (_m *GithubIface) GetChangedFiles(_a0 int) ([]*github.CommitFile, error) {
 	return r0, r1
 }
 
+// IsMerged provides a mock function with given fields: prNumber
+func (_m *GithubIface) IsMerged(prNumber int) (bool, error) {
+	ret := _m.Called(prNumber)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(int) bool); ok {
+		r0 = rf(prNumber)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(int) error); ok {
+		r1 = rf(prNumber)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListMergedPRs provides a mock function with given fields: date, count
 func (_m *GithubIface) ListMergedPRs(date util.Date, count int) ([]pkggithub.Nodes, error) {
 	ret := _m.Called(date, count)

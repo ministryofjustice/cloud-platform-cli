@@ -39,13 +39,6 @@ type Apply struct {
 	GithubClient    github.GithubIface
 }
 
-const (
-	// Assumption that there are no more than 50 PRs merged in last minute
-	prCount = 50
-	// minutes past the current commit timestamp to run the apply
-	minutes = 1
-)
-
 // NewApply creates a new Apply object and populates its fields with values from options(which are flags),
 // instantiate Applier object which also checks and sets the Backend config variables to do terraform init,
 // RequiredEnvVars object which stores the values required for plan/apply of namespace
@@ -67,6 +60,8 @@ func (a *Apply) Initialize() {
 		log.Fatalln("Environment variables required to perform terraform operations not set:", err.Error())
 	}
 	a.RequiredEnvVars.clustername = reqEnvVars.clustername
+	a.RequiredEnvVars.clusterstatebucket = reqEnvVars.clusterstatebucket
+	a.RequiredEnvVars.kubernetescluster = reqEnvVars.kubernetescluster
 	a.RequiredEnvVars.githubowner = reqEnvVars.githubowner
 	a.RequiredEnvVars.githubtoken = reqEnvVars.githubtoken
 	a.RequiredEnvVars.pingdomapitoken = reqEnvVars.pingdomapitoken
