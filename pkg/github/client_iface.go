@@ -12,4 +12,5 @@ import (
 type GithubIface interface {
 	ListMergedPRs(date util.Date, count int) ([]Nodes, error)
 	GetChangedFiles(int) ([]*github.CommitFile, error)
+	IsMerged(prNumber int) (bool, error)
 }
