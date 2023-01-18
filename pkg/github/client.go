@@ -14,6 +14,7 @@ var _ GithubPullRequestsService = (*github.PullRequestsService)(nil)
 
 type GithubPullRequestsService interface {
 	ListFiles(ctx context.Context, owner string, repo string, number int, opt *github.ListOptions) ([]*github.CommitFile, *github.Response, error)
+	IsMerged(ctx context.Context, owner string, repo string, number int) (bool, *github.Response, error)
 }
 
 // GithubClient for handling requests to the Github V3 and V4 APIs.
@@ -91,4 +92,13 @@ func (gh *GithubClient) GetChangedFiles(prNumber int) ([]*github.CommitFile, err
 	}
 
 	return repos, nil
+}
+
+func (gh *GithubClient) IsMerged(prNumber int) (bool, error) {
+	merged, _, err := gh.PullRequests.IsMerged(context.Background(), gh.Owner, gh.Repository, prNumber)
+	if err != nil {
+		return false, err
+	}
+
+	return merged, nil
 }

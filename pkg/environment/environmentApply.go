@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/kelseyhightower/envconfig"
@@ -17,7 +16,6 @@ import (
 type Options struct {
 	Namespace, KubecfgPath, ClusterCtx, GithubToken string
 	PRNumber                                        int
-	CommitTimestamp                                 string
 	AllNamespaces                                   bool
 }
 
@@ -41,13 +39,6 @@ type Apply struct {
 	GithubClient    github.GithubIface
 }
 
-const (
-	// Assumption that there are no more than 50 PRs merged in last minute
-	prCount = 50
-	// minutes past the current commit timestamp to run the apply
-	minutes = 1
-)
-
 // NewApply creates a new Apply object and populates its fields with values from options(which are flags),
 // instantiate Applier object which also checks and sets the Backend config variables to do terraform init,
 // RequiredEnvVars object which stores the values required for plan/apply of namespace
@@ -69,6 +60,8 @@ func (a *Apply) Initialize() {
 		log.Fatalln("Environment variables required to perform terraform operations not set:", err.Error())
 	}
 	a.RequiredEnvVars.clustername = reqEnvVars.clustername
+	a.RequiredEnvVars.clusterstatebucket = reqEnvVars.clusterstatebucket
+	a.RequiredEnvVars.kubernetescluster = reqEnvVars.kubernetescluster
 	a.RequiredEnvVars.githubowner = reqEnvVars.githubowner
 	a.RequiredEnvVars.githubtoken = reqEnvVars.githubtoken
 	a.RequiredEnvVars.pingdomapitoken = reqEnvVars.pingdomapitoken
@@ -114,8 +107,8 @@ func (a *Apply) Plan() error {
 // else checks for PR number and get the list of changed namespaces in that merged PR. Then does the kubectl apply and
 // terraform init and apply of all the namespaces merged in the PR
 func (a *Apply) Apply() error {
-	if a.Options.CommitTimestamp == "" && a.Options.Namespace == "" {
-		err := fmt.Errorf("either commit timestamp or a namespace is required to perform apply")
+	if a.Options.PRNumber == 0 && a.Options.Namespace == "" {
+		err := fmt.Errorf("either a PR ID/Number or a namespace is required to perform apply")
 		return err
 	}
 	// If a namespace is given as a flag, then perform a apply for the given namespace.
@@ -125,28 +118,12 @@ func (a *Apply) Apply() error {
 			return err
 		}
 	} else {
-		// get date past 1 minute to the given commit timestamp
-		// This is because concourse missed commits when merged within 1 minute as checks happen on every minute
-		// get the current and current - 1 minute
-		date, err := util.GetDatePastMinute(a.Options.CommitTimestamp, minutes)
+		isMerged, err := a.GithubClient.IsMerged(a.Options.PRNumber)
 		if err != nil {
 			return err
 		}
-
-		// get the list of PRs that are merged in past 1 minute
-		prURLs, err := a.GithubClient.ListMergedPRs(*date, prCount)
-		if err != nil {
-			return err
-		}
-
-		for _, pr := range prURLs {
-			url := string(pr.PullRequest.Url)
-			prNumber, err := strconv.Atoi(url[strings.LastIndex(url, "/")+1:])
-			fmt.Println("Found PR:", prNumber)
-			if err != nil {
-				return err
-			}
-			changedNamespaces, err := a.nsChangedInPR(a.Options.ClusterCtx, prNumber)
+		if isMerged {
+			changedNamespaces, err := a.nsChangedInPR(a.Options.ClusterCtx, a.Options.PRNumber)
 			if err != nil {
 				return err
 			}
@@ -159,6 +136,7 @@ func (a *Apply) Apply() error {
 				}
 			}
 		}
+
 	}
 	return nil
 }

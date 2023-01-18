@@ -10,12 +10,18 @@ import (
 )
 
 type mockGithub struct {
-	resp []*github.CommitFile
+	resp   []*github.CommitFile
+	merged bool
 }
 
 func (m *mockGithub) ListFiles(ctx context.Context, owner string, repo string, number int, opt *github.ListOptions) ([]*github.CommitFile, *github.Response, error) {
 	return m.resp, nil, nil
 }
+
+func (m *mockGithub) IsMerged(ctx context.Context, owner string, repo string, number int) (bool, *github.Response, error) {
+	return true, nil, nil
+}
+
 func TestNewGithubClient(t *testing.T) {
 	type args struct {
 		config *GithubClientConfig
@@ -79,4 +85,23 @@ func TestGithubClient_GetChangedFiles(t *testing.T) {
 	if !reflect.DeepEqual(got, mc.resp) {
 		t.Errorf("GithubClient.GetChangedFiles() = %v, want %v", got, mc.resp)
 	}
+}
+
+func TestGithubClient_IsMerged(t *testing.T) {
+	mc := &mockGithub{
+		merged: true,
+	}
+	gh := &GithubClient{
+		PullRequests: mc,
+	}
+	got, err := gh.IsMerged(8344)
+
+	if err != nil {
+		t.Errorf("GithubClient.IsMerged() error = %v, wantErr %v", err, nil)
+		return
+	}
+	if got != mc.merged {
+		t.Errorf("GithubClient.IsMerged() = %v, want %v", got, true)
+	}
+
 }
