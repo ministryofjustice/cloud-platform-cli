@@ -11,18 +11,18 @@ import (
 const NamespaceYamlFile = "00-namespace.yaml"
 
 type Namespace struct {
-	Application           string
-	BusinessUnit          string
-	Environment           string
-	GithubTeam            string
-	InfrastructureSupport string
-	IsProduction          string
-	Namespace             string
-	Owner                 string
-	OwnerEmail            string
-	SlackChannel          string
-	SourceCode            string
-	ReviewAfter           string
+	Application           string `yaml:"application"`
+	BusinessUnit          string `yaml:"businessUnit"`
+	Environment           string `yaml:"environment"`
+	GithubTeam            string `yaml:"githubTeam"`
+	InfrastructureSupport string `yaml:"infrastructureSupport"`
+	IsProduction          string `yaml:"isProduction"`
+	Namespace             string `yaml:"namespace"`
+	Owner                 string `yaml:"owner"`
+	OwnerEmail            string `yaml:"ownerEmail"`
+	SlackChannel          string `yaml:"slackChannel"`
+	SourceCode            string `yaml:"sourceCode"`
+	ReviewAfter           string `yaml:"reviewAfter"`
 }
 
 // This is a public function so that we can use it in our tests
