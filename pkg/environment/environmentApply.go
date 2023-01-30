@@ -129,14 +129,15 @@ func (a *Apply) Apply() error {
 			}
 			for _, namespace := range changedNamespaces {
 				a.Options.Namespace = namespace
-				fmt.Println("Applying Namespace:", namespace)
-				err = a.applyNamespace()
-				if err != nil {
-					return err
+				if _, err = os.Stat(a.Options.Namespace); err != nil {
+					fmt.Println("Applying Namespace:", namespace)
+					err = a.applyNamespace()
+					if err != nil {
+						return err
+					}
 				}
 			}
 		}
-
 	}
 	return nil
 }
@@ -255,14 +256,17 @@ func (a *Apply) planNamespace() error {
 		return err
 	}
 
-	outputTerraform, err := applier.planTerraform()
-	if err != nil {
-		return err
-	}
-
 	fmt.Println("\nOutput of kubectl:", outputKubectl)
-	fmt.Println("\nOutput of terraform:")
-	util.Redacted(os.Stdout, outputTerraform)
+
+	if _, err = os.Stat(a.Options.Namespace + "/resources"); err != nil {
+		outputTerraform, err := applier.planTerraform()
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("\nOutput of terraform:")
+		util.Redacted(os.Stdout, outputTerraform)
+	}
 	return nil
 }
 
@@ -287,6 +291,7 @@ func (a *Apply) applyNamespace() error {
 	// secrets in a namespace rotated. This came out of the requirement to rotate IAM credentials
 	// post circle breach.
 	repoPath := "namespaces/" + a.Options.ClusterCtx + "/" + a.Options.Namespace
+
 	if secretBlockerExists(repoPath) {
 		log.Println("This namespace has a secret rotation blocker file, skipping apply")
 		// We don't want to return an error here so we softly fail.
@@ -299,15 +304,17 @@ func (a *Apply) applyNamespace() error {
 	if err != nil {
 		return err
 	}
-
-	outputTerraform, err := applier.applyTerraform()
-	if err != nil {
-		return err
-	}
-
 	fmt.Println("\nOutput of kubectl:", outputKubectl)
-	fmt.Println("\nOutput of terraform:")
-	util.Redacted(os.Stdout, outputTerraform)
+
+	if _, err = os.Stat(a.Options.Namespace + "/resources"); err != nil {
+		outputTerraform, err := applier.applyTerraform()
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("\nOutput of terraform:")
+		util.Redacted(os.Stdout, outputTerraform)
+	}
 	return nil
 }
 
