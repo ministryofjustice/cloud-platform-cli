@@ -1,5 +1,5 @@
 # Build Cloud Platform tools (CLI)
-FROM golang:1.19.4-alpine AS cli_builder
+FROM golang:1.19.5-alpine AS cli_builder
 
 ENV \
     CGO_ENABLED=0 \
