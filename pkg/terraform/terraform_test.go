@@ -26,6 +26,7 @@ func NewTestTerraformCLI(config *TerraformCLIConfig, tfMock *mocks.TerraformExec
 		m.On("SetStderr", mock.Anything).Once()
 		m.On("Init", mock.Anything).Return(nil)
 		m.On("Apply", mock.Anything).Return(nil)
+		m.On("Destroy", mock.Anything).Return(nil)
 		m.On("Plan", mock.Anything).Return(true, nil)
 		m.On("Output", mock.Anything).Return(nil, nil)
 		m.On("Show", mock.Anything).Return(nil, nil)
@@ -271,6 +272,42 @@ func TestTerraformCLI_Apply(t *testing.T) {
 			ctx := context.Background()
 			var out bytes.Buffer
 			err := tfCli.Apply(ctx, &out)
+
+			if tc.expectError {
+				assert.Error(t, err)
+				return
+			}
+
+			assert.NoError(t, err)
+		})
+	}
+
+}
+
+func TestTerraformCLI_Destroy(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name        string
+		expectError bool
+		config      *TerraformCLIConfig
+	}{
+		{
+			"happy path",
+			false,
+			&TerraformCLIConfig{},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			m := new(mocks.TerraformExec)
+			m.On("SetStdout", mock.Anything).Once()
+			m.On("SetStderr", mock.Anything).Once()
+			tfCli := NewTestTerraformCLI(tc.config, nil)
+			ctx := context.Background()
+			var out bytes.Buffer
+			err := tfCli.Destroy(ctx, &out)
 
 			if tc.expectError {
 				assert.Error(t, err)

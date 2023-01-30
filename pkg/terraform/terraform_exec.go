@@ -19,6 +19,7 @@ type terraformExec interface {
 	SetStderr(w io.Writer)
 	Init(ctx context.Context, opts ...tfexec.InitOption) error
 	Apply(ctx context.Context, opts ...tfexec.ApplyOption) error
+	Destroy(ctx context.Context, opts ...tfexec.DestroyOption) error
 	Plan(ctx context.Context, opts ...tfexec.PlanOption) (bool, error)
 	Output(ctx context.Context, opts ...tfexec.OutputOption) (map[string]tfexec.OutputMeta, error)
 	WorkspaceNew(ctx context.Context, workspace string, opts ...tfexec.WorkspaceNewCmdOption) error

@@ -27,13 +27,14 @@ var (
 // TerraformCLI is the client that wraps around terraform-exec
 // to execute Terraform cli commands
 type TerraformCLI struct {
-	tf         terraformExec
-	workingDir string
-	workspace  string
-	applyVars  []tfexec.ApplyOption
-	planVars   []tfexec.PlanOption
-	initVars   []tfexec.InitOption
-	Redacted   bool
+	tf             terraformExec
+	workingDir     string
+	workspace      string
+	applyVars      []tfexec.ApplyOption
+	destroyOptions []tfexec.DestroyOption
+	planVars       []tfexec.PlanOption
+	initVars       []tfexec.InitOption
+	Redacted       bool
 }
 
 // TerraformCLIConfig configures the Terraform client
@@ -168,6 +169,19 @@ func (t *TerraformCLI) Apply(ctx context.Context, w io.Writer) error {
 
 	if err := t.tf.Apply(ctx, t.applyVars...); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// Destroy executes the cli command `terraform destroy` for a given workspace
+func (t *TerraformCLI) Destroy(ctx context.Context, w io.Writer) error {
+
+	t.tf.SetStdout(w)
+	t.tf.SetStderr(w)
+
+	if err := t.tf.Destroy(ctx, t.destroyOptions...); err != nil {
+		return fmt.Errorf("failed to destroy component in %s: %w", t.workspace, err)
 	}
 
 	return nil
