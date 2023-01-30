@@ -27,14 +27,14 @@ var (
 // TerraformCLI is the client that wraps around terraform-exec
 // to execute Terraform cli commands
 type TerraformCLI struct {
-	tf             terraformExec
-	workingDir     string
-	workspace      string
-	applyVars      []tfexec.ApplyOption
-	destroyOptions []tfexec.DestroyOption
-	planVars       []tfexec.PlanOption
-	initVars       []tfexec.InitOption
-	Redacted       bool
+	tf          terraformExec
+	workingDir  string
+	workspace   string
+	applyVars   []tfexec.ApplyOption
+	destroyVars []tfexec.DestroyOption
+	planVars    []tfexec.PlanOption
+	initVars    []tfexec.InitOption
+	Redacted    bool
 }
 
 // TerraformCLIConfig configures the Terraform client
@@ -47,6 +47,8 @@ type TerraformCLIConfig struct {
 	Workspace string
 	// ApplyVars allows you to group apply options passed to Terraform.
 	ApplyVars []tfexec.ApplyOption
+	// DestroyVars allows you to group destroy options passed to Terraform.
+	DestroyVars []tfexec.DestroyOption
 	// PlanVars allows you to group plan variables passed to Terraform.
 	PlanVars []tfexec.PlanOption
 	// InitVars allows you to group init variables passed to Terraform.
@@ -101,13 +103,14 @@ func NewTerraformCLI(config *TerraformCLIConfig) (*TerraformCLI, error) {
 	}
 
 	client := &TerraformCLI{
-		tf:         tf,
-		workingDir: config.WorkingDir,
-		workspace:  config.Workspace,
-		applyVars:  config.ApplyVars,
-		planVars:   config.PlanVars,
-		initVars:   config.InitVars,
-		Redacted:   config.Redacted,
+		tf:          tf,
+		workingDir:  config.WorkingDir,
+		workspace:   config.Workspace,
+		applyVars:   config.ApplyVars,
+		destroyVars: config.DestroyVars,
+		planVars:    config.PlanVars,
+		initVars:    config.InitVars,
+		Redacted:    config.Redacted,
 	}
 
 	return client, nil
@@ -180,7 +183,7 @@ func (t *TerraformCLI) Destroy(ctx context.Context, w io.Writer) error {
 	t.tf.SetStdout(w)
 	t.tf.SetStderr(w)
 
-	if err := t.tf.Destroy(ctx, t.destroyOptions...); err != nil {
+	if err := t.tf.Destroy(ctx, t.destroyVars...); err != nil {
 		return fmt.Errorf("failed to destroy component in %s: %w", t.workspace, err)
 	}
 
