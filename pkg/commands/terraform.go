@@ -1,13 +1,12 @@
 package commands
 
 import (
-	"bytes"
 	"context"
-	"os"
+	"log"
 	"strings"
 
 	terraform "github.com/ministryofjustice/cloud-platform-cli/pkg/terraform"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -15,7 +14,6 @@ import (
 
 func addTerraformCmd(topLevel *cobra.Command) {
 	var tf terraform.TerraformCLIConfig
-	var diff bool
 
 	rootCmd := &cobra.Command{
 		Use:    "terraform",
@@ -28,32 +26,31 @@ func addTerraformCmd(topLevel *cobra.Command) {
 		Short:  `Terraform check-divergence check if there are drifts in the state.`,
 		PreRun: upgradeIfNotLatest,
 		Run: func(cmd *cobra.Command, args []string) {
-			contextLogger := log.WithFields(log.Fields{"subcommand": "check-divergence"})
+			contextLogger := logrus.WithFields(logrus.Fields{"subcommand": "check-divergence"})
 
 			contextLogger.Info("Executing terraform plan, if there is a drift this program execution will fail")
 
-			tfCli, err := terraform.NewTerraformCLI(&tf)
+			if tf.WorkingDir == "" {
+				contextLogger.Fatal("Working directory is required")
+			}
+
+			terraform, err := terraform.NewTerraformCLI(&tf)
 			if err != nil {
 				contextLogger.Fatal(err)
 			}
 
-			var out bytes.Buffer
-			err = tfCli.Init(context.Background(), &out)
-			// print terraform init output irrespective of error. out captures both stdout and stderr of terraform
-			terraform.Redacted(os.Stdout, out.String(), tfCli.Redacted)
-			if err != nil {
-				contextLogger.Fatal("Failed to init terraform: %w", err)
+			if err = terraform.Init(context.Background(), log.Writer()); err != nil {
+				contextLogger.Fatal(err)
 			}
 
-			// diff - false if there is are changes in the plan
-			diff, err = tfCli.Plan(context.Background(), &out)
-			terraform.Redacted(os.Stdout, out.String(), tfCli.Redacted)
+			changes, err := terraform.Plan(context.Background(), log.Writer())
 			if err != nil {
-				contextLogger.Fatal("Failed to plan terraform: %w", err)
+				contextLogger.Fatal(err)
 			}
 
-			if diff {
-				contextLogger.Fatal("There is a drift when executing terraform plan")
+			// If there are changes, exit with an error
+			if changes {
+				contextLogger.Fatal("There are drifts in the state, please run terraform apply to fix them")
 			}
 		},
 	}
