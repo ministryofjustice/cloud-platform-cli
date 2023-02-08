@@ -310,7 +310,7 @@ func (a *Apply) applyNamespace() error {
 		return nil
 	}
 
-	if applySkipExists(repoPath) {
+	if (a.Options.AllNamespaces) && (applySkipExists(repoPath)) {
 		log.Println("This namespace has a apply skip file, skipping apply")
 		// We don't want to return an error here so we softly fail.
 		return nil
