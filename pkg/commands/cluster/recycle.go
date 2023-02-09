@@ -3,7 +3,7 @@ package clustercmd
 import (
 	"github.com/MakeNowJust/heredoc"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
-	cloudPlatform "github.com/ministryofjustice/cloud-platform-cli/pkg/cluster"
+	"github.com/ministryofjustice/cloud-platform-cli/pkg/cluster"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/recycle"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -35,11 +35,11 @@ var clusterRecycleNodeCmd = &cobra.Command{
 		}
 
 		recycle := &recycle.Recycler{
-			Client:  &client.KubeClient{Clientset: clientset},
+			Client:  &cluster.KubeClient{Clientset: clientset},
 			Options: &opt,
 		}
 
-		recycle.Cluster, err = cloudPlatform.NewCluster(recycle.Client)
+		recycle.Cluster, err = cluster.NewCluster(recycle.Client)
 		if err != nil {
 			contextLogger.Fatal(err)
 		}
@@ -47,7 +47,7 @@ var clusterRecycleNodeCmd = &cobra.Command{
 		// Create a snapshot for comparison later.
 		recycle.Snapshot = recycle.Cluster.NewSnapshot()
 
-		recycle.AwsCreds, err = cloudPlatform.NewAwsCreds(opt.AwsRegion)
+		recycle.AwsCreds, err = cluster.NewAwsCreds(opt.AwsRegion)
 		if err != nil {
 			contextLogger.Fatal(err)
 		}

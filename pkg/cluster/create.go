@@ -18,7 +18,7 @@ import (
 
 // ApplyVpc when executed will Apply terraform code to create a Cloud Platform VPC and ensure it is up and running.
 // It will return an error if the VPC is not up and running or the terraform commands fail.
-func (c *Cluster) ApplyVpc(tf *terraform.TerraformCLIConfig, creds *client.AwsCredentials, dir string) error {
+func (c *CloudPlatformCluster) ApplyVpc(tf *terraform.TerraformCLIConfig, creds *client.AwsCredentials, dir string) error {
 	tf.WorkingDir = dir
 
 	output, err := terraformApply(tf)
@@ -39,7 +39,7 @@ func (c *Cluster) ApplyVpc(tf *terraform.TerraformCLIConfig, creds *client.AwsCr
 // ApplyEks will apply the terraform code to create a Cloud Platform EKS cluster and ensure it is up and running.
 // It will return an error if the EKS cluster is not up and running or the terraform commands fail.
 // You can make the eks terraform creation faster by passing the faenable_oidc_associateenable_oidc_associatest flag.
-func (c *Cluster) ApplyEks(tf *terraform.TerraformCLIConfig, creds *client.AwsCredentials, dir string, fast bool) error {
+func (c *CloudPlatformCluster) ApplyEks(tf *terraform.TerraformCLIConfig, creds *client.AwsCredentials, dir string, fast bool) error {
 	tf.WorkingDir = dir
 	if fast {
 		tf.ApplyVars = append(tf.ApplyVars, tfexec.Var(fmt.Sprintf("%s=%v", "enable_oidc_associate", false)))
@@ -61,7 +61,7 @@ func (c *Cluster) ApplyEks(tf *terraform.TerraformCLIConfig, creds *client.AwsCr
 
 // ApplyComponents will apply the Cloud Platform specific components on top of a running cluster. At this point your
 // cluster should be up and running and you should be able to connect to it.
-func (c *Cluster) ApplyComponents(tf *terraform.TerraformCLIConfig, awsCreds *client.AwsCredentials, dir, kubeconf string) error {
+func (c *CloudPlatformCluster) ApplyComponents(tf *terraform.TerraformCLIConfig, awsCreds *client.AwsCredentials, dir, kubeconf string) error {
 	// Reset any previous varibles that might've been set.
 	tf.ApplyVars = nil
 
@@ -89,7 +89,7 @@ func (c *Cluster) ApplyComponents(tf *terraform.TerraformCLIConfig, awsCreds *cl
 		return err
 	}
 
-	kube, err := client.NewKubeClient(kubeconf)
+	kube, err := NewKubeClient(kubeconf)
 	if err != nil {
 		return err
 	}

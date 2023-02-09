@@ -1,8 +1,10 @@
 package clustercmd
 
 import (
+	"fmt"
 	"os"
 
+	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -17,7 +19,12 @@ func addDestroyClusterCmd(toplevel *cobra.Command) {
 				contextLogger.Fatal("You must have the following environment variables set: AWS_PROFILE, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY")
 			}
 
-			kubeClient := client.NewKubeClient()
+			kubeClient, err := client.NewKubeClient("")
+			if err != nil {
+				contextLogger.Fatal(err)
+			}
+
+			fmt.Println(kubeClient)
 
 		},
 	}

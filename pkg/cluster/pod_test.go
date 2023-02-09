@@ -4,14 +4,13 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestCluster_DeleteStuckPods(t *testing.T) {
 	type args struct {
-		c    *client.KubeClient
+		c    *KubeClient
 		node *v1.Node
 	}
 	tests := []struct {
@@ -22,7 +21,7 @@ func TestCluster_DeleteStuckPods(t *testing.T) {
 		{
 			name: "DeleteStuckPods",
 			args: args{
-				c: mockClient,
+				c: &mockClient,
 				node: &v1.Node{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "node-1",
@@ -44,7 +43,7 @@ func TestCluster_DeleteStuckPods(t *testing.T) {
 
 func Test_getNodePods(t *testing.T) {
 	type args struct {
-		c *client.KubeClient
+		c *KubeClient
 		n *v1.Node
 	}
 	tests := []struct {
@@ -56,7 +55,7 @@ func Test_getNodePods(t *testing.T) {
 		{
 			name: "getNodePods",
 			args: args{
-				c: mockClient,
+				c: &mockClient,
 				n: &mockCluster.OldestNode,
 			},
 			wantPods: &v1.PodList{},
@@ -79,7 +78,7 @@ func Test_getNodePods(t *testing.T) {
 
 func Test_getPods(t *testing.T) {
 	type args struct {
-		c *client.KubeClient
+		c *KubeClient
 	}
 	tests := []struct {
 		name    string
@@ -90,7 +89,7 @@ func Test_getPods(t *testing.T) {
 		{
 			name: "getPods",
 			args: args{
-				c: mockClient,
+				c: &mockClient,
 			},
 			want:    []v1.Pod{},
 			wantErr: false,
@@ -158,7 +157,7 @@ func TestCluster_FindNode(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cluster := &Cluster{
+			cluster := &CloudPlatformCluster{
 				Name:       tt.fields.Name,
 				Nodes:      tt.fields.Nodes,
 				Pods:       tt.fields.Pods,
@@ -179,7 +178,7 @@ func TestCluster_FindNode(t *testing.T) {
 
 func TestCluster_GetStuckPods(t *testing.T) {
 	type args struct {
-		c *client.KubeClient
+		c *KubeClient
 	}
 	tests := []struct {
 		name    string
@@ -189,14 +188,14 @@ func TestCluster_GetStuckPods(t *testing.T) {
 		{
 			name: "getPods",
 			args: args{
-				c: mockClient,
+				c: &mockClient,
 			},
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cluster := &Cluster{}
+			cluster := &CloudPlatformCluster{}
 			if err := cluster.GetStuckPods(tt.args.c); (err != nil) != tt.wantErr {
 				t.Errorf("Cluster.GetStuckPods() error = %v, wantErr %v", err, tt.wantErr)
 			}

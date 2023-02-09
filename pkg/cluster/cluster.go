@@ -12,7 +12,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
-	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -120,7 +119,7 @@ func NewCluster(c *KubeClient) (*CloudPlatformCluster, error) {
 		return nil, err
 	}
 
-	return &Cluster{
+	return &CloudPlatformCluster{
 		Name:       nodes[0].Labels["Cluster"],
 		Pods:       pods,
 		Nodes:      nodes,
@@ -130,7 +129,7 @@ func NewCluster(c *KubeClient) (*CloudPlatformCluster, error) {
 }
 
 // NewSnapshot constructs a Snapshot cluster object
-func (c *Cluster) NewSnapshot() *Snapshot {
+func (c *CloudPlatformCluster) NewSnapshot() *Snapshot {
 	return &Snapshot{
 		Cluster: *c,
 	}
@@ -151,7 +150,7 @@ func NewAwsCreds(region string) (*AwsCredentials, error) {
 
 // RefreshStatus performs a value overwrite of the cluster status.
 // This is useful for when the cluster is being updated.
-func (c *Cluster) RefreshStatus(client *client.KubeClient) (err error) {
+func (c *CloudPlatformCluster) RefreshStatus(client *KubeClient) (err error) {
 	c.Nodes, err = GetAllNodes(client)
 	if err != nil {
 		return err

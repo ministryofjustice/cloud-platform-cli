@@ -6,7 +6,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/cluster"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -41,9 +40,9 @@ type Options struct {
 // Recycler is used to store objects used in a recycle session.
 type Recycler struct {
 	// Client represents the kubernetes client.
-	Client *client.KubeClient
+	Client *cluster.KubeClient
 	// Cluster is the cluster object obtained from the current context.
-	Cluster *cluster.Cluster
+	Cluster *cluster.CloudPlatformCluster
 	// Snapshot is the snapshot of the cluster. Used for comparison of cluster state.
 	Snapshot *cluster.Snapshot
 	// AwsCreds is the AWS credentials to use for resource termination.

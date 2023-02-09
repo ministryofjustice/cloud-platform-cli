@@ -5,14 +5,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 )
 
 var (
-	mockClient = &client.KubeClient{
+	mockClient = KubeClient{
 		Clientset: fake.NewSimpleClientset(),
 	}
 
@@ -22,7 +21,7 @@ var (
 
 func Test_GetAllNodes(t *testing.T) {
 	type args struct {
-		c *client.KubeClient
+		c *KubeClient
 	}
 	tests := []struct {
 		name    string
@@ -33,7 +32,7 @@ func Test_GetAllNodes(t *testing.T) {
 		{
 			name: "getAllNodes",
 			args: args{
-				c: mockClient,
+				c: &mockClient,
 			},
 			want:    []v1.Node{},
 			wantErr: false,
@@ -108,7 +107,7 @@ func TestCluster_areNodesReady(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := &Cluster{
+			c := &CloudPlatformCluster{
 				Name:       tt.fields.Name,
 				Nodes:      tt.fields.Nodes,
 				Pods:       tt.fields.Pods,
@@ -116,7 +115,7 @@ func TestCluster_areNodesReady(t *testing.T) {
 				StuckPods:  tt.fields.StuckPods,
 			}
 			if err := c.areNodesReady(); (err != nil) != tt.wantErr {
-				t.Errorf("Cluster.areNodesReady() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("areNodesReady() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -275,7 +274,7 @@ func Test_oldestNode(t *testing.T) {
 func TestGetNewestNode(t *testing.T) {
 	timeNow := time.Now()
 	type args struct {
-		c     *client.KubeClient
+		c     *KubeClient
 		nodes []v1.Node
 	}
 	tests := []struct {
@@ -287,7 +286,7 @@ func TestGetNewestNode(t *testing.T) {
 		{
 			name: "GetNewestNode",
 			args: args{
-				c: mockClient,
+				c: &mockClient,
 				nodes: []v1.Node{
 					{
 						ObjectMeta: metav1.ObjectMeta{

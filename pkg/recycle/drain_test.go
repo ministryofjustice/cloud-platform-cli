@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/cluster"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
@@ -18,7 +17,7 @@ import (
 
 var (
 	mockCluster = cluster.NewMock()
-	mockClient  = client.KubeClient{
+	mockClient  = cluster.KubeClient{
 		Clientset: fake.NewSimpleClientset(),
 	}
 	mockSnapshot = cluster.Snapshot{
@@ -40,8 +39,8 @@ var (
 
 func TestRecycler_useNode(t *testing.T) {
 	type fields struct {
-		client        *client.KubeClient
-		cluster       *cluster.Cluster
+		client        *cluster.KubeClient
+		cluster       *cluster.CloudPlatformCluster
 		snapshot      *cluster.Snapshot
 		options       *Options
 		nodeToRecycle *v1.Node

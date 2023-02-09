@@ -9,8 +9,8 @@ import (
 
 // NewMock mimics the behaviour of New() but returns a mock instead of a real
 // Cluster.
-func NewMock() *Cluster {
-	return &Cluster{
+func NewMock() *CloudPlatformCluster {
+	return &CloudPlatformCluster{
 		Name: "mock",
 		Nodes: []v1.Node{
 			{

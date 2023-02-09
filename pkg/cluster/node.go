@@ -9,14 +9,13 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // FindNode takes a node name and returns the node object
-func (cluster *Cluster) FindNode(name string) (*v1.Node, error) {
+func (cluster *CloudPlatformCluster) FindNode(name string) (*v1.Node, error) {
 	var n v1.Node
 	for _, node := range cluster.Nodes {
 		if node.Name == name {
@@ -29,7 +28,7 @@ func (cluster *Cluster) FindNode(name string) (*v1.Node, error) {
 
 // HealthCheck ensures the cluster is in a healthy state
 // i.e. all nodes are running and ready
-func (c *Cluster) HealthCheck() error {
+func (c *CloudPlatformCluster) HealthCheck() error {
 	err := c.areNodesReady()
 	if err != nil {
 		return err
@@ -38,7 +37,7 @@ func (c *Cluster) HealthCheck() error {
 	return nil
 }
 
-func (c *Cluster) areNodesReady() error {
+func (c *CloudPlatformCluster) areNodesReady() error {
 	for _, node := range c.Nodes {
 		for _, condition := range node.Status.Conditions {
 			// There are many conditions that can be true, but we only care about
@@ -54,7 +53,7 @@ func (c *Cluster) areNodesReady() error {
 
 // CompareNodes confirms if the number of nodes in a snapshot
 // is the same as the number of nodes in the cluster.
-func (c *Cluster) CompareNodes(snap *Snapshot) (err error) {
+func (c *CloudPlatformCluster) CompareNodes(snap *Snapshot) (err error) {
 	if len(c.Nodes) != len(snap.Cluster.Nodes) {
 		return fmt.Errorf("number of nodes are different")
 	}
@@ -64,7 +63,7 @@ func (c *Cluster) CompareNodes(snap *Snapshot) (err error) {
 
 // ValidateCluster allows callers to validate their cluster
 // object.
-func ValidateNodeHealth(c *client.KubeClient) bool {
+func ValidateNodeHealth(c *KubeClient) bool {
 	nodes, err := GetAllNodes(c)
 	if err != nil {
 		return false
@@ -80,7 +79,7 @@ func ValidateNodeHealth(c *client.KubeClient) bool {
 }
 
 // GetAllNodes returns a slice of all nodes in a cluster
-func GetAllNodes(c *client.KubeClient) ([]v1.Node, error) {
+func GetAllNodes(c *KubeClient) ([]v1.Node, error) {
 	n := make([]v1.Node, 0)
 	nodes, err := c.Clientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 	if err != nil {
@@ -91,7 +90,7 @@ func GetAllNodes(c *client.KubeClient) ([]v1.Node, error) {
 }
 
 // getOldestNode returns the oldest node in a cluster
-func getOldestNode(c *client.KubeClient) (v1.Node, error) {
+func getOldestNode(c *KubeClient) (v1.Node, error) {
 	nodes, err := GetAllNodes(c)
 	if err != nil {
 		return v1.Node{}, err
@@ -121,7 +120,7 @@ func oldestNode(nodes []v1.Node) (v1.Node, error) {
 }
 
 // GetNodeByName takes a node name and returns the node object that has the newest creation timestamp
-func GetNewestNode(c *client.KubeClient, nodes []v1.Node) (v1.Node, error) {
+func GetNewestNode(c *KubeClient, nodes []v1.Node) (v1.Node, error) {
 	newest := nodes[0]
 	for _, node := range nodes {
 		if node.CreationTimestamp.After(newest.CreationTimestamp.Time) {
@@ -134,7 +133,7 @@ func GetNewestNode(c *client.KubeClient, nodes []v1.Node) (v1.Node, error) {
 
 // DeleteNode takes a node and authenticates to both the cluster and the AWS account.
 // You must have a valid AWS credentials and an aws profile set up in your ~/.aws/credentials file.
-func DeleteNode(client *client.KubeClient, awsCreds AwsCredentials, node *v1.Node) error {
+func DeleteNode(client *KubeClient, awsCreds AwsCredentials, node *v1.Node) error {
 	err := client.Clientset.CoreV1().Nodes().Delete(context.Background(), node.Name, metav1.DeleteOptions{})
 	if err != nil {
 		return err
@@ -154,7 +153,7 @@ func DeleteNode(client *client.KubeClient, awsCreds AwsCredentials, node *v1.Nod
 }
 
 // waitForNodeDeletion waits for a specified number of retries to see if the node still exists.
-func waitForNodeDeletion(client *client.KubeClient, node v1.Node, interval, retries int) error {
+func waitForNodeDeletion(client *KubeClient, node v1.Node, interval, retries int) error {
 	for i := 0; i < retries; i++ {
 		if _, err := getNode(client, node.Name); err != nil {
 			if apierrors.IsNotFound(err) {
@@ -168,7 +167,7 @@ func waitForNodeDeletion(client *client.KubeClient, node v1.Node, interval, retr
 }
 
 // getNode takes the name of a node and return its object
-func getNode(client *client.KubeClient, name string) (v1.Node, error) {
+func getNode(client *KubeClient, name string) (v1.Node, error) {
 	node, err := client.Clientset.CoreV1().Nodes().Get(context.Background(), name, metav1.GetOptions{})
 	if err != nil {
 		return v1.Node{}, err

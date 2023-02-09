@@ -12,7 +12,7 @@ import (
 	"github.com/jedib0t/go-pretty/v6/list"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
-	cloudPlatform "github.com/ministryofjustice/cloud-platform-cli/pkg/cluster"
+	"github.com/ministryofjustice/cloud-platform-cli/pkg/cluster"
 	terraform "github.com/ministryofjustice/cloud-platform-cli/pkg/terraform"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -57,7 +57,7 @@ func addCreateClusterCmd(toplevel *cobra.Command) {
 			if err := checkCreateDirectory(); err != nil {
 				contextLogger.Fatal(err)
 			}
-			cluster := cloudPlatform.Cluster{
+			cluster := cluster.CloudPlatformCluster{
 				Name:         opt.Name,
 				VpcId:        opt.VpcName,
 				HealthStatus: "Creating",
@@ -91,7 +91,7 @@ func addCreateClusterCmd(toplevel *cobra.Command) {
 // - create a new kubeconfig file for the cluster
 
 // It will return an error if at any stage terraform fails or the cluster isn't recognised.
-func createCluster(cluster *cloudPlatform.Cluster, tf *terraform.TerraformCLIConfig, awsCreds *client.AwsCredentials, opt *clusterOptions) error {
+func createCluster(cluster *cluster.CloudPlatformCluster, tf *terraform.TerraformCLIConfig, awsCreds *client.AwsCredentials, opt *clusterOptions) error {
 	// NOTE: baseDir is the directory where the terraform files are located in the infrastructure repo. This is subject to change.
 	const baseDir = "./terraform/aws-accounts/cloud-platform-aws/"
 	var (
@@ -120,7 +120,7 @@ func createCluster(cluster *cloudPlatform.Cluster, tf *terraform.TerraformCLICon
 	return nil
 }
 
-func printOutTable(c cloudPlatform.Cluster) {
+func printOutTable(c cluster.CloudPlatformCluster) {
 	stuckPods := list.NewWriter()
 	for _, pod := range c.StuckPods {
 		stuckPods.AppendItem(pod.Name)
