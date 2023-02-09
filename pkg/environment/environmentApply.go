@@ -17,6 +17,7 @@ type Options struct {
 	Namespace, KubecfgPath, ClusterCtx, GithubToken string
 	PRNumber                                        int
 	AllNamespaces                                   bool
+	EnableApplySkip                                 bool
 }
 
 // RequiredEnvVars is used to store values such as TF_VAR_ , github and pingdom tokens
@@ -284,6 +285,18 @@ func secretBlockerExists(filePath string) bool {
 	return false
 }
 
+// applySkipExists takes a filepath (usually a namespace name i.e. namespaces/live.../mynamespace)
+// and checks if the file applySkipExists exists.
+func applySkipExists(filePath string) bool {
+	// Check if the file contains a apply skip, skip applying this namespace
+	applySkip := "APPLY_PIPELINE_SKIP_THIS_NAMESPACE"
+	if _, err := os.Stat(filePath + "/" + applySkip); err == nil {
+		return true
+	}
+
+	return false
+}
+
 // applyNamespace intiates a new Apply object with options and env variables, and calls the
 // applyKubectl with dry-run disabled and calls applier TerraformInitAndApply and prints the output
 func (a *Apply) applyNamespace() error {
@@ -294,6 +307,12 @@ func (a *Apply) applyNamespace() error {
 
 	if secretBlockerExists(repoPath) {
 		log.Println("This namespace has a secret rotation blocker file, skipping apply")
+		// We don't want to return an error here so we softly fail.
+		return nil
+	}
+
+	if (a.Options.EnableApplySkip) && (applySkipExists(repoPath)) {
+		log.Println("This namespace has a apply skip file, skipping apply")
 		// We don't want to return an error here so we softly fail.
 		return nil
 	}

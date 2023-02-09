@@ -40,6 +40,7 @@ $ cloud-platform environment apply -n <namespace>
 ```
       --all-namespaces        Apply all namespaces with -all-namespaces
       --cluster string        folder name under namespaces/ inside cloud-platform-environments repo refering to full cluster name
+      --enable-apply-skip     Enable skipping apply for a namespace
       --github-token string   Personal access Token from Github 
   -h, --help                  help for apply
       --kubecfg string        path to kubeconfig file (default "/home/runner/.kube/config")
