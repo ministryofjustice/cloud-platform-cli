@@ -38,3 +38,21 @@ func TestListFolders(t *testing.T) {
 	}
 	defer os.RemoveAll(repoPath)
 }
+
+func TestIsFilePathExists(t *testing.T) {
+	tempDir := "namespaces/testCluster/testNamespace"
+	tempFile := tempDir + "/resources"
+
+	if err := os.MkdirAll(tempFile, os.ModePerm); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := util.IsFilePathExists(tempDir)
+	if err != nil {
+		t.Errorf("IsFilePathExists() error = %v", err)
+	}
+	if !got {
+		t.Errorf("Expected file %v not found", tempFile)
+	}
+	defer os.RemoveAll("namespaces")
+}

@@ -251,6 +251,7 @@ func (a *Apply) applyTerraform() (string, error) {
 // applyKubectl with dry-run enabled and calls applier TerraformInitAndPlan and prints the output
 func (a *Apply) planNamespace() error {
 	applier := NewApply(*a.Options)
+	repoPath := "namespaces/" + a.Options.ClusterCtx + "/" + a.Options.Namespace
 
 	outputKubectl, err := applier.planKubectl()
 	if err != nil {
@@ -259,7 +260,8 @@ func (a *Apply) planNamespace() error {
 
 	fmt.Println("\nOutput of kubectl:", outputKubectl)
 
-	if _, err = os.Stat(a.Options.Namespace + "/resources"); err != nil {
+	exists, err := util.IsFilePathExists(repoPath + "/resources")
+	if err == nil && exists {
 		outputTerraform, err := applier.planTerraform()
 		if err != nil {
 			return err
@@ -267,6 +269,8 @@ func (a *Apply) planNamespace() error {
 
 		fmt.Println("\nOutput of terraform:")
 		util.Redacted(os.Stdout, outputTerraform)
+	} else {
+		return err
 	}
 	return nil
 }
@@ -306,13 +310,13 @@ func (a *Apply) applyNamespace() error {
 	repoPath := "namespaces/" + a.Options.ClusterCtx + "/" + a.Options.Namespace
 
 	if secretBlockerExists(repoPath) {
-		log.Println("This namespace has a secret rotation blocker file, skipping apply")
+		log.Printf("Namespace %s has a secret rotation blocker file, skipping apply", a.Options.Namespace)
 		// We don't want to return an error here so we softly fail.
 		return nil
 	}
 
 	if (a.Options.EnableApplySkip) && (applySkipExists(repoPath)) {
-		log.Println("This namespace has a apply skip file, skipping apply")
+		log.Printf("Namespace %s has a apply skip file, skipping apply", a.Options.Namespace)
 		// We don't want to return an error here so we softly fail.
 		return nil
 	}
@@ -325,7 +329,8 @@ func (a *Apply) applyNamespace() error {
 	}
 	fmt.Println("\nOutput of kubectl:", outputKubectl)
 
-	if _, err = os.Stat(a.Options.Namespace + "/resources"); err != nil {
+	exists, err := util.IsFilePathExists(repoPath + "/resources")
+	if err == nil && exists {
 		outputTerraform, err := applier.applyTerraform()
 		if err != nil {
 			return err
@@ -333,6 +338,9 @@ func (a *Apply) applyNamespace() error {
 
 		fmt.Println("\nOutput of terraform:")
 		util.Redacted(os.Stdout, outputTerraform)
+	} else {
+		log.Printf("Namespace %s doesnot have terraform resources folder, skipping terraform apply", a.Options.Namespace)
+		return err
 	}
 	return nil
 }
