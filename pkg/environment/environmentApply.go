@@ -17,6 +17,7 @@ type Options struct {
 	Namespace, KubecfgPath, ClusterCtx, GithubToken string
 	PRNumber                                        int
 	AllNamespaces                                   bool
+	EnableApplySkip                                 bool
 }
 
 // RequiredEnvVars is used to store values such as TF_VAR_ , github and pingdom tokens
@@ -310,7 +311,7 @@ func (a *Apply) applyNamespace() error {
 		return nil
 	}
 
-	if (a.Options.AllNamespaces) && (applySkipExists(repoPath)) {
+	if (a.Options.EnableApplySkip) && (applySkipExists(repoPath)) {
 		log.Println("This namespace has a apply skip file, skipping apply")
 		// We don't want to return an error here so we softly fail.
 		return nil
