@@ -187,18 +187,17 @@ func TestSecretBlockerExists(t *testing.T) {
 	tempDir := "namespaces/testCluster/testNamespace"
 	tempFile := tempDir + "/SECRET_ROTATE_BLOCK"
 
-	if err := os.MkdirAll(tempFile, os.ModePerm); err != nil {
+	if err := os.MkdirAll(tempDir, os.ModePerm); err != nil {
 		t.Fatal(err)
 	}
-	defer func() {
-		if err := os.RemoveAll(tempFile); err != nil {
-			t.Fatal(err)
-		}
-	}()
+	if _, err := os.Create(tempFile); err != nil {
+		t.Fatal(err)
+	}
 
 	if secretBlockerExists(tempDir) != true {
 		t.Errorf("secretBlocker should return true as the file does exist")
 	}
+	defer os.RemoveAll("namespaces")
 
 }
 
@@ -206,17 +205,16 @@ func Test_applySkipExists(t *testing.T) {
 	tempDir := "namespaces/testCluster/testNamespace"
 	tempFile := tempDir + "/APPLY_PIPELINE_SKIP_THIS_NAMESPACE"
 
-	if err := os.MkdirAll(tempFile, os.ModePerm); err != nil {
+	if err := os.MkdirAll(tempDir, os.ModePerm); err != nil {
 		t.Fatal(err)
 	}
-	defer func() {
-		if err := os.RemoveAll(tempFile); err != nil {
-			t.Fatal(err)
-		}
-	}()
+	if _, err := os.Create(tempFile); err != nil {
+		t.Fatal(err)
+	}
 
 	if applySkipExists(tempDir) != true {
 		t.Errorf("secretBlocker should return true as the file does exist")
 	}
+	defer os.RemoveAll("namespaces")
 
 }
