@@ -33,10 +33,6 @@ func NewDivergence(clusterName, kubeconfig, githubToken string, excludedNamespac
 		return nil, err
 	}
 
-	if clusterName == "" {
-		clusterName = getClusterName(kubeClient)
-	}
-
 	githubClient, err := createGitHubClient(githubToken)
 	if err != nil {
 		return nil, err
@@ -48,14 +44,6 @@ func NewDivergence(clusterName, kubeconfig, githubToken string, excludedNamespac
 		GitHubClient:       githubClient,
 		ExcludedNamespaces: excludedNamespaces,
 	}, nil
-}
-
-func getClusterName(kubeClient kubernetes.Interface) string {
-	clusterName, err := kubeClient.CoreV1().ConfigMaps("kube-public").Get(context.Background(), "cluster-info", metav1.GetOptions{})
-	if err != nil {
-		return ""
-	}
-	return clusterName.Data["cluster-name"]
 }
 
 func (d *Divergence) Check() error {
@@ -122,22 +110,6 @@ func getGithubNamespaces(client *github.Client, clusterName string) ([]string, e
 		nsSet.Insert(*d.Name)
 	}
 	return nsSet.List(), nil
-}
-
-func createClients(kubeconfig, githubToken string) (kubernetes.Interface, *github.Client, error) {
-	// create kube client
-	kubeClient, err := createKubeClient(kubeconfig)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// create github client
-	gitHubClient, err := createGitHubClient(githubToken)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return kubeClient, gitHubClient, nil
 }
 
 func createGitHubClient(pass string) (*github.Client, error) {
