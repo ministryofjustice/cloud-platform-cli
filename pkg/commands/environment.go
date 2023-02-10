@@ -27,20 +27,27 @@ var answersFile string
 
 func addEnvironmentCmd(topLevel *cobra.Command) {
 	topLevel.AddCommand(environmentCmd)
-	environmentCmd.AddCommand(environmentEcrCmd)
-	environmentCmd.AddCommand(environmentRdsCmd)
-	environmentCmd.AddCommand(environmentS3Cmd)
-	environmentCmd.AddCommand(environmentSvcCmd)
-	environmentCmd.AddCommand(environmentCreateCmd)
-	environmentCmd.AddCommand(environmentPlanCmd)
-	environmentCmd.AddCommand(environmentApplyCmd)
+	envSubCommands := []*cobra.Command{
+		environmentEcrCmd,
+		environmentRdsCmd,
+		environmentS3Cmd,
+		environmentCreateCmd,
+		environmentPlanCmd,
+		environmentApplyCmd,
+		environmentApplyCmd,
+		environmentBumpModuleCmd,
+		environmentPrototypeCmd,
+	}
+
+	for _, cmd := range envSubCommands {
+		environmentCmd.AddCommand(cmd)
+	}
+
 	environmentEcrCmd.AddCommand(environmentEcrCreateCmd)
 	environmentRdsCmd.AddCommand(environmentRdsCreateCmd)
 	environmentS3Cmd.AddCommand(environmentS3CreateCmd)
 	environmentSvcCmd.AddCommand(environmentSvcCreateCmd)
-	environmentCmd.AddCommand(environmentPrototypeCmd)
 	environmentPrototypeCmd.AddCommand(environmentPrototypeCreateCmd)
-	environmentCmd.AddCommand(environmentBumpModuleCmd)
 
 	// flags
 	environmentApplyCmd.Flags().BoolVar(&optFlags.AllNamespaces, "all-namespaces", false, "Apply all namespaces with -all-namespaces")
