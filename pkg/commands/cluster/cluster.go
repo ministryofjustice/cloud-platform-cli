@@ -53,10 +53,13 @@ type authOpts struct {
 }
 
 func AddClusterCmd(topLevel *cobra.Command) {
+	// top level command
 	topLevel.AddCommand(clusterCmd)
 
-	// sub cobra commands
+	// sub commands
 	clusterCmd.AddCommand(clusterRecycleNodeCmd)
+	addCreateClusterCmd(clusterCmd)
+	addDestroyClusterCmd(clusterCmd)
 
 	// cluster level flags
 	clusterCmd.Flags().StringVar(&awsAccessKey, "aws-access-key", os.Getenv("AWS_ACCESS_KEY_ID"), "[required] aws access key to use")
@@ -64,9 +67,6 @@ func AddClusterCmd(topLevel *cobra.Command) {
 	clusterCmd.Flags().StringVar(&awsProfile, "aws-profile", os.Getenv("AWS_PROFILE"), "[required] aws profile to use")
 	clusterCmd.Flags().StringVar(&awsRegion, "aws-region", os.Getenv("AWS_REGION"), "[required] aws region to use")
 	clusterCmd.Flags().StringVar(&kubePath, "kubecfg", filepath.Join(homedir.HomeDir(), ".kube", "config"), "path to kubeconfig file")
-
-	// create cluster flags
-	addCreateClusterCmd(clusterCmd)
 
 	// recycle node flags
 	clusterRecycleNodeCmd.Flags().StringVarP(&opt.ResourceName, "name", "n", "", "name of the resource to recycle")
