@@ -80,7 +80,9 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentDivergenceCmd.Flags().StringVarP(&clusterName, "cluster-name", "c", "live", "[optional] Cluster name")
 	environmentDivergenceCmd.Flags().StringVarP(&githubToken, "github-token", "g", "", "[required] Github token")
 	environmentDivergenceCmd.Flags().StringVarP(&kubeconfig, "kubeconfig", "k", "", "[optional] Kubeconfig file path")
-	environmentDivergenceCmd.MarkFlagRequired("github-token")
+	if err := environmentDivergenceCmd.MarkFlagRequired("github-token"); err != nil {
+		log.Fatal(err)
+	}
 }
 
 var environmentCmd = &cobra.Command{
