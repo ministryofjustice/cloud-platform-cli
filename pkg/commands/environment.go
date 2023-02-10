@@ -30,16 +30,17 @@ var clusterName, githubToken string
 func addEnvironmentCmd(topLevel *cobra.Command) {
 	topLevel.AddCommand(environmentCmd)
 	envSubCommands := []*cobra.Command{
-		environmentEcrCmd,
-		environmentRdsCmd,
-		environmentS3Cmd,
-		environmentCreateCmd,
-		environmentPlanCmd,
 		environmentApplyCmd,
 		environmentApplyCmd,
 		environmentBumpModuleCmd,
-		environmentPrototypeCmd,
+		environmentCreateCmd,
 		environmentDivergenceCmd,
+		environmentEcrCmd,
+		environmentPlanCmd,
+		environmentPrototypeCmd,
+		environmentRdsCmd,
+		environmentS3Cmd,
+		environmentSvcCmd,
 	}
 
 	for _, cmd := range envSubCommands {
