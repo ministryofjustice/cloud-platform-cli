@@ -3,7 +3,6 @@ package environment
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
@@ -24,10 +23,6 @@ type Divergence struct {
 // NewDivergence takes the name of a kubernetes cluster, the path to a kubeconfig file and a github personal
 // access token, and returns a Divergence struct.
 func NewDivergence(clusterName, kubeconfig, githubToken string, excludedNamespaces []string) (*Divergence, error) {
-	if !strings.HasPrefix(githubToken, "ghp_") {
-		return nil, fmt.Errorf("invalid github token")
-	}
-
 	kubeClient, err := createKubeClient(kubeconfig)
 	if err != nil {
 		return nil, err
