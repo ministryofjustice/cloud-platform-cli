@@ -31,7 +31,6 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	topLevel.AddCommand(environmentCmd)
 	envSubCommands := []*cobra.Command{
 		environmentApplyCmd,
-		environmentApplyCmd,
 		environmentBumpModuleCmd,
 		environmentCreateCmd,
 		environmentDivergenceCmd,
