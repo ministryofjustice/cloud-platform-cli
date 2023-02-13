@@ -18,7 +18,6 @@ Cloud Platform Environment actions
 
 * [cloud-platform](cloud-platform.md)	 - Multi-purpose CLI from the Cloud Platform team
 * [cloud-platform environment apply](cloud-platform_environment_apply.md)	 - Perform a terraform apply and kubectl apply for a given namespace
-* [cloud-platform environment apply](cloud-platform_environment_apply.md)	 - Perform a terraform apply and kubectl apply for a given namespace
 * [cloud-platform environment bump-module](cloud-platform_environment_bump-module.md)	 - Bump all specified module versions
 * [cloud-platform environment create](cloud-platform_environment_create.md)	 - Create an environment
 * [cloud-platform environment divergence](cloud-platform_environment_divergence.md)	 - Check for divergence between the environments repository and the cluster
