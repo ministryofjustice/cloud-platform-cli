@@ -354,6 +354,7 @@ var environmentDivergenceCmd = &cobra.Command{
 			"opa",
 			"overprovision",
 			"velero",
+			"trivy-system",
 		}
 
 		divergence, err := environment.NewDivergence(clusterName, kubeconfig, githubToken, excludedNamespaces)
