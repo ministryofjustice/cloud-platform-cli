@@ -72,7 +72,7 @@ func addCommonFlags(cmd *cobra.Command, tf *terraform.TerraformCLIConfig) {
 	cmd.PersistentFlags().StringVarP(&awsRegion, "aws-region", "", "", "[required] aws region to use")
 	cmd.PersistentFlags().StringVarP(&tf.Workspace, "workspace", "w", "default", "Default workspace where terraform is going to be executed")
 	// Terraform options
-	cmd.PersistentFlags().StringVar(&tf.Version, "terraform-version", "0.14.8", "[optional] the terraform version to use. [default] 0.14.8")
+	cmd.PersistentFlags().StringVar(&tf.Version, "terraform-version", "1.2.5", "[optional] the terraform version to use.")
 	cmd.PersistentFlags().StringVar(&tf.WorkingDir, "workdir", ".", "[optional] the terraform working directory to perform terraform operation [defaukt] .")
 	cmd.PersistentFlags().BoolVar(&tf.Redacted, "redact", true, "Redact the terraform output before printing")
 
