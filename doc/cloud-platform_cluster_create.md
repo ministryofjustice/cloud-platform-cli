@@ -31,7 +31,7 @@ cloud-platform cluster create [flags]
       --fast                         [optional] if true, will skip the slow parts of the cluster creation process
   -h, --help                         help for create
       --name string                  [optional] name of the cluster
-      --terraform-version string     [optional] the terraform version to use. [default] 0.14.8 (default "0.14.8")
+      --terraform-version string     [optional] the terraform version to use. (default "1.2.5")
       --vpc string                   [optional] name of the vpc to use
 ```
 
