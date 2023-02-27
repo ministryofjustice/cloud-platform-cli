@@ -86,7 +86,12 @@ func (gh *GithubClient) ListMergedPRs(date util.Date, count int) ([]Nodes, error
 }
 
 func (gh *GithubClient) GetChangedFiles(prNumber int) ([]*github.CommitFile, error) {
-	repos, _, err := gh.PullRequests.ListFiles(context.Background(), gh.Owner, gh.Repository, prNumber, nil)
+	repos, _, err := gh.PullRequests.ListFiles(
+		context.Background(),
+		gh.Owner,
+		gh.Repository,
+		prNumber,
+		&github.ListOptions{PerPage: 100})
 	if err != nil {
 		return nil, err
 	}
