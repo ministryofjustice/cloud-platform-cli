@@ -253,12 +253,16 @@ func (a *Apply) planNamespace() error {
 	applier := NewApply(*a.Options)
 	repoPath := "namespaces/" + a.Options.ClusterCtx + "/" + a.Options.Namespace
 
-	outputKubectl, err := applier.planKubectl()
-	if err != nil {
-		return err
-	}
+	if util.IsYamlFileExists(repoPath) {
+		outputKubectl, err := applier.planKubectl()
+		if err != nil {
+			return err
+		}
 
-	fmt.Println("\nOutput of kubectl:", outputKubectl)
+		fmt.Println("\nOutput of kubectl:", outputKubectl)
+	} else {
+		fmt.Printf("Namespace %s doesnot have yaml resources folder, skipping kubectl apply --dry-run", a.Options.Namespace)
+	}
 
 	exists, err := util.IsFilePathExists(repoPath + "/resources")
 	if err == nil && exists {
@@ -270,7 +274,7 @@ func (a *Apply) planNamespace() error {
 		fmt.Println("\nOutput of terraform:")
 		util.Redacted(os.Stdout, outputTerraform)
 	} else {
-		return err
+		fmt.Printf("Namespace %s doesnot have yaml resources folder, skipping terraform plan", a.Options.Namespace)
 	}
 	return nil
 }
@@ -323,11 +327,16 @@ func (a *Apply) applyNamespace() error {
 
 	applier := NewApply(*a.Options)
 
-	outputKubectl, err := applier.applyKubectl()
-	if err != nil {
-		return err
+	if util.IsYamlFileExists(repoPath) {
+		outputKubectl, err := applier.applyKubectl()
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("\nOutput of kubectl:", outputKubectl)
+	} else {
+		fmt.Printf("Namespace %s doesnot have yaml resources folder, skipping kubectl apply", a.Options.Namespace)
 	}
-	fmt.Println("\nOutput of kubectl:", outputKubectl)
 
 	exists, err := util.IsFilePathExists(repoPath + "/resources")
 	if err == nil && exists {
@@ -339,8 +348,7 @@ func (a *Apply) applyNamespace() error {
 		fmt.Println("\nOutput of terraform:")
 		util.Redacted(os.Stdout, outputTerraform)
 	} else {
-		log.Printf("Namespace %s doesnot have terraform resources folder, skipping terraform apply", a.Options.Namespace)
-		return err
+		fmt.Printf("Namespace %s doesnot have terraform resources folder, skipping terraform apply", a.Options.Namespace)
 	}
 	return nil
 }
