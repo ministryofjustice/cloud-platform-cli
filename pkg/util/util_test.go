@@ -134,14 +134,14 @@ func TestRedacted(t *testing.T) {
 		{
 			name: "Redacted Token Content",
 			args: args{
-				output: "token: 1234567890",
+				output: "this_token: 1234567890",
 			},
 			expect: "REDACTED\n",
 		},
 		{
 			name: "Redacted Key Content",
 			args: args{
-				output: "key: 1234567890",
+				output: "key_after: 1234567890",
 			},
 			expect: "REDACTED\n",
 		},
