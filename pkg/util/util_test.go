@@ -120,14 +120,14 @@ func TestRedacted(t *testing.T) {
 		{
 			name: "Redacted Password Content",
 			args: args{
-				output: "password: 1234567890",
+				output: "PASSWORD: 1234567890",
 			},
 			expect: "REDACTED\n",
 		},
 		{
 			name: "Redacted Sercet Content",
 			args: args{
-				output: "secret: 1234567890",
+				output: "AWS_SECRET_ACCSS_KEY: 1234567890",
 			},
 			expect: "REDACTED\n",
 		},
