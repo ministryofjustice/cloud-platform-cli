@@ -79,7 +79,7 @@ func GetLatestGitPull() error {
 }
 
 func Redacted(w io.Writer, output string) {
-	re := regexp.MustCompile(`(?i)password|secret|token|key|https://hooks\.slack\.com|user|arn|ssh-rsa|clientid`)
+	re := regexp.MustCompile(`(?i)password|secret|token|key|https://hooks\.slack\.com`)
 	scanner := bufio.NewScanner(strings.NewReader(output))
 
 	for scanner.Scan() {
