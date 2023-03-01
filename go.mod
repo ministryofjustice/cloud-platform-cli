@@ -29,6 +29,7 @@ require (
 
 require (
 	github.com/aws/aws-sdk-go v1.44.167
+	github.com/dlclark/regexp2 v1.8.1
 	github.com/google/go-cmdtest v0.4.0
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/hashicorp/go-version v1.6.0
@@ -47,7 +48,7 @@ require (
 	k8s.io/apimachinery v0.26.1
 	k8s.io/client-go v0.25.2
 	k8s.io/kubectl v0.25.2
-	sigs.k8s.io/aws-iam-authenticator v0.5.10
+	sigs.k8s.io/aws-iam-authenticator v0.6.4
 )
 
 require (

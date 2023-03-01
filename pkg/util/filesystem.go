@@ -4,6 +4,7 @@ package util
 import (
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 )
@@ -102,4 +103,19 @@ func IsFilePathExists(filePath string) (bool, error) {
 	} else {
 		return false, err
 	}
+}
+
+func IsYamlFileExists(path string) bool {
+	files, err := os.ReadDir(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, file := range files {
+		fileExtension := filepath.Ext(path + "/" + file.Name())
+		if fileExtension == ".yaml" {
+			return true
+		}
+	}
+	return false
 }

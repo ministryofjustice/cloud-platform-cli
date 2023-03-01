@@ -120,28 +120,28 @@ func TestRedacted(t *testing.T) {
 		{
 			name: "Redacted Password Content",
 			args: args{
-				output: "password: 1234567890",
+				output: "PASSWORD: 1234567890",
 			},
 			expect: "REDACTED\n",
 		},
 		{
 			name: "Redacted Sercet Content",
 			args: args{
-				output: "secret: 1234567890",
+				output: "AWS_SECRET_ACCSS_KEY: 1234567890",
 			},
 			expect: "REDACTED\n",
 		},
 		{
 			name: "Redacted Token Content",
 			args: args{
-				output: "token: 1234567890",
+				output: "this_token: 1234567890",
 			},
 			expect: "REDACTED\n",
 		},
 		{
 			name: "Redacted Key Content",
 			args: args{
-				output: "key: 1234567890",
+				output: "key_after: 1234567890",
 			},
 			expect: "REDACTED\n",
 		},
@@ -151,6 +151,27 @@ func TestRedacted(t *testing.T) {
 				output: "https://hooks.slack.com",
 			},
 			expect: "REDACTED\n",
+		},
+		{
+			name: "Redacted secret Content",
+			args: args{
+				output: "secret should be redacted",
+			},
+			expect: "REDACTED\n",
+		},
+		{
+			name: "Redacted secret Content",
+			args: args{
+				output: "this_secret should be redacted",
+			},
+			expect: "REDACTED\n",
+		},
+		{
+			name: "Unredacted kubernetes_secret Content",
+			args: args{
+				output: "This kubernetes_secret should not be redacted",
+			},
+			expect: "This kubernetes_secret should not be redacted\n",
 		},
 		{
 			name: "Unredacted Content",
