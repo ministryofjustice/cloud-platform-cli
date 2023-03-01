@@ -153,6 +153,27 @@ func TestRedacted(t *testing.T) {
 			expect: "REDACTED\n",
 		},
 		{
+			name: "Redacted secret Content",
+			args: args{
+				output: "secret should be redacted",
+			},
+			expect: "REDACTED\n",
+		},
+		{
+			name: "Redacted secret Content",
+			args: args{
+				output: "this_secret should be redacted",
+			},
+			expect: "REDACTED\n",
+		},
+		{
+			name: "Unredacted kubernetes_secret Content",
+			args: args{
+				output: "This kubernetes_secret should not be redacted",
+			},
+			expect: "This kubernetes_secret should not be redacted\n",
+		},
+		{
 			name: "Unredacted Content",
 			args: args{
 				output: "This test should not be redacted",
