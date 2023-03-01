@@ -70,8 +70,8 @@ func (a *Apply) Initialize() {
 
 // Plan is the entry point for performing a namespace plan.
 // It checks if the working directory is in cloud-platform-environments, checks if a PR number or a namespace is given
-// If a namespace is given, it perform a kubectl apply -dry-run and a terraform init and plan of that namespace
-// else checks for PR number and get the list of changed namespaces in the PR. Then does the kubectl apply -dry-run and
+// If a namespace is given, it perform a `kubectl apply --dry-run=client` and a terraform init and plan of that namespace
+// else checks for PR number and get the list of changed namespaces in the PR. Then does the `kubectl apply --dry-run=client` and
 // terraform init and plan of all the namespaces changed in the PR
 func (a *Apply) Plan() error {
 

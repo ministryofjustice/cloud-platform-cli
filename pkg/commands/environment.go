@@ -114,10 +114,10 @@ var environmentEcrCmd = &cobra.Command{
 
 var environmentPlanCmd = &cobra.Command{
 	Use: "plan",
-	Short: `Perform a terraform plan and kubectl apply -dry-run for a given namespace using either -namespace flag or the
+	Short: `Perform a terraform plan and kubectl apply --dry-run=client for a given namespace using either -namespace flag or the
 	the namespace in the given PR Id/Number`,
 	Long: `
-	Perform a kubectl apply -dry-run and a terraform plan for a given namespace using either -namespace flag or the
+	Perform a kubectl apply --dry-run=client and a terraform plan for a given namespace using either -namespace flag or the
 	the namespace in the given PR Id/Number
 
 	Along with the mandatory input flag, the below environments variables needs to be set
