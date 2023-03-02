@@ -22,7 +22,7 @@ Cloud Platform Environment actions
 * [cloud-platform environment create](cloud-platform_environment_create.md)	 - Create an environment
 * [cloud-platform environment divergence](cloud-platform_environment_divergence.md)	 - Check for divergence between the environments repository and the cluster
 * [cloud-platform environment ecr](cloud-platform_environment_ecr.md)	 - Add an ECR to a namespace
-* [cloud-platform environment plan](cloud-platform_environment_plan.md)	 - Perform a terraform plan and kubectl apply -dry-run for a given namespace using either -namespace flag or the
+* [cloud-platform environment plan](cloud-platform_environment_plan.md)	 - Perform a terraform plan and kubectl apply --dry-run=client for a given namespace using either -namespace flag or the
 	the namespace in the given PR Id/Number
 * [cloud-platform environment prototype](cloud-platform_environment_prototype.md)	 - Create a gov.uk prototype kit site on the cloud platform
 * [cloud-platform environment rds](cloud-platform_environment_rds.md)	 - Add an RDS instance to a namespace
