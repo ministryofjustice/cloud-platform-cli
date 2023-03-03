@@ -23,6 +23,66 @@ func addTerraformCmd(topLevel *cobra.Command) {
 		PreRun: upgradeIfNotLatest,
 	}
 
+	plan := &cobra.Command{
+		Use:    "plan",
+		Short:  `Terraform plan.`,
+		PreRun: upgradeIfNotLatest,
+		Run: func(cmd *cobra.Command, args []string) {
+			contextLogger := log.WithFields(log.Fields{"subcommand": "plan"})
+			tfCli, err := terraform.NewTerraformCLI(&tf)
+			if err != nil {
+
+				contextLogger.Fatal(err)
+			}
+
+			var out bytes.Buffer
+
+			err = tfCli.Init(context.Background(), &out)
+			// print terraform init output irrespective of error. out captures both stdout and stderr of terraform
+			terraform.Redacted(os.Stdout, out.String(), tfCli.Redacted)
+			if err != nil {
+				contextLogger.Fatal("Failed to init terraform: %w", err)
+			}
+
+			_, err = tfCli.Plan(context.Background(), &out)
+			terraform.Redacted(os.Stdout, out.String(), tfCli.Redacted)
+			if err != nil {
+				contextLogger.Fatal("Failed to plan terraform: %w", err)
+			}
+		},
+	}
+
+	apply := &cobra.Command{
+		Use:    "apply",
+		Short:  `Terraform apply.`,
+		PreRun: upgradeIfNotLatest,
+		Run: func(cmd *cobra.Command, args []string) {
+			contextLogger := log.WithFields(log.Fields{"subcommand": "apply"})
+			if tf.Workspace == "" {
+				contextLogger.Fatal("Workspace is required")
+			}
+			tfCli, err := terraform.NewTerraformCLI(&tf)
+			if err != nil {
+				contextLogger.Fatal(err)
+			}
+
+			var out bytes.Buffer
+
+			err = tfCli.Init(context.Background(), &out)
+			// print terraform init output irrespective of error. out captures both stdout and stderr of addTerraformCmd
+			terraform.Redacted(os.Stdout, out.String(), tfCli.Redacted)
+			if err != nil {
+				contextLogger.Fatal("Failed to init terraform: %w", err)
+			}
+
+			err = tfCli.Apply(context.Background(), &out)
+			terraform.Redacted(os.Stdout, out.String(), tfCli.Redacted)
+			if err != nil {
+				contextLogger.Fatal("Failed to apply terraform: %w", err)
+			}
+		},
+	}
+
 	checkDivergence := &cobra.Command{
 		Use:    "check-divergence",
 		Short:  `Terraform check-divergence check if there are drifts in the state.`,
@@ -60,6 +120,8 @@ func addTerraformCmd(topLevel *cobra.Command) {
 
 	addCommonFlags(checkDivergence, &tf)
 	rootCmd.AddCommand(checkDivergence)
+	rootCmd.AddCommand(plan)
+	rootCmd.AddCommand(apply)
 	topLevel.AddCommand(rootCmd)
 }
 
