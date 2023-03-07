@@ -254,7 +254,7 @@ func (a *Apply) planNamespace() error {
 	repoPath := "namespaces/" + a.Options.ClusterCtx + "/" + a.Options.Namespace
 
 	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
-		fmt.Printf("Namespace %s doesnot exists, skipping plan\n", a.Options.Namespace)
+		fmt.Printf("Namespace %s does not exist, skipping plan\n", a.Options.Namespace)
 		return nil
 	}
 
@@ -266,7 +266,7 @@ func (a *Apply) planNamespace() error {
 
 		fmt.Println("\nOutput of kubectl:", outputKubectl)
 	} else {
-		fmt.Printf("Namespace %s doesnot have yaml resources folder, skipping kubectl apply --dry-run\n", a.Options.Namespace)
+		fmt.Printf("Namespace %s does not have yaml resources folder, skipping kubectl apply --dry-run\n", a.Options.Namespace)
 	}
 
 	exists, err := util.IsFilePathExists(repoPath + "/resources")
@@ -279,7 +279,7 @@ func (a *Apply) planNamespace() error {
 		fmt.Println("\nOutput of terraform:")
 		util.Redacted(os.Stdout, outputTerraform)
 	} else {
-		fmt.Printf("Namespace %s doesnot have yaml resources folder, skipping terraform plan\n", a.Options.Namespace)
+		fmt.Printf("Namespace %s does not have terraform resources folder, skipping terraform plan\n", a.Options.Namespace)
 	}
 	return nil
 }
@@ -319,7 +319,7 @@ func (a *Apply) applyNamespace() error {
 	repoPath := "namespaces/" + a.Options.ClusterCtx + "/" + a.Options.Namespace
 
 	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
-		fmt.Printf("Namespace %s doesnot exists, skipping apply\n", a.Options.Namespace)
+		fmt.Printf("Namespace %s does not exist, skipping apply\n", a.Options.Namespace)
 		return nil
 	}
 
@@ -345,7 +345,7 @@ func (a *Apply) applyNamespace() error {
 
 		fmt.Println("\nOutput of kubectl:", outputKubectl)
 	} else {
-		fmt.Printf("Namespace %s doesnot have yaml resources folder, skipping kubectl apply", a.Options.Namespace)
+		fmt.Printf("Namespace %s does not have yaml resources folder, skipping kubectl apply", a.Options.Namespace)
 	}
 
 	exists, err := util.IsFilePathExists(repoPath + "/resources")
@@ -358,7 +358,7 @@ func (a *Apply) applyNamespace() error {
 		fmt.Println("\nOutput of terraform:")
 		util.Redacted(os.Stdout, outputTerraform)
 	} else {
-		fmt.Printf("Namespace %s doesnot have terraform resources folder, skipping terraform apply", a.Options.Namespace)
+		fmt.Printf("Namespace %s does not have terraform resources folder, skipping terraform apply", a.Options.Namespace)
 	}
 	return nil
 }
