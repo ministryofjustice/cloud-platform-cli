@@ -253,6 +253,11 @@ func (a *Apply) planNamespace() error {
 	applier := NewApply(*a.Options)
 	repoPath := "namespaces/" + a.Options.ClusterCtx + "/" + a.Options.Namespace
 
+	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
+		fmt.Printf("Namespace %s doesnot exists, skipping plan\n", a.Options.Namespace)
+		return nil
+	}
+
 	if util.IsYamlFileExists(repoPath) {
 		outputKubectl, err := applier.planKubectl()
 		if err != nil {
@@ -261,7 +266,7 @@ func (a *Apply) planNamespace() error {
 
 		fmt.Println("\nOutput of kubectl:", outputKubectl)
 	} else {
-		fmt.Printf("Namespace %s doesnot have yaml resources folder, skipping kubectl apply --dry-run", a.Options.Namespace)
+		fmt.Printf("Namespace %s doesnot have yaml resources folder, skipping kubectl apply --dry-run\n", a.Options.Namespace)
 	}
 
 	exists, err := util.IsFilePathExists(repoPath + "/resources")
@@ -274,7 +279,7 @@ func (a *Apply) planNamespace() error {
 		fmt.Println("\nOutput of terraform:")
 		util.Redacted(os.Stdout, outputTerraform)
 	} else {
-		fmt.Printf("Namespace %s doesnot have yaml resources folder, skipping terraform plan", a.Options.Namespace)
+		fmt.Printf("Namespace %s doesnot have yaml resources folder, skipping terraform plan\n", a.Options.Namespace)
 	}
 	return nil
 }
@@ -312,6 +317,11 @@ func (a *Apply) applyNamespace() error {
 	// secrets in a namespace rotated. This came out of the requirement to rotate IAM credentials
 	// post circle breach.
 	repoPath := "namespaces/" + a.Options.ClusterCtx + "/" + a.Options.Namespace
+
+	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
+		fmt.Printf("Namespace %s doesnot exists, skipping apply\n", a.Options.Namespace)
+		return nil
+	}
 
 	if secretBlockerExists(repoPath) {
 		log.Printf("Namespace %s has a secret rotation blocker file, skipping apply", a.Options.Namespace)
