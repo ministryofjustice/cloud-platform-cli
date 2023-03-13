@@ -268,7 +268,7 @@ func (a *Apply) planNamespace() error {
 		}
 
 		fmt.Println("\nOutput of terraform:")
-		util.Redacted(os.Stdout, outputTerraform)
+		util.Redacted(os.Stdout, outputTerraform, true)
 	} else {
 		return err
 	}
@@ -337,7 +337,7 @@ func (a *Apply) applyNamespace() error {
 		}
 
 		fmt.Println("\nOutput of terraform:")
-		util.Redacted(os.Stdout, outputTerraform)
+		util.Redacted(os.Stdout, outputTerraform, true)
 	} else {
 		log.Printf("Namespace %s doesnot have terraform resources folder, skipping terraform apply", a.Options.Namespace)
 		return err

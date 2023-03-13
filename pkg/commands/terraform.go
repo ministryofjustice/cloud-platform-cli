@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	terraform "github.com/ministryofjustice/cloud-platform-cli/pkg/terraform"
+	"github.com/ministryofjustice/cloud-platform-cli/pkg/util"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -42,13 +43,13 @@ func addTerraformCmd(topLevel *cobra.Command) {
 
 			err = tfCli.Init(context.Background(), &out)
 			// print terraform init output irrespective of error. out captures both stdout and stderr of terraform
-			terraform.Redacted(os.Stdout, out.String(), tfCli.Redacted)
+			util.Redacted(os.Stdout, out.String(), tfCli.Redacted)
 			if err != nil {
 				contextLogger.Fatal("Failed to init terraform: %w", err)
 			}
 
 			_, err = tfCli.Plan(context.Background(), &out)
-			terraform.Redacted(os.Stdout, out.String(), tfCli.Redacted)
+			util.Redacted(os.Stdout, out.String(), tfCli.Redacted)
 			if err != nil {
 				contextLogger.Fatal("Failed to plan terraform: %w", err)
 			}
@@ -73,13 +74,13 @@ func addTerraformCmd(topLevel *cobra.Command) {
 
 			err = tfCli.Init(context.Background(), &out)
 			// print terraform init output irrespective of error. out captures both stdout and stderr of addTerraformCmd
-			terraform.Redacted(os.Stdout, out.String(), tfCli.Redacted)
+			util.Redacted(os.Stdout, out.String(), tfCli.Redacted)
 			if err != nil {
 				contextLogger.Fatal("Failed to init terraform: %w", err)
 			}
 
 			err = tfCli.Apply(context.Background(), &out)
-			terraform.Redacted(os.Stdout, out.String(), tfCli.Redacted)
+			util.Redacted(os.Stdout, out.String(), tfCli.Redacted)
 			if err != nil {
 				contextLogger.Fatal("Failed to apply terraform: %w", err)
 			}
@@ -106,14 +107,14 @@ func addTerraformCmd(topLevel *cobra.Command) {
 			var out bytes.Buffer
 			err = tfCli.Init(context.Background(), &out)
 			// print terraform init output irrespective of error. out captures both stdout and stderr of terraform
-			terraform.Redacted(os.Stdout, out.String(), tfCli.Redacted)
+			util.Redacted(os.Stdout, out.String(), tfCli.Redacted)
 			if err != nil {
 				contextLogger.Fatal("Failed to init terraform: %w", err)
 			}
 
 			// diff - false if there is are changes in the plan
 			diff, err = tfCli.Plan(context.Background(), &out)
-			terraform.Redacted(os.Stdout, out.String(), tfCli.Redacted)
+			util.Redacted(os.Stdout, out.String(), tfCli.Redacted)
 			if err != nil {
 				contextLogger.Fatal("Failed to plan terraform: %w", err)
 			}
