@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	terraform "github.com/ministryofjustice/cloud-platform-cli/pkg/terraform"
-	"github.com/ministryofjustice/cloud-platform-cli/pkg/util"
+	util "github.com/ministryofjustice/cloud-platform-cli/pkg/util"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -143,8 +143,8 @@ func addCommonFlags(cmd *cobra.Command, tf *terraform.TerraformCLIConfig) {
 	cmd.PersistentFlags().StringVarP(&awsRegion, "aws-region", "", "", "[required] aws region to use")
 	cmd.PersistentFlags().StringVarP(&tf.Workspace, "workspace", "w", "", "Default workspace where terraform is going to be executed")
 	// Terraform options
-	cmd.PersistentFlags().StringVar(&tf.Version, "terraform-version", "1.2.5", "[optional] the terraform version to use. [default] 1.2.5")
-	cmd.PersistentFlags().StringVar(&tf.WorkingDir, "workdir", ".", "[optional] the terraform working directory to perform terraform operation [defaukt] .")
+	cmd.PersistentFlags().StringVar(&tf.Version, "terraform-version", "1.2.5", "[optional] the terraform version to use.")
+	cmd.PersistentFlags().StringVar(&tf.WorkingDir, "workdir", ".", "[optional] the terraform working directory to perform terraform operation [default] .")
 	cmd.PersistentFlags().BoolVar(&tf.Redacted, "redact", true, "Redact the terraform output before printing")
 
 	_ = cmd.MarkPersistentFlagRequired("aws-access-key-id")
