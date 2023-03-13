@@ -29,6 +29,9 @@ func addTerraformCmd(topLevel *cobra.Command) {
 		PreRun: upgradeIfNotLatest,
 		Run: func(cmd *cobra.Command, args []string) {
 			contextLogger := log.WithFields(log.Fields{"subcommand": "plan"})
+			if tf.Workspace == "" {
+				contextLogger.Fatal("Workspace is required")
+			}
 			tfCli, err := terraform.NewTerraformCLI(&tf)
 			if err != nil {
 
@@ -89,6 +92,9 @@ func addTerraformCmd(topLevel *cobra.Command) {
 		PreRun: upgradeIfNotLatest,
 		Run: func(cmd *cobra.Command, args []string) {
 			contextLogger := log.WithFields(log.Fields{"subcommand": "check-divergence"})
+			if tf.Workspace == "" {
+				contextLogger.Fatal("Workspace is required")
+			}
 
 			contextLogger.Info("Executing terraform plan, if there is a drift this program execution will fail")
 
@@ -119,6 +125,8 @@ func addTerraformCmd(topLevel *cobra.Command) {
 	}
 
 	addCommonFlags(checkDivergence, &tf)
+	addCommonFlags(plan, &tf)
+	addCommonFlags(apply, &tf)
 	rootCmd.AddCommand(checkDivergence)
 	rootCmd.AddCommand(plan)
 	rootCmd.AddCommand(apply)
@@ -132,7 +140,7 @@ func addCommonFlags(cmd *cobra.Command, tf *terraform.TerraformCLIConfig) {
 	cmd.PersistentFlags().StringVarP(&awsAccessKey, "aws-access-key-id", "", "", "Access key id of service account to be used by terraform")
 	cmd.PersistentFlags().StringVarP(&awsSecret, "aws-secret-access-key", "", "", "Secret access key of service account to be used by terraform")
 	cmd.PersistentFlags().StringVarP(&awsRegion, "aws-region", "", "", "[required] aws region to use")
-	cmd.PersistentFlags().StringVarP(&tf.Workspace, "workspace", "w", "default", "Default workspace where terraform is going to be executed")
+	cmd.PersistentFlags().StringVarP(&tf.Workspace, "workspace", "w", "", "Default workspace where terraform is going to be executed")
 	// Terraform options
 	cmd.PersistentFlags().StringVar(&tf.Version, "terraform-version", "0.14.8", "[optional] the terraform version to use. [default] 0.14.8")
 	cmd.PersistentFlags().StringVar(&tf.WorkingDir, "workdir", ".", "[optional] the terraform working directory to perform terraform operation [defaukt] .")
