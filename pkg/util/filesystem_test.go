@@ -56,3 +56,28 @@ func TestIsFilePathExists(t *testing.T) {
 	}
 	defer os.RemoveAll("namespaces")
 }
+
+func TestIsYamlFileExists(t *testing.T) {
+	tempDir := "namespaces/testCluster/testNamespace"
+	tempFile := tempDir + "/foo.yaml"
+
+	if err := os.MkdirAll(tempDir, os.ModePerm); err != nil {
+		t.Fatal(err)
+	}
+
+	got := util.IsYamlFileExists(tempDir)
+	if got {
+		t.Errorf("Expected no yaml file %v got %v", tempFile, got)
+	}
+
+	_, err := os.Create(tempFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got = util.IsYamlFileExists(tempDir)
+	if !got {
+		t.Errorf("Expected file %v not found", tempFile)
+	}
+	defer os.RemoveAll("namespaces")
+}

@@ -25,22 +25,32 @@ var skipEnvCheck bool
 // answersFile is a flag to specify the path to the answers file.
 var answersFile string
 
+var clusterName, githubToken string
+
 func addEnvironmentCmd(topLevel *cobra.Command) {
 	topLevel.AddCommand(environmentCmd)
-	environmentCmd.AddCommand(environmentEcrCmd)
-	environmentCmd.AddCommand(environmentRdsCmd)
-	environmentCmd.AddCommand(environmentS3Cmd)
-	environmentCmd.AddCommand(environmentSvcCmd)
-	environmentCmd.AddCommand(environmentCreateCmd)
-	environmentCmd.AddCommand(environmentPlanCmd)
-	environmentCmd.AddCommand(environmentApplyCmd)
+	envSubCommands := []*cobra.Command{
+		environmentApplyCmd,
+		environmentBumpModuleCmd,
+		environmentCreateCmd,
+		environmentDivergenceCmd,
+		environmentEcrCmd,
+		environmentPlanCmd,
+		environmentPrototypeCmd,
+		environmentRdsCmd,
+		environmentS3Cmd,
+		environmentSvcCmd,
+	}
+
+	for _, cmd := range envSubCommands {
+		environmentCmd.AddCommand(cmd)
+	}
+
 	environmentEcrCmd.AddCommand(environmentEcrCreateCmd)
 	environmentRdsCmd.AddCommand(environmentRdsCreateCmd)
 	environmentS3Cmd.AddCommand(environmentS3CreateCmd)
 	environmentSvcCmd.AddCommand(environmentSvcCreateCmd)
-	environmentCmd.AddCommand(environmentPrototypeCmd)
 	environmentPrototypeCmd.AddCommand(environmentPrototypeCreateCmd)
-	environmentCmd.AddCommand(environmentBumpModuleCmd)
 
 	// flags
 	environmentApplyCmd.Flags().BoolVar(&optFlags.AllNamespaces, "all-namespaces", false, "Apply all namespaces with -all-namespaces")
@@ -66,6 +76,13 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 
 	environmentCreateCmd.Flags().BoolVarP(&skipEnvCheck, "skip-env-check", "s", false, "Skip the environment check")
 	environmentCreateCmd.Flags().StringVarP(&answersFile, "answers-file", "a", "", "Path to the answers file")
+
+	environmentDivergenceCmd.Flags().StringVarP(&clusterName, "cluster-name", "c", "live", "[optional] Cluster name")
+	environmentDivergenceCmd.Flags().StringVarP(&githubToken, "github-token", "g", "", "[required] Github token")
+	environmentDivergenceCmd.Flags().StringVarP(&kubeconfig, "kubeconfig", "k", "", "[optional] Kubeconfig file path")
+	if err := environmentDivergenceCmd.MarkFlagRequired("github-token"); err != nil {
+		log.Fatal(err)
+	}
 }
 
 var environmentCmd = &cobra.Command{
@@ -97,10 +114,10 @@ var environmentEcrCmd = &cobra.Command{
 
 var environmentPlanCmd = &cobra.Command{
 	Use: "plan",
-	Short: `Perform a terraform plan and kubectl apply -dry-run for a given namespace using either -namespace flag or the
+	Short: `Perform a terraform plan and kubectl apply --dry-run=client for a given namespace using either -namespace flag or the
 	the namespace in the given PR Id/Number`,
 	Long: `
-	Perform a kubectl apply -dry-run and a terraform plan for a given namespace using either -namespace flag or the
+	Perform a kubectl apply --dry-run=client and a terraform plan for a given namespace using either -namespace flag or the
 	the namespace in the given PR Id/Number
 
 	Along with the mandatory input flag, the below environments variables needs to be set
@@ -310,5 +327,42 @@ Would bump all users serviceaccount modules in the environments repository to th
 			return err
 		}
 		return nil
+	},
+}
+
+var environmentDivergenceCmd = &cobra.Command{
+	Use:   "divergence",
+	Short: `Check for divergence between the environments repository and the cluster`,
+	Example: heredoc.Doc(`
+	> cloud-platform environment divergence --cluster myTestCluster --githubToken myGithubToken123
+	`),
+	PreRun: upgradeIfNotLatest,
+	Run: func(cmd *cobra.Command, args []string) {
+		contextLogger := log.WithFields(log.Fields{"subcommand": "divergence"})
+		// list of excluded Kubernetes namespaces to check.
+		excludedNamespaces := []string{
+			"cert-manager",
+			"default",
+			"ingress-controllers",
+			"kube-node-lease",
+			"kube-public",
+			"kube-system",
+			"kuberhealthy",
+			"kuberos",
+			"logging",
+			"opa",
+			"overprovision",
+			"velero",
+			"trivy-system",
+		}
+
+		divergence, err := environment.NewDivergence(clusterName, kubeconfig, githubToken, excludedNamespaces)
+		if err != nil {
+			contextLogger.Fatal(err)
+		}
+
+		if err := divergence.Check(); err != nil {
+			contextLogger.Fatal(err)
+		}
 	},
 }

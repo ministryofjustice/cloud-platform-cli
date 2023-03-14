@@ -12,7 +12,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 )
 
-const TerraformVersion = "0.14.8"
+const TerraformVersion = "1.2.5"
 
 type Applier interface {
 	Initialize()
@@ -165,7 +165,7 @@ func (m *ApplierImpl) TerraformDestroy(directory string) error {
 func (m *ApplierImpl) KubectlApply(namespace, directory string, dryRun bool) (string, error) {
 	var args []string
 	if dryRun {
-		args = []string{"kubectl", "-n", namespace, "apply", "--dry-run", "-f", directory}
+		args = []string{"kubectl", "-n", namespace, "apply", "--dry-run=client", "-f", directory}
 	} else {
 		args = []string{"kubectl", "-n", namespace, "apply", "-f", directory}
 	}

@@ -200,7 +200,7 @@ func (opt *clusterOptions) addCreateClusterFlags(cmd *cobra.Command, auth *authO
 	cmd.Flags().BoolVar(&opt.Fast, "fast", false, "[optional] if true, will skip the slow parts of the cluster creation process")
 
 	// Terraform options
-	cmd.Flags().StringVar(&opt.TfVersion, "terraform-version", "0.14.8", "[optional] the terraform version to use. [default] 0.14.8")
+	cmd.Flags().StringVar(&opt.TfVersion, "terraform-version", "1.2.5", "[optional] the terraform version to use.")
 }
 
 func getCredentials(awsRegion string) (*client.AwsCredentials, error) {

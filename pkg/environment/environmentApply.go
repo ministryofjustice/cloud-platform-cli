@@ -70,8 +70,8 @@ func (a *Apply) Initialize() {
 
 // Plan is the entry point for performing a namespace plan.
 // It checks if the working directory is in cloud-platform-environments, checks if a PR number or a namespace is given
-// If a namespace is given, it perform a kubectl apply -dry-run and a terraform init and plan of that namespace
-// else checks for PR number and get the list of changed namespaces in the PR. Then does the kubectl apply -dry-run and
+// If a namespace is given, it perform a `kubectl apply --dry-run=client` and a terraform init and plan of that namespace
+// else checks for PR number and get the list of changed namespaces in the PR. Then does the `kubectl apply --dry-run=client` and
 // terraform init and plan of all the namespaces changed in the PR
 func (a *Apply) Plan() error {
 
@@ -253,12 +253,21 @@ func (a *Apply) planNamespace() error {
 	applier := NewApply(*a.Options)
 	repoPath := "namespaces/" + a.Options.ClusterCtx + "/" + a.Options.Namespace
 
-	outputKubectl, err := applier.planKubectl()
-	if err != nil {
-		return err
+	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
+		fmt.Printf("Namespace %s does not exist, skipping plan\n", a.Options.Namespace)
+		return nil
 	}
 
-	fmt.Println("\nOutput of kubectl:", outputKubectl)
+	if util.IsYamlFileExists(repoPath) {
+		outputKubectl, err := applier.planKubectl()
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("\nOutput of kubectl:", outputKubectl)
+	} else {
+		fmt.Printf("Namespace %s does not have yaml resources folder, skipping kubectl apply --dry-run\n", a.Options.Namespace)
+	}
 
 	exists, err := util.IsFilePathExists(repoPath + "/resources")
 	if err == nil && exists {
@@ -270,7 +279,7 @@ func (a *Apply) planNamespace() error {
 		fmt.Println("\nOutput of terraform:")
 		util.Redacted(os.Stdout, outputTerraform, true)
 	} else {
-		return err
+		fmt.Printf("Namespace %s does not have terraform resources folder, skipping terraform plan\n", a.Options.Namespace)
 	}
 	return nil
 }
@@ -309,6 +318,11 @@ func (a *Apply) applyNamespace() error {
 	// post circle breach.
 	repoPath := "namespaces/" + a.Options.ClusterCtx + "/" + a.Options.Namespace
 
+	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
+		fmt.Printf("Namespace %s does not exist, skipping apply\n", a.Options.Namespace)
+		return nil
+	}
+
 	if secretBlockerExists(repoPath) {
 		log.Printf("Namespace %s has a secret rotation blocker file, skipping apply", a.Options.Namespace)
 		// We don't want to return an error here so we softly fail.
@@ -323,11 +337,16 @@ func (a *Apply) applyNamespace() error {
 
 	applier := NewApply(*a.Options)
 
-	outputKubectl, err := applier.applyKubectl()
-	if err != nil {
-		return err
+	if util.IsYamlFileExists(repoPath) {
+		outputKubectl, err := applier.applyKubectl()
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("\nOutput of kubectl:", outputKubectl)
+	} else {
+		fmt.Printf("Namespace %s does not have yaml resources folder, skipping kubectl apply", a.Options.Namespace)
 	}
-	fmt.Println("\nOutput of kubectl:", outputKubectl)
 
 	exists, err := util.IsFilePathExists(repoPath + "/resources")
 	if err == nil && exists {
@@ -339,8 +358,7 @@ func (a *Apply) applyNamespace() error {
 		fmt.Println("\nOutput of terraform:")
 		util.Redacted(os.Stdout, outputTerraform, true)
 	} else {
-		log.Printf("Namespace %s doesnot have terraform resources folder, skipping terraform apply", a.Options.Namespace)
-		return err
+		fmt.Printf("Namespace %s does not have terraform resources folder, skipping terraform apply", a.Options.Namespace)
 	}
 	return nil
 }

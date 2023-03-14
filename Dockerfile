@@ -1,12 +1,12 @@
 # Build Cloud Platform tools (CLI)
-FROM golang:1.20.0-alpine AS cli_builder
+FROM golang:1.20.1-alpine AS cli_builder
 
 ENV \
     CGO_ENABLED=0 \
     GOOS=linux \
     KUBECTL_VERSION=1.22.15 \
     CLOUD_PLATFORM_CLI_VERSION=DOCKER \
-    TERRAFORM_VERSION=0.14.8
+    TERRAFORM_VERSION=1.2.5
 
 WORKDIR /build
 
@@ -36,7 +36,7 @@ RUN chmod +x kubectl terraform
 
 # ---
 
-FROM alpine:3.17.1
+FROM alpine:3.17.2
 
 ENV AWSCLI_VERSION=2.7.6
 ENV GLIBC_VER=2.31-r0
