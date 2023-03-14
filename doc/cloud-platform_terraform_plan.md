@@ -15,7 +15,6 @@ cloud-platform terraform plan [flags]
   -h, --help                           help for plan
       --redact                         Redact the terraform output before printing (default true)
       --terraform-version string       [optional] the terraform version to use. (default "1.2.5")
-      --workdir string                 [optional] the terraform working directory to perform terraform operation [default] . (default ".")
   -w, --workspace string               [required] workspace where terraform is going to be executed
 ```
 
