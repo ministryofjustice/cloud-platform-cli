@@ -17,5 +17,7 @@ Terraform actions.
 ### SEE ALSO
 
 * [cloud-platform](cloud-platform.md)	 - Multi-purpose CLI from the Cloud Platform team
+* [cloud-platform terraform apply](cloud-platform_terraform_apply.md)	 - Terraform apply.
 * [cloud-platform terraform check-divergence](cloud-platform_terraform_check-divergence.md)	 - Terraform check-divergence check if there are drifts in the state.
+* [cloud-platform terraform plan](cloud-platform_terraform_plan.md)	 - Terraform plan.
 

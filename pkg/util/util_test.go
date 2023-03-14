@@ -184,7 +184,7 @@ func TestRedacted(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var output bytes.Buffer
-			Redacted(&output, tt.args.output)
+			Redacted(&output, tt.args.output, true)
 			if tt.expect != output.String() {
 				t.Errorf("got %s but expected %s", output.String(), tt.expect)
 			}

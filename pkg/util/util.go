@@ -79,16 +79,19 @@ func GetLatestGitPull() error {
 	return nil
 }
 
-func Redacted(w io.Writer, output string) {
-	re := regexp2.MustCompile(`(?i)(^.*password.*$|^.*token.*$|^.*key.*$|^.*https://hooks\.slack\.com.*$|(?<!kubernetes_)secret)`, 0)
+// Redacted reads bytes of data for any sensitive strings and print REDACTED
+func Redacted(w io.Writer, output string, redact bool) {
+	re := regexp2.MustCompile(`(?i)(^.*password.*$|^.*token.*$|^.*key.*$|^.*https://hooks\.slack\.com.*$|(?<!kubernetes_)secret)|^.*user.*|^.*arn.*|^.*ssh-rsa.*|^.*clientid.*`, 0)
 	scanner := bufio.NewScanner(strings.NewReader(output))
 
 	for scanner.Scan() {
-		got, err := re.FindStringMatch(scanner.Text())
-		if got != nil && err == nil {
-			fmt.Fprintln(w, "REDACTED")
-		} else {
-			fmt.Fprintln(w, scanner.Text())
+		if redact {
+			got, err := re.FindStringMatch(scanner.Text())
+			if got != nil && err == nil {
+				fmt.Fprintln(w, "REDACTED")
+			} else {
+				fmt.Fprintln(w, scanner.Text())
+			}
 		}
 	}
 }

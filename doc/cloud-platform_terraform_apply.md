@@ -1,9 +1,9 @@
-## cloud-platform terraform check-divergence
+## cloud-platform terraform apply
 
-Terraform check-divergence check if there are drifts in the state.
+Terraform apply.
 
 ```
-cloud-platform terraform check-divergence [flags]
+cloud-platform terraform apply [flags]
 ```
 
 ### Options
@@ -12,7 +12,7 @@ cloud-platform terraform check-divergence [flags]
       --aws-access-key-id string       [required] Access key id of service account to be used by terraform
       --aws-region string              [required] aws region to use
       --aws-secret-access-key string   [required] Secret access key of service account to be used by terraform
-  -h, --help                           help for check-divergence
+  -h, --help                           help for apply
       --redact                         Redact the terraform output before printing (default true)
       --terraform-version string       [optional] the terraform version to use. (default "1.2.5")
   -w, --workspace string               [required] workspace where terraform is going to be executed
