@@ -9,14 +9,14 @@ cloud-platform terraform check-divergence [flags]
 ### Options
 
 ```
-      --aws-access-key-id string       Access key id of service account to be used by terraform
+      --aws-access-key-id string       [required] Access key id of service account to be used by terraform
       --aws-region string              [required] aws region to use
-      --aws-secret-access-key string   Secret access key of service account to be used by terraform
+      --aws-secret-access-key string   [required] Secret access key of service account to be used by terraform
   -h, --help                           help for check-divergence
       --redact                         Redact the terraform output before printing (default true)
       --terraform-version string       [optional] the terraform version to use. (default "1.2.5")
       --workdir string                 [optional] the terraform working directory to perform terraform operation [default] . (default ".")
-  -w, --workspace string               Default workspace where terraform is going to be executed
+  -w, --workspace string               [required] workspace where terraform is going to be executed
 ```
 
 ### Options inherited from parent commands
