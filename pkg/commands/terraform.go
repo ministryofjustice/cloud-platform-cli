@@ -144,7 +144,6 @@ func addCommonFlags(cmd *cobra.Command, tf *terraform.TerraformCLIConfig) {
 	// Terraform options
 	cmd.PersistentFlags().StringVarP(&tf.Workspace, "workspace", "w", "", "[required] workspace where terraform is going to be executed")
 	cmd.PersistentFlags().StringVar(&tf.Version, "terraform-version", "1.2.5", "[optional] the terraform version to use.")
-	cmd.PersistentFlags().StringVar(&tf.WorkingDir, "workdir", ".", "[optional] the terraform working directory to perform terraform operation [default] .")
 	cmd.PersistentFlags().BoolVar(&tf.Redacted, "redact", true, "Redact the terraform output before printing")
 
 	_ = cmd.MarkPersistentFlagRequired("aws-access-key-id")
