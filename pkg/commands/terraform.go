@@ -138,17 +138,19 @@ func addCommonFlags(cmd *cobra.Command, tf *terraform.TerraformCLIConfig) {
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 
-	cmd.PersistentFlags().StringVarP(&awsAccessKey, "aws-access-key-id", "", "", "Access key id of service account to be used by terraform")
-	cmd.PersistentFlags().StringVarP(&awsSecret, "aws-secret-access-key", "", "", "Secret access key of service account to be used by terraform")
+	cmd.PersistentFlags().StringVarP(&awsAccessKey, "aws-access-key-id", "", "", "[required] Access key id of service account to be used by terraform")
+	cmd.PersistentFlags().StringVarP(&awsSecret, "aws-secret-access-key", "", "", "[required] Secret access key of service account to be used by terraform")
 	cmd.PersistentFlags().StringVarP(&awsRegion, "aws-region", "", "", "[required] aws region to use")
-	cmd.PersistentFlags().StringVarP(&tf.Workspace, "workspace", "w", "", "Default workspace where terraform is going to be executed")
 	// Terraform options
+	cmd.PersistentFlags().StringVarP(&tf.Workspace, "workspace", "w", "", "[required] workspace where terraform is going to be executed")
 	cmd.PersistentFlags().StringVar(&tf.Version, "terraform-version", "1.2.5", "[optional] the terraform version to use.")
 	cmd.PersistentFlags().StringVar(&tf.WorkingDir, "workdir", ".", "[optional] the terraform working directory to perform terraform operation [default] .")
 	cmd.PersistentFlags().BoolVar(&tf.Redacted, "redact", true, "Redact the terraform output before printing")
 
 	_ = cmd.MarkPersistentFlagRequired("aws-access-key-id")
 	_ = cmd.MarkPersistentFlagRequired("aws-secret-access-key")
+	_ = cmd.MarkPersistentFlagRequired("aws-region")
+	_ = cmd.MarkPersistentFlagRequired("workspace")
 
 	cmd.PersistentFlags().VisitAll(func(f *pflag.Flag) {
 		if viper.IsSet(f.Name) && viper.GetString(f.Name) != "" {
