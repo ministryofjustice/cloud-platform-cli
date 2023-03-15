@@ -1,4 +1,3 @@
-
 name: Test Go code
 
 on:
@@ -23,7 +22,7 @@ jobs:
       # Install Go on the VM running the action.
       - uses: actions/setup-go@v3
         with:
-          go-version: ">=1.19.0"
+          go-version: "1.19.x"
 
       # Run tests with nice formatting. Save the original log in /tmp/gotest.log
       - name: Run tests
