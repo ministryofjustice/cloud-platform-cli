@@ -46,6 +46,7 @@ $ cloud-platform environment apply -n <namespace>
       --kubecfg string        path to kubeconfig file (default "/home/runner/.kube/config")
   -n, --namespace string      Namespace which you want to perform the apply
       --prNumber int          Pull request ID or number to which you want to perform the apply
+      --redact                Redact the terraform output before printing (default true)
 ```
 
 ### Options inherited from parent commands

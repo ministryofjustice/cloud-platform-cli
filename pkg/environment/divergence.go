@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -56,9 +57,9 @@ func (d *Divergence) Check() error {
 
 	// compare namespaces and print out differences
 	clusterNamespacesSet := compareNamespaces(clusterNamespaces, githubNamespaces, d.ExcludedNamespaces)
-	if len(clusterNamespacesSet.List()) > 0 {
-		fmt.Println("The following namespaces are in the cluster but not in github:")
-		for _, ns := range clusterNamespacesSet.List() {
+	if clusterNamespacesSet.Cardinality() > 0 {
+		fmt.Println("The following namespaces are in github but not in the cluster:")
+		for ns := range clusterNamespacesSet.Iter() {
 			fmt.Println(ns)
 		}
 	}
@@ -66,11 +67,11 @@ func (d *Divergence) Check() error {
 	return nil
 }
 
-func compareNamespaces(clusterNamespaces, githubNamespaces, excludedNamespaces []string) sets.String {
-	clusterNamespacesSet := sets.NewString()
+func compareNamespaces(clusterNamespaces, githubNamespaces, excludedNamespaces []string) mapset.Set[string] {
+	clusterNamespacesSet := mapset.NewSet[string]()
 	for _, ns := range clusterNamespaces {
-		if !sets.NewString(githubNamespaces...).Has(ns) && !sets.NewString(excludedNamespaces...).Has(ns) {
-			clusterNamespacesSet.Insert(ns)
+		if !mapset.NewSet(githubNamespaces...).Contains(ns) && !mapset.NewSet(excludedNamespaces...).Contains(ns) {
+			clusterNamespacesSet.Add(ns)
 		}
 	}
 
