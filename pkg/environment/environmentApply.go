@@ -17,7 +17,7 @@ type Options struct {
 	Namespace, KubecfgPath, ClusterCtx, GithubToken string
 	PRNumber                                        int
 	AllNamespaces                                   bool
-	EnableApplySkip                                 bool
+	EnableApplySkip, Redacted                       bool
 }
 
 // RequiredEnvVars is used to store values such as TF_VAR_ , github and pingdom tokens
@@ -271,13 +271,18 @@ func (a *Apply) planNamespace() error {
 
 	exists, err := util.IsFilePathExists(repoPath + "/resources")
 	if err == nil && exists {
+		// Set KUBE_CONFIG_PATH to the path of the kubeconfig file
+		// This is needed for terraform to be able to connect to the cluster
+		if err := os.Setenv("KUBE_CONFIG_PATH", a.Options.KubecfgPath); err != nil {
+			return err
+		}
 		outputTerraform, err := applier.planTerraform()
 		if err != nil {
 			return err
 		}
 
 		fmt.Println("\nOutput of terraform:")
-		util.Redacted(os.Stdout, outputTerraform, true)
+		util.Redacted(os.Stdout, outputTerraform, a.Options.Redacted)
 	} else {
 		fmt.Printf("Namespace %s does not have terraform resources folder, skipping terraform plan\n", a.Options.Namespace)
 	}
@@ -350,13 +355,18 @@ func (a *Apply) applyNamespace() error {
 
 	exists, err := util.IsFilePathExists(repoPath + "/resources")
 	if err == nil && exists {
+		// Set KUBE_CONFIG_PATH to the path of the kubeconfig file
+		// This is needed for terraform to be able to connect to the cluster
+		if err := os.Setenv("KUBE_CONFIG_PATH", a.Options.KubecfgPath); err != nil {
+			return err
+		}
 		outputTerraform, err := applier.applyTerraform()
 		if err != nil {
 			return err
 		}
 
 		fmt.Println("\nOutput of terraform:")
-		util.Redacted(os.Stdout, outputTerraform, true)
+		util.Redacted(os.Stdout, outputTerraform, a.Options.Redacted)
 	} else {
 		fmt.Printf("Namespace %s does not have terraform resources folder, skipping terraform apply", a.Options.Namespace)
 	}
