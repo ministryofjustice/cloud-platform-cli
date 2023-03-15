@@ -34,9 +34,11 @@ var kubePath string
 type clusterOptions struct {
 	// Name is the name of the cluster you wish to create/amend.
 	Name string
+
 	// ClusterSuffix is the suffix to append to the cluster name.
 	// This will be used to create the cluster ingress, such as "live.service.justice.gov.uk".
 	ClusterSuffix string
+
 	// VpcName is the name of the VPC to create the cluster in.
 	// Often clusters will be built in a single VPC.
 	VpcName string
@@ -52,6 +54,18 @@ type clusterOptions struct {
 
 	// Auth0 the Auth0 client ID and secret to use for the cluster.
 	Auth0 authOpts
+
+	// Whether to actually run the destroy cluster commands or just output a destroy plan
+	DestroyDryRun bool
+
+	// Option to destroy the cluster components or skip it if needed
+	DestroyComponents bool
+
+	// Option to destroy the cluster or skip it if needed
+	DestroyCluster bool
+
+	// Option to destroy the vpc or keep it for the cluster being destroyed
+	DestroyVpc bool
 }
 
 // AuthOpts represents the options for Auth0.
@@ -101,7 +115,7 @@ func addCreateClusterCmd(toplevel *cobra.Command) {
 				contextLogger.Fatal(err)
 			}
 
-			if err := checkCreateDirectory(); err != nil {
+			if err := checkDirectory(); err != nil {
 				contextLogger.Fatal(err)
 			}
 			cluster := cloudPlatform.Cluster{
@@ -128,6 +142,142 @@ func addCreateClusterCmd(toplevel *cobra.Command) {
 
 	opt.addCreateClusterFlags(cmd, &auth)
 	toplevel.AddCommand(cmd)
+}
+
+func addDeleteClusterCmd(toplevel *cobra.Command) {
+	var (
+		auth = authOpts{}
+		opt  = clusterOptions{
+			MaxNameLength: 12,
+			Auth0:         auth,
+		}
+	)
+	var (
+		date    = time.Now().Format("0201")
+		minHour = time.Now().Format("1504")
+	)
+
+	cmd := &cobra.Command{
+		Use:   "delete",
+		Short: `delete a cloud-platform cluster`,
+		Long: heredoc.Doc(`
+
+			Running this command will delete an existing eks cluster in the cloud-platform aws account.
+			It will delete the components, then the cluster, the VPC, terraform workspace and cleanup the cloudwatch log group.
+
+			This command defaults to --dry-run=true, set --dry-run=false when you are ready to actually destroy the cluster.
+
+			You must have the following environment variables set, or passed via arguments:
+				- a valid AWS profile or access key and secret.
+				- a valid auth0 client id and secret.
+				- a valid auth0 domain.
+				- a cluster name
+
+			You must also be in the infrastructure repository, and have decrypted the repository before running this command.
+`),
+		PreRun: upgradeIfNotLatest,
+		Run: func(cmd *cobra.Command, args []string) {
+			contextLogger := log.WithFields(log.Fields{"subcommand": "delete-cluster"})
+			err := opt.validateClusterOpts(cmd, date, minHour)
+
+			if err != nil {
+				contextLogger.Fatal(err)
+			}
+
+			status := "Good"
+
+			if !opt.DestroyDryRun {
+				status = "Destroying"
+			}
+
+			if err := checkDirectory(); err != nil {
+				contextLogger.Fatal(err)
+			}
+
+			cluster := cloudPlatform.Cluster{
+				Name:         opt.Name,
+				HealthStatus: status,
+			}
+
+			tf := terraform.TerraformCLIConfig{
+				Workspace: opt.Name,
+				Version:   opt.TfVersion,
+			}
+
+			creds, err := getCredentials(awsRegion)
+			if err != nil {
+				contextLogger.Fatal(err)
+			}
+
+			if err := deleteCluster(&cluster, &tf, creds, &opt); err != nil {
+				contextLogger.Fatal(err)
+			}
+
+			cluster.HealthStatus = "Destroyed"
+		},
+	}
+
+	opt.addDeleteClusterFlags(cmd, &auth)
+	toplevel.AddCommand(cmd)
+}
+
+// deleteCluster performs the actual logic of deleting a cloud platform cluster. Assuming you're in the infrastructure repo, it will:
+// It will return an error if at any stage terraform fails or the cluster isn't recognised.
+func deleteCluster(cluster *cloudPlatform.Cluster, tf *terraform.TerraformCLIConfig, awsCreds *client.AwsCredentials, opt *clusterOptions) error {
+	// NOTE: baseDir is the directory where the terraform files are located in the infrastructure repo. This is subject to change.
+	const baseDir = "./terraform/aws-accounts/cloud-platform-aws/"
+	var (
+		vpcDir        = baseDir + "vpc/"
+		clusterDir    = vpcDir + "eks/"
+		componentsDir = clusterDir + "components/"
+	)
+
+	if opt.DestroyComponents {
+		fmt.Printf("Destroying components in %s cluster\n", cluster.Name)
+		if err := cluster.DestroyComponents(tf, awsCreds, componentsDir, kubePath, opt.DestroyDryRun); err != nil {
+			return err
+		}
+	}
+
+	if opt.DestroyCluster {
+		fmt.Printf("Destroying cluster %s in %s\n", cluster.Name, cluster.VpcId)
+		if err := cluster.DestroyEks(tf, awsCreds, clusterDir, opt.DestroyDryRun); err != nil {
+			return err
+		}
+	}
+
+	if opt.DestroyVpc {
+		fmt.Printf("Destroying vpc %s\n", cluster.VpcId)
+		if err := cluster.DestroyVpc(tf, awsCreds, vpcDir, opt.DestroyDryRun); err != nil {
+			return err
+		}
+
+		fmt.Printf("Deleting terraform workspace %s\n", tf.Workspace)
+		if err := cluster.DeleteTfWorkspace(tf, []string{componentsDir, clusterDir, vpcDir}, opt.DestroyDryRun); err != nil {
+			return err
+		}
+	}
+
+	printOutTable(*cluster)
+
+	return nil
+}
+
+func (opt *clusterOptions) addDeleteClusterFlags(cmd *cobra.Command, auth *authOpts) {
+
+	cmd.Flags().StringVar(&opt.Auth0.ClientId, "auth0-client-id", os.Getenv("AUTH0_CLIENT_ID"), "[required] auth0 client id to use")
+	cmd.Flags().StringVar(&opt.Auth0.ClientSecret, "auth0-client-secret", "", "[required] auth0 client secret to use")
+	cmd.Flags().StringVar(&opt.Auth0.Domain, "auth0-domain", os.Getenv("AUTH0_DOMAIN"), "[required] auth0 domain to use")
+	cmd.Flags().StringVar(&opt.Name, "name", "", "[required] name of the cluster")
+
+	cmd.Flags().StringVar(&kubePath, "kubecfg", filepath.Join(homedir.HomeDir(), ".kube", "config"), "[optional] path to kubeconfig file")
+	cmd.Flags().BoolVar(&opt.DestroyDryRun, "dry-run", true, "[optional] if false, the cluster will be destroyed otherwise no changes will be made to the cluster")
+	cmd.Flags().BoolVar(&opt.DestroyComponents, "destroy-components", true, "[optional] if true, will destroy the cluster components")
+	cmd.Flags().BoolVar(&opt.DestroyCluster, "destroy-cluster", true, "[optional] if true, will destroy the eks cluster")
+	cmd.Flags().BoolVar(&opt.DestroyVpc, "destroy-vpc", true, "[optional] if true, will destroy the vpc")
+
+	// Terraform options
+	cmd.Flags().StringVar(&opt.TfVersion, "terraform-version", "1.2.5", "[optional] the terraform version to use.")
 }
 
 // createCluster performs the actual logic of creating a cloud platform cluster. Assuming you're in the infrastructure repo, it will:
@@ -188,6 +338,7 @@ func printOutTable(c cloudPlatform.Cluster) {
 	t.SetStyle(table.StyleBold)
 	t.Render()
 }
+
 func (opt *clusterOptions) addCreateClusterFlags(cmd *cobra.Command, auth *authOpts) {
 
 	cmd.Flags().StringVar(&opt.Auth0.ClientId, "auth0-client-id", os.Getenv("AUTH0_CLIENT_ID"), "[required] auth0 client id to use")
@@ -258,7 +409,7 @@ func (o *clusterOptions) checkCreateFlags() error {
 	return nil
 }
 
-func checkCreateDirectory() error {
+func checkDirectory() error {
 	// Ensure the executor is running the command in the correct directory.
 	repoName, err := findTopLevelGitDir(".")
 	if err != nil {
@@ -309,6 +460,8 @@ func addClusterCmd(topLevel *cobra.Command) {
 	// create cluster flags
 	addCreateClusterCmd(clusterCmd)
 
+	// delete cluster flags
+	addDeleteClusterCmd(clusterCmd)
 	// recycle node flags
 	clusterRecycleNodeCmd.Flags().StringVarP(&opt.ResourceName, "name", "n", "", "name of the resource to recycle")
 	clusterRecycleNodeCmd.Flags().BoolVarP(&opt.Force, "force", "f", true, "force the pods to drain")

@@ -231,3 +231,16 @@ func (t *TerraformCLI) StateList(state *tfjson.State) []string {
 	}
 	return stateList
 }
+
+func (t *TerraformCLI) WorkspaceDelete(ctx context.Context, workspace string) error {
+	if err := t.tf.WorkspaceSelect(ctx, "default"); err != nil {
+		return err
+	}
+
+	if err := t.tf.WorkspaceDelete(ctx, workspace); err != nil {
+		return err
+	}
+
+	return nil
+
+}
