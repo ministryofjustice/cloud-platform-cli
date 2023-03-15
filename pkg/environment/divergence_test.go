@@ -6,11 +6,11 @@ import (
 	"reflect"
 	"testing"
 
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/google/go-github/github"
 	"github.com/migueleliasweb/go-github-mock/src/mock"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 )
@@ -314,7 +314,7 @@ func Test_compareNamespaces(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want sets.String
+		want mapset.Set[string]
 	}{
 		{
 			name: "compare namespaces",
@@ -323,21 +323,21 @@ func Test_compareNamespaces(t *testing.T) {
 				githubNamespaces:   []string{"default"},
 				excludedNamespaces: nil,
 			},
-			want: sets.NewString("kube-system"),
+			want: mapset.NewSet("kube-system"),
 		},
 		{
 			name: "compare namespaces with excluded namespaces",
 			args: args{
-				clusterNamespaces:  []string{"default", "kube-system"},
+				clusterNamespaces:  []string{"default", "kube-system", "ns1"},
 				githubNamespaces:   []string{"default"},
 				excludedNamespaces: []string{"kube-system"},
 			},
-			want: sets.NewString(),
+			want: mapset.NewSet("ns1"),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := compareNamespaces(tt.args.clusterNamespaces, tt.args.githubNamespaces, tt.args.excludedNamespaces); !reflect.DeepEqual(got, tt.want) {
+			if got := compareNamespaces(tt.args.clusterNamespaces, tt.args.githubNamespaces, tt.args.excludedNamespaces); !got.Equal(tt.want) {
 				t.Errorf("compareNamespaces() = %v, want %v", got, tt.want)
 			}
 		})
