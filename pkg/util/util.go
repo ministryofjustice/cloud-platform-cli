@@ -92,6 +92,8 @@ func Redacted(w io.Writer, output string, redact bool) {
 			} else {
 				fmt.Fprintln(w, scanner.Text())
 			}
+		} else {
+			fmt.Fprintln(w, scanner.Text())
 		}
 	}
 }
