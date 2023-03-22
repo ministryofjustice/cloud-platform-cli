@@ -227,12 +227,14 @@ func deleteCluster(cluster *cloudPlatform.Cluster, tf *terraform.TerraformCLICon
 	// NOTE: baseDir is the directory where the terraform files are located in the infrastructure repo. This is subject to change.
 	const baseDir = "./terraform/aws-accounts/cloud-platform-aws/"
 	var (
-		vpcDir        = baseDir + "vpc/"
-		clusterDir    = vpcDir + "eks/"
-		componentsDir = clusterDir + "components/"
+		vpcDir               = baseDir + "vpc/"
+		clusterDir           = vpcDir + "eks/"
+		componentsDir        = clusterDir + "components/"
+		tfWorkspacesToDelete = []string{}
 	)
 
 	if opt.DestroyComponents {
+		tfWorkspacesToDelete = append(tfWorkspacesToDelete, componentsDir)
 		fmt.Printf("Destroying components in %s cluster\n", cluster.Name)
 		if err := cluster.DestroyComponents(tf, awsCreds, componentsDir, kubePath, opt.DestroyDryRun); err != nil {
 			return err
@@ -240,6 +242,7 @@ func deleteCluster(cluster *cloudPlatform.Cluster, tf *terraform.TerraformCLICon
 	}
 
 	if opt.DestroyCluster {
+		tfWorkspacesToDelete = append(tfWorkspacesToDelete, clusterDir)
 		fmt.Printf("Destroying cluster %s in %s\n", cluster.Name, cluster.VpcId)
 		if err := cluster.DestroyEks(tf, awsCreds, clusterDir, opt.DestroyDryRun); err != nil {
 			return err
@@ -247,13 +250,14 @@ func deleteCluster(cluster *cloudPlatform.Cluster, tf *terraform.TerraformCLICon
 	}
 
 	if opt.DestroyVpc {
+		tfWorkspacesToDelete = append(tfWorkspacesToDelete, vpcDir)
 		fmt.Printf("Destroying vpc %s\n", cluster.VpcId)
 		if err := cluster.DestroyVpc(tf, awsCreds, vpcDir, opt.DestroyDryRun); err != nil {
 			return err
 		}
 
 		fmt.Printf("Deleting terraform workspace %s\n", tf.Workspace)
-		if err := cluster.DeleteTfWorkspace(tf, []string{componentsDir, clusterDir, vpcDir}, opt.DestroyDryRun); err != nil {
+		if err := cluster.DeleteTfWorkspace(tf, tfWorkspacesToDelete, opt.DestroyDryRun); err != nil {
 			return err
 		}
 	}
