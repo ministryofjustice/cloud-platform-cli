@@ -200,43 +200,6 @@ func TestGetCluster(t *testing.T) {
 	}
 }
 
-func Test_deleteLocalState(t *testing.T) {
-	parentDir := "testParent"
-	file := "testFile"
-	siblingDir := "testDir"
-
-	os.RemoveAll(parentDir)
-	err := os.Mkdir(parentDir, 0755)
-	if err != nil {
-		t.Errorf("deleteLocalState() error = %v", err)
-	}
-	defer os.RemoveAll(parentDir)
-
-	// create file in temp directory
-	_, err = os.CreateTemp(parentDir, file)
-	if err != nil {
-		t.Errorf("deleteLocalState() error = %v", err)
-	}
-
-	// create directory in temp directory
-	_, err = os.MkdirTemp(parentDir, siblingDir)
-	if err != nil {
-		t.Errorf("deleteLocalState() error = %v", err)
-	}
-
-	if err := deleteLocalState(parentDir, file, siblingDir); err != nil {
-		t.Errorf("deleteLocalState() error = %v", err)
-	}
-
-	if _, err = os.Stat(file); !os.IsNotExist(err) {
-		t.Errorf("deleteLocalState() error = %v", "file not deleted")
-	}
-
-	if _, err := os.Stat(siblingDir); !os.IsNotExist(err) {
-		t.Errorf("deleteLocalState() error = %v", "directory not deleted")
-	}
-}
-
 func TestApplyTacticalPspFix(t *testing.T) {
 	fakeClientset := fake.NewSimpleClientset(
 		&v1beta1.PodSecurityPolicy{

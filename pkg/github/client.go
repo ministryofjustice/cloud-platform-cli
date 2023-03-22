@@ -61,7 +61,7 @@ func NewGithubClient(config *GithubClientConfig, token string) *GithubClient {
 }
 
 // ListMergedPRs takes date and number of PRs count as input, search the github using Graphql api for
-//  list of PRs (title,url) between the first and last date provided
+// list of PRs (title,url) between the first and last date provided
 func (gh *GithubClient) ListMergedPRs(date util.Date, count int) ([]Nodes, error) {
 
 	var query struct {

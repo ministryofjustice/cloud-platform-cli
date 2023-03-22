@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -118,27 +117,27 @@ func (c *Cluster) ApplyComponents(tf *terraform.TerraformCLIConfig, awsCreds *cl
 }
 
 func terraformApply(tf *terraform.TerraformCLIConfig) (map[string]tfexec.OutputMeta, error) {
-	terraform, error := terraform.NewTerraformCLI(tf)
+	tfCli, error := terraform.NewTerraformCLI(tf)
 	if error != nil {
 		return nil, error
 	}
 
 	// Start fresh and remove any local state.
-	if err := deleteLocalState(tf.WorkingDir, ".terraform", ".terraform.lock.hcl"); err != nil {
+	if err := terraform.DeleteLocalState(tf.WorkingDir, ".terraform", ".terraform.lock.hcl"); err != nil {
 		fmt.Println("Failed to delete local state, continuing anyway")
 	}
 
-	err := terraform.Init(context.Background(), log.Writer())
+	err := tfCli.Init(context.Background(), log.Writer())
 	if err != nil {
 		return nil, fmt.Errorf("failed to init terraform: %w", err)
 	}
 
-	if err = terraform.Apply(context.Background(), log.Writer()); err != nil {
+	if err = tfCli.Apply(context.Background(), log.Writer()); err != nil {
 		return nil, fmt.Errorf("failed to apply terraform: %w", err)
 	}
 
 	// We pass a nil writer to the output command as we don't want to print the output to the console.
-	return terraform.Output(context.Background(), nil)
+	return tfCli.Output(context.Background(), nil)
 }
 
 // AuthToCluster will authenticate to the cluster and return a kubernetes clientset. It will also write the kubeconfig
@@ -313,18 +312,4 @@ func getCluster(name string, svc eksiface.EKSAPI) (*eks.Cluster, error) {
 	}
 
 	return cluster.Cluster, nil
-}
-
-func deleteLocalState(dir string, paths ...string) error {
-	for _, path := range paths {
-		p := strings.Join([]string{dir, path}, "/")
-		if _, err := os.Stat(p); err == nil {
-			err = os.RemoveAll(p)
-			if err != nil {
-				return fmt.Errorf("failed to delete local state: %w", err)
-			}
-		}
-	}
-
-	return nil
 }

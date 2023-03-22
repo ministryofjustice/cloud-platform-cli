@@ -31,6 +31,7 @@ func NewTestTerraformCLI(config *TerraformCLIConfig, tfMock *mocks.TerraformExec
 		m.On("Output", mock.Anything).Return(nil, nil)
 		m.On("Show", mock.Anything).Return(nil, nil)
 		m.On("WorkspaceNew", mock.Anything, mock.Anything).Return(nil)
+		m.On("WorkspaceDelete", mock.Anything, mock.Anything).Return(nil)
 		tfMock = m
 	}
 
@@ -453,6 +454,44 @@ func TestTerraformCLI_StateList(t *testing.T) {
 			tfCli := NewTestTerraformCLI(tt.config, m)
 			if got := tfCli.StateList(tt.args.state); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("TerraformCLI.StateList() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestTerraformCLI_WorkspaceDelete(t *testing.T) {
+	type args struct {
+		ctx       context.Context
+		workspace string
+		mockError error
+	}
+	tests := []struct {
+		name    string
+		config  *TerraformCLIConfig
+		args    args
+		wantErr bool
+	}{
+		{"GIVEN a terraform workspace THEN delete it successfully", &TerraformCLIConfig{
+			WorkingDir: "./",
+			Workspace:  "test-workspace",
+			Version:    "1.2.5",
+		}, args{context.Background(), "test-workspace", nil}, false,
+		},
+		{"GIVEN a terraform workspace AND the delete errors THEN return the error", &TerraformCLIConfig{
+			WorkingDir: "./",
+			Workspace:  "test-workspace",
+			Version:    "1.2.5",
+		}, args{context.Background(), "test-workspace", errors.New("deleting tf workspace")}, true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := new(mocks.TerraformExec)
+			m.On("WorkspaceDelete", mock.Anything, mock.Anything).Return(tt.args.mockError)
+			m.On("WorkspaceSelect", mock.Anything, mock.Anything).Return(nil)
+			tfCli := NewTestTerraformCLI(tt.config, m)
+			if err := tfCli.WorkspaceDelete(tt.args.ctx, tt.args.workspace); (err != nil) != tt.wantErr {
+				t.Errorf("TerraformCLI.WorkspaceDelete() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

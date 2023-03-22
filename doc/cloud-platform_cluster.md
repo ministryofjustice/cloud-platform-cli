@@ -23,5 +23,6 @@ Cloud Platform cluster actions
 
 * [cloud-platform](cloud-platform.md)	 - Multi-purpose CLI from the Cloud Platform team
 * [cloud-platform cluster create](cloud-platform_cluster_create.md)	 - create a new cloud-platform cluster
+* [cloud-platform cluster delete](cloud-platform_cluster_delete.md)	 - delete a cloud-platform cluster
 * [cloud-platform cluster recycle-node](cloud-platform_cluster_recycle-node.md)	 - recycle a node
 
