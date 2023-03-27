@@ -17,7 +17,7 @@ require (
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.15.0
-	github.com/zclconf/go-cty v1.13.0
+	github.com/zclconf/go-cty v1.13.1
 	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa // indirect
 	golang.org/x/mod v0.8.0
 	golang.org/x/net v0.8.0 // indirect
