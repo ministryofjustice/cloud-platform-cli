@@ -3,6 +3,7 @@ package util_test
 import (
 	"log"
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/util"
@@ -80,4 +81,57 @@ func TestIsYamlFileExists(t *testing.T) {
 		t.Errorf("Expected file %v not found", tempFile)
 	}
 	defer os.RemoveAll("namespaces")
+}
+
+func TestGetFolderChunks(t *testing.T) {
+	tempDir1 := "namespaces/ns1/.terraform"
+
+	if err := os.MkdirAll(tempDir1, os.ModePerm); err != nil {
+		t.Fatal(err)
+	}
+	tempDir2 := "namespaces/ns2/.terraform"
+
+	if err := os.MkdirAll(tempDir2, os.ModePerm); err != nil {
+		t.Fatal(err)
+	}
+	tempDir3 := "namespaces/ns3/.terraform"
+
+	if err := os.MkdirAll(tempDir3, os.ModePerm); err != nil {
+		t.Fatal(err)
+	}
+
+	type args struct {
+		repoPath string
+		nsStart  int
+		nsEnd    int
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    []string
+		wantErr bool
+	}{
+		{
+			name: "GetFolderChunks",
+			args: args{
+				repoPath: "namespaces",
+				nsStart:  0,
+				nsEnd:    1,
+			},
+			want:    []string{"namespaces/ns1", "namespaces/ns2"},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := util.GetFolderChunks(tt.args.repoPath, tt.args.nsStart, tt.args.nsEnd)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetFolderChunks() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetFolderChunks() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

@@ -3,13 +3,13 @@ package util
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 )
 
-func GetFolderChunks(repoPath string, numRoutines int) ([][]string, error) {
+// GetFolderChunks get the list of folders from the given path, get list of folders from nsStart till nsEnd
+func GetFolderChunks(repoPath string, nsStart int, nsEnd int) ([]string, error) {
 	folders, err := ListFolderPaths(repoPath)
 	if err != nil {
 		return nil, err
@@ -19,10 +19,10 @@ func GetFolderChunks(repoPath string, numRoutines int) ([][]string, error) {
 	// element of the slice. We dont want to apply from the root folder
 	var nsFolders []string
 	nsFolders = append(nsFolders, folders[1:]...)
+	var folderChunks []string
 
-	folderChunks, err := chunkFolders(nsFolders, numRoutines)
-	if err != nil {
-		return nil, err
+	for i := nsStart; i <= nsEnd; i++ {
+		folderChunks = append(folderChunks, nsFolders[i])
 	}
 	return folderChunks, nil
 }
@@ -52,27 +52,6 @@ func ListFolderPaths(path string) ([]string, error) {
 	}
 
 	return folders, nil
-}
-
-func chunkFolders(folders []string, nRoutines int) ([][]string, error) {
-	nChunks := len(folders) / nRoutines
-
-	fmt.Println("Number of folders per chunk", nChunks)
-
-	var folderChunks [][]string
-	for {
-		if len(folders) == 0 {
-			break
-		}
-
-		if len(folders) < nChunks {
-			nChunks = len(folders)
-		}
-
-		folderChunks = append(folderChunks, folders[0:nChunks])
-		folders = folders[nChunks:]
-	}
-	return folderChunks, nil
 }
 
 func ListFiles(path string) ([]string, error) {
