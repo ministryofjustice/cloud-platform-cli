@@ -208,6 +208,13 @@ func TestRedactedEnv(t *testing.T) {
 			},
 			expect: "REDACTED\n",
 		},
+		{
+			name: "Unredacted Content",
+			args: args{
+				output: "This test output should not be redacted",
+			},
+			expect: "This test output should not be redacted\n",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
