@@ -204,7 +204,7 @@ func TestRedactedEnv(t *testing.T) {
 		{
 			name: "Redacted random_id hex Content",
 			args: args{
-				output: `- hex = "52e372f2fd8b4bc489b5ccb87311efb0fb9b048796195dfb3cf0aafadf7f0dac`,
+				output: `- hex = "abcdefg123456"`,
 			},
 			expect: "REDACTED\n",
 		},
