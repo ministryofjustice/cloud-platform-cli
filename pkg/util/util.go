@@ -98,6 +98,25 @@ func Redacted(w io.Writer, output string, redact bool) {
 	}
 }
 
+// RedactedEnv read bytes of data for environment pipeline sensitive strings and prints REDACTED
+func RedactedEnv(w io.Writer, output string, redact bool) {
+	re := regexp2.MustCompile(`(?i).*hex.*= .*`, 0)
+	scanner := bufio.NewScanner(strings.NewReader(output))
+
+	for scanner.Scan() {
+		if redact {
+			got, err := re.FindStringMatch(scanner.Text())
+			if got != nil && err == nil {
+				fmt.Fprintln(w, "REDACTED")
+			} else {
+				fmt.Fprintln(w, scanner.Text())
+			}
+		} else {
+			fmt.Fprintln(w, scanner.Text())
+		}
+	}
+}
+
 func GetDatePastMinute(timestamp string, minutes int) (*Date, error) {
 	d := &Date{}
 	curTime, err := time.Parse("2006-01-02T15:04:05Z07:00", timestamp)
