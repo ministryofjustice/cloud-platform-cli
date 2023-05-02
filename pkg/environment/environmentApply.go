@@ -17,7 +17,7 @@ type Options struct {
 	Namespace, KubecfgPath, ClusterCtx, GithubToken string
 	PRNumber                                        int
 	AllNamespaces                                   bool
-	EnableApplySkip, Redacted                       bool
+	EnableApplySkip, RedactedEnv                    bool
 }
 
 // RequiredEnvVars is used to store values such as TF_VAR_ , github and pingdom tokens
@@ -282,7 +282,7 @@ func (a *Apply) planNamespace() error {
 		}
 
 		fmt.Println("\nOutput of terraform:")
-		util.Redacted(os.Stdout, outputTerraform, a.Options.Redacted)
+		util.RedactedEnv(os.Stdout, outputTerraform, a.Options.RedactedEnv)
 	} else {
 		fmt.Printf("Namespace %s does not have terraform resources folder, skipping terraform plan\n", a.Options.Namespace)
 	}
@@ -366,7 +366,7 @@ func (a *Apply) applyNamespace() error {
 		}
 
 		fmt.Println("\nOutput of terraform:")
-		util.Redacted(os.Stdout, outputTerraform, a.Options.Redacted)
+		util.RedactedEnv(os.Stdout, outputTerraform, a.Options.RedactedEnv)
 	} else {
 		fmt.Printf("Namespace %s does not have terraform resources folder, skipping terraform apply", a.Options.Namespace)
 	}

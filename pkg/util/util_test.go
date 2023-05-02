@@ -192,6 +192,40 @@ func TestRedacted(t *testing.T) {
 	}
 }
 
+func TestRedactedEnv(t *testing.T) {
+	type args struct {
+		output string
+	}
+	tests := []struct {
+		name   string
+		args   args
+		expect string
+	}{
+		{
+			name: "Redacted random_id hex Content",
+			args: args{
+				output: `- hex = "abcdefg123456"`,
+			},
+			expect: "REDACTED\n",
+		},
+		{
+			name: "Unredacted Content",
+			args: args{
+				output: "This test output should not be redacted",
+			},
+			expect: "This test output should not be redacted\n",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var output bytes.Buffer
+			RedactedEnv(&output, tt.args.output, true)
+			if tt.expect != output.String() {
+				t.Errorf("got %s but expected %s", output.String(), tt.expect)
+			}
+		})
+	}
+}
 func TestGetDatePastMinute(t *testing.T) {
 	type args struct {
 		timestamp string
