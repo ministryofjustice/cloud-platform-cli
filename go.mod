@@ -28,7 +28,7 @@ require (
 )
 
 require (
-	github.com/aws/aws-sdk-go v1.44.224
+	github.com/aws/aws-sdk-go v1.44.254
 	github.com/deckarep/golang-set/v2 v2.3.0
 	github.com/dlclark/regexp2 v1.8.1
 	github.com/google/go-cmdtest v0.4.0
