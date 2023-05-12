@@ -199,7 +199,7 @@ func (a *Apply) planKubectl() (string, error) {
 
 	outputKubectl, err := a.Applier.KubectlApply(a.Options.Namespace, a.Dir, true)
 	if err != nil {
-		err := fmt.Errorf("error running kubectl on namespace %s: in directory: %v, %v", a.Options.Namespace, a.Dir, err)
+		err := fmt.Errorf("error running kubectl on namespace %s: in directory: %v, %v\n %v", a.Options.Namespace, a.Dir, err, outputKubectl)
 		return "", err
 	}
 
@@ -212,7 +212,7 @@ func (a *Apply) applyKubectl() (string, error) {
 
 	outputKubectl, err := a.Applier.KubectlApply(a.Options.Namespace, a.Dir, false)
 	if err != nil {
-		err := fmt.Errorf("error running kubectl on namespace %s: %v", a.Options.Namespace, err)
+		err := fmt.Errorf("error running kubectl on namespace %s: %v \n %v", a.Options.Namespace, err, outputKubectl)
 		return "", err
 	}
 
