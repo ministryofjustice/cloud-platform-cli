@@ -108,8 +108,10 @@ func RedactedEnv(w io.Writer, output string, redact bool) {
 	scanner := bufio.NewScanner(strings.NewReader(output))
 
 	for scanner.Scan() {
+
+		line := scanner.Text()
+
 		if redact {
-			line := scanner.Text()
 
 			match, err := re.MatchString(line)
 			if err != nil {
@@ -120,7 +122,7 @@ func RedactedEnv(w io.Writer, output string, redact bool) {
 			// resource block. Replace the fields contained within the block with the string
 			// (sensitve value)
 			if match {
-				fmt.Println(line)
+				fmt.Fprintln(w, line)
 				for scanner.Scan() {
 					line = scanner.Text()
 					// Check if the current line indicates the end of the resource block
@@ -128,11 +130,17 @@ func RedactedEnv(w io.Writer, output string, redact bool) {
 					if strings.Contains(strings.TrimSpace(line), "}") {
 						break
 					} else {
-						fmt.Println("(sensitive value)")
+						//fmt.Fprintln(w, "(sensitive value)")
 					}
+
 				}
+				// TEMP: Simplifying output to just print REDACTED for figuring out test cases
+				fmt.Fprintln(w, "REDACTED")
+			} else {
+				fmt.Fprintln(w, line)
 			}
-			fmt.Println(line)
+		} else {
+			fmt.Fprintln(w, line)
 		}
 	}
 }

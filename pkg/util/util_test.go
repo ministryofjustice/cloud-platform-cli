@@ -194,7 +194,7 @@ func TestRedacted(t *testing.T) {
 
 func TestRedactedEnv(t *testing.T) {
 	type args struct {
-		output string
+		input string
 	}
 	tests := []struct {
 		name   string
@@ -204,28 +204,63 @@ func TestRedactedEnv(t *testing.T) {
 		{
 			name: "Redacted random_id hex Content",
 			args: args{
-				output: `- hex = "abcdefg123456"`,
+				input: `
+resource "random_id" "auth_token" {
+b64_std     = (known after apply)
+b64_url     = (known after apply)
+byte_length = 32
+dec         = (known after apply)
+hex         = (known after apply)
+id          = (known after apply)
+keepers     = {
+   "auth-token-rotated-date" = "2023-02-08"
+}`,
 			},
-			expect: "REDACTED\n",
+			expect: `
+resource "random_id" "auth_token" {
+REDACTED`,
 		},
 		{
 			name: "Unredacted Content",
 			args: args{
-				output: "This test output should not be redacted",
+				input: `+ resource "random_id" "id" {
+					+ b64_std     = (known after apply)
+					+ b64_url     = (known after apply)
+					+ byte_length = 8
+					+ dec         = (known after apply)
+					+ hex         = (known after apply)
+					+ id          = (known after apply)
+				  }`,
 			},
-			expect: "This test output should not be redacted\n",
+			expect: `+ resource "random_id" "id" {
+				+ b64_std     = (known after apply)
+				+ b64_url     = (known after apply)
+				+ byte_length = 8
+				+ dec         = (known after apply)
+				+ hex         = (known after apply)
+				+ id          = (known after apply)
+			  }`,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var output bytes.Buffer
-			RedactedEnv(&output, tt.args.output, true)
+			RedactedEnv(&output, tt.args.input, true)
 			if tt.expect != output.String() {
 				t.Errorf("got %s but expected %s", output.String(), tt.expect)
 			}
 		})
 	}
 }
+
+// func TestRedactedEnv(t *testing.T) {
+// 	expected := `resource "random_id" "auth_token" {
+// 		REDACTED
+// 		}`
+
+// 	actual :=
+// }
+
 func TestGetDatePastMinute(t *testing.T) {
 	type args struct {
 		timestamp string
