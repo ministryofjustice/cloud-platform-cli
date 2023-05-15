@@ -128,13 +128,11 @@ func RedactedEnv(w io.Writer, output string, redact bool) {
 					// Check if the current line indicates the end of the resource block
 					// and break out of the loop if it does
 					if strings.Contains(strings.TrimSpace(line), "}") {
-						break
+						break // Break out of the loop
 					} else {
-						//fmt.Fprintln(w, "(sensitive value)")
+						continue // Continue until we reach the end of the resource block
 					}
-
 				}
-				// TEMP: Simplifying output to just print REDACTED for figuring out test cases
 				fmt.Fprintln(w, "REDACTED")
 			} else {
 				fmt.Fprintln(w, line)
