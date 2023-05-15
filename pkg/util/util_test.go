@@ -194,7 +194,8 @@ func TestRedacted(t *testing.T) {
 
 func TestRedactedEnv(t *testing.T) {
 	type args struct {
-		input string
+		input  string
+		redact bool
 	}
 	tests := []struct {
 		name   string
@@ -215,51 +216,76 @@ id          = (known after apply)
 keepers     = {
    "auth-token-rotated-date" = "2023-02-08"
 }`,
+				redact: true,
 			},
 			expect: `
 resource "random_id" "auth_token" {
-REDACTED`,
+REDACTED
+`,
+		},
+		{
+			name: "Sensitive random_id hex Content with redact false",
+			args: args{
+				input: `
+resource "random_id" "auth_token" {
+b64_std     = (known after apply)
+b64_url     = (known after apply)
+byte_length = 32
+dec         = (known after apply)
+hex         = (known after apply)
+id          = (known after apply)
+keepers     = {
+    "auth-token-rotated-date" = "2023-02-08"
+}`,
+				redact: false,
+			},
+			expect: `
+resource "random_id" "auth_token" {
+b64_std     = (known after apply)
+b64_url     = (known after apply)
+byte_length = 32
+dec         = (known after apply)
+hex         = (known after apply)
+id          = (known after apply)
+keepers     = {
+    "auth-token-rotated-date" = "2023-02-08"
+}
+`,
 		},
 		{
 			name: "Unredacted Content",
 			args: args{
 				input: `+ resource "random_id" "id" {
-					+ b64_std     = (known after apply)
-					+ b64_url     = (known after apply)
-					+ byte_length = 8
-					+ dec         = (known after apply)
-					+ hex         = (known after apply)
-					+ id          = (known after apply)
-				  }`,
++ b64_std     = (known after apply)
++ b64_url     = (known after apply)
++ byte_length = 8
++ dec         = (known after apply)
++ hex         = (known after apply)
++ id          = (known after apply)
+}`,
+				redact: true,
 			},
 			expect: `+ resource "random_id" "id" {
-				+ b64_std     = (known after apply)
-				+ b64_url     = (known after apply)
-				+ byte_length = 8
-				+ dec         = (known after apply)
-				+ hex         = (known after apply)
-				+ id          = (known after apply)
-			  }`,
++ b64_std     = (known after apply)
++ b64_url     = (known after apply)
++ byte_length = 8
++ dec         = (known after apply)
++ hex         = (known after apply)
++ id          = (known after apply)
+}
+`,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var output bytes.Buffer
-			RedactedEnv(&output, tt.args.input, true)
+			RedactedEnv(&output, tt.args.input, tt.args.redact)
 			if tt.expect != output.String() {
 				t.Errorf("got %s but expected %s", output.String(), tt.expect)
 			}
 		})
 	}
 }
-
-// func TestRedactedEnv(t *testing.T) {
-// 	expected := `resource "random_id" "auth_token" {
-// 		REDACTED
-// 		}`
-
-// 	actual :=
-// }
 
 func TestGetDatePastMinute(t *testing.T) {
 	type args struct {
