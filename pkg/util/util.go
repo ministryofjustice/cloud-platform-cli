@@ -98,21 +98,49 @@ func Redacted(w io.Writer, output string, redact bool) {
 	}
 }
 
-// RedactedEnv read bytes of data for environment pipeline sensitive strings and prints REDACTED
+// RedactedEnv read bytes of data for environment pipeline output, and where it
+// encounters a resource block of type and name: random_id auth_token, replace sensitive
+// contents of this block with the string REDACTED.
+
 func RedactedEnv(w io.Writer, output string, redact bool) {
-	re := regexp2.MustCompile(`(?i).*hex.*= .*`, 0)
+
+	// Regular expression to match elasticache auth_token: resource "random_id" "auth_token"
+	re := regexp2.MustCompile(`(?=.*resource\s+"random_id"\s+"auth_token").*$`, 0)
+
 	scanner := bufio.NewScanner(strings.NewReader(output))
 
 	for scanner.Scan() {
+
+		line := scanner.Text()
+
 		if redact {
-			got, err := re.FindStringMatch(scanner.Text())
-			if got != nil && err == nil {
+
+			match, err := re.MatchString(line)
+			if err != nil {
+				fmt.Println("Error", err)
+			}
+
+			// If current line matches regex, we have encountered an elasticache auth_token
+			// resource block. Replace the fields contained within the block with the string
+			// REDACTED
+			if match {
+				fmt.Fprintln(w, line)
+				for scanner.Scan() {
+					line = scanner.Text()
+					// Check if the current line indicates the end of the resource block
+					// and break out of the loop if it does
+					if strings.Contains(strings.TrimSpace(line), "}") {
+						break // Break out of the loop
+					} else {
+						continue // Continue until we reach the end of the resource block
+					}
+				}
 				fmt.Fprintln(w, "REDACTED")
 			} else {
-				fmt.Fprintln(w, scanner.Text())
+				fmt.Fprintln(w, line)
 			}
 		} else {
-			fmt.Fprintln(w, scanner.Text())
+			fmt.Fprintln(w, line)
 		}
 	}
 }

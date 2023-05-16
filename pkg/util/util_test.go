@@ -194,7 +194,8 @@ func TestRedacted(t *testing.T) {
 
 func TestRedactedEnv(t *testing.T) {
 	type args struct {
-		output string
+		input  string
+		redact bool
 	}
 	tests := []struct {
 		name   string
@@ -202,30 +203,131 @@ func TestRedactedEnv(t *testing.T) {
 		expect string
 	}{
 		{
-			name: "Redacted random_id hex Content",
+			name: "Redacted random_id auth token resource block sensitive content",
 			args: args{
-				output: `- hex = "abcdefg123456"`,
+				input: `+ resource "random_id" "auth_token" {
++ b64_std     = "1234abcd"
++ b64_url     = "1234abcd"
++ byte_length = 32
++ dec         = "1234567890"
++ hex         = "1234abcd"
++ id          = "00000001"
++ keepers     = {
++    "auth-token-rotated-date" = "2023-02-08"
+}
+}
+`,
+				redact: true,
 			},
-			expect: "REDACTED\n",
+			expect: `+ resource "random_id" "auth_token" {
+REDACTED
+}
+`,
 		},
 		{
-			name: "Unredacted Content",
+			name: "Sensitive random_id auth token resource block content with redact false",
 			args: args{
-				output: "This test output should not be redacted",
+				input: `+ resource "random_id" "auth_token" {
++ b64_std     = "1234abcd"
++ b64_url     = "1234abcd"
++ byte_length = 32
++ dec         = "1234567890"
++ hex         = "1234abcd"
++ id          = "00000001"
++ keepers     = {
++     "auth-token-rotated-date" = "2023-02-08"
+}
+`,
+				redact: false,
 			},
-			expect: "This test output should not be redacted\n",
+			expect: `+ resource "random_id" "auth_token" {
++ b64_std     = "1234abcd"
++ b64_url     = "1234abcd"
++ byte_length = 32
++ dec         = "1234567890"
++ hex         = "1234abcd"
++ id          = "00000001"
++ keepers     = {
++     "auth-token-rotated-date" = "2023-02-08"
+}
+`,
+		},
+		{
+			name: "Unredacted resource block content",
+			args: args{
+				input: `+ resource "random_id" "id" {
++ b64_std     = "1234abcd"
++ b64_url     = "1234abcd"
++ byte_length = 8
++ dec         = "1234567890"
++ hex         = "1234abcd"
++ id          = "00000001"
+}
+`,
+				redact: true,
+			},
+			expect: `+ resource "random_id" "id" {
++ b64_std     = "1234abcd"
++ b64_url     = "1234abcd"
++ byte_length = 8
++ dec         = "1234567890"
++ hex         = "1234abcd"
++ id          = "00000001"
+}
+`,
+		},
+		{
+			name: "Both redacted and unredacted resource block content",
+			args: args{
+				input: `+ resource "random_id" "id" {
++ b64_std     = "1234abcd"
++ b64_url     = "1234abcd"
++ byte_length = 8
++ dec         = "1234567890"
++ hex         = "1234abcd"
++ id          = "00000001"
+}
+
++ resource "random_id" "auth_token" {
++ b64_std     = "1234abcd"
++ b64_url     = "1234abcd"
++ byte_length = 32
++ dec         = "1234567890"
++ hex         = "1234abcd"
++ id          = "00000001"
++ keepers     = {
++	"auth-token-rotated-date" = "2023-02-08"
+}
+}
+`,
+				redact: true,
+			},
+			expect: `+ resource "random_id" "id" {
++ b64_std     = "1234abcd"
++ b64_url     = "1234abcd"
++ byte_length = 8
++ dec         = "1234567890"
++ hex         = "1234abcd"
++ id          = "00000001"
+}
+
++ resource "random_id" "auth_token" {
+REDACTED
+}
+`,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var output bytes.Buffer
-			RedactedEnv(&output, tt.args.output, true)
+			RedactedEnv(&output, tt.args.input, tt.args.redact)
 			if tt.expect != output.String() {
 				t.Errorf("got %s but expected %s", output.String(), tt.expect)
 			}
 		})
 	}
 }
+
 func TestGetDatePastMinute(t *testing.T) {
 	type args struct {
 		timestamp string

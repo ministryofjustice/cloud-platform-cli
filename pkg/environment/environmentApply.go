@@ -227,7 +227,7 @@ func (a *Apply) planTerraform() (string, error) {
 
 	outputTerraform, err := a.Applier.TerraformInitAndPlan(a.Options.Namespace, tfFolder)
 	if err != nil {
-		err := fmt.Errorf("error running terraform on namespace %s: %v", a.Options.Namespace, err)
+		err := fmt.Errorf("error running terraform on namespace %s: %v \n %v", a.Options.Namespace, err, outputTerraform)
 		return "", err
 	}
 	return outputTerraform, nil
@@ -241,7 +241,7 @@ func (a *Apply) applyTerraform() (string, error) {
 
 	outputTerraform, err := a.Applier.TerraformInitAndApply(a.Options.Namespace, tfFolder)
 	if err != nil {
-		err := fmt.Errorf("error running terraform on namespace %s: %v", a.Options.Namespace, err)
+		err := fmt.Errorf("error running terraform on namespace %s: %v \n %v", a.Options.Namespace, err, outputTerraform)
 		return "", err
 	}
 	return outputTerraform, nil
