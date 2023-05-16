@@ -98,8 +98,10 @@ func Redacted(w io.Writer, output string, redact bool) {
 	}
 }
 
-// RedactedEnv read bytes of data for environment pipeline redacts random_id auth_token sensitive fields
-// from terraform command output
+// RedactedEnv read bytes of data for environment pipeline output, and where it
+// encounters a resource block of type and name: random_id auth_token, replace sensitive
+// contents of this block with the string REDACTED.
+
 func RedactedEnv(w io.Writer, output string, redact bool) {
 
 	// Regular expression to match elasticache auth_token: resource "random_id" "auth_token"
@@ -120,7 +122,7 @@ func RedactedEnv(w io.Writer, output string, redact bool) {
 
 			// If current line matches regex, we have encountered an elasticache auth_token
 			// resource block. Replace the fields contained within the block with the string
-			// (sensitve value)
+			// REDACTED
 			if match {
 				fmt.Fprintln(w, line)
 				for scanner.Scan() {

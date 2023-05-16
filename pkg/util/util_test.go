@@ -203,75 +203,116 @@ func TestRedactedEnv(t *testing.T) {
 		expect string
 	}{
 		{
-			name: "Redacted random_id hex Content",
+			name: "Redacted random_id auth token resource block sensitive content",
 			args: args{
-				input: `
-resource "random_id" "auth_token" {
-b64_std     = (known after apply)
-b64_url     = (known after apply)
-byte_length = 32
-dec         = (known after apply)
-hex         = (known after apply)
-id          = (known after apply)
-keepers     = {
-   "auth-token-rotated-date" = "2023-02-08"
-}`,
+				input: `+ resource "random_id" "auth_token" {
++ b64_std     = "1234abcd"
++ b64_url     = "1234abcd"
++ byte_length = 32
++ dec         = "1234567890"
++ hex         = "1234abcd"
++ id          = "00000001"
++ keepers     = {
++    "auth-token-rotated-date" = "2023-02-08"
+}
+}
+`,
 				redact: true,
 			},
-			expect: `
-resource "random_id" "auth_token" {
+			expect: `+ resource "random_id" "auth_token" {
 REDACTED
-`,
-		},
-		{
-			name: "Sensitive random_id hex Content with redact false",
-			args: args{
-				input: `
-resource "random_id" "auth_token" {
-b64_std     = (known after apply)
-b64_url     = (known after apply)
-byte_length = 32
-dec         = (known after apply)
-hex         = (known after apply)
-id          = (known after apply)
-keepers     = {
-    "auth-token-rotated-date" = "2023-02-08"
-}`,
-				redact: false,
-			},
-			expect: `
-resource "random_id" "auth_token" {
-b64_std     = (known after apply)
-b64_url     = (known after apply)
-byte_length = 32
-dec         = (known after apply)
-hex         = (known after apply)
-id          = (known after apply)
-keepers     = {
-    "auth-token-rotated-date" = "2023-02-08"
 }
 `,
 		},
 		{
-			name: "Unredacted Content",
+			name: "Sensitive random_id auth token resource block content with redact false",
+			args: args{
+				input: `+ resource "random_id" "auth_token" {
++ b64_std     = "1234abcd"
++ b64_url     = "1234abcd"
++ byte_length = 32
++ dec         = "1234567890"
++ hex         = "1234abcd"
++ id          = "00000001"
++ keepers     = {
++     "auth-token-rotated-date" = "2023-02-08"
+}
+`,
+				redact: false,
+			},
+			expect: `+ resource "random_id" "auth_token" {
++ b64_std     = "1234abcd"
++ b64_url     = "1234abcd"
++ byte_length = 32
++ dec         = "1234567890"
++ hex         = "1234abcd"
++ id          = "00000001"
++ keepers     = {
++     "auth-token-rotated-date" = "2023-02-08"
+}
+`,
+		},
+		{
+			name: "Unredacted resource block content",
 			args: args{
 				input: `+ resource "random_id" "id" {
-+ b64_std     = (known after apply)
-+ b64_url     = (known after apply)
++ b64_std     = "1234abcd"
++ b64_url     = "1234abcd"
 + byte_length = 8
-+ dec         = (known after apply)
-+ hex         = (known after apply)
-+ id          = (known after apply)
-}`,
++ dec         = "1234567890"
++ hex         = "1234abcd"
++ id          = "00000001"
+}
+`,
 				redact: true,
 			},
 			expect: `+ resource "random_id" "id" {
-+ b64_std     = (known after apply)
-+ b64_url     = (known after apply)
++ b64_std     = "1234abcd"
++ b64_url     = "1234abcd"
 + byte_length = 8
-+ dec         = (known after apply)
-+ hex         = (known after apply)
-+ id          = (known after apply)
++ dec         = "1234567890"
++ hex         = "1234abcd"
++ id          = "00000001"
+}
+`,
+		},
+		{
+			name: "Both redacted and unredacted resource block content",
+			args: args{
+				input: `+ resource "random_id" "id" {
++ b64_std     = "1234abcd"
++ b64_url     = "1234abcd"
++ byte_length = 8
++ dec         = "1234567890"
++ hex         = "1234abcd"
++ id          = "00000001"
+}
+
++ resource "random_id" "auth_token" {
++ b64_std     = "1234abcd"
++ b64_url     = "1234abcd"
++ byte_length = 32
++ dec         = "1234567890"
++ hex         = "1234abcd"
++ id          = "00000001"
++ keepers     = {
++	"auth-token-rotated-date" = "2023-02-08"
+}
+}
+`,
+				redact: true,
+			},
+			expect: `+ resource "random_id" "id" {
++ b64_std     = "1234abcd"
++ b64_url     = "1234abcd"
++ byte_length = 8
++ dec         = "1234567890"
++ hex         = "1234abcd"
++ id          = "00000001"
+}
+
++ resource "random_id" "auth_token" {
+REDACTED
 }
 `,
 		},
