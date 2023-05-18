@@ -12,6 +12,7 @@ import (
 var EKS_SYSTEM_NAMESPACES = []string{
 	"cert-manager",
 	"default",
+	"external-secrets-operator",
 	"ingress-controllers",
 	"kube-node-lease",
 	"kube-public",
