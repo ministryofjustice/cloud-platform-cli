@@ -44,7 +44,15 @@ func DecodeSecret(opts *DecodeSecretOptions) error {
 }
 
 func retrieveSecret(namespace, secret string) string {
-	cmd := exec.Command("kubectl", "--namespace", namespace, "get", "secret", secret, "-o", "json")
+
+	// declare cmd variable
+	var cmd *exec.Cmd
+
+	if namespace == "" {
+		cmd = exec.Command("kubectl", "get", "secret", secret, "-o", "json")
+	} else {
+		cmd = exec.Command("kubectl", "--namespace", namespace, "get", "secret", secret, "-o", "json")
+	}
 
 	var out bytes.Buffer
 	cmd.Stdout = &out
