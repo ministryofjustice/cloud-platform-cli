@@ -16,6 +16,7 @@ func addDecodeSecret(topLevel *cobra.Command) {
 		Short:   `Decode a kubernetes secret`,
 		Example: heredoc.Doc(`
 $ cloud-platform decode-secret -n mynamespace -s mysecret
+$ cloud-platform decode-secret -s mysecret  [if you are setting namespace via kubectl context]
 	`),
 		PreRun: upgradeIfNotLatest,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -27,7 +28,6 @@ $ cloud-platform decode-secret -n mynamespace -s mysecret
 	_ = cmd.MarkFlagRequired("secret")
 
 	cmd.Flags().StringVarP(&opts.Namespace, "namespace", "n", "", "Namespace name")
-	_ = cmd.MarkFlagRequired("namespace")
 
 	cmd.Flags().BoolVarP(&opts.ExportAwsCreds, "export-aws-credentials", "e", false, "Export AWS credentials as shell variables")
 

@@ -10,6 +10,7 @@ cloud-platform decode-secret [flags]
 
 ```
 $ cloud-platform decode-secret -n mynamespace -s mysecret
+$ cloud-platform decode-secret -s mysecret  [if you are setting namespace via kubectl context]
 	
 ```
 
