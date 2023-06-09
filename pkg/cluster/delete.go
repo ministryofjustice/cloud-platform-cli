@@ -26,6 +26,7 @@ var EKS_SYSTEM_NAMESPACES = []string{
 	"calico-apiserver",
 	"calico-system",
 	"tigera-operator",
+	"external-secrets-operator",
 }
 
 // DestroyComponents will destroy the Cloud Platform specific components on top of a running cluster. At this point your
