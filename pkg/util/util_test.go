@@ -118,51 +118,9 @@ func TestRedacted(t *testing.T) {
 		expect string
 	}{
 		{
-			name: "Redacted Password Content",
-			args: args{
-				output: "PASSWORD: 1234567890",
-			},
-			expect: "REDACTED\n",
-		},
-		{
-			name: "Redacted Sercet Content",
-			args: args{
-				output: "AWS_SECRET_ACCSS_KEY: 1234567890",
-			},
-			expect: "REDACTED\n",
-		},
-		{
-			name: "Redacted Token Content",
-			args: args{
-				output: "this_token: 1234567890",
-			},
-			expect: "REDACTED\n",
-		},
-		{
-			name: "Redacted Key Content",
-			args: args{
-				output: "key_after: 1234567890",
-			},
-			expect: "REDACTED\n",
-		},
-		{
 			name: "Redacted Webhook Content",
 			args: args{
 				output: "https://hooks.slack.com",
-			},
-			expect: "REDACTED\n",
-		},
-		{
-			name: "Redacted secret Content",
-			args: args{
-				output: "secret should be redacted",
-			},
-			expect: "REDACTED\n",
-		},
-		{
-			name: "Redacted secret Content",
-			args: args{
-				output: "this_secret should be redacted",
 			},
 			expect: "REDACTED\n",
 		},

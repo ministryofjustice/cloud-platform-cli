@@ -80,8 +80,9 @@ func GetLatestGitPull() error {
 }
 
 // Redacted reads bytes of data for any sensitive strings and print REDACTED
+// This functiion is used to prevent slack webhooks URLS from being output in pipeline logs
 func Redacted(w io.Writer, output string, redact bool) {
-	re := regexp2.MustCompile(`(?i)(^.*password.*$|^.*token.*$|^.*key.*$|^.*https://hooks\.slack\.com.*$|(?<!kubernetes_)secret)|^.*user.*|^.*arn.*|^.*ssh-rsa.*|^.*clientid.*`, 0)
+	re := regexp2.MustCompile(`^.*https://hooks\.slack\.com.*$`, 0)
 	scanner := bufio.NewScanner(strings.NewReader(output))
 
 	for scanner.Scan() {
