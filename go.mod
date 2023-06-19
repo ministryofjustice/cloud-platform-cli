@@ -49,7 +49,7 @@ require (
 	k8s.io/apimachinery v0.26.3
 	k8s.io/client-go v0.26.3
 	k8s.io/kubectl v0.26.0-alpha.2
-	sigs.k8s.io/aws-iam-authenticator v0.6.4
+	sigs.k8s.io/aws-iam-authenticator v0.6.10
 )
 
 require (
@@ -70,7 +70,7 @@ require (
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.20.0 // indirect
 	github.com/go-openapi/swag v0.21.1 // indirect
-	github.com/gofrs/flock v0.7.0 // indirect
+	github.com/gofrs/flock v0.8.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/btree v1.1.2 // indirect
