@@ -10,8 +10,7 @@ import (
 )
 
 const (
-	prototypeDeploymentTemplateUrl = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template/resources/prototype/templates"
-	prototypeRepoUrl               = "https://raw.githubusercontent.com/ministryofjustice/moj-prototype-template/main"
+	prototypeResourcesUrl = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template/resources/prototype"
 )
 
 func CreateDeploymentPrototype(skipDockerFiles bool) error {
@@ -67,15 +66,15 @@ on slack.
 
 func createPrototypeDeploymentFiles(branch string, skipDockerFiles bool) error {
 	if !skipDockerFiles {
-		err := environment.CopyUrlToFile(prototypeRepoUrl+"/Dockerfile", "Dockerfile")
+		err := environment.CopyUrlToFile(prototypeResourcesUrl+"/build"+"/Dockerfile", "Dockerfile")
 		if err != nil {
 			return err
 		}
-		err = environment.CopyUrlToFile(prototypeRepoUrl+"/.dockerignore", ".dockerignore")
+		err = environment.CopyUrlToFile(prototypeResourcesUrl+"/build"+"/.dockerignore", ".dockerignore")
 		if err != nil {
 			return err
 		}
-		err = environment.CopyUrlToFile(prototypeRepoUrl+"/start.sh", "start.sh")
+		err = environment.CopyUrlToFile(prototypeResourcesUrl+"/build"+"/start.sh", "start.sh")
 		if err != nil {
 			return err
 		}
@@ -88,7 +87,7 @@ func createPrototypeDeploymentFiles(branch string, skipDockerFiles bool) error {
 	}
 	ghActionFile := ghDir + "cd-" + branch + ".yaml"
 
-	err = environment.CopyUrlToFile(prototypeDeploymentTemplateUrl+"/cd.yaml", ghActionFile)
+	err = environment.CopyUrlToFile(prototypeResourcesUrl+"/templates"+"/cd.yaml", ghActionFile)
 	if err != nil {
 		return err
 	}
@@ -104,7 +103,7 @@ func createPrototypeDeploymentFiles(branch string, skipDockerFiles bool) error {
 		return err
 	}
 
-	err = environment.CopyUrlToFile(prototypeDeploymentTemplateUrl+"/kubernetes-deploy.tpl", "kubernetes-deploy-"+branch+".tpl")
+	err = environment.CopyUrlToFile(prototypeResourcesUrl+"/templates"+"/kubernetes-deploy.tpl", "kubernetes-deploy-"+branch+".tpl")
 	if err != nil {
 		return err
 	}
