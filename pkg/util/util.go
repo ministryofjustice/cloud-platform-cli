@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"net/http"
 	"os/exec"
 	"strings"
 	"time"
@@ -170,4 +172,25 @@ func DeduplicateList(s []string) (list []string) {
 	}
 
 	return
+}
+
+func GetGithubRawContents(rawUrl string) ([]byte, error) {
+	response, err := http.Get(rawUrl)
+
+	if response.StatusCode != 200 {
+		return nil, fmt.Errorf("GetRawContents: Github File Raw Response is not 200 OK. Filename: %s, Response: %s", rawUrl, response.Status)
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf(" GetRawContents: Github File Raw Error: %s", err)
+	}
+
+	defer response.Body.Close()
+
+	data, err := ioutil.ReadAll(response.Body)
+
+	if err != nil {
+		return nil, fmt.Errorf("GetRawContents: Read Data Error: %s", err)
+	}
+	return data, nil
 }

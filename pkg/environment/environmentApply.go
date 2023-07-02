@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
 	"strings"
 
@@ -160,7 +159,7 @@ func (a *Apply) Destroy() error {
 		return err
 	}
 	if isMerged {
-		changedNamespaces, err := a.nsWriteChangedFilesInPR(a.Options.ClusterCtx, a.Options.PRNumber)
+		changedNamespaces, err := a.nsCreateRawChangedFilesInPR(a.Options.ClusterCtx, a.Options.PRNumber)
 		fmt.Println("Namespaces changed in PR", changedNamespaces)
 		if err != nil {
 			return err
@@ -434,17 +433,49 @@ func (a *Apply) nsChangedInPR(cluster string, prNumber int) ([]string, error) {
 	return util.DeduplicateList(namespaceNames), nil
 }
 
-// nsWriteChangedFilesInPR get the list of changed files for a given PR. checks if the namespaces exists in the given cluster and
-// write the list of changes to a file.
-func (a *Apply) nsWriteChangedFilesInPR(cluster string, prNumber int) ([]string, error) {
-
-	files, err := a.GithubClient.GetChangedFiles(prNumber)
+// nsCreateRawChangedFilesInPR get the list of changed files for a given PR. checks if the file is deleted and
+// write the deleted file to the namespace folder
+func (a *Apply) nsCreateRawChangedFilesInPR(cluster string, prNumber int) ([]string, error) {
+	files, err = a.GithubClient.GetChangedFiles(prNumber)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch list of changed files: %s", err)
 	}
 
+	// nsforDestroy creates a namespace for destroy
+	namespaces, err := a.nsforDestroy(files, cluster)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get namespace for destroy from the PR: %s", err)
+	}
+	err = createNamespaceforDestroy(namespaces, cluster)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create namespace for destroy: %s", err)
+	}
+
+	// Get the contents of the CommitFile from RawURL
+	// https://developer.github.com/v3/repos/contents/#get-contents
+
+	for _, file := range files {
+		data, err := util.GetGithubRawContents(file.GetRawURL())
+		if err != nil {
+			return nil, fmt.Errorf("failed to get raw contents: %s", err)
+		}
+		// Create List with changed files
+		if err := ioutil.WriteFile(*file.Filename, data, 0644); err != nil {
+			return nil, fmt.Errorf("failed to write file list: %s", err)
+		}
+	}
+	return namespaces, nil
+
+}
+
+func (a *Apply) nsforDestroy(files []*github.CommitFile, cluster string) ([]string, error) {
 	var namespaceNames []string
 	for _, file := range files {
+		// check of the file is a deleted file
+		if *file.Status != "removed" {
+			return nil, fmt.Errorf("Some of files are not marked for deletion: file %s is not deleted", *file.Filename)
+		}
+
 		// namespaces filepaths are assumed to come in
 		// the format: namespaces/<cluster>.cloud-platform.service.justice.gov.uk/<namespaceName>
 		s := strings.Split(*file.Filename, "/")
@@ -453,53 +484,23 @@ func (a *Apply) nsWriteChangedFilesInPR(cluster string, prNumber int) ([]string,
 		if len(s) > 1 && s[1] == cluster {
 			namespaceNames = append(namespaceNames, s[2])
 		}
-
-		wd, _ := os.Getwd()
-		// make directory if it doesn't exist
-		fmt.Println("wd", wd, "cluster", cluster, "s[2]", s[2])
-		if _, err := os.Stat(wd + "/namespaces/" + cluster + "/" + s[2]); os.IsNotExist(err) {
-			err := os.Mkdir(wd+"/namespaces/"+cluster+"/"+s[2], 0755)
-			if err != nil {
-				fmt.Println("Error creating directory", err)
-			}
-			err = os.Mkdir(wd+"/namespaces/"+cluster+"/"+s[2]+"/resources", 0755)
-			if err != nil {
-				fmt.Println("Error creating resources directory", err)
-			}
-		}
-		// Get the contents of the CommitFile from SHA
-		// https://developer.github.com/v3/repos/contents/#get-contents
-
-		fmt.Println("file.GetRawURL()", file.GetRawURL())
-
-		rawUrl := file.GetRawURL()
-
-		response, err := http.Get(rawUrl)
-
-		if response.StatusCode != 200 {
-			fmt.Println(" * Get Github File Raw Response is not 200 OK:", *file.Filename)
-			panic("Response Status: " + response.Status)
-		}
-
-		if err != nil {
-			fmt.Println(" * Get Github File Raw Error:", err)
-			panic(err)
-		}
-
-		defer response.Body.Close()
-
-		data, err := ioutil.ReadAll(response.Body)
-
-		if err != nil {
-			fmt.Println(" * Read Data Error:", err)
-			panic(err)
-		}
-
-		// Create List with changed files
-		if err := ioutil.WriteFile(*file.Filename, data, 0644); err != nil {
-			return nil, fmt.Errorf("failed to write file list: %s", err)
-		}
 	}
 	return util.DeduplicateList(namespaceNames), nil
+}
 
+func createNamespaceforDestroy(namespaces []string, cluster string) error {
+	wd, _ := os.Getwd()
+	for _, ns := range namespaces {
+		// make directory if it doesn't exist
+		if _, err := os.Stat(wd + "/namespaces/" + cluster + "/" + ns); err != nil {
+			err := os.Mkdir(wd+"/namespaces/"+cluster+"/"+ns, 0755)
+			err = os.Mkdir(wd+"/namespaces/"+cluster+"/"+ns+"/resources", 0755)
+			if err != nil {
+				return fmt.Errorf("Error creating namespaces or resources directory: %s", err)
+			}
+		} else {
+			return fmt.Errorf("Error creating directory: %s", err)
+		}
+	}
+	return nil
 }
