@@ -13,5 +13,4 @@ type GithubIface interface {
 	ListMergedPRs(date util.Date, count int) ([]Nodes, error)
 	GetChangedFiles(int) ([]*github.CommitFile, error)
 	IsMerged(prNumber int) (bool, error)
-	GetContents(path string) (*github.RepositoryContent, error)
 }

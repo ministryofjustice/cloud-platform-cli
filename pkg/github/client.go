@@ -107,12 +107,3 @@ func (gh *GithubClient) IsMerged(prNumber int) (bool, error) {
 
 	return merged, nil
 }
-
-func (gh *GithubClient) GetContents(path string) (*github.RepositoryContent, error) {
-	repoOpts := &github.RepositoryContentGetOptions{}
-	file, _, _, err := gh.V3.Repositories.GetContents(context.Background(), gh.Owner, gh.Repository, path, repoOpts)
-	if err != nil {
-		return &github.RepositoryContent{}, err
-	}
-	return file, nil
-}

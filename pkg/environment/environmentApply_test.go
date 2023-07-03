@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/go-github/github"
+	gogithub "github.com/google/go-github/github"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/environment/mocks"
 	ghMock "github.com/ministryofjustice/cloud-platform-cli/pkg/mocks/github"
 	"github.com/stretchr/testify/assert"
@@ -129,14 +130,14 @@ func TestApply_nsChangedInPR(t *testing.T) {
 	}
 	tests := []struct {
 		name                   string
-		GetChangedFilesOutputs []*github.CommitFile
+		GetChangedFilesOutputs []*gogithub.CommitFile
 		args                   args
 		want                   []string
 		wantErr                bool
 	}{
 		{
 			name: "pr with one namespace",
-			GetChangedFilesOutputs: []*github.CommitFile{
+			GetChangedFilesOutputs: []*gogithub.CommitFile{
 				{
 					SHA:       github.String("6dcb09b5b57875f334f61aebed695e2e4193db5e"),
 					Filename:  github.String("namespaces/testctx/ns1/file1.txt"),
@@ -217,4 +218,77 @@ func Test_applySkipExists(t *testing.T) {
 	}
 	defer os.RemoveAll("namespaces")
 
+}
+
+func Test_nsforDestroy(t *testing.T) {
+	type args struct {
+		files   []*gogithub.CommitFile
+		cluster string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    []string
+		wantErr bool
+	}{
+		{
+			"pr with one namespace",
+			args{
+				[]*gogithub.CommitFile{
+					{
+						SHA:       github.String("6dcb09b5b57875f334f61aebed695e2e4193db5e"),
+						Filename:  github.String("namespaces/testctx/ns1/file1.txt"),
+						Additions: github.Int(0),
+						Deletions: github.Int(14),
+						Changes:   github.Int(0),
+						Status:    github.String("removed"),
+					},
+					{
+						SHA:       github.String("f61aebed695e2e4193db5e6dcb09b5b57875f334"),
+						Filename:  github.String("namespaces/testctx/ns1/file2.txt"),
+						Additions: github.Int(0),
+						Deletions: github.Int(16),
+						Changes:   github.Int(0),
+						Status:    github.String("removed"),
+					},
+				},
+				"testctx",
+			},
+			[]string{"ns1"},
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := nsforDestroy(tt.args.files, tt.args.cluster)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("nsforDestroy() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("nsforDestroy() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_createNamespaceforDestroy(t *testing.T) {
+	type args struct {
+		namespaces []string
+		cluster    string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := createNamespaceforDestroy(tt.args.namespaces, tt.args.cluster); (err != nil) != tt.wantErr {
+				t.Errorf("createNamespaceforDestroy() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
 }

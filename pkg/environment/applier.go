@@ -17,8 +17,10 @@ const TerraformVersion = "1.2.5"
 type Applier interface {
 	Initialize()
 	KubectlApply(namespace, directory string, dryRun bool) (string, error)
+	KubectlDelete(namespace, directory string, dryRun bool) (string, error)
 	TerraformInitAndPlan(namespace string, directory string) (string, error)
 	TerraformInitAndApply(namespace string, directory string) (string, error)
+	TerraformInitAndDestroy(namespace string, directory string) (string, error)
 	TerraformDestroy(directory string) error
 }
 
@@ -153,6 +155,47 @@ func (m *ApplierImpl) TerraformInitAndPlan(namespace, directory string) (string,
 	return out.String(), nil
 }
 
+func (m *ApplierImpl) TerraformInitAndDestroy(namespace, directory string) (string, error) {
+	var out bytes.Buffer
+	terraform, err := tfexec.NewTerraform(directory, m.terraformBinaryPath)
+	if err != nil {
+		return "", errors.New("unable to instantiate Terraform: " + err.Error())
+	}
+
+	terraform.SetStdout(&out)
+	terraform.SetStderr(&out)
+
+	// Sometimes the error text would be useful in the command output that's
+	// displayed in the UI. For this reason, we append the error to the
+	// output before we return it.
+	errReturn := func(out bytes.Buffer, err error) (string, error) {
+		if err != nil {
+			return fmt.Sprintf("%s\n%s", out.String(), err.Error()), err
+		}
+
+		return out.String(), nil
+	}
+
+	key := m.config.PipelineStateKeyPrefix + m.config.PipelineClusterState + "/" + namespace + "/terraform.tfstate"
+
+	err = terraform.Init(context.Background(),
+		tfexec.BackendConfig(fmt.Sprintf("bucket=%s", m.config.PipelineStateBucket)),
+		tfexec.BackendConfig(fmt.Sprintf("key=%s", key)),
+		tfexec.BackendConfig(fmt.Sprintf("dynamodb_table=%s", m.config.PipelineTerraformStateLockTable)),
+		tfexec.BackendConfig(fmt.Sprintf("region=%s", m.config.PipelineStateRegion)))
+	if err != nil {
+		return errReturn(out, err)
+	}
+
+	// ignore if any changes or no changes.
+	err = terraform.Destroy(context.Background())
+	if err != nil {
+		return "", errors.New("unable to do Terraform Destroy: " + err.Error())
+	}
+
+	return out.String(), nil
+}
+
 func (m *ApplierImpl) TerraformDestroy(directory string) error {
 	terraform, err := tfexec.NewTerraform(directory, m.terraformBinaryPath)
 	if err != nil {
@@ -168,6 +211,22 @@ func (m *ApplierImpl) KubectlApply(namespace, directory string, dryRun bool) (st
 		args = []string{"kubectl", "-n", namespace, "apply", "--dry-run=client", "-f", directory}
 	} else {
 		args = []string{"kubectl", "-n", namespace, "apply", "-f", directory}
+	}
+
+	stdout, err := exec.Command(args[0], args[1:]...).CombinedOutput()
+	if err != nil {
+		err = fmt.Errorf("error: %v", err)
+	}
+
+	return string(stdout), err
+}
+
+func (m *ApplierImpl) KubectlDelete(namespace, directory string, dryRun bool) (string, error) {
+	var args []string
+	if dryRun {
+		args = []string{"kubectl", "-n", namespace, "delete", "--dry-run=client", "-f", directory}
+	} else {
+		args = []string{"kubectl", "-n", namespace, "delete", "-f", directory}
 	}
 
 	stdout, err := exec.Command(args[0], args[1:]...).CombinedOutput()
