@@ -148,11 +148,11 @@ func (a *Apply) Apply() error {
 // Destroy is the entry point for performing a namespace destroy.
 // It checks if the working directory is in cloud-platform-environments, checks if a PR number is given
 // Given a PR number, the method get the list of namespaces that are deleted in that merger PR. Then does the terraform init and destroy
-// of all the namespaces merged in the PR and do a kubectl delete of all the namespaces
+// of all the namespaces merged in the PR and do a kubectl delete of the list of namespaces that are deleted in the PR
 func (a *Apply) Destroy() error {
 	fmt.Println("Destroying Namespaces in PR", a.Options.PRNumber)
 	if a.Options.PRNumber == 0 {
-		err := fmt.Errorf("a PR ID/Number is required to perform apply")
+		err := fmt.Errorf("a PR ID/Number is required to perform destroy")
 		return err
 	}
 	isMerged, err := a.GithubClient.IsMerged(a.Options.PRNumber)
@@ -335,11 +335,6 @@ func (a *Apply) planNamespace() error {
 
 	exists, err := util.IsFilePathExists(repoPath + "/resources")
 	if err == nil && exists {
-		// Set KUBE_CONFIG_PATH to the path of the kubeconfig file
-		// This is needed for terraform to be able to connect to the cluster
-		if err := os.Setenv("KUBE_CONFIG_PATH", a.Options.KubecfgPath); err != nil {
-			return err
-		}
 		outputTerraform, err := applier.planTerraform()
 		if err != nil {
 			return err
@@ -419,11 +414,6 @@ func (a *Apply) applyNamespace() error {
 
 	exists, err := util.IsFilePathExists(repoPath + "/resources")
 	if err == nil && exists {
-		// Set KUBE_CONFIG_PATH to the path of the kubeconfig file
-		// This is needed for terraform to be able to connect to the cluster
-		if err := os.Setenv("KUBE_CONFIG_PATH", a.Options.KubecfgPath); err != nil {
-			return err
-		}
 		outputTerraform, err := applier.applyTerraform()
 		if err != nil {
 			return err
@@ -454,11 +444,6 @@ func (a *Apply) destroyNamespace() error {
 
 	exists, err := util.IsFilePathExists(repoPath + "/resources")
 	if err == nil && exists {
-		// Set KUBE_CONFIG_PATH to the path of the kubeconfig file
-		// This is needed for terraform to be able to connect to the cluster
-		if err := os.Setenv("KUBE_CONFIG_PATH", a.Options.KubecfgPath); err != nil {
-			return err
-		}
 		outputTerraform, err := applier.destroyTerraform()
 		if err != nil {
 			return err
@@ -546,7 +531,6 @@ func (a *Apply) nsCreateRawChangedFilesInPR(cluster string, prNumber int) ([]str
 func nsforDestroy(files []*gogithub.CommitFile, cluster string) ([]string, error) {
 	var namespaceNames []string
 	for _, file := range files {
-		fmt.Println(*file.Filename, *file.Status, *file.Deletions)
 		// check of the file is a deleted file
 		if *file.Status != "removed" {
 			return nil, fmt.Errorf("Some of files are not marked for deletion: file %s is not deleted", *file.Filename)
@@ -562,7 +546,6 @@ func nsforDestroy(files []*gogithub.CommitFile, cluster string) ([]string, error
 			namespaceNames = append(namespaceNames, s[2])
 		}
 	}
-	fmt.Println(namespaceNames)
 	return util.DeduplicateList(namespaceNames), nil
 }
 
