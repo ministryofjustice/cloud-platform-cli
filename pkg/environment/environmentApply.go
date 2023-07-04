@@ -2,7 +2,6 @@ package environment
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -520,7 +519,7 @@ func (a *Apply) nsCreateRawChangedFilesInPR(cluster string, prNumber int) ([]str
 			return nil, fmt.Errorf("failed to get raw contents: %s", err)
 		}
 		// Create List with changed files
-		if err := ioutil.WriteFile(*file.Filename, data, 0644); err != nil {
+		if err := os.WriteFile(*file.Filename, data, 0644); err != nil {
 			return nil, fmt.Errorf("failed to write file list: %s", err)
 		}
 	}

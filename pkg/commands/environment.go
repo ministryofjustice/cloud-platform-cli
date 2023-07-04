@@ -100,7 +100,7 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	// Set KUBE_CONFIG_PATH to the path of the kubeconfig file
 	// This is needed for terraform to be able to connect to the cluster
 	if err := os.Setenv("KUBE_CONFIG_PATH", optFlags.KubecfgPath); err != nil {
-		return err
+		log.Fatal(err)
 	}
 }
 
