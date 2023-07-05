@@ -519,7 +519,7 @@ func nsChangedInPR(files []*gogithub.CommitFile, cluster string, isDeleted bool)
 	for _, file := range files {
 		// check of the file is a deleted file
 		if isDeleted && *file.Status != "removed" {
-			return nil, fmt.Errorf("Some of files are not marked for deletion: file %s is not deleted", *file.Filename)
+			return nil, fmt.Errorf("some of files are not marked for deletion: file %s is not deleted", *file.Filename)
 		}
 
 		// namespaces filepaths are assumed to come in
@@ -540,12 +540,15 @@ func createNamespaceforDestroy(namespaces []string, cluster string) error {
 		// make directory if it doesn't exist
 		if _, err := os.Stat(wd + "/namespaces/" + cluster + "/" + ns); err != nil {
 			err := os.Mkdir(wd+"/namespaces/"+cluster+"/"+ns, 0755)
+			if err != nil {
+				return fmt.Errorf("error creating namespaces directory: %s", err)
+			}
 			err = os.Mkdir(wd+"/namespaces/"+cluster+"/"+ns+"/resources", 0755)
 			if err != nil {
-				return fmt.Errorf("Error creating namespaces or resources directory: %s", err)
+				return fmt.Errorf("error creating resources directory: %s", err)
 			}
 		} else {
-			return fmt.Errorf("Error creating directory, namespace exists in the environments repo: %s", err)
+			return fmt.Errorf("error creating directory, namespace exists in the environments repo: %s", err)
 		}
 	}
 	return nil
