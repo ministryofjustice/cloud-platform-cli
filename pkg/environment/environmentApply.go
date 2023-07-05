@@ -88,7 +88,11 @@ func (a *Apply) Plan() error {
 		}
 		return nil
 	} else {
-		changedNamespaces, err := a.nsChangedInPR(a.Options.ClusterCtx, a.Options.PRNumber)
+		files, err := a.GithubClient.GetChangedFiles(a.Options.PRNumber)
+		if err != nil {
+			return fmt.Errorf("failed to fetch list of changed files: %s in PR %v", err, a.Options.PRNumber)
+		}
+		changedNamespaces, err := nsChangedInPR(files, a.Options.ClusterCtx, false)
 		if err != nil {
 			return err
 		}
@@ -125,7 +129,12 @@ func (a *Apply) Apply() error {
 			return err
 		}
 		if isMerged {
-			changedNamespaces, err := a.nsChangedInPR(a.Options.ClusterCtx, a.Options.PRNumber)
+			repos, err := a.GithubClient.GetChangedFiles(a.Options.PRNumber)
+			if err != nil {
+				return err
+			}
+
+			changedNamespaces, err := nsChangedInPR(repos, a.Options.ClusterCtx, false)
 			if err != nil {
 				return err
 			}
@@ -468,30 +477,6 @@ func (a *Apply) destroyNamespace() error {
 	return nil
 }
 
-// nsChangedInPR get the list of changed files for a given PR. checks if the namespaces exists in the given cluster
-// folder and return the list of namespaces.
-func (a *Apply) nsChangedInPR(cluster string, prNumber int) ([]string, error) {
-	repos, err := a.GithubClient.GetChangedFiles(prNumber)
-	if err != nil {
-		return nil, err
-	}
-
-	var namespaceNames []string
-	for _, repo := range repos {
-		// namespaces filepaths are assumed to come in
-		// the format: namespaces/<cluster>.cloud-platform.service.justice.gov.uk/<namespaceName>
-		s := strings.Split(*repo.Filename, "/")
-		//only get namespaces from the folder that belong to the given cluster and
-		// ignore changes outside namespace directories
-		if len(s) > 1 && s[1] == cluster {
-			namespaceNames = append(namespaceNames, s[2])
-		}
-
-	}
-
-	return util.DeduplicateList(namespaceNames), nil
-}
-
 // nsCreateRawChangedFilesInPR get the list of changed files for a given PR. checks if the file is deleted and
 // write the deleted file to the namespace folder
 func (a *Apply) nsCreateRawChangedFilesInPR(cluster string, prNumber int) ([]string, error) {
@@ -501,7 +486,7 @@ func (a *Apply) nsCreateRawChangedFilesInPR(cluster string, prNumber int) ([]str
 	}
 
 	// nsforDestroy creates a namespace for destroy
-	namespaces, err := nsforDestroy(files, cluster)
+	namespaces, err := nsChangedInPR(files, a.Options.ClusterCtx, true)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get namespace for destroy from the PR: %s", err)
 	}
@@ -527,11 +512,13 @@ func (a *Apply) nsCreateRawChangedFilesInPR(cluster string, prNumber int) ([]str
 
 }
 
-func nsforDestroy(files []*gogithub.CommitFile, cluster string) ([]string, error) {
+// nsChangedInPR get the list of changed files for a given PR. checks if the namespaces exists in the given cluster
+// folder and return the list of namespaces.
+func nsChangedInPR(files []*gogithub.CommitFile, cluster string, isDeleted bool) ([]string, error) {
 	var namespaceNames []string
 	for _, file := range files {
 		// check of the file is a deleted file
-		if *file.Status != "removed" {
+		if isDeleted && *file.Status != "removed" {
 			return nil, fmt.Errorf("Some of files are not marked for deletion: file %s is not deleted", *file.Filename)
 		}
 
@@ -540,7 +527,6 @@ func nsforDestroy(files []*gogithub.CommitFile, cluster string) ([]string, error
 		s := strings.Split(*file.Filename, "/")
 		//only get namespaces from the folder that belong to the given cluster and
 		// ignore changes outside namespace directories
-		fmt.Println(s[1], s[2])
 		if len(s) > 1 && s[1] == cluster {
 			namespaceNames = append(namespaceNames, s[2])
 		}

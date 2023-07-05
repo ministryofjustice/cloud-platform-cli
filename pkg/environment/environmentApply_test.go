@@ -6,9 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/go-github/github"
-	gogithub "github.com/google/go-github/github"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/environment/mocks"
-	ghMock "github.com/ministryofjustice/cloud-platform-cli/pkg/mocks/github"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -123,67 +121,6 @@ func TestApply_ApplyKubectl(t *testing.T) {
 	}
 }
 
-func TestApply_nsChangedInPR(t *testing.T) {
-	type args struct {
-		cluster  string
-		prNumber int
-	}
-	tests := []struct {
-		name                   string
-		GetChangedFilesOutputs []*gogithub.CommitFile
-		args                   args
-		want                   []string
-		wantErr                bool
-	}{
-		{
-			name: "pr with one namespace",
-			GetChangedFilesOutputs: []*gogithub.CommitFile{
-				{
-					SHA:       github.String("6dcb09b5b57875f334f61aebed695e2e4193db5e"),
-					Filename:  github.String("namespaces/testctx/ns1/file1.txt"),
-					Additions: github.Int(103),
-					Deletions: github.Int(21),
-					Changes:   github.Int(124),
-					Status:    github.String("added"),
-					Patch:     github.String("@@ -132,7 +132,7 @@ module Test @@ -1000,7 +1000,7 @@ module Test"),
-				},
-				{
-					SHA:       github.String("f61aebed695e2e4193db5e6dcb09b5b57875f334"),
-					Filename:  github.String("namespaces/testctx/ns1/file2.txt"),
-					Additions: github.Int(5),
-					Deletions: github.Int(3),
-					Changes:   github.Int(103),
-					Status:    github.String("modified"),
-					Patch:     github.String("@@ -132,7 +132,7 @@ module Test @@ -1000,7 +1000,7 @@ module Test"),
-				},
-			},
-			args: args{
-				cluster:  "testctx",
-				prNumber: 8834,
-			},
-			want:    []string{"ns1"},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		ghClient := new(ghMock.GithubIface)
-		ghClient.On("GetChangedFiles", 8834).Return(tt.GetChangedFilesOutputs, nil)
-		t.Run(tt.name, func(t *testing.T) {
-			a := &Apply{
-				GithubClient: ghClient,
-			}
-			got, err := a.nsChangedInPR(tt.args.cluster, tt.args.prNumber)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Apply.nsChangedInPR() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Apply.nsChangedInPR() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestSecretBlockerExists(t *testing.T) {
 	tempDir := "namespaces/testCluster/testNamespace"
 	tempFile := tempDir + "/SECRET_ROTATE_BLOCK"
@@ -220,58 +157,6 @@ func Test_applySkipExists(t *testing.T) {
 
 }
 
-func Test_nsforDestroy(t *testing.T) {
-	type args struct {
-		files   []*gogithub.CommitFile
-		cluster string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    []string
-		wantErr bool
-	}{
-		{
-			"pr with one namespace",
-			args{
-				[]*gogithub.CommitFile{
-					{
-						SHA:       github.String("6dcb09b5b57875f334f61aebed695e2e4193db5e"),
-						Filename:  github.String("namespaces/testctx/ns1/file1.txt"),
-						Additions: github.Int(0),
-						Deletions: github.Int(14),
-						Changes:   github.Int(0),
-						Status:    github.String("removed"),
-					},
-					{
-						SHA:       github.String("f61aebed695e2e4193db5e6dcb09b5b57875f334"),
-						Filename:  github.String("namespaces/testctx/ns1/file2.txt"),
-						Additions: github.Int(0),
-						Deletions: github.Int(16),
-						Changes:   github.Int(0),
-						Status:    github.String("removed"),
-					},
-				},
-				"testctx",
-			},
-			[]string{"ns1"},
-			false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := nsforDestroy(tt.args.files, tt.args.cluster)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("nsforDestroy() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("nsforDestroy() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func Test_createNamespaceforDestroy(t *testing.T) {
 	type args struct {
 		namespaces []string
@@ -288,6 +173,92 @@ func Test_createNamespaceforDestroy(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := createNamespaceforDestroy(tt.args.namespaces, tt.args.cluster); (err != nil) != tt.wantErr {
 				t.Errorf("createNamespaceforDestroy() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func Test_nsChangedInPR(t *testing.T) {
+	type args struct {
+		files     []*github.CommitFile
+		cluster   string
+		isDeleted bool
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    []string
+		wantErr bool
+	}{
+		{
+			name: "Pr for namespace change",
+			args: args{
+				files: []*github.CommitFile{
+					{
+						SHA:       github.String("f61aebed695e2e4193db5euy686dcb09b5b57875f334"),
+						Filename:  github.String("namespaces/testctx/ns1/file1.txt"),
+						Additions: github.Int(5),
+						Deletions: github.Int(3),
+						Changes:   github.Int(103),
+						Status:    github.String("modified"),
+						Patch:     github.String("@@ -132,7 +132,7 @@ module Test @@ -1000,7 +1000,7 @@ module Test"),
+					},
+					{
+						SHA:       github.String("f61aebed695e2e4193db5e6dcb09b5b57875f334"),
+						Filename:  github.String("namespaces/testctx/ns1/file2.txt"),
+						Additions: github.Int(5),
+						Deletions: github.Int(3),
+						Changes:   github.Int(103),
+						Status:    github.String("modified"),
+						Patch:     github.String("@@ -132,7 +132,7 @@ module Test @@ -1000,7 +1000,7 @@ module Test"),
+					},
+				},
+				cluster:   "testctx",
+				isDeleted: false,
+			},
+			want:    []string{"ns1"},
+			wantErr: false,
+		},
+		{
+			name: "Pr for namespace change with deleted file",
+			args: args{
+				files: []*github.CommitFile{
+					{
+						SHA:       github.String("f61aebed695e2e4193db5euy686dcb09b5b57875f334"),
+						Filename:  github.String("namespaces/testctx/ns2/file1.txt"),
+						Additions: github.Int(0),
+						Deletions: github.Int(3),
+						Changes:   github.Int(0),
+						Status:    github.String("removed"),
+						Patch:     github.String("@@ -132,7 +132,7 @@ module Test @@ -1000,7 +1000,7 @@ module Test"),
+					},
+					{
+						SHA:       github.String("f61aebed695e2e4193db5e6dcb09b5b57875f334"),
+						Filename:  github.String("namespaces/testctx/ns2/file2.txt"),
+						Additions: github.Int(0),
+						Deletions: github.Int(3),
+						Changes:   github.Int(0),
+						Status:    github.String("removed"),
+						Patch:     github.String("@@ -132,7 +132,7 @@ module Test @@ -1000,7 +1000,7 @@ module Test"),
+					},
+				},
+				cluster:   "testctx",
+				isDeleted: true,
+			},
+			want:    []string{"ns2"},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := nsChangedInPR(tt.args.files, tt.args.cluster, tt.args.isDeleted)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("nsChangedInPR() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("nsChangedInPR() = %v, want %v", got, tt.want)
 			}
 		})
 	}
