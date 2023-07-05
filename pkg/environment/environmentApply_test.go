@@ -158,6 +158,13 @@ func Test_applySkipExists(t *testing.T) {
 }
 
 func Test_createNamespaceforDestroy(t *testing.T) {
+	repoPath := "namespaces/testCluster"
+
+	err := os.MkdirAll(repoPath, os.ModePerm)
+	if err != nil {
+		t.Errorf("Failed to create repo path: %s", err)
+	}
+
 	type args struct {
 		namespaces []string
 		cluster    string
@@ -167,15 +174,24 @@ func Test_createNamespaceforDestroy(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Create namespace for destroy",
+			args: args{
+				namespaces: []string{"testNamespace"},
+				cluster:    "testCluster",
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := createNamespaceforDestroy(tt.args.namespaces, tt.args.cluster); (err != nil) != tt.wantErr {
 				t.Errorf("createNamespaceforDestroy() error = %v, wantErr %v", err, tt.wantErr)
 			}
+
 		})
 	}
+	defer os.RemoveAll("namespaces")
 }
 
 func Test_nsChangedInPR(t *testing.T) {
@@ -260,6 +276,118 @@ func Test_nsChangedInPR(t *testing.T) {
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("nsChangedInPR() = %v, want %v", got, tt.want)
 			}
+		})
+	}
+}
+
+func TestApply_destroyTerraform(t *testing.T) {
+	type fields struct {
+		Options         *Options
+		RequiredEnvVars RequiredEnvVars
+		Applier         Applier
+		Dir             string
+	}
+	tests := []struct {
+		name              string
+		fields            fields
+		TerraformOutputs  string
+		checkExpectations func(t *testing.T, terraform *mocks.Applier, outputs string, err error)
+	}{
+		{
+			name: "Destroy foobar namespace",
+			fields: fields{
+				Options: &Options{
+					Namespace:   "foobar",
+					KubecfgPath: "/root/.kube/config",
+					ClusterCtx:  "testctx",
+				},
+				RequiredEnvVars: RequiredEnvVars{
+					clustername:        "cluster01",
+					clusterstatebucket: "clusterstatebucket",
+					kubernetescluster:  "kubernetescluster01",
+					githubowner:        "githubowner",
+					githubtoken:        "githubtoken",
+					pingdomapitoken:    "pingdomApikey",
+				},
+				Dir: "/root/foobar",
+			},
+			TerraformOutputs: "foobar",
+			checkExpectations: func(t *testing.T, apply *mocks.Applier, outputs string, err error) {
+				apply.AssertCalled(t, "TerraformInitAndDestroy", "foobar", "/root/foobar/resources")
+				assert.Nil(t, err)
+				assert.Len(t, outputs, 6)
+			},
+		},
+	}
+	for i := range tests {
+		terraform := new(mocks.Applier)
+		tfFolder := tests[i].fields.Dir + "/resources"
+		terraform.On("TerraformInitAndDestroy", tests[i].fields.Options.Namespace, tfFolder).Return(tests[i].TerraformOutputs, nil)
+		a := Apply{
+			RequiredEnvVars: tests[i].fields.RequiredEnvVars,
+			Applier:         terraform,
+			Dir:             tests[i].fields.Dir,
+			Options:         tests[i].fields.Options,
+		}
+		outputs, err := a.destroyTerraform()
+		t.Run(tests[i].name, func(t *testing.T) {
+			tests[i].checkExpectations(t, terraform, outputs, err)
+		})
+	}
+
+}
+
+func TestApply_deleteKubectl(t *testing.T) {
+	type fields struct {
+		Options         *Options
+		RequiredEnvVars RequiredEnvVars
+		Applier         Applier
+		Dir             string
+	}
+	tests := []struct {
+		name              string
+		fields            fields
+		KubectlOutputs    string
+		checkExpectations func(t *testing.T, kubectl *mocks.Applier, outputs string, err error)
+	}{
+		{
+			name: "Delete foo namespace",
+			fields: fields{
+				Options: &Options{
+					Namespace:   "foobar",
+					KubecfgPath: "/root/.kube/config",
+					ClusterCtx:  "testctx",
+				},
+				RequiredEnvVars: RequiredEnvVars{
+					clustername:        "cluster01",
+					clusterstatebucket: "clusterstatebucket",
+					kubernetescluster:  "kubernetescluster01",
+					githubowner:        "githubowner",
+					githubtoken:        "githubtoken",
+					pingdomapitoken:    "pingdomApikey",
+				},
+				Dir: "/root/foo",
+			},
+			KubectlOutputs: "/root/foo",
+			checkExpectations: func(t *testing.T, apply *mocks.Applier, outputs string, err error) {
+				apply.AssertCalled(t, "KubectlDelete", "foobar", "/root/foo", false)
+				assert.Nil(t, err)
+				assert.Len(t, outputs, 9)
+			},
+		},
+	}
+	for i := range tests {
+		kubectl := new(mocks.Applier)
+		kubectl.On("KubectlDelete", "foobar", tests[i].fields.Dir, false).Return(tests[i].KubectlOutputs, nil)
+		a := Apply{
+			RequiredEnvVars: tests[i].fields.RequiredEnvVars,
+			Applier:         kubectl,
+			Dir:             tests[i].fields.Dir,
+			Options:         tests[i].fields.Options,
+		}
+		outputs, err := a.deleteKubectl()
+		t.Run(tests[i].name, func(t *testing.T) {
+			tests[i].checkExpectations(t, kubectl, outputs, err)
 		})
 	}
 }
