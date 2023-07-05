@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os/exec"
 	"strings"
@@ -187,7 +186,7 @@ func GetGithubRawContents(rawUrl string) ([]byte, error) {
 
 	defer response.Body.Close()
 
-	data, err := ioutil.ReadAll(response.Body)
+	data, err := io.ReadAll(response.Body)
 
 	if err != nil {
 		return nil, fmt.Errorf("GetRawContents: Read Data Error: %s", err)
