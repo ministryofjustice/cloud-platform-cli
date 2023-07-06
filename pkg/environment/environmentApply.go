@@ -154,9 +154,9 @@ func (a *Apply) Apply() error {
 }
 
 // Destroy is the entry point for performing a namespace destroy.
-// It checks if the working directory is in cloud-platform-environments, checks if a PR number is given
-// Given a PR number, the method get the list of namespaces that are deleted in that merger PR. Then does the terraform init and destroy
-// of all the namespaces merged in the PR and do a kubectl delete of the list of namespaces that are deleted in the PR
+// It checks if the working directory is in cloud-platform-environments, checks if a PR number is given and merged
+// The method get the list of namespaces that are deleted in that merger PR, and for all namespaces in the PR does the
+// terraform init and destroy and do a kubectl delete
 func (a *Apply) Destroy() error {
 	fmt.Println("Destroying Namespaces in PR", a.Options.PRNumber)
 	if a.Options.PRNumber == 0 {
