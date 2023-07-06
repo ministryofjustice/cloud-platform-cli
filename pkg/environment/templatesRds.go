@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	rdsTemplateFilePrefix = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-rds-instance/main/example/"
+	rdsTemplateFilePrefix = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-rds-instance/main/examples/"
 	rdsTfFilePrefix       = "resources/"
 )
 
