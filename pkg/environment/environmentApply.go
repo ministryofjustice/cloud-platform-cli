@@ -325,11 +325,6 @@ func (a *Apply) planNamespace() error {
 	applier := NewApply(*a.Options)
 	repoPath := "namespaces/" + a.Options.ClusterCtx + "/" + a.Options.Namespace
 
-	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
-		fmt.Printf("Namespace %s does not exist, skipping plan\n", a.Options.Namespace)
-		return nil
-	}
-
 	if util.IsYamlFileExists(repoPath) {
 		outputKubectl, err := applier.planKubectl()
 		if err != nil {
