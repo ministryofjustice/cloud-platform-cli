@@ -322,3 +322,31 @@ func TestGetDatePastMinute(t *testing.T) {
 		})
 	}
 }
+
+func TestGetGithubRawContents(t *testing.T) {
+	type args struct {
+		rawUrl string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "get github raw contents",
+			args: args{
+				rawUrl: "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-cli/main/README.md",
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := GetGithubRawContents(tt.args.rawUrl)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetGithubRawContents() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+		})
+	}
+}

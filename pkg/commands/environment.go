@@ -33,6 +33,7 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 		environmentApplyCmd,
 		environmentBumpModuleCmd,
 		environmentCreateCmd,
+		environmentDestroyCmd,
 		environmentDivergenceCmd,
 		environmentEcrCmd,
 		environmentPlanCmd,
@@ -63,6 +64,29 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentApplyCmd.Flags().StringVar(&optFlags.ClusterCtx, "cluster", "", "folder name under namespaces/ inside cloud-platform-environments repo refering to full cluster name")
 	environmentApplyCmd.PersistentFlags().BoolVar(&optFlags.RedactedEnv, "redact", true, "Redact the terraform output before printing")
 
+	environmentBumpModuleCmd.Flags().StringVarP(&module, "module", "m", "", "Module to upgrade the version")
+	environmentBumpModuleCmd.Flags().StringVarP(&moduleVersion, "module-version", "v", "", "Semantic version to bump a module to")
+
+	environmentCreateCmd.Flags().BoolVarP(&skipEnvCheck, "skip-env-check", "s", false, "Skip the environment check")
+	environmentCreateCmd.Flags().StringVarP(&answersFile, "answers-file", "a", "", "Path to the answers file")
+
+	// e.g. if this is the Pull rquest to perform the apply: https://github.com/ministryofjustice/cloud-platform-environments/pull/8370, the pr ID is 8370.
+	environmentDestroyCmd.Flags().IntVar(&optFlags.PRNumber, "prNumber", 0, "Pull request ID or number to which you want to perform the destroy")
+	environmentDestroyCmd.Flags().StringVarP(&optFlags.Namespace, "namespace", "n", "", "Namespace which you want to perform the destroy")
+
+	// Re-use the environmental variable TF_VAR_github_token to call Github Client which is needed to perform terraform operations on each namespace
+	environmentDestroyCmd.Flags().StringVar(&optFlags.GithubToken, "github-token", os.Getenv("TF_VAR_github_token"), "Personal access Token from Github ")
+	environmentDestroyCmd.Flags().StringVar(&optFlags.KubecfgPath, "kubecfg", filepath.Join(homedir.HomeDir(), ".kube", "config"), "path to kubeconfig file")
+	environmentDestroyCmd.Flags().StringVar(&optFlags.ClusterCtx, "cluster", "", "folder name under namespaces/ inside cloud-platform-environments repo refering to full cluster name")
+	environmentDestroyCmd.PersistentFlags().BoolVar(&optFlags.RedactedEnv, "redact", true, "Redact the terraform output before printing")
+
+	environmentDivergenceCmd.Flags().StringVarP(&clusterName, "cluster-name", "c", "live", "[optional] Cluster name")
+	environmentDivergenceCmd.Flags().StringVarP(&githubToken, "github-token", "g", "", "[required] Github token")
+	environmentDivergenceCmd.Flags().StringVarP(&kubeconfig, "kubeconfig", "k", "", "[optional] Kubeconfig file path")
+	if err := environmentDivergenceCmd.MarkFlagRequired("github-token"); err != nil {
+		log.Fatal(err)
+	}
+
 	// e.g. if this is the Pull rquest to perform the apply: https://github.com/ministryofjustice/cloud-platform-environments/pull/8370, the pr ID is 8370.
 	environmentPlanCmd.Flags().IntVar(&optFlags.PRNumber, "prNumber", 0, "Pull request ID or number to which you want to perform the plan")
 	environmentPlanCmd.Flags().StringVarP(&optFlags.Namespace, "namespace", "n", "", "Namespace which you want to perform the plan")
@@ -73,16 +97,9 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentPlanCmd.Flags().StringVar(&optFlags.ClusterCtx, "cluster", "", "folder name under namespaces/ inside cloud-platform-environments repo refering to full cluster name")
 	environmentPlanCmd.PersistentFlags().BoolVar(&optFlags.RedactedEnv, "redact", true, "Redact the terraform output before printing")
 
-	environmentBumpModuleCmd.Flags().StringVarP(&module, "module", "m", "", "Module to upgrade the version")
-	environmentBumpModuleCmd.Flags().StringVarP(&moduleVersion, "module-version", "v", "", "Semantic version to bump a module to")
-
-	environmentCreateCmd.Flags().BoolVarP(&skipEnvCheck, "skip-env-check", "s", false, "Skip the environment check")
-	environmentCreateCmd.Flags().StringVarP(&answersFile, "answers-file", "a", "", "Path to the answers file")
-
-	environmentDivergenceCmd.Flags().StringVarP(&clusterName, "cluster-name", "c", "live", "[optional] Cluster name")
-	environmentDivergenceCmd.Flags().StringVarP(&githubToken, "github-token", "g", "", "[required] Github token")
-	environmentDivergenceCmd.Flags().StringVarP(&kubeconfig, "kubeconfig", "k", "", "[optional] Kubeconfig file path")
-	if err := environmentDivergenceCmd.MarkFlagRequired("github-token"); err != nil {
+	// Set KUBE_CONFIG_PATH to the path of the kubeconfig file
+	// This is needed for terraform to be able to connect to the cluster
+	if err := os.Setenv("KUBE_CONFIG_PATH", optFlags.KubecfgPath); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -210,6 +227,52 @@ var environmentApplyCmd = &cobra.Command{
 			if err != nil {
 				contextLogger.Fatal(err)
 			}
+		}
+	},
+}
+
+var environmentDestroyCmd = &cobra.Command{
+	Use:   "destroy",
+	Short: `Perform a terraform destroy and kubectl delete for a given namespace`,
+	Long: `
+	Perform a kubectl destroy and a terraform delete for a given namespace using either -namespace flag or the
+	the namespace in the given PR Id/Number
+
+	Along with the mandatory input flag, the below environments variables needs to be set
+	TF_VAR_cluster_name - e.g. "cp-1902-02" to get the vpc details for some modules like rds, es
+	TF_VAR_cluster_state_bucket - State where the cluster state is stored
+	TF_VAR_cluster_state_key - folder name/state key inside the state bucket where cluster state is stored
+	TF_VAR_github_owner - Github owner: ministryofjustice
+	TF_VAR_github_token - Personal access token with repo scope to push github action secrets
+	TF_VAR_kubernetes_cluster - Full name of the Cluster e.g. XXXXXX.gr7.eu-west2.eks.amazonaws.com
+	PINGDOM_API_TOKEN - API Token to access pingdom
+	PIPELINE_TERRAFORM_STATE_LOCK_TABLE - DynamoDB table where the state lock is stored
+	PIPELINE_STATE_BUCKET - State bucket where the environments state is stored e.g cloud-platform-terraform-state
+	PIPELINE_STATE_KEY_PREFIX - State key/ folder where the environments terraform state is stored e.g cloud-platform-environments
+	PIPELINE_STATE_REGION - State region of the bucket e.g. eu-west-1
+	PIPELINE_CLUSTER - Cluster name/folder inside namespaces/ in cloud-platform-environments
+	PIPELINE_CLUSTER_STATE - Cluster name/folder inside the state bucket where the environments terraform state is stored
+	`,
+	Example: heredoc.Doc(`
+	$ cloud-platform environment destroy -n <namespace>
+	`),
+	PreRun: upgradeIfNotLatest,
+	Run: func(cmd *cobra.Command, args []string) {
+		contextLogger := log.WithFields(log.Fields{"subcommand": "destroy"})
+
+		ghConfig := &github.GithubClientConfig{
+			Repository: "cloud-platform-environments",
+			Owner:      "ministryofjustice",
+		}
+
+		applier := &environment.Apply{
+			Options:      &optFlags,
+			GithubClient: github.NewGithubClient(ghConfig, optFlags.GithubToken),
+		}
+
+		err := applier.Destroy()
+		if err != nil {
+			contextLogger.Fatal(err)
 		}
 	},
 }

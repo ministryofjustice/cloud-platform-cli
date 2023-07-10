@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	gogithub "github.com/google/go-github/github"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/github"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/util"
@@ -87,7 +88,11 @@ func (a *Apply) Plan() error {
 		}
 		return nil
 	} else {
-		changedNamespaces, err := a.nsChangedInPR(a.Options.ClusterCtx, a.Options.PRNumber)
+		files, err := a.GithubClient.GetChangedFiles(a.Options.PRNumber)
+		if err != nil {
+			return fmt.Errorf("failed to fetch list of changed files: %s in PR %v", err, a.Options.PRNumber)
+		}
+		changedNamespaces, err := nsChangedInPR(files, a.Options.ClusterCtx, false)
 		if err != nil {
 			return err
 		}
@@ -124,7 +129,12 @@ func (a *Apply) Apply() error {
 			return err
 		}
 		if isMerged {
-			changedNamespaces, err := a.nsChangedInPR(a.Options.ClusterCtx, a.Options.PRNumber)
+			repos, err := a.GithubClient.GetChangedFiles(a.Options.PRNumber)
+			if err != nil {
+				return err
+			}
+
+			changedNamespaces, err := nsChangedInPR(repos, a.Options.ClusterCtx, false)
 			if err != nil {
 				return err
 			}
@@ -140,6 +150,41 @@ func (a *Apply) Apply() error {
 			}
 		}
 	}
+	return nil
+}
+
+// Destroy is the entry point for performing a namespace destroy.
+// It checks if the working directory is in cloud-platform-environments, checks if a PR number is given and merged
+// The method get the list of namespaces that are deleted in that merger PR, and for all namespaces in the PR does the
+// terraform init and destroy and do a kubectl delete
+func (a *Apply) Destroy() error {
+	fmt.Println("Destroying Namespaces in PR", a.Options.PRNumber)
+	if a.Options.PRNumber == 0 {
+		err := fmt.Errorf("a PR ID/Number is required to perform destroy")
+		return err
+	}
+	isMerged, err := a.GithubClient.IsMerged(a.Options.PRNumber)
+	if err != nil {
+		return err
+	}
+	if isMerged {
+		changedNamespaces, err := a.nsCreateRawChangedFilesInPR(a.Options.ClusterCtx, a.Options.PRNumber)
+		fmt.Println("Namespaces changed in PR", changedNamespaces)
+		if err != nil {
+			return err
+		}
+		for _, namespace := range changedNamespaces {
+			a.Options.Namespace = namespace
+			if _, err = os.Stat(a.Options.Namespace); err != nil {
+				fmt.Println("Destroying Namespace:", namespace)
+				err = a.destroyNamespace()
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -219,6 +264,19 @@ func (a *Apply) applyKubectl() (string, error) {
 	return outputKubectl, nil
 }
 
+// deleteKubectl calls the applier -> deleteKubectl with dry-run disabled and return the output from applier
+func (a *Apply) deleteKubectl() (string, error) {
+	log.Printf("Running kubectl delete for namespace: %v in directory %v", a.Options.Namespace, a.Dir)
+
+	outputKubectl, err := a.Applier.KubectlDelete(a.Options.Namespace, a.Dir, false)
+	if err != nil {
+		err := fmt.Errorf("error running kubectl delete on namespace %s: %v \n %v", a.Options.Namespace, err, outputKubectl)
+		return "", err
+	}
+
+	return outputKubectl, nil
+}
+
 // planTerraform calls applier -> TerraformInitAndPlan and prints the output from applier
 func (a *Apply) planTerraform() (string, error) {
 	log.Printf("Running Terraform Plan for namespace: %v", a.Options.Namespace)
@@ -247,16 +305,25 @@ func (a *Apply) applyTerraform() (string, error) {
 	return outputTerraform, nil
 }
 
+// applyTerraform calls applier -> TerraformInitAndDestroy and prints the output from applier
+func (a *Apply) destroyTerraform() (string, error) {
+	log.Printf("Running Terraform Destroy for namespace: %v", a.Options.Namespace)
+
+	tfFolder := a.Dir + "/resources"
+
+	outputTerraform, err := a.Applier.TerraformInitAndDestroy(a.Options.Namespace, tfFolder)
+	if err != nil {
+		err := fmt.Errorf("error running terraform on namespace %s: %v \n %v", a.Options.Namespace, err, outputTerraform)
+		return "", err
+	}
+	return outputTerraform, nil
+}
+
 // planNamespace intiates a new Apply object with options and env variables, and calls the
 // applyKubectl with dry-run enabled and calls applier TerraformInitAndPlan and prints the output
 func (a *Apply) planNamespace() error {
 	applier := NewApply(*a.Options)
 	repoPath := "namespaces/" + a.Options.ClusterCtx + "/" + a.Options.Namespace
-
-	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
-		fmt.Printf("Namespace %s does not exist, skipping plan\n", a.Options.Namespace)
-		return nil
-	}
 
 	if util.IsYamlFileExists(repoPath) {
 		outputKubectl, err := applier.planKubectl()
@@ -271,11 +338,6 @@ func (a *Apply) planNamespace() error {
 
 	exists, err := util.IsFilePathExists(repoPath + "/resources")
 	if err == nil && exists {
-		// Set KUBE_CONFIG_PATH to the path of the kubeconfig file
-		// This is needed for terraform to be able to connect to the cluster
-		if err := os.Setenv("KUBE_CONFIG_PATH", a.Options.KubecfgPath); err != nil {
-			return err
-		}
 		outputTerraform, err := applier.planTerraform()
 		if err != nil {
 			return err
@@ -355,11 +417,6 @@ func (a *Apply) applyNamespace() error {
 
 	exists, err := util.IsFilePathExists(repoPath + "/resources")
 	if err == nil && exists {
-		// Set KUBE_CONFIG_PATH to the path of the kubeconfig file
-		// This is needed for terraform to be able to connect to the cluster
-		if err := os.Setenv("KUBE_CONFIG_PATH", a.Options.KubecfgPath); err != nil {
-			return err
-		}
 		outputTerraform, err := applier.applyTerraform()
 		if err != nil {
 			return err
@@ -373,26 +430,117 @@ func (a *Apply) applyNamespace() error {
 	return nil
 }
 
-// nsChangedInPR get the list of changed files for a given PR. checks if the namespaces exists in the given cluster
-// folder and return the list of namespaces.
-func (a *Apply) nsChangedInPR(cluster string, prNumber int) ([]string, error) {
-	repos, err := a.GithubClient.GetChangedFiles(prNumber)
-	if err != nil {
-		return nil, err
+// destroyNamespace intiates a apply object with options and env variables, and calls the
+// calls applier TerraformInitAndDestroy, applyKubectl with dry-run disabled and prints the output
+func (a *Apply) destroyNamespace() error {
+	repoPath := "namespaces/" + a.Options.ClusterCtx + "/" + a.Options.Namespace
+
+	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
+		fmt.Printf("Namespace %s does not exist, skipping destroy\n", a.Options.Namespace)
+		return nil
 	}
 
+	applier := NewApply(*a.Options)
+
+	exists, err := util.IsFilePathExists(repoPath + "/resources")
+	if err == nil && exists {
+		outputTerraform, err := applier.destroyTerraform()
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("\nOutput of terraform:")
+		util.RedactedEnv(os.Stdout, outputTerraform, a.Options.RedactedEnv)
+
+		if util.IsYamlFileExists(repoPath) {
+			outputKubectl, err := applier.deleteKubectl()
+			if err != nil {
+				return err
+			}
+
+			fmt.Println("\nOutput of kubectl:", outputKubectl)
+		} else {
+			fmt.Printf("Namespace %s does not have yaml resources folder, skipping kubectl delete", a.Options.Namespace)
+		}
+
+	} else {
+		fmt.Printf("Namespace %s does not have terraform resources folder, skipping terraform destroy", a.Options.Namespace)
+	}
+	return nil
+}
+
+// nsCreateRawChangedFilesInPR get the list of changed files for a given PR. checks if the file is deleted and
+// write the deleted file to the namespace folder
+func (a *Apply) nsCreateRawChangedFilesInPR(cluster string, prNumber int) ([]string, error) {
+	files, err := a.GithubClient.GetChangedFiles(prNumber)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch list of changed files: %s", err)
+	}
+
+	namespaces, err := nsChangedInPR(files, a.Options.ClusterCtx, true)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get namespace for destroy from the PR: %s", err)
+	}
+	err = createNamespaceforDestroy(namespaces, cluster)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create namespace for destroy: %s", err)
+	}
+
+	// Get the contents of the CommitFile from RawURL
+	// https://developer.github.com/v3/repos/contents/#get-contents
+
+	for _, file := range files {
+		data, err := util.GetGithubRawContents(file.GetRawURL())
+		if err != nil {
+			return nil, fmt.Errorf("failed to get raw contents: %s", err)
+		}
+		// Create List with changed files
+		if err := os.WriteFile(*file.Filename, data, 0644); err != nil {
+			return nil, fmt.Errorf("failed to write file list: %s", err)
+		}
+	}
+	return namespaces, nil
+
+}
+
+// nsChangedInPR get the list of changed files for a given PR. checks if the namespaces exists in the given cluster
+// folder and return the list of namespaces.
+func nsChangedInPR(files []*gogithub.CommitFile, cluster string, isDeleted bool) ([]string, error) {
 	var namespaceNames []string
-	for _, repo := range repos {
+	for _, file := range files {
+		// check of the file is a deleted file
+		if isDeleted && *file.Status != "removed" {
+			return nil, fmt.Errorf("some of files are not marked for deletion: file %s is not deleted", *file.Filename)
+		}
+
 		// namespaces filepaths are assumed to come in
 		// the format: namespaces/<cluster>.cloud-platform.service.justice.gov.uk/<namespaceName>
-		s := strings.Split(*repo.Filename, "/")
+		s := strings.Split(*file.Filename, "/")
 		//only get namespaces from the folder that belong to the given cluster and
 		// ignore changes outside namespace directories
 		if len(s) > 1 && s[1] == cluster {
 			namespaceNames = append(namespaceNames, s[2])
 		}
-
 	}
-
 	return util.DeduplicateList(namespaceNames), nil
+}
+
+func createNamespaceforDestroy(namespaces []string, cluster string) error {
+	wd, _ := os.Getwd()
+	for _, ns := range namespaces {
+		// make directory if it doesn't exist
+		if _, err := os.Stat(wd + "/namespaces/" + cluster + "/" + ns); err != nil {
+			err := os.Mkdir(wd+"/namespaces/"+cluster+"/"+ns, 0755)
+			if err != nil {
+				return fmt.Errorf("error creating namespaces directory: %s", err)
+			}
+			err = os.Mkdir(wd+"/namespaces/"+cluster+"/"+ns+"/resources", 0755)
+			if err != nil {
+				return fmt.Errorf("error creating resources directory: %s", err)
+			}
+		} else {
+			return fmt.Errorf("error creating directory, namespace exists in the environments repo: %s", err)
+		}
+	}
+	return nil
 }
