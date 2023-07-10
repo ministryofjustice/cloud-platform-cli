@@ -514,7 +514,7 @@ func nsChangedInPR(files []*gogithub.CommitFile, cluster string, isDeleted bool)
 	for _, file := range files {
 		// check of the file is a deleted file
 		if isDeleted && *file.Status != "removed" {
-			fmt.Println("some of files are not marked for deletion: file %s is not deleted", *file.Filename)
+			fmt.Println("some of files are not marked for deletion: file", *file.Filename, "is not deleted")
 			return nil, nil
 		}
 
