@@ -305,7 +305,7 @@ func (a *Apply) applyTerraform() (string, error) {
 	return outputTerraform, nil
 }
 
-// applyTerraform calls applier -> TerraformInitAndApply and prints the output from applier
+// applyTerraform calls applier -> TerraformInitAndDestroy and prints the output from applier
 func (a *Apply) destroyTerraform() (string, error) {
 	log.Printf("Running Terraform Destroy for namespace: %v", a.Options.Namespace)
 
@@ -433,9 +433,6 @@ func (a *Apply) applyNamespace() error {
 // destroyNamespace intiates a apply object with options and env variables, and calls the
 // calls applier TerraformInitAndDestroy, applyKubectl with dry-run disabled and prints the output
 func (a *Apply) destroyNamespace() error {
-	// secretBlocker is a file used to control the behaviour of a namespace that will have all
-	// secrets in a namespace rotated. This came out of the requirement to rotate IAM credentials
-	// post circle breach.
 	repoPath := "namespaces/" + a.Options.ClusterCtx + "/" + a.Options.Namespace
 
 	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
@@ -480,7 +477,6 @@ func (a *Apply) nsCreateRawChangedFilesInPR(cluster string, prNumber int) ([]str
 		return nil, fmt.Errorf("failed to fetch list of changed files: %s", err)
 	}
 
-	// nsforDestroy creates a namespace for destroy
 	namespaces, err := nsChangedInPR(files, a.Options.ClusterCtx, true)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get namespace for destroy from the PR: %s", err)
