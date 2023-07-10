@@ -481,6 +481,10 @@ func (a *Apply) nsCreateRawChangedFilesInPR(cluster string, prNumber int) ([]str
 	if err != nil {
 		return nil, fmt.Errorf("failed to get namespace for destroy from the PR: %s", err)
 	}
+	if len(namespaces) == 0 {
+		fmt.Println("No namespace found in the PR for destroy")
+		return nil, nil
+	}
 	err = createNamespaceforDestroy(namespaces, cluster)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create namespace for destroy: %s", err)
@@ -510,7 +514,8 @@ func nsChangedInPR(files []*gogithub.CommitFile, cluster string, isDeleted bool)
 	for _, file := range files {
 		// check of the file is a deleted file
 		if isDeleted && *file.Status != "removed" {
-			return nil, fmt.Errorf("some of files are not marked for deletion: file %s is not deleted", *file.Filename)
+			fmt.Println("some of files are not marked for deletion: file %s is not deleted", *file.Filename)
+			return nil, nil
 		}
 
 		// namespaces filepaths are assumed to come in
