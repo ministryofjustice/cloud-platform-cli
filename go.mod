@@ -12,7 +12,7 @@ require (
 	github.com/hashicorp/hcl/v2 v2.16.2
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
-	github.com/sirupsen/logrus v1.9.0
+	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/pflag v1.0.5
@@ -30,7 +30,7 @@ require (
 require (
 	github.com/aws/aws-sdk-go v1.44.262
 	github.com/deckarep/golang-set/v2 v2.3.0
-	github.com/dlclark/regexp2 v1.9.0
+	github.com/dlclark/regexp2 v1.10.0
 	github.com/google/go-cmdtest v0.4.0
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/hashicorp/go-version v1.6.0
