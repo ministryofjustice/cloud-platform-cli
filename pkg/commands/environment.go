@@ -97,11 +97,6 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentPlanCmd.Flags().StringVar(&optFlags.ClusterCtx, "cluster", "", "folder name under namespaces/ inside cloud-platform-environments repo refering to full cluster name")
 	environmentPlanCmd.PersistentFlags().BoolVar(&optFlags.RedactedEnv, "redact", true, "Redact the terraform output before printing")
 
-	// Set KUBE_CONFIG_PATH to the path of the kubeconfig file
-	// This is needed for terraform to be able to connect to the cluster
-	if err := os.Setenv("KUBE_CONFIG_PATH", optFlags.KubecfgPath); err != nil {
-		log.Fatal(err)
-	}
 }
 
 var environmentCmd = &cobra.Command{

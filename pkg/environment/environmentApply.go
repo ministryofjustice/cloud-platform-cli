@@ -67,6 +67,11 @@ func (a *Apply) Initialize() {
 	a.RequiredEnvVars.githubowner = reqEnvVars.githubowner
 	a.RequiredEnvVars.githubtoken = reqEnvVars.githubtoken
 	a.RequiredEnvVars.pingdomapitoken = reqEnvVars.pingdomapitoken
+	// Set KUBE_CONFIG_PATH to the path of the kubeconfig file
+	// This is needed for terraform to be able to connect to the cluster when a different kubecfg is passed
+	if err := os.Setenv("KUBE_CONFIG_PATH", a.Options.KubecfgPath); err != nil {
+		log.Fatalln("KUBE_CONFIG_PATH environment variable cant be set:", err.Error())
+	}
 }
 
 // Plan is the entry point for performing a namespace plan.
@@ -416,6 +421,11 @@ func (a *Apply) applyNamespace() error {
 	}
 
 	exists, err := util.IsFilePathExists(repoPath + "/resources")
+	// Set KUBE_CONFIG_PATH to the path of the kubeconfig file
+	// This is needed for terraform to be able to connect to the cluster when a different kubecfg is passed
+	if err := os.Setenv("KUBE_CONFIG_PATH", a.Options.KubecfgPath); err != nil {
+		return err
+	}
 	if err == nil && exists {
 		outputTerraform, err := applier.applyTerraform()
 		if err != nil {
