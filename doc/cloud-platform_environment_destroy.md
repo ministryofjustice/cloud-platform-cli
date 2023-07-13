@@ -38,13 +38,15 @@ $ cloud-platform environment destroy -n <namespace>
 ### Options
 
 ```
-      --cluster string        folder name under namespaces/ inside cloud-platform-environments repo refering to full cluster name
+      --cluster string        cluster context fron kubeconfig file
+      --clusterdir string     folder name under namespaces/ inside cloud-platform-environments repo refering to full cluster name
       --github-token string   Personal access Token from Github 
   -h, --help                  help for destroy
       --kubecfg string        path to kubeconfig file (default "/home/runner/.kube/config")
   -n, --namespace string      Namespace which you want to perform the destroy
       --prNumber int          Pull request ID or number to which you want to perform the destroy
       --redact                Redact the terraform output before printing (default true)
+      --skip-prod-destroy     skip prod namespaces from destroy namespace (default true)
 ```
 
 ### Options inherited from parent commands
