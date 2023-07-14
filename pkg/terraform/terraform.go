@@ -22,6 +22,7 @@ import (
 var (
 	wsFailedToSelectRegexp = regexp.MustCompile(`Failed to select workspace`)
 	wsDoesNotExistRegexp   = regexp.MustCompile(`workspace ".*" does not exist`)
+	wsAlreadyExists        = regexp.MustCompile(`Workspace ".*" already exists`)
 )
 
 // TerraformCLI is the client that wraps around terraform-exec
@@ -129,10 +130,9 @@ func (t *TerraformCLI) Init(ctx context.Context, w io.Writer) error {
 	// https://github.com/hashicorp/terraform/issues/21393
 TF_INIT_AGAIN:
 	if err := t.tf.Init(ctx); err != nil {
-		var wsErr *tfexec.ErrNoWorkspace
 		matchedFailedToSelect := wsFailedToSelectRegexp.MatchString(err.Error())
 		matchedDoesNotExist := wsDoesNotExistRegexp.MatchString(err.Error())
-		if matchedFailedToSelect || matchedDoesNotExist || errors.As(err, &wsErr) {
+		if matchedFailedToSelect || matchedDoesNotExist {
 			fmt.Println("workspace was detected without state, " +
 				"creating new workspace and attempting Terraform init again")
 			if err := t.tf.WorkspaceNew(ctx, t.workspace); err != nil {
@@ -148,10 +148,9 @@ TF_INIT_AGAIN:
 	}
 
 	if !wsCreated {
-		err := t.tf.WorkspaceNew(ctx, t.workspace)
-		if err != nil {
-			var wsErr *tfexec.ErrWorkspaceExists
-			if !errors.As(err, &wsErr) {
+		if err := t.tf.WorkspaceNew(ctx, t.workspace); err != nil {
+			matchedAlreadyExists := wsAlreadyExists.MatchString(err.Error())
+			if err != nil && !matchedAlreadyExists {
 				return err
 			}
 		}
@@ -166,7 +165,6 @@ TF_INIT_AGAIN:
 
 // Apply executes the cli command `terraform apply` for a given workspace
 func (t *TerraformCLI) Apply(ctx context.Context, w io.Writer) error {
-
 	t.tf.SetStdout(w)
 	t.tf.SetStderr(w)
 
@@ -179,7 +177,6 @@ func (t *TerraformCLI) Apply(ctx context.Context, w io.Writer) error {
 
 // Destroy executes the cli command `terraform destroy` for a given workspace
 func (t *TerraformCLI) Destroy(ctx context.Context, w io.Writer) error {
-
 	t.tf.SetStdout(w)
 	t.tf.SetStderr(w)
 
@@ -192,12 +189,10 @@ func (t *TerraformCLI) Destroy(ctx context.Context, w io.Writer) error {
 
 // Plan executes the cli command `terraform plan` for a given workspace
 func (t *TerraformCLI) Plan(ctx context.Context, w io.Writer) (bool, error) {
-
 	t.tf.SetStdout(w)
 	t.tf.SetStderr(w)
 
 	diff, err := t.tf.Plan(ctx, t.planVars...)
-
 	if err != nil {
 		return false, err
 	}
@@ -242,5 +237,4 @@ func (t *TerraformCLI) WorkspaceDelete(ctx context.Context, workspace string) er
 	}
 
 	return nil
-
 }

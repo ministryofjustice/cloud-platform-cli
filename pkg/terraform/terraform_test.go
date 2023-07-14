@@ -160,7 +160,7 @@ func TestTerraformCLI_Init(t *testing.T) {
 			false,
 			&TerraformCLIConfig{},
 			nil,
-			&tfexec.ErrWorkspaceExists{Name: "workspace-name"},
+			errors.New(`Workspace "foobar" already exists`),
 		},
 	}
 
@@ -190,7 +190,6 @@ func TestTerraformCLI_Init(t *testing.T) {
 }
 
 func TestTerraformCLIInit_HandleWorkspaceError(t *testing.T) {
-
 	t.Parallel()
 
 	cases := []struct {
@@ -249,7 +248,6 @@ Error: Currently selected workspace "some-task" does not exist
 }
 
 func TestTerraformCLI_Apply(t *testing.T) {
-
 	t.Parallel()
 
 	cases := []struct {
@@ -282,7 +280,6 @@ func TestTerraformCLI_Apply(t *testing.T) {
 			assert.NoError(t, err)
 		})
 	}
-
 }
 
 func TestTerraformCLI_Destroy(t *testing.T) {
@@ -318,7 +315,6 @@ func TestTerraformCLI_Destroy(t *testing.T) {
 			assert.NoError(t, err)
 		})
 	}
-
 }
 
 func TestTerraformCLI_Plan(t *testing.T) {
@@ -419,7 +415,6 @@ func TestTerraformCLI_Show(t *testing.T) {
 }
 
 func TestTerraformCLI_StateList(t *testing.T) {
-
 	type args struct {
 		state *tfjson.State
 	}
@@ -471,17 +466,19 @@ func TestTerraformCLI_WorkspaceDelete(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{"GIVEN a terraform workspace THEN delete it successfully", &TerraformCLIConfig{
-			WorkingDir: "./",
-			Workspace:  "test-workspace",
-			Version:    "1.2.5",
-		}, args{context.Background(), "test-workspace", nil}, false,
+		{
+			"GIVEN a terraform workspace THEN delete it successfully", &TerraformCLIConfig{
+				WorkingDir: "./",
+				Workspace:  "test-workspace",
+				Version:    "1.2.5",
+			}, args{context.Background(), "test-workspace", nil}, false,
 		},
-		{"GIVEN a terraform workspace AND the delete errors THEN return the error", &TerraformCLIConfig{
-			WorkingDir: "./",
-			Workspace:  "test-workspace",
-			Version:    "1.2.5",
-		}, args{context.Background(), "test-workspace", errors.New("deleting tf workspace")}, true,
+		{
+			"GIVEN a terraform workspace AND the delete errors THEN return the error", &TerraformCLIConfig{
+				WorkingDir: "./",
+				Workspace:  "test-workspace",
+				Version:    "1.2.5",
+			}, args{context.Background(), "test-workspace", errors.New("deleting tf workspace")}, true,
 		},
 	}
 	for _, tt := range tests {
