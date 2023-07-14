@@ -22,6 +22,7 @@ import (
 var (
 	wsFailedToSelectRegexp = regexp.MustCompile(`Failed to select workspace`)
 	wsDoesNotExistRegexp   = regexp.MustCompile(`workspace ".*" does not exist`)
+	wsAlreadyExists        = regexp.MustCompile(`Workspace ".*" already exists`)
 )
 
 // TerraformCLI is the client that wraps around terraform-exec
@@ -147,9 +148,11 @@ TF_INIT_AGAIN:
 	}
 
 	if !wsCreated {
-		err := t.tf.WorkspaceNew(ctx, t.workspace)
-		if err != nil {
-			return err
+		if err := t.tf.WorkspaceNew(ctx, t.workspace); err != nil {
+			matchedAlreadyExists := wsAlreadyExists.MatchString(err.Error())
+			if err != nil && !matchedAlreadyExists {
+				return err
+			}
 		}
 	}
 
