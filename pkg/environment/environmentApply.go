@@ -194,11 +194,9 @@ func (a *Apply) Destroy() error {
 
 		for _, namespace := range changedNamespaces {
 			a.Options.Namespace = namespace
-			if a.Options.SkipProdDestroy {
-				if isProductionNs(namespace, namespaces) {
-					err := fmt.Errorf("cannot destroy production namespace with skip-prod-destroy flag set to true")
-					return err
-				}
+			if a.Options.SkipProdDestroy && isProductionNs(namespace, namespaces) {
+				err := fmt.Errorf("cannot destroy production namespace with skip-prod-destroy flag set to true")
+				return err
 			}
 			// Check if the namespace is present in the folder
 			if _, err = os.Stat(a.Options.Namespace); err != nil {
