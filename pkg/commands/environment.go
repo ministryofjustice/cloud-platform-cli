@@ -414,7 +414,7 @@ var environmentDivergenceCmd = &cobra.Command{
 			"kuberhealthy",
 			"kuberos",
 			"logging",
-			"opa",
+			"gatekeeper-system",
 			"overprovision",
 			"velero",
 			"trivy-system",

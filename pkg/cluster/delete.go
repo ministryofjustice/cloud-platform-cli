@@ -20,7 +20,6 @@ var EKS_SYSTEM_NAMESPACES = []string{
 	"kuberos",
 	"logging",
 	"monitoring",
-	"opa",
 	"velero",
 	"kuberhealthy",
 	"trivy-system",
