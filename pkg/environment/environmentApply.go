@@ -10,15 +10,18 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/github"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/util"
+	"github.com/ministryofjustice/cloud-platform-environments/pkg/authenticate"
+	"github.com/ministryofjustice/cloud-platform-environments/pkg/namespace"
+	v1 "k8s.io/api/core/v1"
 )
 
 // Options are used to configure plan/apply sessions.
 // These options are normally passed via flags in a command line.
 type Options struct {
-	Namespace, KubecfgPath, ClusterCtx, GithubToken string
-	PRNumber                                        int
-	AllNamespaces                                   bool
-	EnableApplySkip, RedactedEnv                    bool
+	Namespace, KubecfgPath, ClusterCtx, ClusterDir, GithubToken string
+	PRNumber                                                    int
+	AllNamespaces                                               bool
+	EnableApplySkip, RedactedEnv, SkipProdDestroy               bool
 }
 
 // RequiredEnvVars is used to store values such as TF_VAR_ , github and pingdom tokens
@@ -48,7 +51,7 @@ func NewApply(opt Options) *Apply {
 	apply := Apply{
 		Options: &opt,
 		Applier: NewApplier("/usr/local/bin/terraform", "/usr/local/bin/kubectl"),
-		Dir:     "namespaces/" + opt.ClusterCtx + "/" + opt.Namespace,
+		Dir:     "namespaces/" + opt.ClusterDir + "/" + opt.Namespace,
 	}
 
 	apply.Initialize()
@@ -97,7 +100,7 @@ func (a *Apply) Plan() error {
 		if err != nil {
 			return fmt.Errorf("failed to fetch list of changed files: %s in PR %v", err, a.Options.PRNumber)
 		}
-		changedNamespaces, err := nsChangedInPR(files, a.Options.ClusterCtx, false)
+		changedNamespaces, err := nsChangedInPR(files, a.Options.ClusterDir, false)
 		if err != nil {
 			return err
 		}
@@ -139,7 +142,7 @@ func (a *Apply) Apply() error {
 				return err
 			}
 
-			changedNamespaces, err := nsChangedInPR(repos, a.Options.ClusterCtx, false)
+			changedNamespaces, err := nsChangedInPR(repos, a.Options.ClusterDir, false)
 			if err != nil {
 				return err
 			}
@@ -173,13 +176,29 @@ func (a *Apply) Destroy() error {
 		return err
 	}
 	if isMerged {
-		changedNamespaces, err := a.nsCreateRawChangedFilesInPR(a.Options.ClusterCtx, a.Options.PRNumber)
+		changedNamespaces, err := a.nsCreateRawChangedFilesInPR(a.Options.ClusterDir, a.Options.PRNumber)
 		fmt.Println("Namespaces changed in PR", changedNamespaces)
 		if err != nil {
 			return err
 		}
+		kubeClient, err := authenticate.CreateClientFromConfigFile(a.Options.KubecfgPath, a.Options.ClusterCtx)
+		if err != nil {
+			return err
+		}
+
+		// GetAllNamespacesFromCluster
+		namespaces, err := namespace.GetAllNamespacesFromCluster(kubeClient)
+		if err != nil {
+			return err
+		}
+
 		for _, namespace := range changedNamespaces {
 			a.Options.Namespace = namespace
+			if a.Options.SkipProdDestroy && isProductionNs(namespace, namespaces) {
+				err := fmt.Errorf("cannot destroy production namespace with skip-prod-destroy flag set to true")
+				return err
+			}
+			// Check if the namespace is present in the folder
 			if _, err = os.Stat(a.Options.Namespace); err != nil {
 				fmt.Println("Destroying Namespace:", namespace)
 				err = a.destroyNamespace()
@@ -204,7 +223,7 @@ func (a *Apply) ApplyAll() error {
 		return err
 	}
 
-	repoPath := "namespaces/" + a.Options.ClusterCtx
+	repoPath := "namespaces/" + a.Options.ClusterDir
 	folderChunks, err := util.GetFolderChunks(repoPath, numRoutines)
 	if err != nil {
 		return err
@@ -328,7 +347,7 @@ func (a *Apply) destroyTerraform() (string, error) {
 // applyKubectl with dry-run enabled and calls applier TerraformInitAndPlan and prints the output
 func (a *Apply) planNamespace() error {
 	applier := NewApply(*a.Options)
-	repoPath := "namespaces/" + a.Options.ClusterCtx + "/" + a.Options.Namespace
+	repoPath := "namespaces/" + a.Options.ClusterDir + "/" + a.Options.Namespace
 
 	if util.IsYamlFileExists(repoPath) {
 		outputKubectl, err := applier.planKubectl()
@@ -388,7 +407,7 @@ func (a *Apply) applyNamespace() error {
 	// secretBlocker is a file used to control the behaviour of a namespace that will have all
 	// secrets in a namespace rotated. This came out of the requirement to rotate IAM credentials
 	// post circle breach.
-	repoPath := "namespaces/" + a.Options.ClusterCtx + "/" + a.Options.Namespace
+	repoPath := "namespaces/" + a.Options.ClusterDir + "/" + a.Options.Namespace
 
 	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
 		fmt.Printf("Namespace %s does not exist, skipping apply\n", a.Options.Namespace)
@@ -443,7 +462,7 @@ func (a *Apply) applyNamespace() error {
 // destroyNamespace intiates a apply object with options and env variables, and calls the
 // calls applier TerraformInitAndDestroy, applyKubectl with dry-run disabled and prints the output
 func (a *Apply) destroyNamespace() error {
-	repoPath := "namespaces/" + a.Options.ClusterCtx + "/" + a.Options.Namespace
+	repoPath := "namespaces/" + a.Options.ClusterDir + "/" + a.Options.Namespace
 
 	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
 		fmt.Printf("Namespace %s does not exist, skipping destroy\n", a.Options.Namespace)
@@ -487,7 +506,7 @@ func (a *Apply) nsCreateRawChangedFilesInPR(cluster string, prNumber int) ([]str
 		return nil, fmt.Errorf("failed to fetch list of changed files: %s", err)
 	}
 
-	namespaces, err := nsChangedInPR(files, a.Options.ClusterCtx, true)
+	namespaces, err := nsChangedInPR(files, a.Options.ClusterDir, true)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get namespace for destroy from the PR: %s", err)
 	}
@@ -558,4 +577,14 @@ func createNamespaceforDestroy(namespaces []string, cluster string) error {
 		}
 	}
 	return nil
+}
+
+func isProductionNs(nsInPR string, namespaces []v1.Namespace) bool {
+	for _, ns := range namespaces {
+		is_prod := ns.Labels["cloud-platform.justice.gov.uk/is-production"] == "true"
+		if ns.Name == nsInPR && is_prod {
+			return true
+		}
+	}
+	return false
 }

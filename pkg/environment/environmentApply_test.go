@@ -8,6 +8,8 @@ import (
 	"github.com/google/go-github/github"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/environment/mocks"
 	"github.com/stretchr/testify/assert"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestApply_ApplyTerraform(t *testing.T) {
@@ -388,6 +390,60 @@ func TestApply_deleteKubectl(t *testing.T) {
 		outputs, err := a.deleteKubectl()
 		t.Run(tests[i].name, func(t *testing.T) {
 			tests[i].checkExpectations(t, kubectl, outputs, err)
+		})
+	}
+}
+
+func Test_isProductionNs(t *testing.T) {
+	type args struct {
+		nsInPR     string
+		namespaces []v1.Namespace
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "Prod Namespace is not in PR",
+			args: args{
+				nsInPR: "foobar",
+				namespaces: []v1.Namespace{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "foobar",
+							Labels: map[string]string{
+								"cloud-platform.justice.gov.uk/is-production": "false",
+							},
+						},
+					},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "Prod Namespace is in PR",
+			args: args{
+				nsInPR: "foobar",
+				namespaces: []v1.Namespace{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "foobar",
+							Labels: map[string]string{
+								"cloud-platform.justice.gov.uk/is-production": "true",
+							},
+						},
+					},
+				},
+			},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isProductionNs(tt.args.nsInPR, tt.args.namespaces); got != tt.want {
+				t.Errorf("isProductionNs() = %v, want %v", got, tt.want)
+			}
 		})
 	}
 }

@@ -39,7 +39,8 @@ $ cloud-platform environment plan
 ### Options
 
 ```
-      --cluster string        folder name under namespaces/ inside cloud-platform-environments repo refering to full cluster name
+      --cluster string        cluster context fron kubeconfig file
+      --clusterdir string     folder name under namespaces/ inside cloud-platform-environments repo refering to full cluster name
       --github-token string   Personal access Token from Github 
   -h, --help                  help for plan
       --kubecfg string        path to kubeconfig file (default "/home/runner/.kube/config")

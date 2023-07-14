@@ -325,8 +325,12 @@ github.com/matttproud/golang_protobuf_extensions v1.0.2 h1:hAHbPm5IJGijwng3PWk09
 github.com/matttproud/golang_protobuf_extensions v1.0.2/go.mod h1:BSXmuO+STAnVfrANrmjBb36TMTDstsz7MSK+HVaYKv4=
 github.com/migueleliasweb/go-github-mock v0.0.16 h1:iEx6iqYASRJVoEO5eMOYpQZFTc00cZ6ysynOArUKM3A=
 github.com/migueleliasweb/go-github-mock v0.0.16/go.mod h1:CjrgPd8s5sf5g3XSESAQqxufae+PZbgM/F317C3uD7g=
+github.com/ministryofjustice/cloud-platform-environments v1.2.1-0.20230712165212-61f4971d3baa h1:ttFqd4Ks4CizU51l7aKp3XuEI87t20VoRnn6O8ARj9Q=
+github.com/ministryofjustice/cloud-platform-environments v1.2.1-0.20230712165212-61f4971d3baa/go.mod h1:i3PdaTg3t4U25VUT4qkUn5MNVGhyP1sSnSnTp6UV7OE=
 github.com/ministryofjustice/cloud-platform-go-library v0.0.0-20220803122921-1ca1153b1730 h1:4u9OcC1NTIARZjKBdop1qY3hxC2DGaHEE+i43BFh+aI=
 github.com/ministryofjustice/cloud-platform-go-library v0.0.0-20220803122921-1ca1153b1730/go.mod h1:53gzeRuRULbIkftuejJrv41aJl8ps35D9qKX2rtkwOc=
+github.com/ministryofjustice/cloud-platform-how-out-of-date-are-we/reports/pkg/hoodaw v0.0.0-20230210112905-1665bd8fd8d4 h1:ftBQt/WDx6KDlxZWDRKAEps1lOgg4Po0IDsD9mqAg48=
+github.com/ministryofjustice/cloud-platform-how-out-of-date-are-we/reports/pkg/hoodaw v0.0.0-20230210112905-1665bd8fd8d4/go.mod h1:MBNDOQ9eBV1V9rbtuQOiXYkhSyuytZwK2J2m44+rgMk=
 github.com/mitchellh/go-wordwrap v1.0.1 h1:TLuKupo69TCn6TQSyGxwI1EblZZEsQ0vMlAFQflz0v0=
 github.com/mitchellh/go-wordwrap v1.0.1/go.mod h1:R62XHJLzvMFRBbcrT7m7WgmE1eOyTSsCt+hzestvNj0=
 github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyuac5Z2hdY=
@@ -869,8 +873,8 @@ k8s.io/kube-openapi v0.0.0-20221012153701-172d655c2280 h1:+70TFaan3hfJzs+7VK2o+O
 k8s.io/kube-openapi v0.0.0-20221012153701-172d655c2280/go.mod h1:+Axhij7bCpeqhklhUTe3xmOn6bWxolyZEeyaFpjGtl4=
 k8s.io/kubectl v0.26.0-alpha.2 h1:oVGhSH2LyUCJtnkh2x/mF1Zrd6gNoMoPzZQn9OQgrd4=
 k8s.io/kubectl v0.26.0-alpha.2/go.mod h1:PJGh0Ga44aosnto+H/CuYoqQFFvILdWH0fFy8XrSOAg=
-k8s.io/metrics v0.26.0-alpha.2 h1:3hBWB8ji5brwC2Pd0AoexlOF04tgzwnEeUg43wmzyD8=
-k8s.io/metrics v0.26.0-alpha.2/go.mod h1:6S/TGdomnTocg+e+gf9AWDAah9DTaqSs9lRhq2ivWmU=
+k8s.io/metrics v0.26.1 h1:iB+QdMLa2V70a7zb0XYEcaUpPM0y+p4fZN0UtxcPHLk=
+k8s.io/metrics v0.26.1/go.mod h1:fMeLXmK/xgvckFG63GJ0kDjFiQH7P0Dpi5Lvhlo5DXE=
 k8s.io/utils v0.0.0-20221107191617-1a15be271d1d h1:0Smp/HP1OH4Rvhe+4B8nWGERtlqAGSftbSbbmm45oFs=
 k8s.io/utils v0.0.0-20221107191617-1a15be271d1d/go.mod h1:OLgZIPagt7ERELqWJFomSt595RzquPNLL48iOWgYOg0=
 rsc.io/binaryregexp v0.2.0/go.mod h1:qTv7/COck+e2FymRvadv62gMdZztPaShugOCi3I+8D8=
