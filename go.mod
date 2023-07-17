@@ -42,7 +42,7 @@ require (
 	github.com/migueleliasweb/go-github-mock v0.0.16
 	github.com/ministryofjustice/cloud-platform-environments v1.2.1-0.20230712165212-61f4971d3baa
 	github.com/ministryofjustice/cloud-platform-go-library v0.0.0-20220803122921-1ca1153b1730
-	github.com/rs/zerolog v1.29.0
+	github.com/rs/zerolog v1.29.1
 	github.com/shurcooL/githubv4 v0.0.0-20220922232305-70b4d362a8cb
 	github.com/stretchr/testify v1.8.2
 	golang.org/x/oauth2 v0.6.0
