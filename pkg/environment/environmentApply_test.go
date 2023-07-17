@@ -159,12 +159,17 @@ func Test_applySkipExists(t *testing.T) {
 
 }
 
-func Test_createNamespaceforDestroy(t *testing.T) {
+func Test_canCreateNamespaceforDestroy(t *testing.T) {
 	repoPath := "namespaces/testCluster"
+	existingNamespace := "namespaces/testCluster/testNamespaceCantDestroy"
 
 	err := os.MkdirAll(repoPath, os.ModePerm)
 	if err != nil {
 		t.Errorf("Failed to create repo path: %s", err)
+	}
+	err = os.MkdirAll(existingNamespace, os.ModePerm)
+	if err != nil {
+		t.Errorf("Failed to create repo path for existingNamespace: %s", err)
 	}
 
 	type args struct {
@@ -174,6 +179,7 @@ func Test_createNamespaceforDestroy(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
+		want    bool
 		wantErr bool
 	}{
 		{
@@ -182,15 +188,29 @@ func Test_createNamespaceforDestroy(t *testing.T) {
 				namespaces: []string{"testNamespace"},
 				cluster:    "testCluster",
 			},
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name: "Create namespace for destroy with existing namespace",
+			args: args{
+				namespaces: []string{"testNamespaceCantDestroy"},
+				cluster:    "testCluster",
+			},
+			want:    false,
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := createNamespaceforDestroy(tt.args.namespaces, tt.args.cluster); (err != nil) != tt.wantErr {
-				t.Errorf("createNamespaceforDestroy() error = %v, wantErr %v", err, tt.wantErr)
+			got, err := canCreateNamespaceforDestroy(tt.args.namespaces, tt.args.cluster)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("canCreateNamespaceforDestroy() error = %v, wantErr %v", err, tt.wantErr)
+				return
 			}
-
+			if got != tt.want {
+				t.Errorf("canCreateNamespaceforDestroy() = %v, want %v", got, tt.want)
+			}
 		})
 	}
 	defer os.RemoveAll("namespaces")
@@ -447,3 +467,30 @@ func Test_isProductionNs(t *testing.T) {
 		})
 	}
 }
+
+// func Test_canCreateNamespaceforDestroy(t *testing.T) {
+// 	type args struct {
+// 		namespaces []string
+// 		cluster    string
+// 	}
+// 	tests := []struct {
+// 		name    string
+// 		args    args
+// 		want    bool
+// 		wantErr bool
+// 	}{
+// 		// TODO: Add test cases.
+// 	}
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			got, err := canCreateNamespaceforDestroy(tt.args.namespaces, tt.args.cluster)
+// 			if (err != nil) != tt.wantErr {
+// 				t.Errorf("canCreateNamespaceforDestroy() error = %v, wantErr %v", err, tt.wantErr)
+// 				return
+// 			}
+// 			if got != tt.want {
+// 				t.Errorf("canCreateNamespaceforDestroy() = %v, want %v", got, tt.want)
+// 			}
+// 		})
+// 	}
+// }
