@@ -520,7 +520,7 @@ func (a *Apply) nsCreateRawChangedFilesInPR(cluster string, prNumber int) ([]str
 		fmt.Println("No namespace found in the PR for destroy")
 		return nil, nil
 	}
-	canCreate, err := canCreateNamespaceforDestroy(namespaces, cluster)
+	canCreate, err := canCreateNamespaces(namespaces, cluster)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create namespace for destroy: %s", err)
 	}
@@ -569,7 +569,7 @@ func nsChangedInPR(files []*gogithub.CommitFile, cluster string, isDeleted bool)
 	return util.DeduplicateList(namespaceNames), nil
 }
 
-func canCreateNamespaceforDestroy(namespaces []string, cluster string) (bool, error) {
+func canCreateNamespaces(namespaces []string, cluster string) (bool, error) {
 	wd, _ := os.Getwd()
 	for _, ns := range namespaces {
 		// make directory if it doesn't exist

@@ -159,7 +159,7 @@ func Test_applySkipExists(t *testing.T) {
 
 }
 
-func Test_canCreateNamespaceforDestroy(t *testing.T) {
+func Test_canCreateNamespaces(t *testing.T) {
 	repoPath := "namespaces/testCluster"
 	existingNamespace := "namespaces/testCluster/testNamespaceCantDestroy"
 
@@ -203,13 +203,13 @@ func Test_canCreateNamespaceforDestroy(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := canCreateNamespaceforDestroy(tt.args.namespaces, tt.args.cluster)
+			got, err := canCreateNamespaces(tt.args.namespaces, tt.args.cluster)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("canCreateNamespaceforDestroy() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("canCreateNamespaces() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("canCreateNamespaceforDestroy() = %v, want %v", got, tt.want)
+				t.Errorf("canCreateNamespaces() = %v, want %v", got, tt.want)
 			}
 		})
 	}
