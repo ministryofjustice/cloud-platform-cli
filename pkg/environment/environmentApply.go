@@ -177,10 +177,16 @@ func (a *Apply) Destroy() error {
 	}
 	if isMerged {
 		changedNamespaces, err := a.nsCreateRawChangedFilesInPR(a.Options.ClusterDir, a.Options.PRNumber)
-		fmt.Println("Namespaces changed in PR", changedNamespaces)
 		if err != nil {
 			return err
 		}
+		if len(changedNamespaces) == 0 {
+			fmt.Println("No namespaces to destroy")
+			return nil
+		}
+
+		fmt.Println("Namespaces removed in PR", changedNamespaces)
+
 		kubeClient, err := authenticate.CreateClientFromConfigFile(a.Options.KubecfgPath, a.Options.ClusterCtx)
 		if err != nil {
 			return err
@@ -514,9 +520,13 @@ func (a *Apply) nsCreateRawChangedFilesInPR(cluster string, prNumber int) ([]str
 		fmt.Println("No namespace found in the PR for destroy")
 		return nil, nil
 	}
-	err = createNamespaceforDestroy(namespaces, cluster)
+	canCreate, err := canCreateNamespaces(namespaces, cluster)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create namespace for destroy: %s", err)
+	}
+	if !canCreate {
+		fmt.Println("Cannot create namespace for destroy")
+		return nil, nil
 	}
 
 	// Get the contents of the CommitFile from RawURL
@@ -559,24 +569,25 @@ func nsChangedInPR(files []*gogithub.CommitFile, cluster string, isDeleted bool)
 	return util.DeduplicateList(namespaceNames), nil
 }
 
-func createNamespaceforDestroy(namespaces []string, cluster string) error {
+func canCreateNamespaces(namespaces []string, cluster string) (bool, error) {
 	wd, _ := os.Getwd()
 	for _, ns := range namespaces {
 		// make directory if it doesn't exist
 		if _, err := os.Stat(wd + "/namespaces/" + cluster + "/" + ns); err != nil {
 			err := os.Mkdir(wd+"/namespaces/"+cluster+"/"+ns, 0755)
 			if err != nil {
-				return fmt.Errorf("error creating namespaces directory: %s", err)
+				return false, fmt.Errorf("error creating namespaces directory: %s", err)
 			}
 			err = os.Mkdir(wd+"/namespaces/"+cluster+"/"+ns+"/resources", 0755)
 			if err != nil {
-				return fmt.Errorf("error creating resources directory: %s", err)
+				return false, fmt.Errorf("error creating resources directory: %s", err)
 			}
 		} else {
-			return fmt.Errorf("error creating directory, namespace exists in the environments repo: %s", err)
+			fmt.Printf("namespace %s exists in the environments repo, skipping destroy", ns)
+			return false, nil
 		}
 	}
-	return nil
+	return true, nil
 }
 
 func isProductionNs(nsInPR string, namespaces []v1.Namespace) bool {
