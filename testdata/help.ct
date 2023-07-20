@@ -13,6 +13,7 @@ Available Commands:
   environment   Cloud Platform Environment actions
   help          Help about any command
   kubecfg       Cloud Platform kubeconfig related commands
+  pipeline      Cloud Platform pipeline actions
   prototype     Cloud Platform Prototype actions
   terraform     Terraform actions.
 
