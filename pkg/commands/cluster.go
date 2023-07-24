@@ -15,6 +15,7 @@ import (
 	cloudPlatform "github.com/ministryofjustice/cloud-platform-cli/pkg/cluster"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/recycle"
 	terraform "github.com/ministryofjustice/cloud-platform-cli/pkg/terraform"
+	util "github.com/ministryofjustice/cloud-platform-cli/pkg/util"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/util/homedir"
@@ -32,6 +33,8 @@ var kubePath string
 // CreateOptions struct represents the options passed to the Create method
 // by the `cloud-platform create cluster` command.
 type clusterOptions struct {
+	util.Options
+
 	// Name is the name of the cluster you wish to create/amend.
 	Name string
 
@@ -179,7 +182,6 @@ func addDeleteClusterCmd(toplevel *cobra.Command) {
 		Run: func(cmd *cobra.Command, args []string) {
 			contextLogger := log.WithFields(log.Fields{"subcommand": "delete-cluster"})
 			err := opt.validateClusterOpts(cmd, date, minHour)
-
 			if err != nil {
 				contextLogger.Fatal(err)
 			}
@@ -268,7 +270,6 @@ func deleteCluster(cluster *cloudPlatform.Cluster, tf *terraform.TerraformCLICon
 }
 
 func (opt *clusterOptions) addDeleteClusterFlags(cmd *cobra.Command, auth *authOpts) {
-
 	cmd.Flags().StringVar(&opt.Auth0.ClientId, "auth0-client-id", os.Getenv("AUTH0_CLIENT_ID"), "[required] auth0 client id to use")
 	cmd.Flags().StringVar(&opt.Auth0.ClientSecret, "auth0-client-secret", "", "[required] auth0 client secret to use")
 	cmd.Flags().StringVar(&opt.Auth0.Domain, "auth0-domain", os.Getenv("AUTH0_DOMAIN"), "[required] auth0 domain to use")
@@ -344,7 +345,6 @@ func printOutTable(c cloudPlatform.Cluster) {
 }
 
 func (opt *clusterOptions) addCreateClusterFlags(cmd *cobra.Command, auth *authOpts) {
-
 	cmd.Flags().StringVar(&opt.Auth0.ClientId, "auth0-client-id", os.Getenv("AUTH0_CLIENT_ID"), "[required] auth0 client id to use")
 	cmd.Flags().StringVar(&opt.Auth0.ClientSecret, "auth0-client-secret", "", "[required] auth0 client secret to use")
 	cmd.Flags().StringVar(&opt.Auth0.Domain, "auth0-domain", os.Getenv("AUTH0_DOMAIN"), "[required] auth0 domain to use")
@@ -372,14 +372,6 @@ func (o *clusterOptions) validateClusterOpts(cmd *cobra.Command, date, minHour s
 		return err
 	}
 
-	if err := o.checkClusterName(date, minHour); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (o *clusterOptions) checkClusterName(date, minHour string) error {
 	if o.Name == "" {
 		name := fmt.Sprintf("cp-%s-%s", date, minHour)
 
@@ -387,13 +379,10 @@ func (o *clusterOptions) checkClusterName(date, minHour string) error {
 		o.VpcName = name
 	}
 
-	if len(o.Name) > o.MaxNameLength {
-		return errors.New("cluster name is too long, please use a shorter name")
+	if err := o.IsNameValid(); err != nil {
+		return err
 	}
 
-	if strings.Contains(o.Name, "live") || strings.Contains(o.Name, "manager") {
-		return errors.New("cluster name cannot contain the words 'live' or 'manager'")
-	}
 	return nil
 }
 

@@ -21,6 +21,7 @@ cloud-platform [flags]
 * [cloud-platform duplicate](cloud-platform_duplicate.md)	 - Cloud Platform duplicate resource
 * [cloud-platform environment](cloud-platform_environment.md)	 - Cloud Platform Environment actions
 * [cloud-platform kubecfg](cloud-platform_kubecfg.md)	 - Cloud Platform kubeconfig related commands
+* [cloud-platform pipeline](cloud-platform_pipeline.md)	 - Cloud Platform pipeline actions
 * [cloud-platform prototype](cloud-platform_prototype.md)	 - Cloud Platform Prototype actions
 * [cloud-platform terraform](cloud-platform_terraform.md)	 - Terraform actions.
 
