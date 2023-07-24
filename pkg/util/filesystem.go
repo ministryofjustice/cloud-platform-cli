@@ -4,7 +4,6 @@ package util
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 )
@@ -108,7 +107,7 @@ func IsFilePathExists(filePath string) (bool, error) {
 func IsYamlFileExists(path string) bool {
 	files, err := os.ReadDir(path)
 	if err != nil {
-		log.Fatal(err)
+		return false
 	}
 
 	for _, file := range files {

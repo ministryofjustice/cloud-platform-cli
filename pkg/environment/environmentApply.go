@@ -100,8 +100,10 @@ func (a *Apply) Plan() error {
 		if err != nil {
 			return fmt.Errorf("failed to fetch list of changed files: %s in PR %v", err, a.Options.PRNumber)
 		}
+
 		changedNamespaces, err := nsChangedInPR(files, a.Options.ClusterDir, false)
 		if err != nil {
+			fmt.Println("failed to get list of changed namespaces in PR:", err)
 			return err
 		}
 		for _, namespace := range changedNamespaces {
