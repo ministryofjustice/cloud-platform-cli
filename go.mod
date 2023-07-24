@@ -44,7 +44,7 @@ require (
 	github.com/ministryofjustice/cloud-platform-go-library v0.0.0-20220803122921-1ca1153b1730
 	github.com/rs/zerolog v1.29.1
 	github.com/shurcooL/githubv4 v0.0.0-20220922232305-70b4d362a8cb
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.4
 	golang.org/x/oauth2 v0.6.0
 	k8s.io/api v0.26.3
 	k8s.io/apimachinery v0.26.3
