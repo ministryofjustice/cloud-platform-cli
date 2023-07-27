@@ -125,3 +125,7 @@ See the existing commands for examples.
 
 [docker hub]: https://hub.docker.com/repository/docker/ministryofjustice/cloud-platform-cli
 [github ui]: https://github.com/ministryofjustice/cloud-platform-cli/releases
+
+### Update container Image in Cloud Platform Concourse pipelines
+
+The [Cloud Platform concourse pipeline](https://github.com/ministryofjustice/cloud-platform-terraform-concourse/tree/main/pipelines/manager/main) uses many of the cli commands such as deploying the [environments repo](https://github.com/ministryofjustice/cloud-platform-environments.git) to Cloud Platform kubernetes Cluster, checking divergence on cloud platform infrastructure, regular cluster create-test-destroy operations etc. Whenever the cli tool is released, a docker image is build an pushed to the docker hub using github workflow. Update the concourse pipeline with the latest cli image to ensure latest of cli binary runs on the pipeline.
