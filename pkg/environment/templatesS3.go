@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	s3TemplateFile = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-s3-bucket/main/example/s3.tf"
+	s3TemplateFile = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-s3-bucket/main/examples/s3.tf"
 	s3TfFile       = "resources/s3.tf"
 )
 
