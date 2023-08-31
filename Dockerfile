@@ -4,7 +4,7 @@ FROM golang:1.20.5-alpine AS cli_builder
 ENV \
     CGO_ENABLED=0 \
     GOOS=linux \
-    KUBECTL_VERSION=1.22.15 \
+    KUBECTL_VERSION=1.24.15 \
     CLOUD_PLATFORM_CLI_VERSION=DOCKER \
     TERRAFORM_VERSION=1.2.5
 
