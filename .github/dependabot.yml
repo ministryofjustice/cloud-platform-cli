@@ -13,6 +13,19 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    ignore:
+      - dependency-name: "k8s.io/kubectl"
+        versions:
+          - ">=v0.26.0"
+      - dependency-name: "k8s.io/client-go"
+        versions:
+          - ">=v0.26.0"
+      - dependency-name: "k8s.io/api"
+        versions:
+          - ">=v0.26.0"
+      - dependency-name: "k8s.io/apimachinery"
+        versions:
+          - ">=v0.26.0"
     groups:
       go:
         patterns:
