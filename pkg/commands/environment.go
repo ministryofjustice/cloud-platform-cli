@@ -15,8 +15,10 @@ import (
 )
 
 // variables specific to commands package used to store the values of flags of various environment sub commands
-var module, moduleVersion string
-var optFlags environment.Options
+var (
+	module, moduleVersion string
+	optFlags              environment.Options
+)
 
 // skipEnvCheck is a flag to skip the environments repository check.
 // This is useful for testing.
@@ -40,7 +42,6 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 		environmentPrototypeCmd,
 		environmentRdsCmd,
 		environmentS3Cmd,
-		environmentSvcCmd,
 	}
 
 	for _, cmd := range envSubCommands {
@@ -50,7 +51,6 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentEcrCmd.AddCommand(environmentEcrCreateCmd)
 	environmentRdsCmd.AddCommand(environmentRdsCreateCmd)
 	environmentS3Cmd.AddCommand(environmentS3CreateCmd)
-	environmentSvcCmd.AddCommand(environmentSvcCreateCmd)
 	environmentPrototypeCmd.AddCommand(environmentPrototypeCreateCmd)
 
 	// flags
@@ -100,7 +100,6 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentPlanCmd.Flags().StringVar(&optFlags.ClusterCtx, "cluster", "", "cluster context fron kubeconfig file")
 	environmentPlanCmd.Flags().StringVar(&optFlags.ClusterDir, "clusterdir", "", "folder name under namespaces/ inside cloud-platform-environments repo refering to full cluster name")
 	environmentPlanCmd.PersistentFlags().BoolVar(&optFlags.RedactedEnv, "redact", true, "Redact the terraform output before printing")
-
 }
 
 var environmentCmd = &cobra.Command{
@@ -313,31 +312,6 @@ var environmentS3CreateCmd = &cobra.Command{
 	Short:  `Create "resources/s3.tf" terraform file for a S3 bucket`,
 	PreRun: upgradeIfNotLatest,
 	RunE:   environment.CreateTemplateS3,
-}
-
-var environmentSvcCmd = &cobra.Command{
-	Use:   "serviceaccount",
-	Short: `Add a serviceaccount to a namespace`,
-	Example: heredoc.Doc(`
-	> cloud-platform environment serviceaccount
-	`),
-	PreRun: upgradeIfNotLatest,
-}
-
-var environmentSvcCreateCmd = &cobra.Command{
-	Use:   "create",
-	Short: `Creates a serviceaccount in your chosen namespace`,
-	Example: heredoc.Doc(`
-	> cloud-platform environment serviceaccount create
-	`),
-	PreRun: upgradeIfNotLatest,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := environment.CreateTemplateServiceAccount(); err != nil {
-			return err
-		}
-
-		return nil
-	},
 }
 
 var environmentPrototypeCmd = &cobra.Command{

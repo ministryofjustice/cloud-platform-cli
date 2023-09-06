@@ -46,7 +46,6 @@ func TestCreatePrototype(t *testing.T) {
 		dir + "resources/main.tf",
 		variablesTfFile,
 		ecrTfFile,
-		dir + "resources/serviceaccount.tf",
 		dir + "resources/basic-auth.tf",
 		dir + "resources/versions.tf",
 	}

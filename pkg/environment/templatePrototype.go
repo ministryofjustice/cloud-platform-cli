@@ -179,10 +179,6 @@ func createPrototypeFiles(p *Prototype) error {
 	if err != nil {
 		return err
 	}
-	err = CopyUrlToFile(prototypeTemplateUrl+"/serviceaccount.tf", nsdir+"/resources/serviceaccount.tf")
-	if err != nil {
-		return err
-	}
 	err = CopyUrlToFile(prototypeTemplateUrl+"/basic-auth.tf", nsdir+"/resources/basic-auth.tf")
 	if err != nil {
 		return err
