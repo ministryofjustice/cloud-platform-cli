@@ -37,7 +37,7 @@ require (
 	github.com/hashicorp/hc-install v0.6.0
 	github.com/hashicorp/terraform-exec v0.19.0
 	github.com/hashicorp/terraform-json v0.17.1
-	github.com/jedib0t/go-pretty/v6 v6.4.7
+	github.com/jedib0t/go-pretty/v6 v6.4.8
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/migueleliasweb/go-github-mock v0.0.20
 	github.com/ministryofjustice/cloud-platform-environments v1.2.1-0.20230712165212-61f4971d3baa
