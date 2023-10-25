@@ -28,13 +28,13 @@ var (
 // TerraformCLI is the client that wraps around terraform-exec
 // to execute Terraform cli commands
 type TerraformCLI struct {
-	tf          terraformExec
-	workingDir  string
-	workspace   string
-	applyVars   []tfexec.ApplyOption
-	destroyVars []tfexec.DestroyOption
-	planVars    []tfexec.PlanOption
-	initVars    []tfexec.InitOption
+	Tf          terraformExec
+	WorkingDir  string
+	Workspace   string
+	ApplyVars   []tfexec.ApplyOption
+	DestroyVars []tfexec.DestroyOption
+	PlanVars    []tfexec.PlanOption
+	InitVars    []tfexec.InitOption
 	Redacted    bool
 }
 
@@ -104,13 +104,13 @@ func NewTerraformCLI(config *TerraformCLIConfig) (*TerraformCLI, error) {
 	}
 
 	client := &TerraformCLI{
-		tf:          tf,
-		workingDir:  config.WorkingDir,
-		workspace:   config.Workspace,
-		applyVars:   config.ApplyVars,
-		destroyVars: config.DestroyVars,
-		planVars:    config.PlanVars,
-		initVars:    config.InitVars,
+		Tf:          tf,
+		WorkingDir:  config.WorkingDir,
+		Workspace:   config.Workspace,
+		ApplyVars:   config.ApplyVars,
+		DestroyVars: config.DestroyVars,
+		PlanVars:    config.PlanVars,
+		InitVars:    config.InitVars,
 		Redacted:    config.Redacted,
 	}
 
@@ -122,20 +122,20 @@ func NewTerraformCLI(config *TerraformCLIConfig) (*TerraformCLI, error) {
 func (t *TerraformCLI) Init(ctx context.Context, w io.Writer) error {
 	var wsCreated bool
 
-	t.tf.SetStdout(w)
-	t.tf.SetStderr(w)
+	t.Tf.SetStdout(w)
+	t.Tf.SetStderr(w)
 	// This is special handling for when the workspace has been detected in
 	// .terraform/environment with a non-existing state. This case is common
 	// when the state for the workspace has been deleted.
 	// https://github.com/hashicorp/terraform/issues/21393
 TF_INIT_AGAIN:
-	if err := t.tf.Init(ctx); err != nil {
+	if err := t.Tf.Init(ctx); err != nil {
 		matchedFailedToSelect := wsFailedToSelectRegexp.MatchString(err.Error())
 		matchedDoesNotExist := wsDoesNotExistRegexp.MatchString(err.Error())
 		if matchedFailedToSelect || matchedDoesNotExist {
 			fmt.Println("workspace was detected without state, " +
 				"creating new workspace and attempting Terraform init again")
-			if err := t.tf.WorkspaceNew(ctx, t.workspace); err != nil {
+			if err := t.Tf.WorkspaceNew(ctx, t.Workspace); err != nil {
 				return err
 			}
 
@@ -148,7 +148,7 @@ TF_INIT_AGAIN:
 	}
 
 	if !wsCreated {
-		if err := t.tf.WorkspaceNew(ctx, t.workspace); err != nil {
+		if err := t.Tf.WorkspaceNew(ctx, t.Workspace); err != nil {
 			matchedAlreadyExists := wsAlreadyExists.MatchString(err.Error())
 			if err != nil && !matchedAlreadyExists {
 				return err
@@ -156,7 +156,7 @@ TF_INIT_AGAIN:
 		}
 	}
 
-	if err := t.tf.WorkspaceSelect(ctx, t.workspace); err != nil {
+	if err := t.Tf.WorkspaceSelect(ctx, t.Workspace); err != nil {
 		return err
 	}
 
@@ -165,10 +165,10 @@ TF_INIT_AGAIN:
 
 // Apply executes the cli command `terraform apply` for a given workspace
 func (t *TerraformCLI) Apply(ctx context.Context, w io.Writer) error {
-	t.tf.SetStdout(w)
-	t.tf.SetStderr(w)
+	t.Tf.SetStdout(w)
+	t.Tf.SetStderr(w)
 
-	if err := t.tf.Apply(ctx, t.applyVars...); err != nil {
+	if err := t.Tf.Apply(ctx, t.ApplyVars...); err != nil {
 		return err
 	}
 
@@ -177,11 +177,11 @@ func (t *TerraformCLI) Apply(ctx context.Context, w io.Writer) error {
 
 // Destroy executes the cli command `terraform destroy` for a given workspace
 func (t *TerraformCLI) Destroy(ctx context.Context, w io.Writer) error {
-	t.tf.SetStdout(w)
-	t.tf.SetStderr(w)
+	t.Tf.SetStdout(w)
+	t.Tf.SetStderr(w)
 
-	if err := t.tf.Destroy(ctx, t.destroyVars...); err != nil {
-		return fmt.Errorf("failed to destroy component in %s: %w", t.workspace, err)
+	if err := t.Tf.Destroy(ctx, t.DestroyVars...); err != nil {
+		return fmt.Errorf("failed to destroy component in %s: %w", t.Workspace, err)
 	}
 
 	return nil
@@ -189,10 +189,10 @@ func (t *TerraformCLI) Destroy(ctx context.Context, w io.Writer) error {
 
 // Plan executes the cli command `terraform plan` for a given workspace
 func (t *TerraformCLI) Plan(ctx context.Context, w io.Writer) (bool, error) {
-	t.tf.SetStdout(w)
-	t.tf.SetStderr(w)
+	t.Tf.SetStdout(w)
+	t.Tf.SetStderr(w)
 
-	diff, err := t.tf.Plan(ctx, t.planVars...)
+	diff, err := t.Tf.Plan(ctx, t.PlanVars...)
 	if err != nil {
 		return false, err
 	}
@@ -203,13 +203,13 @@ func (t *TerraformCLI) Plan(ctx context.Context, w io.Writer) (bool, error) {
 // Plan executes the cli command `terraform plan` for a given workspace
 func (t *TerraformCLI) Output(ctx context.Context, w io.Writer) (map[string]tfexec.OutputMeta, error) {
 	// Often times, the output is not needed, so the caller can specify a null writer to ignore.
-	t.tf.SetStdout(w)
-	return t.tf.Output(ctx)
+	t.Tf.SetStdout(w)
+	return t.Tf.Output(ctx)
 }
 
 // Show reads the default state path and outputs the state
 func (t *TerraformCLI) Show(ctx context.Context, w io.Writer) (*tfjson.State, error) {
-	return t.tf.Show(ctx)
+	return t.Tf.Show(ctx)
 }
 
 // StateList loop over the state and builds a state list
@@ -228,11 +228,11 @@ func (t *TerraformCLI) StateList(state *tfjson.State) []string {
 }
 
 func (t *TerraformCLI) WorkspaceDelete(ctx context.Context, workspace string) error {
-	if err := t.tf.WorkspaceSelect(ctx, "default"); err != nil {
+	if err := t.Tf.WorkspaceSelect(ctx, "default"); err != nil {
 		return err
 	}
 
-	if err := t.tf.WorkspaceDelete(ctx, workspace); err != nil {
+	if err := t.Tf.WorkspaceDelete(ctx, workspace); err != nil {
 		return err
 	}
 
