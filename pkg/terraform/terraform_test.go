@@ -36,9 +36,9 @@ func NewTestTerraformCLI(config *TerraformCLIConfig, tfMock *mocks.TerraformExec
 	}
 
 	tfCli := &TerraformCLI{
-		tf:         tfMock,
-		workingDir: "test/working/dir",
-		workspace:  "test-workspace",
+		Tf:         tfMock,
+		WorkingDir: "test/working/dir",
+		Workspace:  "test-workspace",
 	}
 
 	if config == nil {
@@ -46,10 +46,10 @@ func NewTestTerraformCLI(config *TerraformCLIConfig, tfMock *mocks.TerraformExec
 	}
 
 	if config.WorkingDir != "" {
-		tfCli.workingDir = config.WorkingDir
+		tfCli.WorkingDir = config.WorkingDir
 	}
 	if config.Workspace != "" {
-		tfCli.workspace = config.Workspace
+		tfCli.Workspace = config.Workspace
 	}
 
 	return tfCli

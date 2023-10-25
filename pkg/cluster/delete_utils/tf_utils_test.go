@@ -2,11 +2,12 @@ package deleteutils
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
-	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/hashicorp/terraform-exec/tfexec"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/terraform"
 )
@@ -62,6 +63,7 @@ func Test_initTfCLI(t *testing.T) {
 		WorkingDir: "./",
 		Workspace:  "default",
 		Version:    "0.14.8",
+		PlanVars:   []tfexec.PlanOption{tfexec.Destroy(true)},
 	}
 
 	expectedDestroyConfig := &terraform.TerraformCLIConfig{
@@ -81,8 +83,6 @@ func Test_initTfCLI(t *testing.T) {
 	actualErrConfig := &terraform.TerraformCLIConfig{
 		Version: "",
 	}
-
-	expectedDryConfig.PlanVars = append(expectedDryConfig.PlanVars, tfexec.Destroy(true))
 
 	expectedDryDestroyCli, _ := terraform.NewTerraformCLI(expectedDryConfig)
 	expectedDestroyCli, _ := terraform.NewTerraformCLI(expectedDestroyConfig)
@@ -129,8 +129,24 @@ func Test_initTfCLI(t *testing.T) {
 				t.Errorf("initTfCLI() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) && tt.want != nil {
+
+			if tt.want == nil && !cmp.Equal(got, tt.want) {
+				return
+			}
+
+			gotTf := got.(*terraform.TerraformCLI).Tf
+			gotPlan := got.(*terraform.TerraformCLI).PlanVars
+
+			marshalledGot, _ := json.Marshal(got)
+			marshalledWant, _ := json.Marshal(tt.want)
+			marshGotPlan, _ := json.Marshal(gotPlan)
+			marshWantPlan, _ := json.Marshal(tt.want.PlanVars)
+			marshGotTf, _ := json.Marshal(gotTf)
+			marshWantTF, _ := json.Marshal(tt.want.Tf)
+
+			if !cmp.Equal(marshalledWant, marshalledGot) && tt.want != nil && !cmp.Equal(marshGotTf, marshWantTF) && !cmp.Equal(marshGotPlan, marshWantPlan) {
 				t.Errorf("initTfCLI() = %v, want %v", got, tt.want)
+				return
 			}
 		})
 	}

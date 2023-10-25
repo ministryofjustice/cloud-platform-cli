@@ -59,23 +59,31 @@ func (re *Repository) GetBranch() (string, error) {
 	return re.branch, nil
 }
 
-// Get the latest changes form the origin remove and merge into current branch
 // It is assumed the current working directory is a git repo so ensure you check before calling this method
 func GetLatestGitPull() error {
-	// git pull of the repo
-	cmd := exec.Command("git", "pull")
+	reset := exec.Command("git", "reset", "--hard", "origin/main")
+	pull := exec.Command("git", "pull")
 
 	var out bytes.Buffer
 	var stderr bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
+	reset.Stdout = &out
+	reset.Stderr = &stderr
+	pull.Stdout = &out
+	pull.Stderr = &stderr
 
-	err := cmd.Run()
+	fmt.Println("Executing git reset")
+	resetErr := reset.Run()
+	if resetErr != nil {
+		fmt.Println(fmt.Sprint(resetErr) + ": " + stderr.String())
+		return resetErr
+	}
+
+	fmt.Println("Executing git pull")
+	err := pull.Run()
 	if err != nil {
 		fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
 		return err
 	}
-	fmt.Println("Executing git pull")
 
 	return nil
 }
@@ -105,7 +113,6 @@ func Redacted(w io.Writer, output string, redact bool) {
 // contents of this block with the string REDACTED.
 
 func RedactedEnv(w io.Writer, output string, redact bool) {
-
 	// Regular expression to match elasticache auth_token: resource "random_id" "auth_token"
 	re := regexp2.MustCompile(`(?=.*resource\s+"random_id"\s+"auth_token").*$`, 0)
 
@@ -187,7 +194,6 @@ func GetGithubRawContents(rawUrl string) ([]byte, error) {
 	defer response.Body.Close()
 
 	data, err := io.ReadAll(response.Body)
-
 	if err != nil {
 		return nil, fmt.Errorf("GetRawContents: Read Data Error: %s", err)
 	}

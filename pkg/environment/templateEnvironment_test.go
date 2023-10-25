@@ -46,7 +46,7 @@ func TestCreateNamespaceWithAnswersFile(t *testing.T) {
 	}
 
 	stringsInFiles := map[string]string{
-		namespaceFile: "name: testNamespace",
+		namespaceFile: `name: "testNamespace"`,
 	}
 
 	for filename, searchString := range stringsInFiles {
