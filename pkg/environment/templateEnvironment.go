@@ -219,6 +219,10 @@ func downloadAndInitialiseTemplates(namespace string) ([]*templateFromUrl, error
 			url:  envTemplateLocation + "/" + "04-networkpolicy.yaml",
 		},
 		{
+			name: "bypass-psp-rbac.yaml",
+			url:  envTemplateLocation + "/" + "bypass-psp-rbac.yaml",
+		},
+		{
 			name: "resources/main.tf",
 			url:  envTemplateLocation + "/" + "resources/main.tf",
 		},
