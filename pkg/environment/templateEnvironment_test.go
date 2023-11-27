@@ -119,6 +119,7 @@ func TestCreateNamespace(t *testing.T) {
 		namespaceFile:   "cloud-platform.justice.gov.uk/owner: \"Some Team: some-team@digital.justice.gov.uk\"",
 		namespaceFile:   "cloud-platform.justice.gov.uk/source-code: \"https://github.com/ministryofjustice/somerepo\"",
 		namespaceFile:   "cloud-platform.justice.gov.uk/is-production: \"false\"",
+		namespaceFile:   "pod-security.kubernetes.io/enforce: restricted",
 		rbacFile:        "name: \"github:my-github-team\"",
 		variablesTfFile: "my-team-slack_channel",
 		variablesTfFile: "my-github-team",
