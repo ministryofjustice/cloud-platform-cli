@@ -22,6 +22,7 @@ type Options struct {
 	PRNumber                                                    int
 	AllNamespaces                                               bool
 	EnableApplySkip, RedactedEnv, SkipProdDestroy               bool
+	BatchApplyIndex, BatchApplySize                             int
 }
 
 // RequiredEnvVars is used to store values such as TF_VAR_ , github and pingdom tokens
@@ -221,8 +222,7 @@ func (a *Apply) Destroy() error {
 }
 
 // ApplyAll is the entry point for performing a namespace apply on all namespaces.
-// It checks if the working directory is in cloud-platform-environments, prepare the folder chunks based on the
-// numRoutines the apply has to run, then loop over the list of namespaces in each chunk and does the kubectl apply
+// It checks if the working directory is in cloud-platform-environments, get the list of namespace folders and perform kubectl apply
 // and terraform init and apply of the namespace
 func (a *Apply) ApplyAll() error {
 	re := RepoEnvironment{}
@@ -232,18 +232,46 @@ func (a *Apply) ApplyAll() error {
 	}
 
 	repoPath := "namespaces/" + a.Options.ClusterDir
-	folderChunks, err := util.GetFolderChunks(repoPath, numRoutines)
+	folders, err := util.ListFolderPaths(repoPath)
 	if err != nil {
 		return err
 	}
 
-	for i := 0; i < len(folderChunks); i++ {
-		err := a.applyNamespaceDirs(folderChunks[i])
-		if err != nil {
-			return err
-		}
+	// skip the root folder namespaces/cluster.cloud-platform.service.justice.gov.uk which is the first
+	// element of the slice. We dont want to apply from the root folder
+	var nsFolders []string
+	nsFolders = append(nsFolders, folders[1:]...)
 
+	err = a.applyNamespaceDirs(nsFolders)
+	if err != nil {
+		return err
 	}
+
+	return nil
+}
+
+// ApplyBatch is the entry point for performing a namespace apply on a batch of namespaces.
+// It checks if the working directory is in cloud-platform-environments, get the list of namespace folders based on the batch index and size
+// and perform kubectl apply and terraform init and apply of the namespace
+func (a *Apply) ApplyBatch() error {
+	re := RepoEnvironment{}
+	err := re.mustBeInCloudPlatformEnvironments()
+	if err != nil {
+		return err
+	}
+
+	repoPath := "namespaces/" + a.Options.ClusterDir
+	folderChunks, err := util.GetFolderChunks(repoPath, a.Options.BatchApplyIndex, a.Options.BatchApplySize)
+
+	if err != nil {
+		return err
+	}
+
+	err = a.applyNamespaceDirs(folderChunks)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

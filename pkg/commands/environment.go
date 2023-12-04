@@ -55,6 +55,8 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 
 	// flags
 	environmentApplyCmd.Flags().BoolVar(&optFlags.AllNamespaces, "all-namespaces", false, "Apply all namespaces with -all-namespaces")
+	environmentApplyCmd.Flags().IntVar(&optFlags.BatchApplyIndex, "batch-apply-index", 0, "Starting index for Apply to a batch of namespaces")
+	environmentApplyCmd.Flags().IntVar(&optFlags.BatchApplySize, "batch-apply-size", 10, "Number of namespaces to apply in a batch")
 	environmentApplyCmd.Flags().BoolVar(&optFlags.EnableApplySkip, "enable-apply-skip", false, "Enable skipping apply for a namespace")
 	environmentApplyCmd.Flags().StringVarP(&optFlags.Namespace, "namespace", "n", "", "Namespace which you want to perform the apply")
 	environmentApplyCmd.Flags().IntVar(&optFlags.PRNumber, "prNumber", 0, "Pull request ID or number to which you want to perform the apply")
@@ -218,6 +220,11 @@ var environmentApplyCmd = &cobra.Command{
 
 		if optFlags.AllNamespaces {
 			err := applier.ApplyAll()
+			if err != nil {
+				contextLogger.Fatal(err)
+			}
+		} else if optFlags.BatchApplyIndex > 0 && optFlags.BatchApplySize > 0 {
+			err := applier.ApplyBatch()
 			if err != nil {
 				contextLogger.Fatal(err)
 			}

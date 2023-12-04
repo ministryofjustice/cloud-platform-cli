@@ -3,6 +3,7 @@ package util_test
 import (
 	"log"
 	"os"
+	"strconv"
 	"testing"
 
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/util"
@@ -80,4 +81,36 @@ func TestIsYamlFileExists(t *testing.T) {
 		t.Errorf("Expected file %v not found", tempFile)
 	}
 	defer os.RemoveAll("namespaces")
+}
+
+func TestGetFolderChunks(t *testing.T) {
+	createTestFolderStructure(t)
+
+	defer os.RemoveAll("namespaces")
+
+	nsfolders, err := util.GetFolderChunks("namespaces", 3, 3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(nsfolders) != 3 {
+		t.Errorf("Expected 3 folders got %v", len(nsfolders))
+	}
+
+}
+func createTestFolderStructure(t *testing.T) {
+	// loop and create folders
+	for i := 0; i < 10; i++ {
+		tempDir := "namespaces/testCluster/testNamespace" + strconv.Itoa(i)
+		tempFile := tempDir + "/foo.yaml"
+
+		if err := os.MkdirAll(tempDir, os.ModePerm); err != nil {
+			t.Fatal(err)
+		}
+
+		_, err := os.Create(tempFile)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
 }
