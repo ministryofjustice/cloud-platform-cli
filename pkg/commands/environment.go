@@ -223,7 +223,7 @@ var environmentApplyCmd = &cobra.Command{
 			if err != nil {
 				contextLogger.Fatal(err)
 			}
-		} else if optFlags.BatchApplyIndex > 0 && optFlags.BatchApplySize > 0 {
+		} else if optFlags.BatchApplyIndex >= 0 && optFlags.BatchApplySize > 0 {
 			err := applier.ApplyBatch()
 			if err != nil {
 				contextLogger.Fatal(err)
