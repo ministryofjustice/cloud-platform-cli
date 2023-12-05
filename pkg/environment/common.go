@@ -12,7 +12,6 @@ const (
 	liveBaseDir          = "namespaces/live.cloud-platform.service.justice.gov.uk"
 	betaBaseDir          = "namespaces/live-2.cloud-platform.service.justice.gov.uk"
 	envTemplateLocation  = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template"
-	numRoutines          = 1
 	mojOwner             = "ministryofjustice"
 )
 

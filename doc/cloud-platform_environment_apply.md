@@ -38,16 +38,18 @@ $ cloud-platform environment apply -n <namespace>
 ### Options
 
 ```
-      --all-namespaces        Apply all namespaces with -all-namespaces
-      --cluster string        cluster context fron kubeconfig file
-      --clusterdir string     folder name under namespaces/ inside cloud-platform-environments repo refering to full cluster name
-      --enable-apply-skip     Enable skipping apply for a namespace
-      --github-token string   Personal access Token from Github 
-  -h, --help                  help for apply
-      --kubecfg string        path to kubeconfig file (default "/home/runner/.kube/config")
-  -n, --namespace string      Namespace which you want to perform the apply
-      --prNumber int          Pull request ID or number to which you want to perform the apply
-      --redact                Redact the terraform output before printing (default true)
+      --all-namespaces          Apply all namespaces with -all-namespaces
+      --batch-apply-index int   Starting index for Apply to a batch of namespaces
+      --batch-apply-size int    Number of namespaces to apply in a batch (default 10)
+      --cluster string          cluster context fron kubeconfig file
+      --clusterdir string       folder name under namespaces/ inside cloud-platform-environments repo refering to full cluster name
+      --enable-apply-skip       Enable skipping apply for a namespace
+      --github-token string     Personal access Token from Github 
+  -h, --help                    help for apply
+      --kubecfg string          path to kubeconfig file (default "/home/runner/.kube/config")
+  -n, --namespace string        Namespace which you want to perform the apply
+      --prNumber int            Pull request ID or number to which you want to perform the apply
+      --redact                  Redact the terraform output before printing (default true)
 ```
 
 ### Options inherited from parent commands

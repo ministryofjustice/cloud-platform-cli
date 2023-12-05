@@ -3,12 +3,11 @@ package util
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 )
 
-func GetFolderChunks(repoPath string, numRoutines int) ([][]string, error) {
+func GetFolderChunks(repoPath string, batchIndex int, batchSize int) ([]string, error) {
 	folders, err := ListFolderPaths(repoPath)
 	if err != nil {
 		return nil, err
@@ -19,11 +18,10 @@ func GetFolderChunks(repoPath string, numRoutines int) ([][]string, error) {
 	var nsFolders []string
 	nsFolders = append(nsFolders, folders[1:]...)
 
-	folderChunks, err := chunkFolders(nsFolders, numRoutines)
-	if err != nil {
-		return nil, err
+	if batchIndex < 0 || batchSize <= 0 || batchIndex+batchSize > len(nsFolders) {
+		return nil, errors.New("invalid index or size")
 	}
-	return folderChunks, nil
+	return nsFolders[batchIndex : batchIndex+batchSize], nil
 }
 
 // ListFolders take the path as input, list all the folders in the give path and
@@ -51,27 +49,6 @@ func ListFolderPaths(path string) ([]string, error) {
 	}
 
 	return folders, nil
-}
-
-func chunkFolders(folders []string, nRoutines int) ([][]string, error) {
-	nChunks := len(folders) / nRoutines
-
-	fmt.Println("Number of folders per chunk", nChunks)
-
-	var folderChunks [][]string
-	for {
-		if len(folders) == 0 {
-			break
-		}
-
-		if len(folders) < nChunks {
-			nChunks = len(folders)
-		}
-
-		folderChunks = append(folderChunks, folders[0:nChunks])
-		folders = folders[nChunks:]
-	}
-	return folderChunks, nil
 }
 
 func ListFiles(path string) ([]string, error) {

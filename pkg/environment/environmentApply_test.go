@@ -68,6 +68,61 @@ func TestApply_ApplyTerraform(t *testing.T) {
 	}
 }
 
+func TestApply_PlanKubectl(t *testing.T) {
+	type fields struct {
+		Options         *Options
+		RequiredEnvVars RequiredEnvVars
+		Applier         Applier
+		Dir             string
+	}
+	tests := []struct {
+		name              string
+		fields            fields
+		KubectlOutputs    string
+		checkExpectations func(t *testing.T, kubectl *mocks.Applier, outputs string, err error)
+	}{
+		{
+			name: "Apply foo namespace",
+			fields: fields{
+				Options: &Options{
+					Namespace:   "foobar",
+					KubecfgPath: "/root/.kube/config",
+					ClusterCtx:  "testctx",
+				},
+				RequiredEnvVars: RequiredEnvVars{
+					clustername:        "cluster01",
+					clusterstatebucket: "clusterstatebucket",
+					kubernetescluster:  "kubernetescluster01",
+					githubowner:        "githubowner",
+					githubtoken:        "githubtoken",
+					pingdomapitoken:    "pingdomApikey",
+				},
+				Dir: "/root/foo",
+			},
+			KubectlOutputs: "/root/foo",
+			checkExpectations: func(t *testing.T, apply *mocks.Applier, outputs string, err error) {
+				apply.AssertCalled(t, "KubectlApply", "foobar", "/root/foo", false)
+				assert.Nil(t, err)
+				assert.Len(t, outputs, 9)
+			},
+		},
+	}
+	for i := range tests {
+		kubectl := new(mocks.Applier)
+		kubectl.On("KubectlApply", "foobar", tests[i].fields.Dir, false).Return(tests[i].KubectlOutputs, nil)
+		a := Apply{
+			RequiredEnvVars: tests[i].fields.RequiredEnvVars,
+			Applier:         kubectl,
+			Dir:             tests[i].fields.Dir,
+			Options:         tests[i].fields.Options,
+		}
+		outputs, err := a.applyKubectl()
+		t.Run(tests[i].name, func(t *testing.T) {
+			tests[i].checkExpectations(t, kubectl, outputs, err)
+		})
+	}
+}
+
 func TestApply_ApplyKubectl(t *testing.T) {
 	type fields struct {
 		Options         *Options
