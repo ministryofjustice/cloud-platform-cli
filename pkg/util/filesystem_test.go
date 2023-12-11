@@ -133,6 +133,19 @@ func TestGetFolderChunks(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "Get 3 folders starting from index 9 of total 10 namespaces",
+			args: args{
+				repoPath:   "namespaces",
+				batchIndex: 9,
+				batchSize:  3,
+			},
+			want: []string{
+				"namespaces/testCluster/testNamespace8",
+				"namespaces/testCluster/testNamespace9",
+			},
+			wantErr: false,
+		},
+		{
 			name: "Get 3 folders starting from index 20",
 			args: args{
 				repoPath:   "namespaces",
