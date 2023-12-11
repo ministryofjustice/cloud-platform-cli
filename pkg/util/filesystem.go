@@ -19,7 +19,7 @@ func GetFolderChunks(repoPath string, batchIndex int, batchSize int) ([]string, 
 	nsFolders = append(nsFolders, folders[1:]...)
 
 	if batchIndex < 0 || batchSize <= 0 || batchIndex > len(nsFolders) {
-		return nil, errors.New("invalid batch-apply-index")
+		return nil, errors.New("invalid index or size")
 	}
 	// The number of namespaces cant be equally split and hence the last batch
 	// will have either the batchsize or the remaining of the namespaces

@@ -217,12 +217,14 @@ var environmentApplyCmd = &cobra.Command{
 			Options:      &optFlags,
 			GithubClient: github.NewGithubClient(ghConfig, optFlags.GithubToken),
 		}
-		// if -all-namespaces is provided, apply all namespaces
-		if optFlags.AllNamespaces {
-			err := applier.ApplyAll()
+
+		// if -namespace or a prNumber is provided, apply on given namespace
+		if optFlags.Namespace != "" || optFlags.PRNumber > 0 {
+			err := applier.Apply()
 			if err != nil {
 				contextLogger.Fatal(err)
 			}
+			return
 		}
 		// if -batch-apply-index and -batch-apply-size is provided, apply on given batch of namespaces
 		if optFlags.BatchApplyIndex >= 0 && optFlags.BatchApplySize > 0 {
@@ -230,14 +232,17 @@ var environmentApplyCmd = &cobra.Command{
 			if err != nil {
 				contextLogger.Fatal(err)
 			}
+			return
 		}
-		// if -namespace or a prNumber is provided, apply on given namespace
-		if optFlags.Namespace != "" || optFlags.PRNumber > 0 {
-			err := applier.Apply()
+		// if -all-namespaces is provided, apply all namespaces
+		if optFlags.AllNamespaces {
+			err := applier.ApplyAll()
 			if err != nil {
 				contextLogger.Fatal(err)
 			}
+			return
 		}
+
 	},
 }
 
