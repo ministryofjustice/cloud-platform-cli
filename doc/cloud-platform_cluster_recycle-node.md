@@ -21,6 +21,7 @@ $ cloud-platform cluster recycle-node
       --aws-region string       aws region to use (default "eu-west-2")
       --aws-secret-key string   aws secret to use
       --debug                   enable debug logging
+      --drain-only              just cordon and drain the nodes and don't bring up new ones
   -f, --force                   force the pods to drain (default true)
   -h, --help                    help for recycle-node
   -i, --ignore-label            whether to ignore the labels on the resource
