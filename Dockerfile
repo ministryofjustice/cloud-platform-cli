@@ -2,21 +2,21 @@
 FROM golang:1.21.3-alpine AS cli_builder
 
 ENV \
-    CGO_ENABLED=0 \
-    GOOS=linux \
-    KUBECTL_VERSION=1.24.15 \
-    CLOUD_PLATFORM_CLI_VERSION=DOCKER \
-    TERRAFORM_VERSION=1.2.5
+  CGO_ENABLED=0 \
+  GOOS=linux \
+  KUBECTL_VERSION=1.24.15 \
+  CLOUD_PLATFORM_CLI_VERSION=DOCKER \
+  TERRAFORM_VERSION=1.2.5
 
 WORKDIR /build
 
 RUN \
   apk add \
-    --no-cache \
-    --no-progress \
-    --update \
-    curl \
-    unzip
+  --no-cache \
+  --no-progress \
+  --update \
+  curl \
+  unzip
 
 # Build cli
 COPY go.mod .
@@ -51,31 +51,32 @@ RUN apk add --update --no-cache \
   git \
   gnupg \
   grep \
-  openssl
+  openssl \
+  parallel
 
 
 # AWS cli installation taken from https://github.com/aws/aws-cli/issues/4685#issuecomment-941927371
 RUN apk add --no-cache --virtual .dependencies binutils curl \
-    && curl -sL https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub -o /etc/apk/keys/sgerrand.rsa.pub \
-    && curl -sLO https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VER}/glibc-${GLIBC_VER}.apk \
-    && curl -sLO https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VER}/glibc-bin-${GLIBC_VER}.apk \
-    && curl -sLO https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VER}/glibc-i18n-${GLIBC_VER}.apk \
-    && apk add --force-overwrite --no-cache --virtual .glibc \
-        glibc-${GLIBC_VER}.apk \
-        glibc-bin-${GLIBC_VER}.apk \
-        glibc-i18n-${GLIBC_VER}.apk \
-    && /usr/glibc-compat/bin/localedef -i en_US -f UTF-8 en_US.UTF-8 \
-    && curl -sL https://awscli.amazonaws.com/awscli-exe-linux-x86_64-${AWSCLI_VERSION}.zip -o awscliv2.zip \
-    && unzip awscliv2.zip \
-    && aws/install \
-    && rm -rf \
-        awscliv2.zip \
-        aws \
-        /usr/local/aws-cli/v2/*/dist/aws_completer \
-        /usr/local/aws-cli/v2/*/dist/awscli/data/ac.index \
-        /usr/local/aws-cli/v2/*/dist/awscli/examples \
-        glibc-*.apk \
-    && apk del --purge .dependencies
+  && curl -sL https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub -o /etc/apk/keys/sgerrand.rsa.pub \
+  && curl -sLO https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VER}/glibc-${GLIBC_VER}.apk \
+  && curl -sLO https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VER}/glibc-bin-${GLIBC_VER}.apk \
+  && curl -sLO https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VER}/glibc-i18n-${GLIBC_VER}.apk \
+  && apk add --force-overwrite --no-cache --virtual .glibc \
+  glibc-${GLIBC_VER}.apk \
+  glibc-bin-${GLIBC_VER}.apk \
+  glibc-i18n-${GLIBC_VER}.apk \
+  && /usr/glibc-compat/bin/localedef -i en_US -f UTF-8 en_US.UTF-8 \
+  && curl -sL https://awscli.amazonaws.com/awscli-exe-linux-x86_64-${AWSCLI_VERSION}.zip -o awscliv2.zip \
+  && unzip awscliv2.zip \
+  && aws/install \
+  && rm -rf \
+  awscliv2.zip \
+  aws \
+  /usr/local/aws-cli/v2/*/dist/aws_completer \
+  /usr/local/aws-cli/v2/*/dist/awscli/data/ac.index \
+  /usr/local/aws-cli/v2/*/dist/awscli/examples \
+  glibc-*.apk \
+  && apk del --purge .dependencies
 
 COPY --from=cli_builder /build/cloud-platform /usr/local/bin/cloud-platform
 COPY --from=cli_builder /build/kubectl /usr/local/bin/kubectl
