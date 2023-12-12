@@ -31,6 +31,8 @@ type Options struct {
 	KubecfgPath string
 	// IgnoreLabel indicates that the node-cordon or node-drain labels should not be checked.
 	IgnoreLabel bool
+	// just cordon and drain the nodes and don't bring up new ones
+	DrainOnly bool
 
 	// AwsProfile is the AWS profile to use for resource termination.
 	AwsProfile string
@@ -113,6 +115,11 @@ func (r *Recycler) recycleNode() (err error) {
 	err = r.drainNode(drainHelper)
 	if err != nil {
 		return fmt.Errorf("unable to drain node: %s", err)
+	}
+
+	if r.Options.DrainOnly {
+		log.Info().Msgf("Running in DrainOnly mode, node: %s is cordoned and drained but not terminated", r.nodeToRecycle.Name)
+		return nil
 	}
 
 	log.Info().Msgf("Terminate node: %s", r.nodeToRecycle.Name)

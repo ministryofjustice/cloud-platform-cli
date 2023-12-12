@@ -467,6 +467,7 @@ func addClusterCmd(topLevel *cobra.Command) {
 	clusterRecycleNodeCmd.Flags().StringVar(&awsProfile, "aws-profile", os.Getenv("AWS_PROFILE"), "aws profile to use")
 	clusterRecycleNodeCmd.Flags().StringVar(&opt.AwsRegion, "aws-region", "eu-west-2", "aws region to use")
 	clusterRecycleNodeCmd.Flags().BoolVar(&opt.Debug, "debug", false, "enable debug logging")
+	clusterRecycleNodeCmd.Flags().BoolVar(&opt.DrainOnly, "drain-only", false, "just cordon and drain the nodes and don't bring up new ones")
 }
 
 var clusterCmd = &cobra.Command{
