@@ -56,7 +56,7 @@ func addPipelineCordonAndDrainClusterCmd(toplevel *cobra.Command) {
 			}
 
 			if cliOpt.NodeGroupName == "" {
-				contextLogger.Fatal("--node-group-to-drain is required")
+				contextLogger.Fatal("--node-group is required")
 			}
 
 			pipeline.CordonAndDrainPipelineShellCmds(cliOpt.Name, cliOpt.NodeGroupName)
