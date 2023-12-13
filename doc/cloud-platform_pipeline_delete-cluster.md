@@ -16,6 +16,9 @@ You must have the following environment variables set, or passed via arguments:
    ** You _must_ have the fly cli installed **
    --> https://concourse-ci.org/fly.html
 
+   ** You must also have wget installed **
+   --> brew install wget
+
 
 ```
 cloud-platform pipeline delete-cluster [flags]
