@@ -27,7 +27,7 @@ func DeletePipelineShellCmds(clusterName string) {
 }
 
 func CordonAndDrainPipelineShellCmds(clusterName, nodeGroup string) {
-	strCmd := fmt.Sprintf("wget -qO- https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-concourse/main/pipelines/manager/main/cordon-and-drain.yaml | fly -t manager set-pipeline --pipeline cordon-and-drain-nodes  --config - -v node_group_to_drain=%s -v cluster_name=%s", nodeGroup, clusterName)
+	strCmd := fmt.Sprintf("wget -qO- https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-concourse/main/pipelines/manager/main/cordon-and-drain-nodes.yaml | fly -t manager set-pipeline --pipeline cordon-and-drain-nodes  --config - -v node_group_to_drain=%s -v cluster_name=%s", nodeGroup, clusterName)
 
 	runCmd("fly", []string{"--target", "manager", "login", "--team-name", "main", "--concourse-url", "https://concourse.cloud-platform.service.justice.gov.uk/"})
 	runCmd("bash", []string{"-c", strCmd})
