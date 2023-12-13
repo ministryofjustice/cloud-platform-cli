@@ -17,5 +17,6 @@ Cloud Platform pipeline actions
 ### SEE ALSO
 
 * [cloud-platform](cloud-platform.md)	 - Multi-purpose CLI from the Cloud Platform team
+* [cloud-platform pipeline cordon-and-drain](cloud-platform_pipeline_cordon-and-drain.md)	 - cordon and drain a node group on a cluster
 * [cloud-platform pipeline delete-cluster](cloud-platform_pipeline_delete-cluster.md)	 - delete a cloud-platform cluster via the pipeline
 
