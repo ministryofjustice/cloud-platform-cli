@@ -4,6 +4,6 @@ type namespaceNameValidator struct{}
 
 func (v *namespaceNameValidator) isValid(s string) bool {
 	r := new(regexValidator)
-	r.regex = `^[a-z\-]+$`
+	r.regex = `^[a-z0-9\-]+$`
 	return r.isValid(s)
 }
