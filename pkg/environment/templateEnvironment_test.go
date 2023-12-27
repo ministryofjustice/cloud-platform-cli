@@ -72,14 +72,14 @@ func TestReadAnswersFile(t *testing.T) {
 
 func TestCreateNamespace(t *testing.T) {
 	ns := Namespace{
-		Namespace:             "foobar",
+		Namespace:             "foo2bar",
 		BusinessUnit:          "My Biz Unit",
 		Environment:           "envname",
 		Application:           "My App",
 		Owner:                 "Some Team",
 		InfrastructureSupport: "some-team@digital.justice.gov.uk",
 		SourceCode:            "https://github.com/ministryofjustice/somerepo",
-		GithubTeam:            "my-github-team",
+		GithubTeam:            "my-github-2-team",
 		SlackChannel:          "my-team-slack_channel",
 		IsProduction:          "false",
 	}
@@ -89,7 +89,7 @@ func TestCreateNamespace(t *testing.T) {
 		t.Errorf("Unexpected error: %s", err)
 	}
 
-	dir := namespaceBaseFolder + "/foobar/"
+	dir := namespaceBaseFolder + "/foo2bar/"
 	namespaceFile := dir + "00-namespace.yaml"
 	rbacFile := dir + "01-rbac.yaml"
 	variablesTfFile := dir + "resources/variables.tf"
@@ -112,7 +112,7 @@ func TestCreateNamespace(t *testing.T) {
 	}
 
 	stringsInFiles := map[string]string{
-		namespaceFile:   "name: foobar",
+		namespaceFile:   "name: foo2bar",
 		namespaceFile:   "cloud-platform.justice.gov.uk/business-unit: \"My Biz Unit\"",
 		namespaceFile:   "cloud-platform.justice.gov.uk/environment-name: \"envname\"",
 		namespaceFile:   "cloud-platform.justice.gov.uk/application: \"My App\"",
@@ -120,9 +120,9 @@ func TestCreateNamespace(t *testing.T) {
 		namespaceFile:   "cloud-platform.justice.gov.uk/source-code: \"https://github.com/ministryofjustice/somerepo\"",
 		namespaceFile:   "cloud-platform.justice.gov.uk/is-production: \"false\"",
 		namespaceFile:   "pod-security.kubernetes.io/enforce: restricted",
-		rbacFile:        "name: \"github:my-github-team\"",
+		rbacFile:        "name: \"github:my-github-2-team\"",
 		variablesTfFile: "my-team-slack_channel",
-		variablesTfFile: "my-github-team",
+		variablesTfFile: "my-github-2-team",
 	}
 
 	for filename, searchString := range stringsInFiles {
