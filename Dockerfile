@@ -52,7 +52,8 @@ RUN apk add --update --no-cache \
   gnupg \
   grep \
   openssl \
-  parallel
+  parallel \
+  python3 
 
 
 # AWS cli installation taken from https://github.com/aws/aws-cli/issues/4685#issuecomment-941927371
