@@ -17,7 +17,7 @@ require (
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.18.2
-	github.com/zclconf/go-cty v1.14.1
+	github.com/zclconf/go-cty v1.14.2
 	golang.org/x/crypto v0.18.0 // indirect
 	golang.org/x/mod v0.14.0
 	golang.org/x/net v0.20.0 // indirect
@@ -28,7 +28,7 @@ require (
 )
 
 require (
-	github.com/aws/aws-sdk-go v1.50.0
+	github.com/aws/aws-sdk-go v1.50.10
 	github.com/deckarep/golang-set/v2 v2.6.0
 	github.com/dlclark/regexp2 v1.10.0
 	github.com/google/go-cmdtest v0.4.0
@@ -37,12 +37,12 @@ require (
 	github.com/hashicorp/hc-install v0.6.2
 	github.com/hashicorp/terraform-exec v0.20.0
 	github.com/hashicorp/terraform-json v0.21.0
-	github.com/jedib0t/go-pretty/v6 v6.5.3
+	github.com/jedib0t/go-pretty/v6 v6.5.4
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/migueleliasweb/go-github-mock v0.0.22
 	github.com/ministryofjustice/cloud-platform-environments v1.2.1-0.20230712165212-61f4971d3baa
 	github.com/ministryofjustice/cloud-platform-go-library v0.0.0-20220803122921-1ca1153b1730
-	github.com/rs/zerolog v1.31.0
+	github.com/rs/zerolog v1.32.0
 	github.com/shurcooL/githubv4 v0.0.0-20220922232305-70b4d362a8cb
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/oauth2 v0.16.0
