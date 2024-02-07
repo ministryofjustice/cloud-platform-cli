@@ -36,7 +36,7 @@ RUN chmod +x kubectl terraform
 
 # ---
 
-FROM alpine:3.19.0
+FROM alpine:3.19.1
 
 ENV AWSCLI_VERSION=2.7.6
 ENV GLIBC_VER=2.31-r0
