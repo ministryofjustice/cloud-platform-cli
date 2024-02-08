@@ -18,7 +18,7 @@ type Applier interface {
 	Initialize()
 	KubectlApply(namespace, directory string, dryRun bool) (string, error)
 	KubectlDelete(namespace, directory string, dryRun bool) (string, error)
-	TerraformInitAndPlan(namespace string, directory string) (string, error)
+	TerraformInitAndPlan(namespace string, directory string, output bool) (string, error)
 	TerraformInitAndApply(namespace string, directory string) (string, error)
 	TerraformInitAndDestroy(namespace string, directory string) (string, error)
 	TerraformDestroy(directory string) error
@@ -114,7 +114,7 @@ func (m *ApplierImpl) TerraformInitAndApply(namespace, directory string) (string
 	return out.String(), nil
 }
 
-func (m *ApplierImpl) TerraformInitAndPlan(namespace, directory string) (string, error) {
+func (m *ApplierImpl) TerraformInitAndPlan(namespace, directory string, output bool) (string, error) {
 	var out bytes.Buffer
 	terraform, err := tfexec.NewTerraform(directory, m.terraformBinaryPath)
 	if err != nil {
@@ -146,12 +146,20 @@ func (m *ApplierImpl) TerraformInitAndPlan(namespace, directory string) (string,
 		return errReturn(out, err)
 	}
 
-	// ignore if any changes or no changes.
-	_, err = terraform.Plan(context.Background())
-	if err != nil {
+	if output {
+		planOpts := tfexec.Out("tfplan")
+		_, err = terraform.Plan(context.Background(), planOpts)
+		if err != nil {
+			return "", errors.New("unable to do Terraform Plan: " + err.Error())
+		}
+	} else if !output {
+		_, err = terraform.Plan(context.Background())
+		if err != nil {
+			return "", errors.New("unable to do Terraform Plan: " + err.Error())
+		}
+	} else {
 		return "", errors.New("unable to do Terraform Plan: " + err.Error())
 	}
-
 	return out.String(), nil
 }
 

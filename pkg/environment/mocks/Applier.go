@@ -125,22 +125,22 @@ func (_m *Applier) TerraformInitAndDestroy(namespace string, directory string) (
 }
 
 // TerraformInitAndPlan provides a mock function with given fields: namespace, directory
-func (_m *Applier) TerraformInitAndPlan(namespace string, directory string) (string, error) {
+func (_m *Applier) TerraformInitAndPlan(namespace string, directory string, output bool) (string, error) {
 	ret := _m.Called(namespace, directory)
 
 	var r0 string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string, string) (string, error)); ok {
-		return rf(namespace, directory)
+	if rf, ok := ret.Get(0).(func(string, string, bool) (string, error)); ok {
+		return rf(namespace, directory, output)
 	}
-	if rf, ok := ret.Get(0).(func(string, string) string); ok {
-		r0 = rf(namespace, directory)
+	if rf, ok := ret.Get(0).(func(string, string, bool) string); ok {
+		r0 = rf(namespace, directory, output)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(string, string) error); ok {
-		r1 = rf(namespace, directory)
+	if rf, ok := ret.Get(1).(func(string, string, bool) error); ok {
+		r1 = rf(namespace, directory, output)
 	} else {
 		r1 = ret.Error(1)
 	}

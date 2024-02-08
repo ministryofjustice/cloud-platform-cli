@@ -22,6 +22,7 @@ type Options struct {
 	PRNumber                                                    int
 	AllNamespaces                                               bool
 	EnableApplySkip, RedactedEnv, SkipProdDestroy               bool
+	Output                                                      bool
 	BatchApplyIndex, BatchApplySize                             int
 }
 
@@ -343,7 +344,7 @@ func (a *Apply) planTerraform() (string, error) {
 
 	tfFolder := a.Dir + "/resources"
 
-	outputTerraform, err := a.Applier.TerraformInitAndPlan(a.Options.Namespace, tfFolder)
+	outputTerraform, err := a.Applier.TerraformInitAndPlan(a.Options.Namespace, tfFolder, a.Options.Output)
 	if err != nil {
 		err := fmt.Errorf("error running terraform on namespace %s: %v \n %v", a.Options.Namespace, err, outputTerraform)
 		return "", err

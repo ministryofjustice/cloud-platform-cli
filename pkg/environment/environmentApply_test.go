@@ -54,7 +54,7 @@ func TestApply_ApplyTerraform(t *testing.T) {
 	for i := range tests {
 		terraform := new(mocks.Applier)
 		tfFolder := tests[i].fields.Dir + "/resources"
-		terraform.On("TerraformInitAndApply", tests[i].fields.Options.Namespace, tfFolder).Return(tests[i].TerraformOutputs, nil)
+		terraform.On("TerraformInitAndApply", tests[i].fields.Options.Namespace, tfFolder).Return(tests[i].TerraformOutputs, tests[i].fields.Options.Output, nil)
 		a := Apply{
 			RequiredEnvVars: tests[i].fields.RequiredEnvVars,
 			Applier:         terraform,
