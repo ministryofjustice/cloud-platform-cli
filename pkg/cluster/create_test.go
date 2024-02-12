@@ -1,7 +1,6 @@
 package cluster
 
 import (
-	"context"
 	"encoding/base64"
 	"errors"
 	"os"
@@ -12,10 +11,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/policy/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/fake"
 	"sigs.k8s.io/aws-iam-authenticator/pkg/token"
 )
 
@@ -197,32 +192,5 @@ func TestGetCluster(t *testing.T) {
 	_, err = getCluster("bad", mockSvc)
 	if err == nil {
 		t.Errorf("was expecting an error here. getCluster() error = %v", "expected error")
-	}
-}
-
-func TestApplyTacticalPspFix(t *testing.T) {
-	fakeClientset := fake.NewSimpleClientset(
-		&v1beta1.PodSecurityPolicy{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "eks.privileged",
-			},
-		},
-		// Add pods
-		&v1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "FakePod",
-			},
-		},
-	)
-
-	// Good path
-	err := applyTacticalPspFix(fakeClientset)
-	if err != nil {
-		t.Errorf("applyTacticalPspFix() error = %v", err)
-	}
-
-	err = fakeClientset.PolicyV1beta1().PodSecurityPolicies().Delete(context.Background(), "eks.privileged", metav1.DeleteOptions{})
-	if err == nil {
-		t.Errorf("we wanted to delete the eks.privileged psp. applyTacticalPspFix() error = %v", err)
 	}
 }

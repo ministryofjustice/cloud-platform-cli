@@ -16,8 +16,6 @@ import (
 	"github.com/hashicorp/terraform-exec/tfexec"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/terraform"
-	kubeErr "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -83,16 +81,14 @@ func (c *Cluster) ApplyComponents(tf *terraform.TerraformCLIConfig, awsCreds *cl
 		tf.ApplyVars = append(tf.ApplyVars, tfexec.Var(v))
 	}
 
-	clientset, err := AuthToCluster(tf.Workspace, awsCreds.Eks, kubeconf, awsCreds.Profile)
+	// Auth to the cluster and write the kubeconfig to disk.
+	_, err := AuthToCluster(tf.Workspace, awsCreds.Eks, kubeconf, awsCreds.Profile)
 	if err != nil {
 		return fmt.Errorf("failed to auth to cluster: %w", err)
 	}
 
 	tf.WorkingDir = dir
 
-	if err := applyTacticalPspFix(clientset); err != nil {
-		return err
-	}
 	_, err = terraformApply(tf)
 	if err != nil {
 		return err
@@ -255,38 +251,6 @@ func getVpc(name string, svc ec2iface.EC2API) (*ec2.DescribeVpcsOutput, error) {
 			},
 		},
 	})
-}
-
-// applyTacticalPspFix deletes the current eks.privileged psp in the cluster.
-// This allows the cluster to be created with a different psp. All pods are recycled
-// so the new psp will be applied.
-func applyTacticalPspFix(clientset kubernetes.Interface) error {
-	// Delete the eks.privileged psp
-	err := clientset.PolicyV1beta1().PodSecurityPolicies().Delete(context.TODO(), "eks.privileged", metav1.DeleteOptions{})
-	// if the psp doesn't exist, we don't need to do anything
-	if kubeErr.IsNotFound(err) {
-		fmt.Println("No eks.privileged psp found, skipping")
-		return nil
-	}
-	if err != nil {
-		return fmt.Errorf("failed to delete eks.privileged psp: %w", err)
-	}
-
-	// Get all pods in the cluster
-	pods, err := clientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		return fmt.Errorf("failed to list pods: %w", err)
-	}
-
-	// Delete all pods in the cluster
-	for _, pod := range pods.Items {
-		err = clientset.CoreV1().Pods(pod.Namespace).Delete(context.TODO(), pod.Name, metav1.DeleteOptions{})
-		if err != nil {
-			return fmt.Errorf("failed to delete pod: %w", err)
-		}
-	}
-
-	return nil
 }
 
 // checkCluster checks the cluster is created and exists.

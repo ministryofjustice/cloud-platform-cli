@@ -229,8 +229,3 @@ func CheckEc2InstanceTerminated(node v1.Node, awsCreds AwsCredentials) error {
 	}
 	return nil
 }
-
-// getClusterName returns the name of the cluster from a node
-func getClusterName(nodes []v1.Node) string {
-	return nodes[0].Labels["Cluster"]
-}
