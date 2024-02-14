@@ -19,3 +19,7 @@ commandTests:
     command: "cloud-platform"
     args: ["version", "--skip-version-check"]
     exitCode: 0
+  - name: "aws cli good command"
+    command: "aws"
+    args: ["--version"]
+    exitCode: 0
