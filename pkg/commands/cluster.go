@@ -289,6 +289,7 @@ func (opt *clusterOptions) addDeleteClusterFlags(cmd *cobra.Command, auth *authO
 // - create a new terraform Workspace
 // - create a new VPC
 // - create a new EKS cluster
+// - create the core components required for the cluster to function
 // - create the components required for the cluster to function
 // - create a new kubeconfig file for the cluster
 
@@ -299,7 +300,8 @@ func createCluster(cluster *cloudPlatform.Cluster, tf *terraform.TerraformCLICon
 	var (
 		vpcDir        = baseDir + "vpc/"
 		clusterDir    = vpcDir + "eks/"
-		componentsDir = clusterDir + "components/"
+		coreDir       = clusterDir + "core/"
+		componentsDir = coreDir + "components/"
 	)
 
 	fmt.Println("Creating vpc")
@@ -309,6 +311,11 @@ func createCluster(cluster *cloudPlatform.Cluster, tf *terraform.TerraformCLICon
 
 	fmt.Printf("Creating cluster %s in %s\n", cluster.Name, cluster.VpcId)
 	if err := cluster.ApplyEks(tf, awsCreds, clusterDir, opt.Fast); err != nil {
+		return err
+	}
+
+	fmt.Println("Creating core components")
+	if err := cluster.ApplyCore(tf, awsCreds, componentsDir, kubePath); err != nil {
 		return err
 	}
 
