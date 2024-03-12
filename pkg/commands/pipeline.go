@@ -13,6 +13,7 @@ type pipelineOptions struct {
 	Name          string
 	NodeGroupName string
 	MaxNameLength int8
+	BranchName    string
 }
 
 var cliOpt pipelineOptions
@@ -69,6 +70,7 @@ func addPipelineCordonAndDrainClusterCmd(toplevel *cobra.Command) {
 
 func (opt *pipelineOptions) addPipelineDeleteClusterFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&cliOpt.Name, "cluster-name", "", "cluster to delete")
+	cmd.Flags().StringVarP(&cliOpt.BranchName, "branch-name", "b", "main", "branch name to use for pipeline run (default: main)")
 }
 
 func addPipelineDeleteClusterCmd(toplevel *cobra.Command) {
@@ -84,6 +86,8 @@ func addPipelineDeleteClusterCmd(toplevel *cobra.Command) {
 
 			You must have the following environment variables set, or passed via arguments:
 				- a cluster name
+
+			Optionally you can pass a branch name to use for the pipeline run, default is "main"
 
       ** You _must_ have the fly cli installed **
       --> https://concourse-ci.org/fly.html
@@ -104,7 +108,7 @@ func addPipelineDeleteClusterCmd(toplevel *cobra.Command) {
 				contextLogger.Fatal(err)
 			}
 
-			pipeline.DeletePipelineShellCmds(cliOpt.Name)
+			pipeline.DeletePipelineShellCmds(cliOpt.Name, cliOpt.BranchName)
 		},
 	}
 
