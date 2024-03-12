@@ -35,8 +35,8 @@ type RequiredEnvVars struct {
 	kubernetescluster  string `required:"true" envconfig:"TF_VAR_kubernetes_cluster"`
 	githubowner        string `required:"true" envconfig:"TF_VAR_github_owner"`
 	githubtoken        string `required:"true" envconfig:"TF_VAR_github_token"`
-	slackBotToken      string `required:"false" envconfig:"SLACK_BOT_TOKEN"`
-	slackWebhookUrl    string `required:"false" envconfig:"SLACK_WEBHOOK_URL"`
+	slackBotToken      string `required:"true" envconfig:"SLACK_BOT_TOKEN"`
+	slackWebhookUrl    string `required:"true" envconfig:"SLACK_WEBHOOK_URL"`
 	pingdomapitoken    string `required:"true" envconfig:"PINGDOM_API_TOKEN"`
 }
 
@@ -87,6 +87,7 @@ func (a *Apply) Initialize() {
 	a.RequiredEnvVars.githubowner = reqEnvVars.githubowner
 	a.RequiredEnvVars.githubtoken = reqEnvVars.githubtoken
 	a.RequiredEnvVars.slackBotToken = reqEnvVars.slackBotToken
+	a.RequiredEnvVars.slackWebhookUrl = reqEnvVars.slackWebhookUrl
 	a.RequiredEnvVars.pingdomapitoken = reqEnvVars.pingdomapitoken
 	// Set KUBE_CONFIG_PATH to the path of the kubeconfig file
 	// This is needed for terraform to be able to connect to the cluster when a different kubecfg is passed
