@@ -54,6 +54,7 @@ RUN apt install \
   openssl \
   parallel \
   python3  \
+  jq \
   -y
 
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-${AWSCLI_VERSION}.zip" -o "awscliv2.zip"

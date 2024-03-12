@@ -41,6 +41,7 @@ $ cloud-platform environment apply -n <namespace>
       --all-namespaces          Apply all namespaces with -all-namespaces
       --batch-apply-index int   Starting index for Apply to a batch of namespaces
       --batch-apply-size int    Number of namespaces to apply in a batch
+      --build-url string        The concourse apply build url
       --cluster string          cluster context fron kubeconfig file
       --clusterdir string       folder name under namespaces/ inside cloud-platform-environments repo refering to full cluster name
       --enable-apply-skip       Enable skipping apply for a namespace

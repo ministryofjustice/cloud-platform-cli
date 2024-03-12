@@ -9,6 +9,7 @@ import (
 	gogithub "github.com/google/go-github/github"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/github"
+	"github.com/ministryofjustice/cloud-platform-cli/pkg/slack"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/util"
 	"github.com/ministryofjustice/cloud-platform-environments/pkg/authenticate"
 	"github.com/ministryofjustice/cloud-platform-environments/pkg/namespace"
@@ -20,6 +21,7 @@ import (
 type Options struct {
 	Namespace, KubecfgPath, ClusterCtx, ClusterDir, GithubToken string
 	PRNumber                                                    int
+	BuildUrl                                                    string
 	AllNamespaces                                               bool
 	EnableApplySkip, RedactedEnv, SkipProdDestroy               bool
 	BatchApplyIndex, BatchApplySize                             int
@@ -33,6 +35,8 @@ type RequiredEnvVars struct {
 	kubernetescluster  string `required:"true" envconfig:"TF_VAR_kubernetes_cluster"`
 	githubowner        string `required:"true" envconfig:"TF_VAR_github_owner"`
 	githubtoken        string `required:"true" envconfig:"TF_VAR_github_token"`
+	slackBotToken      string `required:"false" envconfig:"SLACK_BOT_TOKEN"`
+	slackWebhookUrl    string `required:"false" envconfig:"SLACK_WEBHOOK_URL"`
 	pingdomapitoken    string `required:"true" envconfig:"PINGDOM_API_TOKEN"`
 }
 
@@ -43,6 +47,18 @@ type Apply struct {
 	Applier         Applier
 	Dir             string
 	GithubClient    github.GithubIface
+}
+
+func notifyUserApplyFailed(prNumberInt int, slackToken, webhookUrl, buildUrl string) {
+	if prNumberInt > 0 && strings.Contains(buildUrl, "http") {
+		prNumber := fmt.Sprintf("%d", prNumberInt)
+
+		slackErr := slack.Notify(prNumber, slackToken, webhookUrl, buildUrl)
+
+		if slackErr != nil {
+			fmt.Printf("Warning: Error notifying user of build error %v\n", slackErr)
+		}
+	}
 }
 
 // NewApply creates a new Apply object and populates its fields with values from options(which are flags),
@@ -70,6 +86,7 @@ func (a *Apply) Initialize() {
 	a.RequiredEnvVars.kubernetescluster = reqEnvVars.kubernetescluster
 	a.RequiredEnvVars.githubowner = reqEnvVars.githubowner
 	a.RequiredEnvVars.githubtoken = reqEnvVars.githubtoken
+	a.RequiredEnvVars.slackBotToken = reqEnvVars.slackBotToken
 	a.RequiredEnvVars.pingdomapitoken = reqEnvVars.pingdomapitoken
 	// Set KUBE_CONFIG_PATH to the path of the kubeconfig file
 	// This is needed for terraform to be able to connect to the cluster when a different kubecfg is passed
@@ -84,7 +101,6 @@ func (a *Apply) Initialize() {
 // else checks for PR number and get the list of changed namespaces in the PR. Then does the `kubectl apply --dry-run=client` and
 // terraform init and plan of all the namespaces changed in the PR
 func (a *Apply) Plan() error {
-
 	if a.Options.PRNumber == 0 && a.Options.Namespace == "" {
 		return fmt.Errorf("either a PR Id/Number or a namespace is required to perform plan")
 	}
@@ -262,7 +278,6 @@ func (a *Apply) ApplyBatch() error {
 
 	repoPath := "namespaces/" + a.Options.ClusterDir
 	folderChunks, err := util.GetFolderChunks(repoPath, a.Options.BatchApplyIndex, a.Options.BatchApplySize)
-
 	if err != nil {
 		return err
 	}
@@ -365,7 +380,7 @@ func (a *Apply) applyTerraform() (string, error) {
 	return outputTerraform, nil
 }
 
-// applyTerraform calls applier -> TerraformInitAndDestroy and prints the output from applier
+// destroyTerraform calls applier -> TerraformInitAndDestroy and prints the output from applier
 func (a *Apply) destroyTerraform() (string, error) {
 	log.Printf("Running Terraform Destroy for namespace: %v", a.Options.Namespace)
 
@@ -467,6 +482,8 @@ func (a *Apply) applyNamespace() error {
 	if util.IsYamlFileExists(repoPath) {
 		outputKubectl, err := applier.applyKubectl()
 		if err != nil {
+			notifyUserApplyFailed(a.Options.PRNumber, a.RequiredEnvVars.slackBotToken, a.RequiredEnvVars.slackWebhookUrl, a.Options.BuildUrl)
+
 			return err
 		}
 
@@ -484,9 +501,9 @@ func (a *Apply) applyNamespace() error {
 	if err == nil && exists {
 		outputTerraform, err := applier.applyTerraform()
 		if err != nil {
+			notifyUserApplyFailed(a.Options.PRNumber, a.RequiredEnvVars.slackBotToken, a.RequiredEnvVars.slackWebhookUrl, a.Options.BuildUrl)
 			return err
 		}
-
 		fmt.Println("\nOutput of terraform:")
 		util.RedactedEnv(os.Stdout, outputTerraform, a.Options.RedactedEnv)
 	} else {
@@ -573,7 +590,6 @@ func (a *Apply) nsCreateRawChangedFilesInPR(cluster string, prNumber int) ([]str
 		}
 	}
 	return namespaces, nil
-
 }
 
 // nsChangedInPR get the list of changed files for a given PR. checks if the namespaces exists in the given cluster
@@ -590,7 +606,7 @@ func nsChangedInPR(files []*gogithub.CommitFile, cluster string, isDeleted bool)
 		// namespaces filepaths are assumed to come in
 		// the format: namespaces/<cluster>.cloud-platform.service.justice.gov.uk/<namespaceName>
 		s := strings.Split(*file.Filename, "/")
-		//only get namespaces from the folder that belong to the given cluster and
+		// only get namespaces from the folder that belong to the given cluster and
 		// ignore changes outside namespace directories
 		if len(s) > 1 && s[1] == cluster {
 			namespaceNames = append(namespaceNames, s[2])

@@ -15,8 +15,10 @@ import (
 )
 
 // variables specific to commands package used to store the values of flags of various environment sub commands
-var module, moduleVersion string
-var optFlags environment.Options
+var (
+	module, moduleVersion string
+	optFlags              environment.Options
+)
 
 // skipEnvCheck is a flag to skip the environments repository check.
 // This is useful for testing.
@@ -66,6 +68,7 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentApplyCmd.Flags().StringVar(&optFlags.ClusterCtx, "cluster", "", "cluster context fron kubeconfig file")
 	environmentApplyCmd.Flags().StringVar(&optFlags.ClusterDir, "clusterdir", "", "folder name under namespaces/ inside cloud-platform-environments repo refering to full cluster name")
 	environmentApplyCmd.PersistentFlags().BoolVar(&optFlags.RedactedEnv, "redact", true, "Redact the terraform output before printing")
+	environmentApplyCmd.Flags().StringVar(&optFlags.BuildUrl, "build-url", "", "The concourse apply build url")
 
 	environmentBumpModuleCmd.Flags().StringVarP(&module, "module", "m", "", "Module to upgrade the version")
 	environmentBumpModuleCmd.Flags().StringVarP(&moduleVersion, "module-version", "v", "", "Semantic version to bump a module to")
@@ -92,7 +95,7 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 		log.Fatal(err)
 	}
 
-	// e.g. if this is the Pull rquest to perform the apply: https://github.com/ministryofjustice/cloud-platform-environments/pull/8370, the pr ID is 8370.
+	// e.g. if this is the Pull request to perform the apply: https://github.com/ministryofjustice/cloud-platform-environments/pull/8370, the pr ID is 8370.
 	environmentPlanCmd.Flags().IntVar(&optFlags.PRNumber, "prNumber", 0, "Pull request ID or number to which you want to perform the plan")
 	environmentPlanCmd.Flags().StringVarP(&optFlags.Namespace, "namespace", "n", "", "Namespace which you want to perform the plan")
 
@@ -102,7 +105,6 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentPlanCmd.Flags().StringVar(&optFlags.ClusterCtx, "cluster", "", "cluster context fron kubeconfig file")
 	environmentPlanCmd.Flags().StringVar(&optFlags.ClusterDir, "clusterdir", "", "folder name under namespaces/ inside cloud-platform-environments repo refering to full cluster name")
 	environmentPlanCmd.PersistentFlags().BoolVar(&optFlags.RedactedEnv, "redact", true, "Redact the terraform output before printing")
-
 }
 
 var environmentCmd = &cobra.Command{
@@ -242,7 +244,6 @@ var environmentApplyCmd = &cobra.Command{
 			}
 			return
 		}
-
 	},
 }
 
