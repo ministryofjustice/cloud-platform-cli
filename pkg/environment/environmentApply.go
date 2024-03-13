@@ -35,8 +35,8 @@ type RequiredEnvVars struct {
 	kubernetescluster  string `required:"true" envconfig:"TF_VAR_kubernetes_cluster"`
 	githubowner        string `required:"true" envconfig:"TF_VAR_github_owner"`
 	githubtoken        string `required:"true" envconfig:"TF_VAR_github_token"`
-	slackBotToken      string `required:"true" envconfig:"SLACK_BOT_TOKEN"`
-	slackWebhookUrl    string `required:"true" envconfig:"SLACK_WEBHOOK_URL"`
+	SlackBotToken      string `required:"false" envconfig:"SLACK_BOT_TOKEN"`
+	SlackWebhookUrl    string `required:"false" envconfig:"SLACK_WEBHOOK_URL"`
 	pingdomapitoken    string `required:"true" envconfig:"PINGDOM_API_TOKEN"`
 }
 
@@ -86,9 +86,10 @@ func (a *Apply) Initialize() {
 	a.RequiredEnvVars.kubernetescluster = reqEnvVars.kubernetescluster
 	a.RequiredEnvVars.githubowner = reqEnvVars.githubowner
 	a.RequiredEnvVars.githubtoken = reqEnvVars.githubtoken
-	a.RequiredEnvVars.slackBotToken = reqEnvVars.slackBotToken
-	a.RequiredEnvVars.slackWebhookUrl = reqEnvVars.slackWebhookUrl
+	a.RequiredEnvVars.SlackBotToken = reqEnvVars.SlackBotToken
+	a.RequiredEnvVars.SlackWebhookUrl = reqEnvVars.SlackWebhookUrl
 	a.RequiredEnvVars.pingdomapitoken = reqEnvVars.pingdomapitoken
+
 	// Set KUBE_CONFIG_PATH to the path of the kubeconfig file
 	// This is needed for terraform to be able to connect to the cluster when a different kubecfg is passed
 	if err := os.Setenv("KUBE_CONFIG_PATH", a.Options.KubecfgPath); err != nil {
@@ -147,6 +148,7 @@ func (a *Apply) Apply() error {
 	}
 	// If a namespace is given as a flag, then perform a apply for the given namespace.
 	if a.Options.Namespace != "" {
+
 		err := a.applyNamespace()
 		if err != nil {
 			return err
@@ -483,8 +485,7 @@ func (a *Apply) applyNamespace() error {
 	if util.IsYamlFileExists(repoPath) {
 		outputKubectl, err := applier.applyKubectl()
 		if err != nil {
-			notifyUserApplyFailed(a.Options.PRNumber, a.RequiredEnvVars.slackBotToken, a.RequiredEnvVars.slackWebhookUrl, a.Options.BuildUrl)
-
+			notifyUserApplyFailed(a.Options.PRNumber, applier.RequiredEnvVars.SlackBotToken, applier.RequiredEnvVars.SlackWebhookUrl, a.Options.BuildUrl)
 			return err
 		}
 
@@ -502,7 +503,7 @@ func (a *Apply) applyNamespace() error {
 	if err == nil && exists {
 		outputTerraform, err := applier.applyTerraform()
 		if err != nil {
-			notifyUserApplyFailed(a.Options.PRNumber, a.RequiredEnvVars.slackBotToken, a.RequiredEnvVars.slackWebhookUrl, a.Options.BuildUrl)
+			notifyUserApplyFailed(a.Options.PRNumber, applier.RequiredEnvVars.SlackBotToken, applier.RequiredEnvVars.SlackWebhookUrl, a.Options.BuildUrl)
 			return err
 		}
 		fmt.Println("\nOutput of terraform:")
