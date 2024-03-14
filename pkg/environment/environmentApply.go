@@ -25,6 +25,7 @@ type Options struct {
 	AllNamespaces                                               bool
 	EnableApplySkip, RedactedEnv, SkipProdDestroy               bool
 	BatchApplyIndex, BatchApplySize                             int
+	OnlySkipFileChanged                                         bool
 }
 
 // RequiredEnvVars is used to store values such as TF_VAR_ , github and pingdom tokens
@@ -160,6 +161,13 @@ func (a *Apply) Apply() error {
 		}
 		if isMerged {
 			repos, err := a.GithubClient.GetChangedFiles(a.Options.PRNumber)
+
+			a.Options.OnlySkipFileChanged = false
+
+			if len(repos) == 1 {
+				a.Options.OnlySkipFileChanged = strings.Contains(*repos[0].Filename, "APPLY_PIPELINE_SKIP_THIS_NAMESPACE")
+			}
+
 			if err != nil {
 				return err
 			}
@@ -485,7 +493,9 @@ func (a *Apply) applyNamespace() error {
 	if util.IsYamlFileExists(repoPath) {
 		outputKubectl, err := applier.applyKubectl()
 		if err != nil {
-			notifyUserApplyFailed(a.Options.PRNumber, applier.RequiredEnvVars.SlackBotToken, applier.RequiredEnvVars.SlackWebhookUrl, a.Options.BuildUrl)
+			if !a.Options.OnlySkipFileChanged {
+				notifyUserApplyFailed(a.Options.PRNumber, applier.RequiredEnvVars.SlackBotToken, applier.RequiredEnvVars.SlackWebhookUrl, a.Options.BuildUrl)
+			}
 			return err
 		}
 
@@ -503,7 +513,9 @@ func (a *Apply) applyNamespace() error {
 	if err == nil && exists {
 		outputTerraform, err := applier.applyTerraform()
 		if err != nil {
-			notifyUserApplyFailed(a.Options.PRNumber, applier.RequiredEnvVars.SlackBotToken, applier.RequiredEnvVars.SlackWebhookUrl, a.Options.BuildUrl)
+			if !a.Options.OnlySkipFileChanged {
+				notifyUserApplyFailed(a.Options.PRNumber, applier.RequiredEnvVars.SlackBotToken, applier.RequiredEnvVars.SlackWebhookUrl, a.Options.BuildUrl)
+			}
 			return err
 		}
 		fmt.Println("\nOutput of terraform:")
