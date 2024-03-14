@@ -2,11 +2,6 @@ name: Build and push a new adhoc release
 
 on:
   workflow_dispatch:
-    inputs:
-      build_branch:
-        description: "Branch to build from"
-        required: true
-        default: "main"
 
 permissions:
   contents: write
@@ -18,8 +13,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.events.inputs.build_branch }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -33,17 +26,18 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # - name: Get Tags for Image
-      #   id: metadata
-      #   uses: docker/metadata-action@v5
-      #   with:
-      #     images: ministryofjustice/cloud-platform-cli
-      #     tags: |
-      #       type=ref,event=tag
+      - name: Get Tags for Image
+        id: metadata
+        uses: docker/metadata-action@v5
+        with:
+          images: ministryofjustice/cloud-platform-cli
+          tags: |
+            type=ref,event=branch
+
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ github.events.inputs.build_branch }}
-          build-args: CLOUD_PLATFORM_CLI_VERSION=${{ github.events.inputs.build_branch }}
+          tags: ${{ steps.metadata.outputs.tags }}
+          build-args: CLOUD_PLATFORM_CLI_VERSION=${{ steps.metadata.outputs.tags }}
