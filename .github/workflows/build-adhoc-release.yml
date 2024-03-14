@@ -38,6 +38,6 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: false
+          push: true
           tags: ${{ steps.metadata.outputs.tags }}
           build-args: CLOUD_PLATFORM_CLI_VERSION=${{ steps.metadata.outputs.tags }}
