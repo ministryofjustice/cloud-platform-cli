@@ -485,7 +485,9 @@ func (a *Apply) applyNamespace() error {
 	if util.IsYamlFileExists(repoPath) {
 		outputKubectl, err := applier.applyKubectl()
 		if err != nil {
-			notifyUserApplyFailed(a.Options.PRNumber, applier.RequiredEnvVars.SlackBotToken, applier.RequiredEnvVars.SlackWebhookUrl, a.Options.BuildUrl)
+			if !applySkipExists(repoPath) {
+				notifyUserApplyFailed(a.Options.PRNumber, applier.RequiredEnvVars.SlackBotToken, applier.RequiredEnvVars.SlackWebhookUrl, a.Options.BuildUrl)
+			}
 			return err
 		}
 
@@ -503,7 +505,9 @@ func (a *Apply) applyNamespace() error {
 	if err == nil && exists {
 		outputTerraform, err := applier.applyTerraform()
 		if err != nil {
-			notifyUserApplyFailed(a.Options.PRNumber, applier.RequiredEnvVars.SlackBotToken, applier.RequiredEnvVars.SlackWebhookUrl, a.Options.BuildUrl)
+			if !applySkipExists(repoPath) {
+				notifyUserApplyFailed(a.Options.PRNumber, applier.RequiredEnvVars.SlackBotToken, applier.RequiredEnvVars.SlackWebhookUrl, a.Options.BuildUrl)
+			}
 			return err
 		}
 		fmt.Println("\nOutput of terraform:")
