@@ -2,11 +2,6 @@ name: Build and push a new adhoc release
 
 on:
   workflow_dispatch:
-    inputs:
-      build_branch:
-        description: "Branch to build from"
-        required: true
-        default: "main"
 
 permissions:
   contents: write
@@ -18,8 +13,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.inputs.build_branch }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
