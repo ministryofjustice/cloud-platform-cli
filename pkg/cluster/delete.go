@@ -32,7 +32,7 @@ var EKS_SYSTEM_NAMESPACES = []string{
 // DestroyComponents will destroy the Cloud Platform specific components on top of a running cluster. At this point your
 // cluster should be up and running and you should be able to connect to it.
 func (c *Cluster) DestroyComponents(tf *terraform.TerraformCLIConfig, awsCreds *client.AwsCredentials, dir, kubeconf string, dryRun bool) error {
-	// Reset any previous varibles that might've been set.
+	// Reset any previous variables that might've been set.
 	tf.DestroyVars = nil
 	tf.WorkingDir = dir
 
@@ -52,6 +52,20 @@ func (c *Cluster) DestroyComponents(tf *terraform.TerraformCLIConfig, awsCreds *
 	}
 
 	err = deleteutils.TerraformDestroyLayer(tf, dryRun)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DestroyCore will destroy the Cloud Platform specific core components on top of a running cluster.
+func (c *Cluster) DestroyCore(tf *terraform.TerraformCLIConfig, awsCreds *client.AwsCredentials, dir, kubeconf string, dryRun bool) error {
+	// Reset any previous variables that might've been set.
+	tf.DestroyVars = nil
+	tf.WorkingDir = dir
+
+	err := deleteutils.TerraformDestroyLayer(tf, dryRun)
 	if err != nil {
 		return err
 	}
