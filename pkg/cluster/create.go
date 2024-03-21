@@ -66,10 +66,46 @@ func (c *Cluster) ApplyEks(tf *terraform.TerraformCLIConfig, creds *client.AwsCr
 	return nil
 }
 
+// ApplyCore will apply the Cloud Platform specific core components on top of a running cluster.
+func (c *Cluster) ApplyCore(tf *terraform.TerraformCLIConfig, awsCreds *client.AwsCredentials, dir, kubeconf string) error {
+	// Reset any previous variables that might've been set.
+	tf.ApplyVars = nil
+
+	// Auth to the cluster and write the kubeconfig to disk.
+	_, err := AuthToCluster(tf.Workspace, awsCreds.Eks, kubeconf, awsCreds.Profile)
+	if err != nil {
+		return fmt.Errorf("failed to auth to cluster: %w", err)
+	}
+
+	tf.WorkingDir = dir
+
+	_, err = terraformApply(tf)
+	if err != nil {
+		return err
+	}
+
+	kube, err := client.NewKubeClient(kubeconf)
+	if err != nil {
+		return err
+	}
+
+	nodes, err := GetAllNodes(kube)
+	if err != nil {
+		return err
+	}
+	c.Nodes = nodes
+
+	if err := c.GetStuckPods(kube); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // ApplyComponents will apply the Cloud Platform specific components on top of a running cluster. At this point your
 // cluster should be up and running and you should be able to connect to it.
 func (c *Cluster) ApplyComponents(tf *terraform.TerraformCLIConfig, awsCreds *client.AwsCredentials, dir, kubeconf string) error {
-	// Reset any previous varibles that might've been set.
+	// Reset any previous variables that might've been set.
 	tf.ApplyVars = nil
 
 	// Turn the monitoring options off.

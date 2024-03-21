@@ -64,6 +64,9 @@ type clusterOptions struct {
 	// Option to destroy the cluster components or skip it if needed
 	DestroyComponents bool
 
+	// Option to destroy the cluster core or skip it if needed
+	DestroyCore bool
+
 	// Option to destroy the cluster or skip it if needed
 	DestroyCluster bool
 
@@ -231,7 +234,8 @@ func deleteCluster(cluster *cloudPlatform.Cluster, tf *terraform.TerraformCLICon
 	var (
 		vpcDir               = baseDir + "vpc/"
 		clusterDir           = vpcDir + "eks/"
-		componentsDir        = clusterDir + "components/"
+		coreDir              = clusterDir + "core/"
+		componentsDir        = coreDir + "components/"
 		tfWorkspacesToDelete = []string{}
 	)
 
@@ -239,6 +243,14 @@ func deleteCluster(cluster *cloudPlatform.Cluster, tf *terraform.TerraformCLICon
 		tfWorkspacesToDelete = append(tfWorkspacesToDelete, componentsDir)
 		fmt.Printf("Destroying components in %s cluster\n", cluster.Name)
 		if err := cluster.DestroyComponents(tf, awsCreds, componentsDir, kubePath, opt.DestroyDryRun); err != nil {
+			return err
+		}
+	}
+
+	if opt.DestroyCore {
+		tfWorkspacesToDelete = append(tfWorkspacesToDelete, coreDir)
+		fmt.Printf("Destroying core in %s cluster\n", cluster.Name)
+		if err := cluster.DestroyCore(tf, awsCreds, componentsDir, kubePath, opt.DestroyDryRun); err != nil {
 			return err
 		}
 	}
@@ -289,7 +301,8 @@ func (opt *clusterOptions) addDeleteClusterFlags(cmd *cobra.Command, auth *authO
 // - create a new terraform Workspace
 // - create a new VPC
 // - create a new EKS cluster
-// - create the components required for the cluster to function
+// - create a new core components
+// - create the optional components
 // - create a new kubeconfig file for the cluster
 
 // It will return an error if at any stage terraform fails or the cluster isn't recognised.
@@ -299,20 +312,26 @@ func createCluster(cluster *cloudPlatform.Cluster, tf *terraform.TerraformCLICon
 	var (
 		vpcDir        = baseDir + "vpc/"
 		clusterDir    = vpcDir + "eks/"
-		componentsDir = clusterDir + "components/"
+		coreDir       = clusterDir + "core/"
+		componentsDir = coreDir + "components/"
 	)
 
-	fmt.Println("Creating vpc")
+	fmt.Println("Creating vpc...")
 	if err := cluster.ApplyVpc(tf, awsCreds, vpcDir); err != nil {
 		return err
 	}
 
-	fmt.Printf("Creating cluster %s in %s\n", cluster.Name, cluster.VpcId)
+	fmt.Printf("Creating cluster %s in %s...\n", cluster.Name, cluster.VpcId)
 	if err := cluster.ApplyEks(tf, awsCreds, clusterDir, opt.Fast); err != nil {
 		return err
 	}
 
-	fmt.Println("Creating components")
+	fmt.Println("Creating core components...")
+	if err := cluster.ApplyCore(tf, awsCreds, coreDir, kubePath); err != nil {
+		return err
+	}
+
+	fmt.Println("Creating components...")
 	if err := cluster.ApplyComponents(tf, awsCreds, componentsDir, kubePath); err != nil {
 		return err
 	}
