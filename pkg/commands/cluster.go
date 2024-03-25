@@ -250,7 +250,7 @@ func deleteCluster(cluster *cloudPlatform.Cluster, tf *terraform.TerraformCLICon
 	if opt.DestroyCore {
 		tfWorkspacesToDelete = append(tfWorkspacesToDelete, coreDir)
 		fmt.Printf("Destroying core in %s cluster\n", cluster.Name)
-		if err := cluster.DestroyCore(tf, awsCreds, componentsDir, kubePath, opt.DestroyDryRun); err != nil {
+		if err := cluster.DestroyCore(tf, awsCreds, coreDir, kubePath, opt.DestroyDryRun); err != nil {
 			return err
 		}
 	}
