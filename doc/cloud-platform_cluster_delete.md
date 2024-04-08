@@ -31,6 +31,7 @@ cloud-platform cluster delete [flags]
       --auth0-domain string          [required] auth0 domain to use
       --destroy-cluster              [optional] if true, will destroy the eks cluster (default true)
       --destroy-components           [optional] if true, will destroy the cluster components (default true)
+      --destroy-core                 [optional] if true, will destroy the cluster core layer (default true)
       --destroy-vpc                  [optional] if true, will destroy the vpc (default true)
       --dry-run                      [optional] if false, the cluster will be destroyed otherwise no changes will be made to the cluster (default true)
   -h, --help                         help for delete
