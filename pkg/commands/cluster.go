@@ -290,6 +290,7 @@ func (opt *clusterOptions) addDeleteClusterFlags(cmd *cobra.Command, auth *authO
 	cmd.Flags().StringVar(&kubePath, "kubecfg", filepath.Join(homedir.HomeDir(), ".kube", "config"), "[optional] path to kubeconfig file")
 	cmd.Flags().BoolVar(&opt.DestroyDryRun, "dry-run", true, "[optional] if false, the cluster will be destroyed otherwise no changes will be made to the cluster")
 	cmd.Flags().BoolVar(&opt.DestroyComponents, "destroy-components", true, "[optional] if true, will destroy the cluster components")
+	cmd.Flags().BoolVar(&opt.DestroyCore, "destroy-core", true, "[optional] if true, will destroy the cluster core layer")
 	cmd.Flags().BoolVar(&opt.DestroyCluster, "destroy-cluster", true, "[optional] if true, will destroy the eks cluster")
 	cmd.Flags().BoolVar(&opt.DestroyVpc, "destroy-vpc", true, "[optional] if true, will destroy the vpc")
 
