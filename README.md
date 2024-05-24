@@ -1,5 +1,6 @@
 # Cloud Platform Tool CLI
 
+
 [![Releases](https://img.shields.io/github/release/ministryofjustice/cloud-platform-cli/all.svg?style=flat-square)](https://github.com/ministryofjustice/cloud-platform-cli/releases)
 [![codecov](https://codecov.io/gh/ministryofjustice/cloud-platform-cli/branch/main/graph/badge.svg?token=BUF45279MY)](https://codecov.io/gh/ministryofjustice/cloud-platform-cli)
 
