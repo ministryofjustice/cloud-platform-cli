@@ -7,7 +7,7 @@ on:
 
 jobs:
   add-to-project:
-    name: Add issue to project
+    name: Add dependabot PRs to project
     runs-on: ubuntu-latest
     steps:
       - name: Get Token
