@@ -10,10 +10,17 @@ jobs:
     name: Add issue to project
     runs-on: ubuntu-latest
     steps:
+      - name: Get Token
+        id: get_workflow_token
+        uses: peter-murray/workflow-application-token-action@v3
+        with:
+          application_id: ${{ secrets.GITHUB_APP_ID }}
+          application_private_key: ${{ secrets.GITHUB_APP_PRIVATE_KEY }}
+          organization: ministryofjustice
       - uses: actions/add-to-project@v1.0.1
         with:
           # You can target a project in a different organization
           # to the issue
           project-url: https://github.com/orgs/ministryofjustice/projects/65
-          github-token: ${{ secrets.ADD_TO_PROJECT_TOKEN }}
+          github-token: ${{ steps.get_workflow_token.outputs.token }}
           labeled: dependencies
