@@ -1,0 +1,19 @@
+name: Add dependencies to Cloud Platform project
+
+on:
+  pull_request:
+    types:
+      - opened
+
+jobs:
+  add-to-project:
+    name: Add issue to project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/add-to-project@v1.0.1
+        with:
+          # You can target a project in a different organization
+          # to the issue
+          project-url: https://github.com/orgs/ministryofjustice/projects/65
+          github-token: ${{ secrets.ADD_TO_PROJECT_TOKEN }}
+          labeled: dependencies
