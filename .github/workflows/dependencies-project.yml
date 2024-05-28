@@ -41,39 +41,39 @@ jobs:
           GH_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
           MAX_REPO: 50
         run: |
-          pr_urls=$(gh search prs --owner dependabot label:dependencies --state open --json 'url' | jq -c '[.[].url]')
+          pr_urls=$(gh search prs --owner dependabot label:dependencies --state open --json 'url' --repo 'cloud-platform-cli'| jq -c '[.[].url]')
           echo "pr_urls=${pr_urls}" >> $GITHUB_OUTPUT
           echo "pr_urls=${pr_urls}"
 
-  process_prs:
-    name: Process PR
-    runs-on: ubuntu-latest
-    needs: get_prs
-    strategy:
-      fail-fast: false
-      matrix:
-        url: ${{fromJSON(needs.get_prs.outputs.urls)}}
+  # process_prs:
+  #   name: Process PR
+  #   runs-on: ubuntu-latest
+  #   needs: get_prs
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       url: ${{fromJSON(needs.get_prs.outputs.urls)}}
 
-    steps:
-      - name: Get Token
-        id: get_workflow_token
-        uses: peter-murray/workflow-application-token-action@v3
-        with:
-          application_id: ${{ secrets.APPLICATION_ID }}
-          application_private_key: ${{ secrets.APPLICATION_PRIVATE_KEY }}
-          organization: ministryofjustice
+  #   steps:
+  #     - name: Get Token
+  #       id: get_workflow_token
+  #       uses: peter-murray/workflow-application-token-action@v3
+  #       with:
+  #         application_id: ${{ secrets.APPLICATION_ID }}
+  #         application_private_key: ${{ secrets.APPLICATION_PRIVATE_KEY }}
+  #         organization: ministryofjustice
 
-      - name: Check if PR is in project
-        id: in_project
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
-        run: |
-          gh pr view ${{ matrix.url }}  --json 'projectItems' | jq -r '.projectItems[0].title' | grep 'Cloud Platform'
+  #     - name: Check if PR is in project
+  #       id: in_project
+  #       continue-on-error: true
+  #       env:
+  #         GH_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
+  #       run: |
+  #         gh pr view ${{ matrix.url }}  --json 'projectItems' | jq -r '.projectItems[0].title' | grep 'Cloud Platform'
 
-      - name: Add PR to project
-        if: steps.in_project.outcome == 'failure'
-        env:
-          GH_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
-        run: |
-          gh pr edit ${{ matrix.url }} --add-project 'Cloud Platform'
+  #     - name: Add PR to project
+  #       if: steps.in_project.outcome == 'failure'
+  #       env:
+  #         GH_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
+  #       run: |
+  #         gh pr edit ${{ matrix.url }} --add-project 'Cloud Platform'
