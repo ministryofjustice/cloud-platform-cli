@@ -69,11 +69,11 @@ jobs:
         env:
           GH_TOKEN: $${{ steps.get_workflow_token.outputs.token }}
         run: |
-          gh pr view ${{ matrix.url }}  --json 'projectItems' | jq -r '.projectItems[0].title' | grep Neurobagel
+          gh pr view ${{ matrix.url }}  --json 'projectItems' | jq -r '.projectItems[0].title' | grep 'Cloud Platform'
 
       - name: Add PR to project
         if: steps.in_project.outcome == 'failure'
         env:
           GH_TOKEN: $${{ steps.get_workflow_token.outputs.token }}
         run: |
-          gh pr edit ${{ matrix.url }} --add-project Neurobagel
+          gh pr edit ${{ matrix.url }} --add-project 'Cloud Platform'
