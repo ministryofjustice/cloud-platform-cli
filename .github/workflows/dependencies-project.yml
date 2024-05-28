@@ -41,7 +41,7 @@ jobs:
           GH_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
           MAX_REPO: 50
         run: |
-          pr_urls=$(gh search prs --owner dependabot label:dependencies --state open --json 'url' --repo 'cloud-platform-cli'| jq -c '[.[].url]')
+          pr_urls=$(gh search prs --owner dependabot label:dependencies --state open --json 'url' --repo 'ministryofjustice/cloud-platform-cli'| jq -c '[.[].url]')
           echo "pr_urls=${pr_urls}" >> $GITHUB_OUTPUT
           echo "pr_urls=${pr_urls}"
 
