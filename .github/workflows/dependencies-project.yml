@@ -2,13 +2,31 @@ name: Add dependencies to Cloud Platform project
 
 on:
   workflow_dispatch:
-  pull_request:
-    types: [opened, edited, reopened, synchronize]
+  # pull_request:
+  #   types: [opened, edited, reopened, synchronize]
 
 jobs:
-  add-to-project:
-    name: Add dependabot PRs to project
+  # add-to-project:
+  #   name: Add dependabot PRs to project
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Get Token
+  #       id: get_workflow_token
+  #       uses: peter-murray/workflow-application-token-action@v3
+  #       with:
+  #         application_id: ${{ secrets.APPLICATION_ID }}
+  #         application_private_key: ${{ secrets.APPLICATION_PRIVATE_KEY }}
+  #         organization: ministryofjustice
+  #     - uses: actions/add-to-project@v1.0.1
+  #       with:
+  #         project-url: https://github.com/orgs/ministryofjustice/projects/65
+  #         github-token: ${{ steps.get_workflow_token.outputs.token }}
+  #         labeled: dependencies
+  get_prs:
+    name: Get all PRs with the bot label
     runs-on: ubuntu-latest
+    outputs:
+      urls: ${{ steps.get_pr.outputs.pr_urls }}
     steps:
       - name: Get Token
         id: get_workflow_token
@@ -17,8 +35,12 @@ jobs:
           application_id: ${{ secrets.APPLICATION_ID }}
           application_private_key: ${{ secrets.APPLICATION_PRIVATE_KEY }}
           organization: ministryofjustice
-      - uses: actions/add-to-project@v1.0.1
-        with:
-          project-url: https://github.com/orgs/ministryofjustice/projects/65
-          github-token: ${{ steps.get_workflow_token.outputs.token }}
-          labeled: dependencies
+      - name: Get current repositories
+        id: get_pr
+        env:
+          GH_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
+          MAX_REPO: 50
+        run: |
+          pr_urls=$(gh search prs --owner dependabot label:dependencies --state open --json 'url' | jq -c '[.[].url]')
+          echo "pr_urls=${pr_urls}" >> $GITHUB_OUTPUT
+          echo "pr_urls=${pr_urls}"
