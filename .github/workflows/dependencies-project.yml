@@ -7,4 +7,4 @@ on:
 
 jobs:
   add-dependabot-to-projcet:
-    uses: ministryofjustice/cloud-platform-github-workflows/.github/worfkflows/dependencies-project.yml
+    uses: ministryofjustice/cloud-platform-github-workflows/.github/worfkflows/dependencies-project.yml@main
