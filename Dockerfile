@@ -1,5 +1,5 @@
 # Build Cloud Platform tools (CLI)
-FROM golang:1.21.7-bookworm AS cli_builder
+FROM golang:1.22.5-bookworm AS cli_builder
 
 ENV \
   CGO_ENABLED=0 \
