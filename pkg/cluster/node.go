@@ -90,15 +90,6 @@ func GetAllNodes(c *client.KubeClient) ([]v1.Node, error) {
 	return n, nil
 }
 
-func getOldestNode(c *client.KubeClient) (v1.Node, error) {
-	nodes, err := GetAllNodes(c)
-	if err != nil {
-		return v1.Node{}, err
-	}
-
-	return oldestNode(nodes)
-}
-
 func oldestNode(nodes []v1.Node) (v1.Node, error) {
 	oldestNode := nodes[0]
 	for _, node := range nodes {
