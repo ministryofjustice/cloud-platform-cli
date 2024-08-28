@@ -525,7 +525,7 @@ var clusterRecycleNodeCmd = &cobra.Command{
 			Options: &opt,
 		}
 
-		recycle.Cluster, err = cloudPlatform.NewCluster(recycle.Client)
+		recycle.Cluster, err = cloudPlatform.NewCluster(recycle.Client, opt.Oldest)
 		if err != nil {
 			contextLogger.Fatal(err)
 		}
