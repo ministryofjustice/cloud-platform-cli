@@ -62,7 +62,7 @@ func NewCluster(c *client.KubeClient) (*Cluster, error) {
 		return nil, err
 	}
 
-	oldestNode, err := getOldestNode(c)
+	oldestNode, err := oldestNode(nodes)
 	if err != nil {
 		return nil, err
 	}
