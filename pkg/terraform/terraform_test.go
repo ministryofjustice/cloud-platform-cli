@@ -84,7 +84,7 @@ func TestNewTerraformCLI(t *testing.T) {
 				ExecPath:   "path/to/tf",
 				WorkingDir: "",
 				Workspace:  "default",
-				Version:    "0.14.8",
+				Version:    "1.2.5",
 			},
 		},
 		{
@@ -94,7 +94,7 @@ func TestNewTerraformCLI(t *testing.T) {
 				ExecPath:   "path/to/tf",
 				WorkingDir: "./",
 				Workspace:  "my-workspace",
-				Version:    "0.14.8",
+				Version:    "1.2.5",
 			},
 		},
 		{
@@ -104,7 +104,7 @@ func TestNewTerraformCLI(t *testing.T) {
 				ExecPath:   "",
 				WorkingDir: "./",
 				Workspace:  "my-workspace",
-				Version:    "0.14.8",
+				Version:    "1.2.5",
 			},
 		},
 	}
