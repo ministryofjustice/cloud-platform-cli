@@ -15,6 +15,7 @@ var _ GithubPullRequestsService = (*github.PullRequestsService)(nil)
 type GithubPullRequestsService interface {
 	ListFiles(ctx context.Context, owner string, repo string, number int, opt *github.ListOptions) ([]*github.CommitFile, *github.Response, error)
 	IsMerged(ctx context.Context, owner string, repo string, number int) (bool, *github.Response, error)
+	Create(ctx context.Context, owner string, repo string, pr *github.NewPullRequest) (*github.PullRequest, *github.Response, error)
 }
 
 // GithubClient for handling requests to the Github V3 and V4 APIs.
@@ -43,7 +44,6 @@ type Nodes struct {
 
 // NewGithubClient ...
 func NewGithubClient(config *GithubClientConfig, token string) *GithubClient {
-
 	client := oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: token},
 	))
@@ -63,7 +63,6 @@ func NewGithubClient(config *GithubClientConfig, token string) *GithubClient {
 // ListMergedPRs takes date and number of PRs count as input, search the github using Graphql api for
 // list of PRs (title,url) between the first and last date provided
 func (gh *GithubClient) ListMergedPRs(date util.Date, count int) ([]Nodes, error) {
-
 	var query struct {
 		Search struct {
 			Nodes []Nodes
@@ -106,4 +105,22 @@ func (gh *GithubClient) IsMerged(prNumber int) (bool, error) {
 	}
 
 	return merged, nil
+}
+
+func (gh *GithubClient) CreatePR(branchName, namespace, description string) (string, error) {
+	newPR := &github.NewPullRequest{
+		Title:               github.String("Fix: rds version mismatch in " + namespace),
+		Head:                github.String("ministryofjustice:" + branchName),
+		Base:                github.String("main"),
+		Body:                github.String(description),
+		MaintainerCanModify: github.Bool(true),
+	}
+
+	pr, _, err := gh.PullRequests.Create(context.TODO(), "ministryofjustice", "cloud-platform-environments", newPR)
+	if err != nil {
+		return "", err
+	}
+
+	fmt.Printf("PR created: %s\n", pr.GetHTMLURL())
+	return pr.GetHTMLURL(), nil
 }

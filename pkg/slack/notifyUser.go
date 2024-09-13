@@ -24,3 +24,12 @@ func Notify(prNumber, token, webhookUrl, buildUrl string) error {
 
 	return post(user, ts, webhookUrl, buildUrl)
 }
+
+func PostToAsk(prUrl, webhookUrl string) error {
+	webhookMsg := slack.WebhookMessage{
+		Channel: "ask-cloud-platform",
+		Text:    "PR for review please: " + prUrl,
+	}
+
+	return slack.PostWebhook(webhookUrl, &webhookMsg)
+}

@@ -65,10 +65,11 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	// Re-use the environmental variable TF_VAR_github_token to call Github Client which is needed to perform terraform operations on each namespace
 	environmentApplyCmd.Flags().StringVar(&optFlags.GithubToken, "github-token", os.Getenv("TF_VAR_github_token"), "Personal access Token from Github ")
 	environmentApplyCmd.Flags().StringVar(&optFlags.KubecfgPath, "kubecfg", filepath.Join(homedir.HomeDir(), ".kube", "config"), "path to kubeconfig file")
-	environmentApplyCmd.Flags().StringVar(&optFlags.ClusterCtx, "cluster", "", "cluster context fron kubeconfig file")
-	environmentApplyCmd.Flags().StringVar(&optFlags.ClusterDir, "clusterdir", "", "folder name under namespaces/ inside cloud-platform-environments repo refering to full cluster name")
+	environmentApplyCmd.Flags().StringVar(&optFlags.ClusterCtx, "cluster", "", "cluster context from kubeconfig file")
+	environmentApplyCmd.Flags().StringVar(&optFlags.ClusterDir, "clusterdir", "", "folder name under namespaces/ inside cloud-platform-environments repo referring to full cluster name")
 	environmentApplyCmd.PersistentFlags().BoolVar(&optFlags.RedactedEnv, "redact", true, "Redact the terraform output before printing")
 	environmentApplyCmd.Flags().StringVar(&optFlags.BuildUrl, "build-url", "", "The concourse apply build url")
+	environmentApplyCmd.Flags().BoolVar(&optFlags.IsPipeline, "is-pipeline", false, "is this running from the pipeline")
 
 	environmentBumpModuleCmd.Flags().StringVarP(&module, "module", "m", "", "Module to upgrade the version")
 	environmentBumpModuleCmd.Flags().StringVarP(&moduleVersion, "module-version", "v", "", "Semantic version to bump a module to")
@@ -76,15 +77,15 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentCreateCmd.Flags().BoolVarP(&skipEnvCheck, "skip-env-check", "s", false, "Skip the environment check")
 	environmentCreateCmd.Flags().StringVarP(&answersFile, "answers-file", "a", "", "Path to the answers file")
 
-	// e.g. if this is the Pull rquest to perform the apply: https://github.com/ministryofjustice/cloud-platform-environments/pull/8370, the pr ID is 8370.
+	// e.g. if this is the Pull request to perform the apply: https://github.com/ministryofjustice/cloud-platform-environments/pull/8370, the pr ID is 8370.
 	environmentDestroyCmd.Flags().IntVar(&optFlags.PRNumber, "prNumber", 0, "Pull request ID or number to which you want to perform the destroy")
 	environmentDestroyCmd.Flags().StringVarP(&optFlags.Namespace, "namespace", "n", "", "Namespace which you want to perform the destroy")
 
 	// Re-use the environmental variable TF_VAR_github_token to call Github Client which is needed to perform terraform operations on each namespace
 	environmentDestroyCmd.Flags().StringVar(&optFlags.GithubToken, "github-token", os.Getenv("TF_VAR_github_token"), "Personal access Token from Github ")
 	environmentDestroyCmd.Flags().StringVar(&optFlags.KubecfgPath, "kubecfg", filepath.Join(homedir.HomeDir(), ".kube", "config"), "path to kubeconfig file")
-	environmentDestroyCmd.Flags().StringVar(&optFlags.ClusterCtx, "cluster", "", "cluster context fron kubeconfig file")
-	environmentDestroyCmd.Flags().StringVar(&optFlags.ClusterDir, "clusterdir", "", "folder name under namespaces/ inside cloud-platform-environments repo refering to full cluster name")
+	environmentDestroyCmd.Flags().StringVar(&optFlags.ClusterCtx, "cluster", "", "cluster context from kubeconfig file")
+	environmentDestroyCmd.Flags().StringVar(&optFlags.ClusterDir, "clusterdir", "", "folder name under namespaces/ inside cloud-platform-environments repo referring to full cluster name")
 	environmentDestroyCmd.PersistentFlags().BoolVar(&optFlags.RedactedEnv, "redact", true, "Redact the terraform output before printing")
 	environmentDestroyCmd.Flags().BoolVar(&optFlags.SkipProdDestroy, "skip-prod-destroy", true, "skip prod namespaces from destroy namespace")
 
@@ -102,8 +103,8 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	// Re-use the environmental variable TF_VAR_github_token to call Github Client which is needed to perform terraform operations on each namespace
 	environmentPlanCmd.Flags().StringVar(&optFlags.GithubToken, "github-token", os.Getenv("TF_VAR_github_token"), "Personal access Token from Github ")
 	environmentPlanCmd.Flags().StringVar(&optFlags.KubecfgPath, "kubecfg", filepath.Join(homedir.HomeDir(), ".kube", "config"), "path to kubeconfig file")
-	environmentPlanCmd.Flags().StringVar(&optFlags.ClusterCtx, "cluster", "", "cluster context fron kubeconfig file")
-	environmentPlanCmd.Flags().StringVar(&optFlags.ClusterDir, "clusterdir", "", "folder name under namespaces/ inside cloud-platform-environments repo refering to full cluster name")
+	environmentPlanCmd.Flags().StringVar(&optFlags.ClusterCtx, "cluster", "", "cluster context from kubeconfig file")
+	environmentPlanCmd.Flags().StringVar(&optFlags.ClusterDir, "clusterdir", "", "folder name under namespaces/ inside cloud-platform-environments repo referring to full cluster name")
 	environmentPlanCmd.PersistentFlags().BoolVar(&optFlags.RedactedEnv, "redact", true, "Redact the terraform output before printing")
 }
 

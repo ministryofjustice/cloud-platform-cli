@@ -1,6 +1,8 @@
 package environment
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"log"
 	"os"
@@ -25,7 +27,7 @@ type Options struct {
 	AllNamespaces                                               bool
 	EnableApplySkip, RedactedEnv, SkipProdDestroy               bool
 	BatchApplyIndex, BatchApplySize                             int
-	OnlySkipFileChanged                                         bool
+	OnlySkipFileChanged, IsPipeline                             bool
 }
 
 // RequiredEnvVars is used to store values such as TF_VAR_ , github and pingdom tokens
@@ -384,9 +386,58 @@ func (a *Apply) applyTerraform() (string, error) {
 	tfFolder := a.Dir + "/resources"
 
 	outputTerraform, err := a.Applier.TerraformInitAndApply(a.Options.Namespace, tfFolder)
+
+	if a.Options.IsPipeline {
+		var filenames []string
+
+		matches, rdsErr := IsRdsVersionMismatched(err.Error())
+		versionDescription := "Fix Terraform RDS version drift. Here are the RDS version mismatches: \n\n"
+
+		if rdsErr != nil {
+			return "", fmt.Errorf("error running terraform on namespace %s: %s \n %s \n %s", a.Options.Namespace, err.Error(), rdsErr.Error(), outputTerraform)
+		}
+
+		for i := 0; i < matches.TotalVersionMismatches; i++ {
+
+			moduleName := matches.ModuleNames[i][0]
+			actualDbVersion := matches.Versions[i][0]
+			terraformDbVersion := matches.Versions[i][1]
+
+			versionDescription += versionDescription + "downgrade from " + actualDbVersion + " to " + terraformDbVersion + "\n"
+
+			file, updateErr := UpdateVersion(moduleName, actualDbVersion, terraformDbVersion, tfFolder)
+
+			filenames = append(filenames, file)
+
+			if updateErr != nil {
+				return "", fmt.Errorf("error running terraform on namespace %s: %s \n %s \n %s", a.Options.Namespace, err.Error(), updateErr.Error(), outputTerraform)
+			}
+
+		}
+
+		b := make([]byte, 2)
+		rand.Read(b)
+		fourCharUid := hex.EncodeToString(b)
+		branchName := a.Options.Namespace + "-rds-minor-version-bump-" + fourCharUid
+
+		description := "``` " + versionDescription + " ```"
+		prUrl, prErr := createPR(branchName, description, filenames, a)
+
+		if prErr != nil {
+			err := fmt.Errorf("error running terraform on namespace %s: %v \n %v \n %v", a.Options.Namespace, err, outputTerraform, prErr)
+			return "", err
+
+		}
+
+		slackErr := slack.PostToAsk(prUrl, a.RequiredEnvVars.SlackWebhookUrl)
+
+		if slackErr != nil {
+			fmt.Printf("Warning: Error posting to #ask-cloud-platform %v\n", slackErr)
+		}
+
+	}
 	if err != nil {
-		err := fmt.Errorf("error running terraform on namespace %s: %v \n %v", a.Options.Namespace, err, outputTerraform)
-		return "", err
+		return "", fmt.Errorf("error running terraform on namespace %s: %v \n %v", a.Options.Namespace, err, outputTerraform)
 	}
 	return outputTerraform, nil
 }
@@ -511,6 +562,7 @@ func (a *Apply) applyNamespace() error {
 		return err
 	}
 	if err == nil && exists {
+		applier.GithubClient = a.GithubClient
 		outputTerraform, err := applier.applyTerraform()
 		if err != nil {
 			if !a.Options.OnlySkipFileChanged {
