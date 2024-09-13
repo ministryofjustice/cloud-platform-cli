@@ -1,6 +1,6 @@
 module github.com/ministryofjustice/cloud-platform-cli
 
-go 1.21
+go 1.23
 
 require (
 	github.com/MakeNowJust/heredoc v1.0.0
@@ -44,6 +44,7 @@ require (
 	github.com/ministryofjustice/cloud-platform-go-library v0.0.0-20220803122921-1ca1153b1730
 	github.com/rs/zerolog v1.31.0
 	github.com/shurcooL/githubv4 v0.0.0-20220922232305-70b4d362a8cb
+	github.com/slack-go/slack v0.12.5
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/oauth2 v0.16.0
 	k8s.io/api v0.26.3
@@ -121,7 +122,6 @@ require (
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
 	github.com/shurcooL/graphql v0.0.0-20220606043923-3cf50f8a0a29 // indirect
-	github.com/slack-go/slack v0.12.5 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.11.0 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
