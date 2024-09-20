@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func UpdateVersion(moduleName, actualDbVersion, terraformDbVersion, tfDir string) (string, error) {
+func updateVersion(moduleName, actualDbVersion, terraformDbVersion, tfDir string) (string, error) {
 	grepCmd := exec.Command("/bin/sh", "-c", "grep -l 'module \""+moduleName+"\"' *")
 
 	grepCmd.Dir = tfDir
@@ -51,4 +51,35 @@ func UpdateVersion(moduleName, actualDbVersion, terraformDbVersion, tfDir string
 	}
 
 	return string(fileName), nil
+}
+
+func checkRdsAndUpdate(tfErr, tfDir string) (string, []string, error) {
+	var filenames []string
+
+	matches, rdsErr := IsRdsVersionMismatched(tfErr)
+	versionDescription := "Fix Terraform RDS version drift. Here are the RDS version mismatches: \n\n"
+
+	if rdsErr != nil {
+		return "", nil, rdsErr
+	}
+
+	for i := 0; i < matches.TotalVersionMismatches; i++ {
+
+		moduleName := matches.ModuleNames[i][0]
+		actualDbVersion := matches.Versions[i][0]
+		terraformDbVersion := matches.Versions[i][1]
+
+		versionDescription += versionDescription + "downgrade from " + actualDbVersion + " to " + terraformDbVersion + "\n"
+
+		file, updateErr := updateVersion(moduleName, actualDbVersion, terraformDbVersion, tfDir)
+
+		filenames = append(filenames, file)
+
+		if updateErr != nil {
+			return "", nil, updateErr
+		}
+
+	}
+
+	return versionDescription, filenames, nil
 }

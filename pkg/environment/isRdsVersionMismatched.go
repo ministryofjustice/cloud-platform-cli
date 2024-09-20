@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 type RdsVersionResults struct {
@@ -48,22 +49,26 @@ func IsRdsVersionMismatched(outputTerraform string) (*RdsVersionResults, error) 
 func checkVersionDowngrade(versions [][]string) bool {
 	isValid := true
 
-	for range versions {
-		for _, inner := range versions {
-			if len(inner) == 2 {
-				accFloat, err := strconv.ParseFloat(inner[0], 32)
-				tfFloat, err := strconv.ParseFloat(inner[1], 32)
+	for _, inner := range versions {
+		if len(inner) == 2 {
+			splitAcc := strings.Split(inner[0], ".")
+			splitTf := strings.Split(inner[1], ".")
 
-				isUpgrade := tfFloat > accFloat
+			adjustedAcc := strings.Join(splitAcc, "")
+			adjustedTf := strings.Join(splitTf, "")
 
-				if err != nil || isUpgrade {
-					isValid = false
-					break
-				}
-			} else {
+			acc, err := strconv.ParseInt(adjustedAcc, 0, 64)
+			tf, err := strconv.ParseInt(adjustedTf, 0, 64)
+
+			isUpgrade := tf > acc
+
+			if err != nil || isUpgrade {
 				isValid = false
 				break
 			}
+		} else {
+			isValid = false
+			break
 		}
 	}
 
