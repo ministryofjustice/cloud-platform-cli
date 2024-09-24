@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	gogithub "github.com/google/go-github/github"
+
+	tfjson "github.com/hashicorp/terraform-json"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/github"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/slack"
@@ -364,17 +366,17 @@ func (a *Apply) deleteKubectl() (string, error) {
 }
 
 // planTerraform calls applier -> TerraformInitAndPlan and prints the output from applier
-func (a *Apply) planTerraform() (string, error) {
+func (a *Apply) planTerraform() (*tfjson.Plan, string, error) {
 	log.Printf("Running Terraform Plan for namespace: %v", a.Options.Namespace)
 
 	tfFolder := a.Dir + "/resources"
 
-	outputTerraform, err := a.Applier.TerraformInitAndPlan(a.Options.Namespace, tfFolder)
+	tfPlan, outputTerraform, err := a.Applier.TerraformInitAndPlan(a.Options.Namespace, tfFolder)
 	if err != nil {
 		err := fmt.Errorf("error running terraform on namespace %s: %v \n %v", a.Options.Namespace, err, outputTerraform)
-		return "", err
+		return nil, "", err
 	}
-	return outputTerraform, nil
+	return tfPlan, outputTerraform, nil
 }
 
 // applyTerraform calls applier -> TerraformInitAndApply and prints the output from applier
@@ -442,12 +444,18 @@ func (a *Apply) planNamespace() error {
 
 	exists, err := util.IsFilePathExists(repoPath + "/resources")
 	if err == nil && exists {
-		outputTerraform, err := applier.planTerraform()
+		tfPlan, outputTerraform, err := applier.planTerraform()
 		if err != nil {
 			return err
 		}
 
 		fmt.Println("\nOutput of terraform:")
+
+		commentErr := CreateComment(a.GithubClient, tfPlan, a.Options.PRNumber)
+		if commentErr != nil {
+			fmt.Printf("\nError posting comment: %v", commentErr)
+		}
+
 		util.RedactedEnv(os.Stdout, outputTerraform, a.Options.RedactedEnv)
 	} else {
 		fmt.Printf("Namespace %s does not have terraform resources folder, skipping terraform plan\n", a.Options.Namespace)

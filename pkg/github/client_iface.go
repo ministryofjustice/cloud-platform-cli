@@ -15,4 +15,5 @@ type GithubIface interface {
 	IsMerged(prNumber int) (bool, error)
 	CreatePR(branchName, namespace, description string) (string, error)
 	ListOpenPRs(namespace string) ([]*github.PullRequest, error)
+	CreateComment(prNumber int, body string) error
 }
