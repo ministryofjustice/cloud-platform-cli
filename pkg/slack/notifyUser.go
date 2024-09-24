@@ -28,7 +28,7 @@ func Notify(prNumber, token, webhookUrl, buildUrl string) error {
 func PostToAsk(prUrl, webhookUrl string) error {
 	webhookMsg := slack.WebhookMessage{
 		Channel: "ask-cloud-platform",
-		Text:    "PR for review please: " + prUrl,
+		Text:    "RDS Minor version mismatch. PR for review please: " + prUrl,
 	}
 
 	return slack.PostWebhook(webhookUrl, &webhookMsg)

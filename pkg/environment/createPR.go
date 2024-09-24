@@ -11,13 +11,11 @@ import (
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/slack"
 )
 
-func createPR(versionDescription, namespace string) func(github.GithubIface, []string) (string, error) {
+func createPR(description, namespace string) func(github.GithubIface, []string) (string, error) {
 	b := make([]byte, 2)
 	rand.Read(b)
 	fourCharUid := hex.EncodeToString(b)
 	branchName := namespace + "-rds-minor-version-bump-" + fourCharUid
-
-	description := "``` " + versionDescription + " ```"
 
 	return func(gh github.GithubIface, filenames []string) (string, error) {
 		checkCmd := exec.Command("/bin/sh", "-c", "git checkout -b "+branchName)

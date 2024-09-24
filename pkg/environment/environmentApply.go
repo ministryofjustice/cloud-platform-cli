@@ -392,7 +392,9 @@ func (a *Apply) applyTerraform() (string, error) {
 			return "", fmt.Errorf("error running terraform on namespace %s: %s \n %s \n %s", a.Options.Namespace, err.Error(), updateErr.Error(), outputTerraform)
 		}
 
-		prUrl, createErr := createPR(versionDescription, a.Options.Namespace)(a.GithubClient, filenames)
+		description := "\n\n``` " + versionDescription + " ```\n\n" + a.Options.BuildUrl
+
+		prUrl, createErr := createPR(description, a.Options.Namespace)(a.GithubClient, filenames)
 
 		if createErr != nil {
 			return "", fmt.Errorf("error running terraform on namespace %s: %v \n %v \n %v", a.Options.Namespace, err, outputTerraform, createErr)
