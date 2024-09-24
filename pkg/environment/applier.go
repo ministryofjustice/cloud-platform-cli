@@ -76,6 +76,7 @@ func (m *ApplierImpl) optionEnvBackendConfigVars(c EnvBackendConfigVars) error {
 
 func (m *ApplierImpl) TerraformInitAndApply(namespace, directory string) (string, error) {
 	var out bytes.Buffer
+
 	terraform, err := tfexec.NewTerraform(directory, m.terraformBinaryPath)
 	if err != nil {
 		return "", errors.New("unable to instantiate Terraform: " + err.Error())
@@ -108,7 +109,7 @@ func (m *ApplierImpl) TerraformInitAndApply(namespace, directory string) (string
 
 	err = terraform.Apply(context.Background(), tfexec.Refresh(true))
 	if err != nil {
-		return "", errors.New("unable to apply Terraform: " + err.Error())
+		return errReturn(out, err)
 	}
 
 	return out.String(), nil

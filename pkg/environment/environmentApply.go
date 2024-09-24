@@ -25,7 +25,7 @@ type Options struct {
 	AllNamespaces                                               bool
 	EnableApplySkip, RedactedEnv, SkipProdDestroy               bool
 	BatchApplyIndex, BatchApplySize                             int
-	OnlySkipFileChanged                                         bool
+	OnlySkipFileChanged, IsPipeline                             bool
 }
 
 // RequiredEnvVars is used to store values such as TF_VAR_ , github and pingdom tokens
@@ -384,9 +384,27 @@ func (a *Apply) applyTerraform() (string, error) {
 	tfFolder := a.Dir + "/resources"
 
 	outputTerraform, err := a.Applier.TerraformInitAndApply(a.Options.Namespace, tfFolder)
+
+	if a.Options.IsPipeline {
+		versionDescription, filenames, updateErr := checkRdsAndUpdate(err.Error(), tfFolder)
+
+		if updateErr != nil {
+			return "", fmt.Errorf("error running terraform on namespace %s: %s \n %s \n %s", a.Options.Namespace, err.Error(), updateErr.Error(), outputTerraform)
+		}
+
+		description := "\n\n``` " + versionDescription + " ```\n\n" + a.Options.BuildUrl
+
+		prUrl, createErr := createPR(description, a.Options.Namespace)(a.GithubClient, filenames)
+
+		if createErr != nil {
+			return "", fmt.Errorf("error running terraform on namespace %s: %v \n %v \n %v", a.Options.Namespace, err, outputTerraform, createErr)
+		}
+
+		postPR(prUrl, a.RequiredEnvVars.SlackWebhookUrl)
+
+	}
 	if err != nil {
-		err := fmt.Errorf("error running terraform on namespace %s: %v \n %v", a.Options.Namespace, err, outputTerraform)
-		return "", err
+		return "", fmt.Errorf("error running terraform on namespace %s: %v \n %v", a.Options.Namespace, err, outputTerraform)
 	}
 	return outputTerraform, nil
 }
@@ -511,6 +529,7 @@ func (a *Apply) applyNamespace() error {
 		return err
 	}
 	if err == nil && exists {
+		applier.GithubClient = a.GithubClient
 		outputTerraform, err := applier.applyTerraform()
 		if err != nil {
 			if !a.Options.OnlySkipFileChanged {
