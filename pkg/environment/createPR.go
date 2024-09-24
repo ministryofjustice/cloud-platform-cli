@@ -13,29 +13,31 @@ import (
 
 func createPR(description, namespace string) func(github.GithubIface, []string) (string, error) {
 	b := make([]byte, 2)
-	rand.Read(b)
+
+	rand.Read(b) //nolint:errcheck
+
 	fourCharUid := hex.EncodeToString(b)
 	branchName := namespace + "-rds-minor-version-bump-" + fourCharUid
 
 	return func(gh github.GithubIface, filenames []string) (string, error) {
 		checkCmd := exec.Command("/bin/sh", "-c", "git checkout -b "+branchName)
-		checkCmd.Start()
-		checkCmd.Wait()
+		checkCmd.Start() //nolint:errcheck
+		checkCmd.Wait()  //nolint:errcheck
 
 		strFiles := strings.Join(filenames, " ")
 		cmd := exec.Command("/bin/sh", "-c", "git add "+strFiles)
 		cmd.Dir = "namespaces/live.cloud-platform.service.justice.gov.uk/" + namespace + "/resources"
-		cmd.Start()
-		cmd.Wait()
+		cmd.Start() //nolint:errcheck
+		cmd.Wait()  //nolint:errcheck
 
 		commitCmd := exec.Command("/bin/sh", "-c", "git commit -m 'concourse: correcting rds version drift'")
 		commitCmd.Dir = "namespaces/live.cloud-platform.service.justice.gov.uk/" + namespace + "/resources"
-		commitCmd.Start()
-		commitCmd.Wait()
+		commitCmd.Start() //nolint:errcheck
+		commitCmd.Wait()  //nolint:errcheck
 
 		pushCmd := exec.Command("/bin/sh", "-c", "git push --set-upstream origin "+branchName)
-		pushCmd.Start()
-		pushCmd.Wait()
+		pushCmd.Start() //nolint:errcheck
+		pushCmd.Wait()  //nolint:errcheck
 
 		return gh.CreatePR(branchName, namespace, description)
 	}

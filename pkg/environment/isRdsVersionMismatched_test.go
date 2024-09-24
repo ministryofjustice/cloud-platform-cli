@@ -94,8 +94,8 @@ func TestIsRdsVersionMismatched(t *testing.T) {
 			},
 			nil,
 		},
-		{"GIVEN an output WITHOUT a version mismatch THEN return nil", nomatchOutput, nil, errors.New("terraform is failing but it doesn't look like a rds version mismatch.")},
-		{"GIVEN an output WITH a version mismatch BUT the mismatch would cause a db UPGRADE THEN return nil", isVersionUpgradeMismatch, nil, errors.New("terraform is failing, but it isn't trying to downgrade the RDS versions so it needs more investigation.")},
+		{"GIVEN an output WITHOUT a version mismatch THEN return nil", nomatchOutput, nil, errors.New("terraform is failing but it doesn't look like a rds version mismatch")},
+		{"GIVEN an output WITH a version mismatch BUT the mismatch would cause a db UPGRADE THEN return nil", isVersionUpgradeMismatch, nil, errors.New("terraform is failing, but it isn't trying to downgrade the RDS versions so it needs more investigation")},
 		{
 			"GIVEN an output WITH MULTIPLE version mismatches THEN return the correct string slices", multipleMismatchOutput, &environment.RdsVersionResults{
 				Versions:               [][]string{{"14.12", "14.10"}, {"16.18", "16.16"}},
@@ -104,7 +104,7 @@ func TestIsRdsVersionMismatched(t *testing.T) {
 			},
 			nil,
 		},
-		{"GIVEN an output with an inconsistent number of versions and modules THEN return nil and an error", inconsistentOutput, nil, errors.New("Error: there is an inconistent number of versions vs module names, there should be an even amount but we have 1 sets of versions and 3 module names")},
+		{"GIVEN an output with an inconsistent number of versions and modules THEN return nil and an error", inconsistentOutput, nil, errors.New("error: there is an inconistent number of versions vs module names, there should be an even amount but we have 1 sets of versions and 3 module names")},
 	}
 
 	for _, tt := range tests {
