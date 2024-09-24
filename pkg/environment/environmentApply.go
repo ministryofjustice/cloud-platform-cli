@@ -385,7 +385,7 @@ func (a *Apply) applyTerraform() (string, error) {
 
 	outputTerraform, err := a.Applier.TerraformInitAndApply(a.Options.Namespace, tfFolder)
 
-	if a.Options.IsPipeline {
+	if a.Options.IsPipeline && err != nil {
 		versionDescription, filenames, updateErr := checkRdsAndUpdate(err.Error(), tfFolder)
 
 		if updateErr != nil {
