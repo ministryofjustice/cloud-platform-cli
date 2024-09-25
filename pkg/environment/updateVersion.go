@@ -40,7 +40,7 @@ func updateVersion(moduleName, actualDbVersion, terraformDbVersion, tfDir string
 
 	escapedTfDbVersion := "\"" + splitTfDbVersion[0] + "\\." + splitTfDbVersion[1] + "\""
 
-	sedCmd := exec.Command("/bin/sh", "-c", "sed -i '' -e '"+dbMatch[1]+"s/"+escapedTfDbVersion+"/\""+actualDbVersion+"\"/g' "+string(fileName))
+	sedCmd := exec.Command("/bin/sh", "-c", "sed -i'' -e '"+dbMatch[1]+"s/"+escapedTfDbVersion+"/\""+actualDbVersion+"\"/g' "+string(fileName))
 
 	sedCmd.Dir = tfDir
 
