@@ -38,7 +38,7 @@ func createPR(description, namespace, ghToken, repo string) func(github.GithubIf
 		cmd.Start() //nolint:errcheck
 		cmd.Wait()  //nolint:errcheck
 
-		commitCmd := exec.Command("/bin/sh", "-c", "git commit -c user.name='cloud-platform-moj' -c user.email='platforms+githubuser@digital.justice.gov.uk' -m 'concourse: correcting rds version drift'")
+		commitCmd := exec.Command("/bin/sh", "-c", "git -c user.name='cloud-platform-moj' -c user.email='platforms+githubuser@digital.justice.gov.uk' commit -m 'concourse: correcting rds version drift'")
 		commitCmd.Dir = "namespaces/live.cloud-platform.service.justice.gov.uk/" + namespace + "/resources"
 		commitCmd.Start() //nolint:errcheck
 		commitCmd.Wait()  //nolint:errcheck
