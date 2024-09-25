@@ -389,7 +389,7 @@ func (a *Apply) applyTerraform() (string, error) {
 		versionDescription, filenames, updateErr := checkRdsAndUpdate(err.Error(), tfFolder)
 
 		if updateErr != nil {
-			return "", fmt.Errorf("error running terraform on namespace %s: %s \n %s \n %s", a.Options.Namespace, err.Error(), updateErr.Error(), outputTerraform)
+			return "", fmt.Errorf("update error running terraform on namespace %s: %s \n %s \n %s", a.Options.Namespace, err.Error(), updateErr.Error(), outputTerraform)
 		}
 
 		description := "\n\n``` " + versionDescription + " ```\n\n" + a.Options.BuildUrl
@@ -397,7 +397,7 @@ func (a *Apply) applyTerraform() (string, error) {
 		prUrl, createErr := createPR(description, a.Options.Namespace)(a.GithubClient, filenames)
 
 		if createErr != nil {
-			return "", fmt.Errorf("error running terraform on namespace %s: %v \n %v \n %v", a.Options.Namespace, err, outputTerraform, createErr)
+			return "", fmt.Errorf("create error running terraform on namespace %s: %v \n %v \n %v", a.Options.Namespace, err, outputTerraform, createErr)
 		}
 
 		postPR(prUrl, a.RequiredEnvVars.SlackWebhookUrl)
