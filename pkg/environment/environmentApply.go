@@ -394,7 +394,7 @@ func (a *Apply) applyTerraform() (string, error) {
 
 		description := "\n\n``` " + versionDescription + " ```\n\n" + a.Options.BuildUrl
 
-		prUrl, createErr := createPR(description, a.Options.Namespace)(a.GithubClient, filenames)
+		prUrl, createErr := createPR(description, a.Options.Namespace, a.Options.GithubToken, "cloud-platform-environments")(a.GithubClient, filenames)
 
 		if createErr != nil {
 			return "", fmt.Errorf("create error running terraform on namespace %s: %v \n %v \n %v", a.Options.Namespace, err, outputTerraform, createErr)

@@ -11,7 +11,7 @@ import (
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/slack"
 )
 
-func createPR(description, namespace string) func(github.GithubIface, []string) (string, error) {
+func createPR(description, namespace, ghToken, repo string) func(github.GithubIface, []string) (string, error) {
 	b := make([]byte, 2)
 
 	rand.Read(b) //nolint:errcheck
@@ -20,6 +20,14 @@ func createPR(description, namespace string) func(github.GithubIface, []string) 
 	branchName := namespace + "-rds-minor-version-bump-" + fourCharUid
 
 	return func(gh github.GithubIface, filenames []string) (string, error) {
+		removeRemoteCmd := exec.Command("/bin/sh", "-c", "git remote remove origin")
+		removeRemoteCmd.Start() //nolint:errcheck
+		removeRemoteCmd.Wait()  //nolint:errcheck
+
+		useGhTokenCmd := exec.Command("/bin/sh", "-c", "git remote add origin https://"+ghToken+"@github.com/ministryofjustice/"+repo)
+		useGhTokenCmd.Start() //nolint:errcheck
+		useGhTokenCmd.Wait()  //nolint:errcheck
+
 		checkCmd := exec.Command("/bin/sh", "-c", "git checkout -b "+branchName)
 		checkCmd.Start() //nolint:errcheck
 		checkCmd.Wait()  //nolint:errcheck
