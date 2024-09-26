@@ -69,7 +69,7 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentApplyCmd.Flags().StringVar(&optFlags.ClusterDir, "clusterdir", "", "folder name under namespaces/ inside cloud-platform-environments repo referring to full cluster name")
 	environmentApplyCmd.PersistentFlags().BoolVar(&optFlags.RedactedEnv, "redact", true, "Redact the terraform output before printing")
 	environmentApplyCmd.Flags().StringVar(&optFlags.BuildUrl, "build-url", "", "The concourse apply build url")
-	environmentApplyCmd.Flags().BoolVar(&optFlags.IsPipeline, "is-pipeline", false, "is this running from the pipeline")
+	environmentApplyCmd.Flags().BoolVar(&optFlags.IsApplyPipeline, "is-apply-pipeline", false, "is this running in the apply pipelines")
 
 	environmentBumpModuleCmd.Flags().StringVarP(&module, "module", "m", "", "Module to upgrade the version")
 	environmentBumpModuleCmd.Flags().StringVarP(&moduleVersion, "module-version", "v", "", "Semantic version to bump a module to")

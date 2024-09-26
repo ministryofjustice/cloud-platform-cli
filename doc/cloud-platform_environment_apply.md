@@ -47,7 +47,7 @@ $ cloud-platform environment apply -n <namespace>
       --enable-apply-skip       Enable skipping apply for a namespace
       --github-token string     Personal access Token from Github 
   -h, --help                    help for apply
-      --is-pipeline             is this running from the pipeline
+      --is-apply-pipeline       is this running in the apply pipelines
       --kubecfg string          path to kubeconfig file (default "/home/runner/.kube/config")
   -n, --namespace string        Namespace which you want to perform the apply
       --prNumber int            Pull request ID or number to which you want to perform the apply

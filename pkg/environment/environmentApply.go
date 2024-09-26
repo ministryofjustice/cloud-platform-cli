@@ -25,7 +25,7 @@ type Options struct {
 	AllNamespaces                                               bool
 	EnableApplySkip, RedactedEnv, SkipProdDestroy               bool
 	BatchApplyIndex, BatchApplySize                             int
-	OnlySkipFileChanged, IsPipeline                             bool
+	OnlySkipFileChanged, IsApplyPipeline                        bool
 }
 
 // RequiredEnvVars is used to store values such as TF_VAR_ , github and pingdom tokens
@@ -385,7 +385,7 @@ func (a *Apply) applyTerraform() (string, error) {
 
 	outputTerraform, err := a.Applier.TerraformInitAndApply(a.Options.Namespace, tfFolder)
 
-	if a.Options.IsPipeline && err != nil {
+	if a.Options.IsApplyPipeline && err != nil {
 		versionDescription, filenames, updateErr := checkRdsAndUpdate(err.Error(), tfFolder)
 
 		if updateErr != nil {
@@ -511,7 +511,7 @@ func (a *Apply) applyNamespace() error {
 	if util.IsYamlFileExists(repoPath) {
 		outputKubectl, err := applier.applyKubectl()
 		if err != nil {
-			if !a.Options.OnlySkipFileChanged {
+			if !a.Options.OnlySkipFileChanged && !a.Options.IsApplyPipeline {
 				notifyUserApplyFailed(a.Options.PRNumber, applier.RequiredEnvVars.SlackBotToken, applier.RequiredEnvVars.SlackWebhookUrl, a.Options.BuildUrl)
 			}
 			return err
@@ -532,7 +532,7 @@ func (a *Apply) applyNamespace() error {
 		applier.GithubClient = a.GithubClient
 		outputTerraform, err := applier.applyTerraform()
 		if err != nil {
-			if !a.Options.OnlySkipFileChanged {
+			if !a.Options.OnlySkipFileChanged && !a.Options.IsApplyPipeline {
 				notifyUserApplyFailed(a.Options.PRNumber, applier.RequiredEnvVars.SlackBotToken, applier.RequiredEnvVars.SlackWebhookUrl, a.Options.BuildUrl)
 			}
 			return err
