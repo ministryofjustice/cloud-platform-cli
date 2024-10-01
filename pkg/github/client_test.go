@@ -26,6 +26,10 @@ func (m *mockGithub) Create(ctx context.Context, owner string, repo string, pr *
 	return nil, nil, nil
 }
 
+func (m *mockGithub) List(ctx context.Context, owner, repo string, opts *github.PullRequestListOptions) ([]*github.PullRequest, *github.Response, error) {
+	return nil, nil, nil
+}
+
 func TestNewGithubClient(t *testing.T) {
 	type args struct {
 		config *GithubClientConfig

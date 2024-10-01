@@ -3,6 +3,7 @@ package environment
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -46,6 +47,15 @@ func createPR(description, namespace, ghToken, repo string) func(github.GithubIf
 		pushCmd := exec.Command("/bin/sh", "-c", "git push --set-upstream origin "+branchName)
 		pushCmd.Start() //nolint:errcheck
 		pushCmd.Wait()  //nolint:errcheck
+
+		pulls, err := gh.ListOpenPRs(namespace)
+		if err != nil {
+			fmt.Printf("warning: Error listing open prs: %v\n", err)
+		}
+
+		if len(pulls) > 0 {
+			return "", errors.New("a pr is already open for this namespace, skipping opening another...")
+		}
 
 		return gh.CreatePR(branchName, namespace, description)
 	}
