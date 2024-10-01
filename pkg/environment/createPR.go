@@ -29,6 +29,15 @@ func createPR(description, namespace, ghToken, repo string) func(github.GithubIf
 		useGhTokenCmd.Start() //nolint:errcheck
 		useGhTokenCmd.Wait()  //nolint:errcheck
 
+		pulls, err := gh.ListOpenPRs(namespace)
+		if err != nil {
+			fmt.Printf("warning: Error listing open prs: %v\n", err)
+		}
+
+		if len(pulls) > 0 {
+			return "", errors.New("a pr is already open for this namespace, skipping opening another")
+		}
+
 		checkCmd := exec.Command("/bin/sh", "-c", "git checkout -b "+branchName)
 		checkCmd.Start() //nolint:errcheck
 		checkCmd.Wait()  //nolint:errcheck
@@ -47,15 +56,6 @@ func createPR(description, namespace, ghToken, repo string) func(github.GithubIf
 		pushCmd := exec.Command("/bin/sh", "-c", "git push --set-upstream origin "+branchName)
 		pushCmd.Start() //nolint:errcheck
 		pushCmd.Wait()  //nolint:errcheck
-
-		pulls, err := gh.ListOpenPRs(namespace)
-		if err != nil {
-			fmt.Printf("warning: Error listing open prs: %v\n", err)
-		}
-
-		if len(pulls) > 0 {
-			return "", errors.New("a pr is already open for this namespace, skipping opening another")
-		}
 
 		return gh.CreatePR(branchName, namespace, description)
 	}
