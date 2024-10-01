@@ -54,7 +54,7 @@ func createPR(description, namespace, ghToken, repo string) func(github.GithubIf
 		}
 
 		if len(pulls) > 0 {
-			return "", errors.New("a pr is already open for this namespace, skipping opening another...")
+			return "", errors.New("a pr is already open for this namespace, skipping opening another")
 		}
 
 		return gh.CreatePR(branchName, namespace, description)
