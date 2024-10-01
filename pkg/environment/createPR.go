@@ -3,6 +3,7 @@ package environment
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -27,6 +28,15 @@ func createPR(description, namespace, ghToken, repo string) func(github.GithubIf
 		useGhTokenCmd := exec.Command("/bin/sh", "-c", "git remote add origin https://"+ghToken+"@github.com/ministryofjustice/"+repo)
 		useGhTokenCmd.Start() //nolint:errcheck
 		useGhTokenCmd.Wait()  //nolint:errcheck
+
+		pulls, err := gh.ListOpenPRs(namespace)
+		if err != nil {
+			fmt.Printf("warning: Error listing open prs: %v\n", err)
+		}
+
+		if len(pulls) > 0 {
+			return "", errors.New("a pr is already open for this namespace, skipping opening another")
+		}
 
 		checkCmd := exec.Command("/bin/sh", "-c", "git checkout -b "+branchName)
 		checkCmd.Start() //nolint:errcheck

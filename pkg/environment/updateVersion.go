@@ -64,7 +64,6 @@ func checkRdsAndUpdate(tfErr, tfDir string) (string, []string, error) {
 	}
 
 	for i := 0; i < matches.TotalVersionMismatches; i++ {
-
 		moduleName := matches.ModuleNames[i][0]
 		actualDbVersion := matches.Versions[i][0]
 		terraformDbVersion := matches.Versions[i][1]

@@ -3,6 +3,7 @@ package github
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/google/go-github/github"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/util"
@@ -16,6 +17,7 @@ type GithubPullRequestsService interface {
 	ListFiles(ctx context.Context, owner string, repo string, number int, opt *github.ListOptions) ([]*github.CommitFile, *github.Response, error)
 	IsMerged(ctx context.Context, owner string, repo string, number int) (bool, *github.Response, error)
 	Create(ctx context.Context, owner string, repo string, pr *github.NewPullRequest) (*github.PullRequest, *github.Response, error)
+	List(ctx context.Context, owner string, repo string, opts *github.PullRequestListOptions) ([]*github.PullRequest, *github.Response, error)
 }
 
 // GithubClient for handling requests to the Github V3 and V4 APIs.
@@ -123,4 +125,44 @@ func (gh *GithubClient) CreatePR(branchName, namespace, description string) (str
 
 	fmt.Printf("PR created: %s\n", pr.GetHTMLURL())
 	return pr.GetHTMLURL(), nil
+}
+
+func (gh *GithubClient) ListOpenPRs(namespace string) ([]*github.PullRequest, error) {
+	listOpts := &github.ListOptions{PerPage: 100, Page: 0}
+	opts := &github.PullRequestListOptions{
+		State:       "open",
+		ListOptions: *listOpts,
+	}
+	allOpenPrs := []*github.PullRequest{}
+	matchedOpenPRs := []*github.PullRequest{}
+	paginate := 0
+
+	prs, resp, err := gh.PullRequests.List(context.TODO(), "ministryofjustice", "cloud-platform-environments", opts)
+	if err != nil {
+		return nil, err
+	}
+
+	allOpenPrs = append(allOpenPrs, prs...)
+
+	paginate = resp.NextPage
+
+	for paginate > 0 {
+		opts.ListOptions.Page = resp.NextPage
+		prs, resp, err := gh.PullRequests.List(context.TODO(), "ministryofjustice", "cloud-platform-environments", opts)
+		if err != nil {
+			return nil, err
+		}
+
+		allOpenPrs = append(allOpenPrs, prs...)
+
+		paginate = resp.NextPage
+	}
+
+	for _, pr := range allOpenPrs {
+		if strings.Contains(*pr.Title, "Fix: rds version mismatch in "+namespace) {
+			matchedOpenPRs = append(matchedOpenPRs, pr)
+		}
+	}
+
+	return matchedOpenPRs, nil
 }

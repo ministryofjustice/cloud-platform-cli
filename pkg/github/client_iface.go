@@ -14,4 +14,5 @@ type GithubIface interface {
 	GetChangedFiles(int) ([]*github.CommitFile, error)
 	IsMerged(prNumber int) (bool, error)
 	CreatePR(branchName, namespace, description string) (string, error)
+	ListOpenPRs(namespace string) ([]*github.PullRequest, error)
 }
