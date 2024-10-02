@@ -61,7 +61,7 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentApplyCmd.Flags().IntVar(&optFlags.BatchApplySize, "batch-apply-size", 0, "Number of namespaces to apply in a batch")
 	environmentApplyCmd.Flags().BoolVar(&optFlags.EnableApplySkip, "enable-apply-skip", false, "Enable skipping apply for a namespace")
 	environmentApplyCmd.Flags().StringVarP(&optFlags.Namespace, "namespace", "n", "", "Namespace which you want to perform the apply")
-	environmentApplyCmd.Flags().IntVar(&optFlags.PRNumber, "prNumber", 0, "Pull request ID or number to which you want to perform the apply")
+	environmentApplyCmd.Flags().IntVar(&optFlags.PRNumber, "pr-number", 0, "Pull request ID or number to which you want to perform the apply")
 	// Re-use the environmental variable TF_VAR_github_token to call Github Client which is needed to perform terraform operations on each namespace
 	environmentApplyCmd.Flags().StringVar(&optFlags.GithubToken, "github-token", os.Getenv("TF_VAR_github_token"), "Personal access Token from Github ")
 	environmentApplyCmd.Flags().StringVar(&optFlags.KubecfgPath, "kubecfg", filepath.Join(homedir.HomeDir(), ".kube", "config"), "path to kubeconfig file")
@@ -78,7 +78,7 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentCreateCmd.Flags().StringVarP(&answersFile, "answers-file", "a", "", "Path to the answers file")
 
 	// e.g. if this is the Pull request to perform the apply: https://github.com/ministryofjustice/cloud-platform-environments/pull/8370, the pr ID is 8370.
-	environmentDestroyCmd.Flags().IntVar(&optFlags.PRNumber, "prNumber", 0, "Pull request ID or number to which you want to perform the destroy")
+	environmentDestroyCmd.Flags().IntVar(&optFlags.PRNumber, "pr-number", 0, "Pull request ID or number to which you want to perform the destroy")
 	environmentDestroyCmd.Flags().StringVarP(&optFlags.Namespace, "namespace", "n", "", "Namespace which you want to perform the destroy")
 
 	// Re-use the environmental variable TF_VAR_github_token to call Github Client which is needed to perform terraform operations on each namespace
@@ -97,7 +97,7 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	}
 
 	// e.g. if this is the Pull request to perform the apply: https://github.com/ministryofjustice/cloud-platform-environments/pull/8370, the pr ID is 8370.
-	environmentPlanCmd.Flags().IntVar(&optFlags.PRNumber, "prNumber", 0, "Pull request ID or number to which you want to perform the plan")
+	environmentPlanCmd.Flags().IntVar(&optFlags.PRNumber, "pr-number", 0, "Pull request ID or number to which you want to perform the plan")
 	environmentPlanCmd.Flags().StringVarP(&optFlags.Namespace, "namespace", "n", "", "Namespace which you want to perform the plan")
 
 	// Re-use the environmental variable TF_VAR_github_token to call Github Client which is needed to perform terraform operations on each namespace

@@ -6,16 +6,9 @@ import (
 	"os"
 	"strings"
 
-	gogithub "github.com/google/go-github/github"
-
-	tfjson "github.com/hashicorp/terraform-json"
-	"github.com/kelseyhightower/envconfig"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/github"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/slack"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/util"
-	"github.com/ministryofjustice/cloud-platform-environments/pkg/authenticate"
-	"github.com/ministryofjustice/cloud-platform-environments/pkg/namespace"
-	v1 "k8s.io/api/core/v1"
 )
 
 // Options are used to configure plan/apply sessions.
@@ -78,67 +71,6 @@ func NewApply(opt Options) *Apply {
 	return &apply
 }
 
-func (a *Apply) Initialize() {
-	var reqEnvVars RequiredEnvVars
-	err := envconfig.Process("", &reqEnvVars)
-	if err != nil {
-		log.Fatalln("Environment variables required to perform terraform operations not set:", err.Error())
-	}
-	a.RequiredEnvVars.clustername = reqEnvVars.clustername
-	a.RequiredEnvVars.clusterstatebucket = reqEnvVars.clusterstatebucket
-	a.RequiredEnvVars.kubernetescluster = reqEnvVars.kubernetescluster
-	a.RequiredEnvVars.githubowner = reqEnvVars.githubowner
-	a.RequiredEnvVars.githubtoken = reqEnvVars.githubtoken
-	a.RequiredEnvVars.SlackBotToken = reqEnvVars.SlackBotToken
-	a.RequiredEnvVars.SlackWebhookUrl = reqEnvVars.SlackWebhookUrl
-	a.RequiredEnvVars.pingdomapitoken = reqEnvVars.pingdomapitoken
-
-	// Set KUBE_CONFIG_PATH to the path of the kubeconfig file
-	// This is needed for terraform to be able to connect to the cluster when a different kubecfg is passed
-	if err := os.Setenv("KUBE_CONFIG_PATH", a.Options.KubecfgPath); err != nil {
-		log.Fatalln("KUBE_CONFIG_PATH environment variable cant be set:", err.Error())
-	}
-}
-
-// Plan is the entry point for performing a namespace plan.
-// It checks if the working directory is in cloud-platform-environments, checks if a PR number or a namespace is given
-// If a namespace is given, it perform a `kubectl apply --dry-run=client` and a terraform init and plan of that namespace
-// else checks for PR number and get the list of changed namespaces in the PR. Then does the `kubectl apply --dry-run=client` and
-// terraform init and plan of all the namespaces changed in the PR
-func (a *Apply) Plan() error {
-	if a.Options.PRNumber == 0 && a.Options.Namespace == "" {
-		return fmt.Errorf("either a PR Id/Number or a namespace is required to perform plan")
-	}
-
-	// If a namespace is given as a flag, then perform a plan for the given namespace.
-	if a.Options.Namespace != "" {
-		err := a.planNamespace()
-		if err != nil {
-			return err
-		}
-		return nil
-	} else {
-		files, err := a.GithubClient.GetChangedFiles(a.Options.PRNumber)
-		if err != nil {
-			return fmt.Errorf("failed to fetch list of changed files: %s in PR %v", err, a.Options.PRNumber)
-		}
-
-		changedNamespaces, err := nsChangedInPR(files, a.Options.ClusterDir, false)
-		if err != nil {
-			fmt.Println("failed to get list of changed namespaces in PR:", err)
-			return err
-		}
-		for _, namespace := range changedNamespaces {
-			a.Options.Namespace = namespace
-			err = a.planNamespace()
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
 // Apply is the entry point for performing a namespace apply.
 // It checks if the working directory is in cloud-platform-environments, checks if a PR number or a namespace is given
 // If a namespace is given, it perform a kubectl apply and a terraform init and apply of that namespace
@@ -190,63 +122,6 @@ func (a *Apply) Apply() error {
 			}
 		}
 	}
-	return nil
-}
-
-// Destroy is the entry point for performing a namespace destroy.
-// It checks if the working directory is in cloud-platform-environments, checks if a PR number is given and merged
-// The method get the list of namespaces that are deleted in that merger PR, and for all namespaces in the PR does the
-// terraform init and destroy and do a kubectl delete
-func (a *Apply) Destroy() error {
-	fmt.Println("Destroying Namespaces in PR", a.Options.PRNumber)
-	if a.Options.PRNumber == 0 {
-		err := fmt.Errorf("a PR ID/Number is required to perform destroy")
-		return err
-	}
-	isMerged, err := a.GithubClient.IsMerged(a.Options.PRNumber)
-	if err != nil {
-		return err
-	}
-	if isMerged {
-		changedNamespaces, err := a.nsCreateRawChangedFilesInPR(a.Options.ClusterDir, a.Options.PRNumber)
-		if err != nil {
-			return err
-		}
-		if len(changedNamespaces) == 0 {
-			fmt.Println("No namespaces to destroy")
-			return nil
-		}
-
-		fmt.Println("Namespaces removed in PR", changedNamespaces)
-
-		kubeClient, err := authenticate.CreateClientFromConfigFile(a.Options.KubecfgPath, a.Options.ClusterCtx)
-		if err != nil {
-			return err
-		}
-
-		// GetAllNamespacesFromCluster
-		namespaces, err := namespace.GetAllNamespacesFromCluster(kubeClient)
-		if err != nil {
-			return err
-		}
-
-		for _, namespace := range changedNamespaces {
-			a.Options.Namespace = namespace
-			if a.Options.SkipProdDestroy && isProductionNs(namespace, namespaces) {
-				err := fmt.Errorf("cannot destroy production namespace with skip-prod-destroy flag set to true")
-				return err
-			}
-			// Check if the namespace is present in the folder
-			if _, err = os.Stat(a.Options.Namespace); err != nil {
-				fmt.Println("Destroying Namespace:", namespace)
-				err = a.destroyNamespace()
-				if err != nil {
-					return err
-				}
-			}
-		}
-	}
-
 	return nil
 }
 
@@ -326,19 +201,6 @@ func (a *Apply) applyNamespaceDirs(chunkFolder []string) error {
 	return nil
 }
 
-// planKubectl calls the applier -> applyKubectl with dry-run enabled and return the output from applier
-func (a *Apply) planKubectl() (string, error) {
-	log.Printf("Running kubectl dry-run for namespace: %v in directory %v", a.Options.Namespace, a.Dir)
-
-	outputKubectl, err := a.Applier.KubectlApply(a.Options.Namespace, a.Dir, true)
-	if err != nil {
-		err := fmt.Errorf("error running kubectl on namespace %s: in directory: %v, %v\n %v", a.Options.Namespace, a.Dir, err, outputKubectl)
-		return "", err
-	}
-
-	return outputKubectl, nil
-}
-
 // applyKubectl calls the applier -> applyKubectl with dry-run disabled and return the output from applier
 func (a *Apply) applyKubectl() (string, error) {
 	log.Printf("Running kubectl for namespace: %v in directory %v", a.Options.Namespace, a.Dir)
@@ -363,20 +225,6 @@ func (a *Apply) deleteKubectl() (string, error) {
 	}
 
 	return outputKubectl, nil
-}
-
-// planTerraform calls applier -> TerraformInitAndPlan and prints the output from applier
-func (a *Apply) planTerraform() (*tfjson.Plan, string, error) {
-	log.Printf("Running Terraform Plan for namespace: %v", a.Options.Namespace)
-
-	tfFolder := a.Dir + "/resources"
-
-	tfPlan, outputTerraform, err := a.Applier.TerraformInitAndPlan(a.Options.Namespace, tfFolder)
-	if err != nil {
-		err := fmt.Errorf("error running terraform on namespace %s: %v \n %v", a.Options.Namespace, err, outputTerraform)
-		return nil, "", err
-	}
-	return tfPlan, outputTerraform, nil
 }
 
 // applyTerraform calls applier -> TerraformInitAndApply and prints the output from applier
@@ -409,58 +257,6 @@ func (a *Apply) applyTerraform() (string, error) {
 		return "", fmt.Errorf("error running terraform on namespace %s: %v \n %v", a.Options.Namespace, err, outputTerraform)
 	}
 	return outputTerraform, nil
-}
-
-// destroyTerraform calls applier -> TerraformInitAndDestroy and prints the output from applier
-func (a *Apply) destroyTerraform() (string, error) {
-	log.Printf("Running Terraform Destroy for namespace: %v", a.Options.Namespace)
-
-	tfFolder := a.Dir + "/resources"
-
-	outputTerraform, err := a.Applier.TerraformInitAndDestroy(a.Options.Namespace, tfFolder)
-	if err != nil {
-		err := fmt.Errorf("error running terraform on namespace %s: %v \n %v", a.Options.Namespace, err, outputTerraform)
-		return "", err
-	}
-	return outputTerraform, nil
-}
-
-// planNamespace intiates a new Apply object with options and env variables, and calls the
-// applyKubectl with dry-run enabled and calls applier TerraformInitAndPlan and prints the output
-func (a *Apply) planNamespace() error {
-	applier := NewApply(*a.Options)
-	repoPath := "namespaces/" + a.Options.ClusterDir + "/" + a.Options.Namespace
-
-	if util.IsYamlFileExists(repoPath) {
-		outputKubectl, err := applier.planKubectl()
-		if err != nil {
-			return err
-		}
-
-		fmt.Println("\nOutput of kubectl:", outputKubectl)
-	} else {
-		fmt.Printf("Namespace %s does not have yaml resources folder, skipping kubectl apply --dry-run\n", a.Options.Namespace)
-	}
-
-	exists, err := util.IsFilePathExists(repoPath + "/resources")
-	if err == nil && exists {
-		tfPlan, outputTerraform, err := applier.planTerraform()
-		if err != nil {
-			return err
-		}
-
-		fmt.Println("\nOutput of terraform:")
-
-		commentErr := CreateComment(a.GithubClient, tfPlan, a.Options.PRNumber)
-		if commentErr != nil {
-			fmt.Printf("\nError posting comment: %v", commentErr)
-		}
-
-		util.RedactedEnv(os.Stdout, outputTerraform, a.Options.RedactedEnv)
-	} else {
-		fmt.Printf("Namespace %s does not have terraform resources folder, skipping terraform plan\n", a.Options.Namespace)
-	}
-	return nil
 }
 
 // secretBlockerExists takes a filepath (usually a namespace name i.e. namespaces/live.../mynamespace)
@@ -551,138 +347,4 @@ func (a *Apply) applyNamespace() error {
 		fmt.Printf("Namespace %s does not have terraform resources folder, skipping terraform apply", a.Options.Namespace)
 	}
 	return nil
-}
-
-// destroyNamespace intiates a apply object with options and env variables, and calls the
-// calls applier TerraformInitAndDestroy, applyKubectl with dry-run disabled and prints the output
-func (a *Apply) destroyNamespace() error {
-	repoPath := "namespaces/" + a.Options.ClusterDir + "/" + a.Options.Namespace
-
-	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
-		fmt.Printf("Namespace %s does not exist, skipping destroy\n", a.Options.Namespace)
-		return nil
-	}
-
-	applier := NewApply(*a.Options)
-
-	exists, err := util.IsFilePathExists(repoPath + "/resources")
-	if err == nil && exists {
-		outputTerraform, err := applier.destroyTerraform()
-		if err != nil {
-			return err
-		}
-
-		fmt.Println("\nOutput of terraform:")
-		util.RedactedEnv(os.Stdout, outputTerraform, a.Options.RedactedEnv)
-
-		if util.IsYamlFileExists(repoPath) {
-			outputKubectl, err := applier.deleteKubectl()
-			if err != nil {
-				return err
-			}
-
-			fmt.Println("\nOutput of kubectl:", outputKubectl)
-		} else {
-			fmt.Printf("Namespace %s does not have yaml resources folder, skipping kubectl delete", a.Options.Namespace)
-		}
-
-	} else {
-		fmt.Printf("Namespace %s does not have terraform resources folder, skipping terraform destroy", a.Options.Namespace)
-	}
-	return nil
-}
-
-// nsCreateRawChangedFilesInPR get the list of changed files for a given PR. checks if the file is deleted and
-// write the deleted file to the namespace folder
-func (a *Apply) nsCreateRawChangedFilesInPR(cluster string, prNumber int) ([]string, error) {
-	files, err := a.GithubClient.GetChangedFiles(prNumber)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch list of changed files: %s", err)
-	}
-
-	namespaces, err := nsChangedInPR(files, a.Options.ClusterDir, true)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get namespace for destroy from the PR: %s", err)
-	}
-	if len(namespaces) == 0 {
-		fmt.Println("No namespace found in the PR for destroy")
-		return nil, nil
-	}
-	canCreate, err := canCreateNamespaces(namespaces, cluster)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create namespace for destroy: %s", err)
-	}
-	if !canCreate {
-		fmt.Println("Cannot create namespace for destroy")
-		return nil, nil
-	}
-
-	// Get the contents of the CommitFile from RawURL
-	// https://developer.github.com/v3/repos/contents/#get-contents
-
-	for _, file := range files {
-		data, err := util.GetGithubRawContents(file.GetRawURL())
-		if err != nil {
-			return nil, fmt.Errorf("failed to get raw contents: %s", err)
-		}
-		// Create List with changed files
-		if err := os.WriteFile(*file.Filename, data, 0644); err != nil {
-			return nil, fmt.Errorf("failed to write file list: %s", err)
-		}
-	}
-	return namespaces, nil
-}
-
-// nsChangedInPR get the list of changed files for a given PR. checks if the namespaces exists in the given cluster
-// folder and return the list of namespaces.
-func nsChangedInPR(files []*gogithub.CommitFile, cluster string, isDeleted bool) ([]string, error) {
-	var namespaceNames []string
-	for _, file := range files {
-		// check of the file is a deleted file
-		if isDeleted && *file.Status != "removed" {
-			fmt.Println("some of files are not marked for deletion: file", *file.Filename, "is not deleted")
-			return nil, nil
-		}
-
-		// namespaces filepaths are assumed to come in
-		// the format: namespaces/<cluster>.cloud-platform.service.justice.gov.uk/<namespaceName>
-		s := strings.Split(*file.Filename, "/")
-		// only get namespaces from the folder that belong to the given cluster and
-		// ignore changes outside namespace directories
-		if len(s) > 1 && s[1] == cluster {
-			namespaceNames = append(namespaceNames, s[2])
-		}
-	}
-	return util.DeduplicateList(namespaceNames), nil
-}
-
-func canCreateNamespaces(namespaces []string, cluster string) (bool, error) {
-	wd, _ := os.Getwd()
-	for _, ns := range namespaces {
-		// make directory if it doesn't exist
-		if _, err := os.Stat(wd + "/namespaces/" + cluster + "/" + ns); err != nil {
-			err := os.Mkdir(wd+"/namespaces/"+cluster+"/"+ns, 0755)
-			if err != nil {
-				return false, fmt.Errorf("error creating namespaces directory: %s", err)
-			}
-			err = os.Mkdir(wd+"/namespaces/"+cluster+"/"+ns+"/resources", 0755)
-			if err != nil {
-				return false, fmt.Errorf("error creating resources directory: %s", err)
-			}
-		} else {
-			fmt.Printf("namespace %s exists in the environments repo, skipping destroy", ns)
-			return false, nil
-		}
-	}
-	return true, nil
-}
-
-func isProductionNs(nsInPR string, namespaces []v1.Namespace) bool {
-	for _, ns := range namespaces {
-		is_prod := ns.Labels["cloud-platform.justice.gov.uk/is-production"] == "true"
-		if ns.Name == nsInPR && is_prod {
-			return true
-		}
-	}
-	return false
 }

@@ -45,7 +45,7 @@ $ cloud-platform environment plan
   -h, --help                  help for plan
       --kubecfg string        path to kubeconfig file (default "/home/runner/.kube/config")
   -n, --namespace string      Namespace which you want to perform the plan
-      --prNumber int          Pull request ID or number to which you want to perform the plan
+      --pr-number int         Pull request ID or number to which you want to perform the plan
       --redact                Redact the terraform output before printing (default true)
 ```
 
