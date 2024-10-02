@@ -166,3 +166,19 @@ func (gh *GithubClient) ListOpenPRs(namespace string) ([]*github.PullRequest, er
 
 	return matchedOpenPRs, nil
 }
+
+func (gh *GithubClient) CreateComment(prNumber int, body string) error {
+	comment := &github.IssueComment{
+		Body: github.String(body),
+	}
+
+	_, _, err := gh.V3.Issues.CreateComment(
+		context.TODO(),
+		"ministryofjustice",
+		"cloud-platform-environments",
+		prNumber,
+		comment,
+	)
+
+	return err
+}
