@@ -153,8 +153,6 @@ func (m *ApplierImpl) TerraformInitAndPlan(namespace, directory string) (*tfjson
 
 	tfPlan, _ := terraform.ShowPlanFile(context.Background(), "plan-"+namespace+".out")
 
-	tfPlan.UseJSONNumber(true)
-
 	if err != nil {
 		return nil, "", errors.New("unable to do Terraform Plan: " + err.Error())
 	}
