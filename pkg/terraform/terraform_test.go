@@ -27,7 +27,7 @@ func NewTestTerraformCLI(config *TerraformCLIConfig, tfMock *mocks.TerraformExec
 		m.On("Init", mock.Anything).Return(nil)
 		m.On("Apply", mock.Anything).Return(nil)
 		m.On("Destroy", mock.Anything).Return(nil)
-		m.On("Plan", mock.Anything).Return(true, nil)
+		m.On("Plan", mock.Anything, mock.Anything).Return(true, nil)
 		m.On("Output", mock.Anything).Return(nil, nil)
 		m.On("Show", mock.Anything).Return(nil, nil)
 		m.On("WorkspaceNew", mock.Anything, mock.Anything).Return(nil)

@@ -192,6 +192,8 @@ func (t *TerraformCLI) Plan(ctx context.Context, w io.Writer) (bool, error) {
 	t.Tf.SetStdout(w)
 	t.Tf.SetStderr(w)
 
+	outOptions := tfexec.Out("plan.out")
+	t.PlanVars = append(t.PlanVars, outOptions)
 	diff, err := t.Tf.Plan(ctx, t.PlanVars...)
 	if err != nil {
 		return false, err

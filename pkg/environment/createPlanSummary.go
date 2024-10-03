@@ -56,7 +56,7 @@ func CreateCommentBody(tfPlan *tfjson.Plan) string {
 	body = fmt.Sprintf(body, len(resourcesToCreate), len(resourcesToDelete), len(resourcesToUpdate), len(resourcesToReplace), len(resourcesUnchanged), details("create", "+", resourcesToCreate), details("destroy", "-", resourcesToDelete), details("update", "!", resourcesToUpdate), details("replace", "-+", resourcesToReplace))
 
 	if len(resourcesToCreate) == 0 && len(resourcesToReplace) == 0 && len(resourcesToUpdate) == 0 && len(resourcesToDelete) == 0 {
-		body = "\n```diff\n+ There are no terraform changes to apply```\n"
+		body = "\n```diff\n+ There are no terraform changes to apply\n```\n"
 	}
 
 	return body
