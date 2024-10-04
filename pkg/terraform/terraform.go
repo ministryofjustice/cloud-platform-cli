@@ -28,14 +28,16 @@ var (
 // TerraformCLI is the client that wraps around terraform-exec
 // to execute Terraform cli commands
 type TerraformCLI struct {
-	Tf          terraformExec
-	WorkingDir  string
-	Workspace   string
-	ApplyVars   []tfexec.ApplyOption
-	DestroyVars []tfexec.DestroyOption
-	PlanVars    []tfexec.PlanOption
-	InitVars    []tfexec.InitOption
-	Redacted    bool
+	Tf           terraformExec
+	WorkingDir   string
+	Workspace    string
+	ApplyVars    []tfexec.ApplyOption
+	DestroyVars  []tfexec.DestroyOption
+	PlanVars     []tfexec.PlanOption
+	InitVars     []tfexec.InitOption
+	Redacted     bool
+	IsPipeline   bool
+	PlanFilename string
 }
 
 // TerraformCLIConfig configures the Terraform client
@@ -58,6 +60,10 @@ type TerraformCLIConfig struct {
 	Version string
 	// Redacted is the flag to enable/disable redacting the terraform before printing output.
 	Redacted bool
+	// if the terraform is being executed from the pipeline
+	IsPipeline bool
+	// Plan Filename to be output from plan or to be used in apply
+	PlanFilename string
 }
 
 // NewTerraformCLI creates a terraform-exec client and configures and
@@ -104,14 +110,16 @@ func NewTerraformCLI(config *TerraformCLIConfig) (*TerraformCLI, error) {
 	}
 
 	client := &TerraformCLI{
-		Tf:          tf,
-		WorkingDir:  config.WorkingDir,
-		Workspace:   config.Workspace,
-		ApplyVars:   config.ApplyVars,
-		DestroyVars: config.DestroyVars,
-		PlanVars:    config.PlanVars,
-		InitVars:    config.InitVars,
-		Redacted:    config.Redacted,
+		Tf:           tf,
+		WorkingDir:   config.WorkingDir,
+		Workspace:    config.Workspace,
+		ApplyVars:    config.ApplyVars,
+		DestroyVars:  config.DestroyVars,
+		PlanVars:     config.PlanVars,
+		InitVars:     config.InitVars,
+		Redacted:     config.Redacted,
+		IsPipeline:   config.IsPipeline,
+		PlanFilename: config.PlanFilename,
 	}
 
 	return client, nil
@@ -168,6 +176,11 @@ func (t *TerraformCLI) Apply(ctx context.Context, w io.Writer) error {
 	t.Tf.SetStdout(w)
 	t.Tf.SetStderr(w)
 
+	if t.IsPipeline && t.PlanFilename != "" {
+		outOptions := tfexec.DirOrPlan(t.PlanFilename)
+		t.ApplyVars = append(t.ApplyVars, outOptions)
+	}
+
 	if err := t.Tf.Apply(ctx, t.ApplyVars...); err != nil {
 		return err
 	}
@@ -191,6 +204,11 @@ func (t *TerraformCLI) Destroy(ctx context.Context, w io.Writer) error {
 func (t *TerraformCLI) Plan(ctx context.Context, w io.Writer) (bool, error) {
 	t.Tf.SetStdout(w)
 	t.Tf.SetStderr(w)
+
+	if t.IsPipeline && t.PlanFilename != "" {
+		outOptions := tfexec.Out(t.PlanFilename)
+		t.PlanVars = append(t.PlanVars, outOptions)
+	}
 
 	diff, err := t.Tf.Plan(ctx, t.PlanVars...)
 	if err != nil {

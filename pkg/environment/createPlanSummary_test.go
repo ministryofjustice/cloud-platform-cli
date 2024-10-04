@@ -104,7 +104,7 @@ func Test_CreateCommentBody(t *testing.T) {
 		want string
 	}{
 		{
-			"GIVEN a terraform plan with no changes THEN return a comment body stating so", args{tfNoChangesPlan}, "\n```diff\n+ There are no terraform changes to apply```\n",
+			"GIVEN a terraform plan with no changes THEN return a comment body stating so", args{tfNoChangesPlan}, "\n```diff\n+ There are no terraform changes to apply\n```\n",
 		},
 		{
 			"GIVEN a terraform plan with CREATE changes THEN return a comment body with correct changes", args{tfChangesPlan01}, createChangesExpected,

@@ -33,9 +33,13 @@ func addTerraformCmd(topLevel *cobra.Command) {
 			if tf.Workspace == "" {
 				contextLogger.Fatal("Workspace is required")
 			}
+
+			if tf.IsPipeline && tf.PlanFilename == "" {
+				contextLogger.Fatal("When running in the pipeline you must provide a plan filename")
+			}
+
 			tfCli, err := terraform.NewTerraformCLI(&tf)
 			if err != nil {
-
 				contextLogger.Fatal(err)
 			}
 
@@ -65,6 +69,11 @@ func addTerraformCmd(topLevel *cobra.Command) {
 			if tf.Workspace == "" {
 				contextLogger.Fatal("Workspace is required")
 			}
+
+			if tf.IsPipeline && tf.PlanFilename == "" {
+				contextLogger.Fatal("When running in the pipeline you must provide a plan filename")
+			}
+
 			tfCli, err := terraform.NewTerraformCLI(&tf)
 			if err != nil {
 				contextLogger.Fatal(err)
@@ -146,6 +155,8 @@ func addCommonFlags(cmd *cobra.Command, tf *terraform.TerraformCLIConfig) {
 	cmd.PersistentFlags().StringVarP(&tf.Workspace, "workspace", "w", "", "[required] workspace where terraform is going to be executed")
 	cmd.PersistentFlags().StringVar(&tf.Version, "terraform-version", "1.2.5", "[optional] the terraform version to use.")
 	cmd.PersistentFlags().BoolVar(&tf.Redacted, "redact", true, "Redact the terraform output before printing")
+	cmd.PersistentFlags().BoolVar(&tf.IsPipeline, "is-pipeline", false, "[required] if the terraform is being executed from the pipeline")
+	cmd.PersistentFlags().StringVar(&tf.PlanFilename, "plan-filename", "", "[optional] the plan filename to be output from the terraform plan or used for the terraform apply eg. 'plan-$PR_NUM.out' [default] ''")
 
 	_ = cmd.MarkPersistentFlagRequired("aws-access-key-id")
 	_ = cmd.MarkPersistentFlagRequired("aws-secret-access-key")
