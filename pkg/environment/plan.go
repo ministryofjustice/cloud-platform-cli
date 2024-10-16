@@ -34,7 +34,7 @@ func (a *Apply) Plan() error {
 
 	// If a namespace is given as a flag, then perform a plan for the given namespace.
 	if a.Options.Namespace != "" {
-		err := a.planNamespace()
+		err := a.planNamespace(a.Options.Namespace)
 		if err != nil {
 			return err
 		}
@@ -51,8 +51,7 @@ func (a *Apply) Plan() error {
 			return err
 		}
 		for _, namespace := range changedNamespaces {
-			a.Options.Namespace = namespace
-			err = a.planNamespace()
+			err = a.planNamespace(namespace)
 			if err != nil {
 				return err
 			}
@@ -77,9 +76,10 @@ func (a *Apply) planTerraform() (*tfjson.Plan, string, error) {
 
 // planNamespace intiates a new Apply object with options and env variables, and calls the
 // applyKubectl with dry-run enabled and calls applier TerraformInitAndPlan and prints the output
-func (a *Apply) planNamespace() error {
-	applier := NewApply(*a.Options)
-	repoPath := "namespaces/" + a.Options.ClusterDir + "/" + a.Options.Namespace
+func (a *Apply) planNamespace(namespace string) error {
+	applier := NewApply(*a.Options, namespace)
+	applier.Options.Namespace = namespace
+	repoPath := "namespaces/" + a.Options.ClusterDir + "/" + namespace
 
 	if util.IsYamlFileExists(repoPath) {
 		outputKubectl, err := applier.planKubectl()
@@ -89,7 +89,7 @@ func (a *Apply) planNamespace() error {
 
 		fmt.Println("\nOutput of kubectl:", outputKubectl)
 	} else {
-		fmt.Printf("Namespace %s does not have yaml resources folder, skipping kubectl apply --dry-run\n", a.Options.Namespace)
+		fmt.Printf("Namespace %s does not have yaml resources folder, skipping kubectl apply --dry-run\n", namespace)
 	}
 
 	exists, err := util.IsFilePathExists(repoPath + "/resources")
@@ -107,7 +107,7 @@ func (a *Apply) planNamespace() error {
 		}
 		util.RedactedEnv(os.Stdout, outputTerraform, a.Options.RedactedEnv)
 	} else {
-		fmt.Printf("Namespace %s does not have terraform resources folder, skipping terraform plan\n", a.Options.Namespace)
+		fmt.Printf("Namespace %s does not have terraform resources folder, skipping terraform plan\n", namespace)
 	}
 	return nil
 }
