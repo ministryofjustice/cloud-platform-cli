@@ -157,12 +157,6 @@ func (m *ApplierImpl) TerraformInitAndPlan(namespace, directory string) (*tfjson
 		return nil, "", errors.New("unable to do Terraform Plan: " + err.Error())
 	}
 
-	// ignore if any changes or no changes.
-	_, err = terraform.Plan(context.Background())
-	if err != nil {
-		return nil, "", errors.New("unable to do Terraform Plan: " + err.Error())
-	}
-
 	return tfPlan, out.String(), nil
 }
 

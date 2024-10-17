@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/client"
+	"github.com/ministryofjustice/cloud-platform-cli/pkg/util"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -131,7 +132,7 @@ func Test_contains(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := contains(tt.args.s, tt.args.str); got != tt.want {
+			if got := util.Contains(tt.args.s, tt.args.str); got != tt.want {
 				t.Errorf("contains() = %v, want %v", got, tt.want)
 			}
 		})

@@ -49,15 +49,14 @@ func (a *Apply) Destroy() error {
 		}
 
 		for _, namespace := range changedNamespaces {
-			a.Options.Namespace = namespace
 			if a.Options.SkipProdDestroy && isProductionNs(namespace, namespaces) {
 				err := fmt.Errorf("cannot destroy production namespace with skip-prod-destroy flag set to true")
 				return err
 			}
 			// Check if the namespace is present in the folder
-			if _, err = os.Stat(a.Options.Namespace); err != nil {
+			if _, err = os.Stat(namespace); err != nil {
 				fmt.Println("Destroying Namespace:", namespace)
-				err = a.destroyNamespace()
+				err = a.destroyNamespace(namespace)
 				if err != nil {
 					return err
 				}
@@ -84,15 +83,16 @@ func (a *Apply) destroyTerraform() (string, error) {
 
 // destroyNamespace intiates a apply object with options and env variables, and calls the
 // calls applier TerraformInitAndDestroy, applyKubectl with dry-run disabled and prints the output
-func (a *Apply) destroyNamespace() error {
-	repoPath := "namespaces/" + a.Options.ClusterDir + "/" + a.Options.Namespace
+func (a *Apply) destroyNamespace(namespace string) error {
+	repoPath := "namespaces/" + a.Options.ClusterDir + "/" + namespace
 
 	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
-		fmt.Printf("Namespace %s does not exist, skipping destroy\n", a.Options.Namespace)
+		fmt.Printf("Namespace %s does not exist, skipping destroy\n", namespace)
 		return nil
 	}
 
-	applier := NewApply(*a.Options)
+	applier := NewApply(*a.Options, namespace)
+	applier.Options.Namespace = namespace
 
 	exists, err := util.IsFilePathExists(repoPath + "/resources")
 	if err == nil && exists {
@@ -112,11 +112,11 @@ func (a *Apply) destroyNamespace() error {
 
 			fmt.Println("\nOutput of kubectl:", outputKubectl)
 		} else {
-			fmt.Printf("Namespace %s does not have yaml resources folder, skipping kubectl delete", a.Options.Namespace)
+			fmt.Printf("Namespace %s does not have yaml resources folder, skipping kubectl delete", namespace)
 		}
 
 	} else {
-		fmt.Printf("Namespace %s does not have terraform resources folder, skipping terraform destroy", a.Options.Namespace)
+		fmt.Printf("Namespace %s does not have terraform resources folder, skipping terraform destroy", namespace)
 	}
 	return nil
 }
