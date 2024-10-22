@@ -74,22 +74,20 @@ func GetLatestGitPull() error {
 	fmt.Println("Executing git reset")
 	resetErr := reset.Run()
 	if resetErr != nil {
-		fmt.Println(fmt.Sprint(resetErr) + ": " + stderr.String())
-		return resetErr
+		return errors.New(resetErr.Error() + ": " + stderr.String())
 	}
 
 	fmt.Println("Executing git pull")
 	err := pull.Run()
 	if err != nil {
-		fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
-		return err
+		return errors.New(fmt.Sprint(err) + ": " + stderr.String())
 	}
 
 	return nil
 }
 
 // Redacted reads bytes of data for any sensitive strings and print REDACTED
-// This functiion is used to prevent slack webhooks URLS from being output in pipeline logs
+// This function is used to prevent slack webhooks URLS from being output in pipeline logs
 func Redacted(w io.Writer, output string, redact bool) {
 	re := regexp2.MustCompile(`^.*https://hooks\.slack\.com.*$`, 0)
 	scanner := bufio.NewScanner(strings.NewReader(output))

@@ -184,11 +184,6 @@ func (a *Apply) ApplyBatch() error {
 func (a *Apply) applyNamespaceDirs(chunkFolder []string) error {
 	erroredNs := []string{}
 
-	err := util.GetLatestGitPull()
-	if err != nil {
-		return err
-	}
-
 	done := make(chan bool)
 	defer close(done)
 
@@ -231,6 +226,15 @@ func (a *Apply) runApply(done <-chan bool, dirStream <-chan string) <-chan strin
 			case results <- func(dir string) string {
 				ns := strings.Split(dir, "/")
 				namespace := ns[2]
+
+				pullErr := util.GetLatestGitPull()
+				if pullErr != nil {
+					if strings.Contains(pullErr.Error(), "index.lock") {
+						fmt.Printf("ignoring git lock error during parallel run\n")
+					} else {
+						return pullErr.Error()
+					}
+				}
 
 				err := a.applyNamespace(namespace)
 				if err != nil {
