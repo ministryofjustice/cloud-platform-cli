@@ -189,7 +189,7 @@ func (a *Apply) applyNamespaceDirs(chunkFolder []string) error {
 
 	chunkStream := util.Generator(done, chunkFolder...)
 
-	routineResults := a.parallelApplyNamespace(done, chunkStream, 1) // goroutines are very lightweight and can number in millions, but the tasks we are doing are very heavy so we need to limit this as much as possible
+	routineResults := a.parallelApplyNamespace(done, chunkStream, 2) // goroutines are very lightweight and can number in millions, but the tasks we are doing are very heavy so we need to limit this as much as possible
 
 	results := util.FanIn(done, routineResults...)
 
@@ -203,7 +203,7 @@ func (a *Apply) applyNamespaceDirs(chunkFolder []string) error {
 
 func (a *Apply) parallelApplyNamespace(done <-chan bool, dirStream <-chan string, numRoutines int) []<-chan string {
 	if a.Options.IsApplyPipeline {
-		runtime.GOMAXPROCS(1) // this is based on https://github.com/ministryofjustice/cloud-platform-infrastructure/blob/ebafd84ba45a18deeb113d1b57f565141368c187/terraform/aws-accounts/cloud-platform-aws/vpc/eks/cluster.tf#L46C1-L46C58 current max cpu is 4 (for workloads running in concourse)
+		runtime.GOMAXPROCS(numRoutines) // this is based on https://github.com/ministryofjustice/cloud-platform-infrastructure/blob/ebafd84ba45a18deeb113d1b57f565141368c187/terraform/aws-accounts/cloud-platform-aws/vpc/eks/cluster.tf#L46C1-L46C58 current max cpu is 4 (for workloads running in concourse)
 	}
 
 	routineResults := make([]<-chan string, numRoutines)
