@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"strings"
+
 	"github.com/MakeNowJust/heredoc"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/pipeline"
 	util "github.com/ministryofjustice/cloud-platform-cli/pkg/util"
@@ -58,6 +60,10 @@ func addPipelineCordonAndDrainClusterCmd(toplevel *cobra.Command) {
 
 			if cliOpt.NodeGroupName == "" {
 				contextLogger.Fatal("--node-group is required")
+			}
+
+			if strings.Contains(cliOpt.Name, "manager") && strings.Contains(cliOpt.NodeGroupName, "def-ng") {
+				contextLogger.Fatal("⚠️ Warning ⚠️ Because this command runs remotely in concourse, this command can’t be used to drain default ng on the manager cluster. It must be run locally while your context is set to the correct cluster. see https://runbooks.cloud-platform.service.justice.gov.uk/node-group-changes.html#process-for-recycling-all-nodes-in-a-cluster for more details")
 			}
 
 			pipeline.CordonAndDrainPipelineShellCmds(cliOpt.Name, cliOpt.NodeGroupName)

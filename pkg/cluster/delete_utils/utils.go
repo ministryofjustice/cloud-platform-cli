@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/eks"
+	"github.com/ministryofjustice/cloud-platform-cli/pkg/util"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -37,7 +38,7 @@ func AbortIfUserNamespacesExist(namespaces []v1.Namespace, systemNamespaces []st
 			continue
 		}
 
-		isUserNamespace := !contains(systemNamespaces, ns.Name)
+		isUserNamespace := !util.Contains(systemNamespaces, ns.Name)
 
 		if isUserNamespace {
 			userNamespaces = append(userNamespaces, ns.Name)
@@ -73,7 +74,7 @@ func CheckClusterIsDestroyed(clusterName string, eksAPI EKSClient) error {
 		clusterValues = append(clusterValues, *val)
 	}
 
-	isDeleted := !contains(clusterValues, clusterName)
+	isDeleted := !util.Contains(clusterValues, clusterName)
 
 	if !isDeleted {
 		return fmt.Errorf("cluster has not successfully deleted")
@@ -91,7 +92,6 @@ func CheckVpcIsDestroyed(vpcID string, ec2API EC2Client) error {
 			{Name: aws.String("tag:business-unit"), Values: []*string{aws.String("Platforms")}},
 		},
 	})
-
 	if err != nil {
 		return fmt.Errorf("failed to list vpcs: %w", err)
 	}
@@ -102,22 +102,11 @@ func CheckVpcIsDestroyed(vpcID string, ec2API EC2Client) error {
 		vpcValues = append(vpcValues, *val.VpcId)
 	}
 
-	isDeleted := !contains(vpcValues, vpcID)
+	isDeleted := !util.Contains(vpcValues, vpcID)
 
 	if !isDeleted {
 		return fmt.Errorf("vpc has not successfully deleted")
 	}
 
 	return nil
-}
-
-// Contains checks if a string is present in a slice
-func contains(s []string, str string) bool {
-	for _, v := range s {
-		if v == str {
-			return true
-		}
-	}
-
-	return false
 }

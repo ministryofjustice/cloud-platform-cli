@@ -51,7 +51,9 @@ type AwsCredentials struct {
 
 // NewCluster creates a new Cluster object and populates its
 // fields with the values from the Kubernetes cluster in the client passed to it.
-func NewCluster(c *client.KubeClient) (*Cluster, error) {
+func NewCluster(c *client.KubeClient, recycleOldest bool) (*Cluster, error) {
+	oldNode := v1.Node{}
+
 	pods, err := getPods(c)
 	if err != nil {
 		return nil, err
@@ -62,9 +64,13 @@ func NewCluster(c *client.KubeClient) (*Cluster, error) {
 		return nil, err
 	}
 
-	oldestNode, err := getOldestNode(c)
-	if err != nil {
-		return nil, err
+	if recycleOldest {
+		n, err := oldestNode(nodes)
+		if err != nil {
+			return nil, err
+		}
+
+		oldNode = n
 	}
 
 	newestNode, err := GetNewestNode(c, nodes)
@@ -76,7 +82,7 @@ func NewCluster(c *client.KubeClient) (*Cluster, error) {
 		Name:       nodes[0].Labels["Cluster"],
 		Pods:       pods,
 		Nodes:      nodes,
-		OldestNode: oldestNode,
+		OldestNode: oldNode,
 		NewestNode: newestNode,
 	}, nil
 }
@@ -99,19 +105,4 @@ func NewAwsCreds(region string) (*AwsCredentials, error) {
 		Session: sess,
 		Region:  region,
 	}, nil
-}
-
-// RefreshStatus performs a value overwrite of the cluster status.
-// This is useful for when the cluster is being updated.
-func (c *Cluster) RefreshStatus(client *client.KubeClient) (err error) {
-	c.Nodes, err = GetAllNodes(client)
-	if err != nil {
-		return err
-	}
-
-	c.OldestNode, err = getOldestNode(client)
-	if err != nil {
-		return err
-	}
-	return nil
 }

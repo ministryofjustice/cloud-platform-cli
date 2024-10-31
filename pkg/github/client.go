@@ -3,6 +3,7 @@ package github
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/google/go-github/github"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/util"
@@ -15,6 +16,8 @@ var _ GithubPullRequestsService = (*github.PullRequestsService)(nil)
 type GithubPullRequestsService interface {
 	ListFiles(ctx context.Context, owner string, repo string, number int, opt *github.ListOptions) ([]*github.CommitFile, *github.Response, error)
 	IsMerged(ctx context.Context, owner string, repo string, number int) (bool, *github.Response, error)
+	Create(ctx context.Context, owner string, repo string, pr *github.NewPullRequest) (*github.PullRequest, *github.Response, error)
+	List(ctx context.Context, owner string, repo string, opts *github.PullRequestListOptions) ([]*github.PullRequest, *github.Response, error)
 }
 
 // GithubClient for handling requests to the Github V3 and V4 APIs.
@@ -43,7 +46,6 @@ type Nodes struct {
 
 // NewGithubClient ...
 func NewGithubClient(config *GithubClientConfig, token string) *GithubClient {
-
 	client := oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: token},
 	))
@@ -63,7 +65,6 @@ func NewGithubClient(config *GithubClientConfig, token string) *GithubClient {
 // ListMergedPRs takes date and number of PRs count as input, search the github using Graphql api for
 // list of PRs (title,url) between the first and last date provided
 func (gh *GithubClient) ListMergedPRs(date util.Date, count int) ([]Nodes, error) {
-
 	var query struct {
 		Search struct {
 			Nodes []Nodes
@@ -106,4 +107,78 @@ func (gh *GithubClient) IsMerged(prNumber int) (bool, error) {
 	}
 
 	return merged, nil
+}
+
+func (gh *GithubClient) CreatePR(branchName, namespace, description string) (string, error) {
+	newPR := &github.NewPullRequest{
+		Title:               github.String("Fix: rds version mismatch in " + namespace),
+		Head:                github.String("ministryofjustice:" + branchName),
+		Base:                github.String("main"),
+		Body:                github.String(description),
+		MaintainerCanModify: github.Bool(true),
+	}
+
+	pr, _, err := gh.PullRequests.Create(context.TODO(), "ministryofjustice", "cloud-platform-environments", newPR)
+	if err != nil {
+		return "", err
+	}
+
+	fmt.Printf("PR created: %s\n", pr.GetHTMLURL())
+	return pr.GetHTMLURL(), nil
+}
+
+func (gh *GithubClient) ListOpenPRs(namespace string) ([]*github.PullRequest, error) {
+	listOpts := &github.ListOptions{PerPage: 100, Page: 0}
+	opts := &github.PullRequestListOptions{
+		State:       "open",
+		ListOptions: *listOpts,
+	}
+	allOpenPrs := []*github.PullRequest{}
+	matchedOpenPRs := []*github.PullRequest{}
+	paginate := 0
+
+	prs, resp, err := gh.PullRequests.List(context.TODO(), "ministryofjustice", "cloud-platform-environments", opts)
+	if err != nil {
+		return nil, err
+	}
+
+	allOpenPrs = append(allOpenPrs, prs...)
+
+	paginate = resp.NextPage
+
+	for paginate > 0 {
+		opts.ListOptions.Page = resp.NextPage
+		prs, resp, err := gh.PullRequests.List(context.TODO(), "ministryofjustice", "cloud-platform-environments", opts)
+		if err != nil {
+			return nil, err
+		}
+
+		allOpenPrs = append(allOpenPrs, prs...)
+
+		paginate = resp.NextPage
+	}
+
+	for _, pr := range allOpenPrs {
+		if strings.Contains(*pr.Title, "Fix: rds version mismatch in "+namespace) {
+			matchedOpenPRs = append(matchedOpenPRs, pr)
+		}
+	}
+
+	return matchedOpenPRs, nil
+}
+
+func (gh *GithubClient) CreateComment(prNumber int, body string) error {
+	comment := &github.IssueComment{
+		Body: github.String(body),
+	}
+
+	_, _, err := gh.V3.Issues.CreateComment(
+		context.TODO(),
+		"ministryofjustice",
+		"cloud-platform-environments",
+		prNumber,
+		comment,
+	)
+
+	return err
 }

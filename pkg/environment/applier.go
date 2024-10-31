@@ -9,6 +9,7 @@ import (
 	"os/exec"
 
 	"github.com/hashicorp/terraform-exec/tfexec"
+	tfjson "github.com/hashicorp/terraform-json"
 	"github.com/kelseyhightower/envconfig"
 )
 
@@ -18,7 +19,7 @@ type Applier interface {
 	Initialize()
 	KubectlApply(namespace, directory string, dryRun bool) (string, error)
 	KubectlDelete(namespace, directory string, dryRun bool) (string, error)
-	TerraformInitAndPlan(namespace string, directory string) (string, error)
+	TerraformInitAndPlan(namespace string, directory string) (*tfjson.Plan, string, error)
 	TerraformInitAndApply(namespace string, directory string) (string, error)
 	TerraformInitAndDestroy(namespace string, directory string) (string, error)
 	TerraformDestroy(directory string) error
@@ -76,6 +77,7 @@ func (m *ApplierImpl) optionEnvBackendConfigVars(c EnvBackendConfigVars) error {
 
 func (m *ApplierImpl) TerraformInitAndApply(namespace, directory string) (string, error) {
 	var out bytes.Buffer
+
 	terraform, err := tfexec.NewTerraform(directory, m.terraformBinaryPath)
 	if err != nil {
 		return "", errors.New("unable to instantiate Terraform: " + err.Error())
@@ -108,17 +110,17 @@ func (m *ApplierImpl) TerraformInitAndApply(namespace, directory string) (string
 
 	err = terraform.Apply(context.Background(), tfexec.Refresh(true))
 	if err != nil {
-		return "", errors.New("unable to apply Terraform: " + err.Error())
+		return errReturn(out, err)
 	}
 
 	return out.String(), nil
 }
 
-func (m *ApplierImpl) TerraformInitAndPlan(namespace, directory string) (string, error) {
+func (m *ApplierImpl) TerraformInitAndPlan(namespace, directory string) (*tfjson.Plan, string, error) {
 	var out bytes.Buffer
 	terraform, err := tfexec.NewTerraform(directory, m.terraformBinaryPath)
 	if err != nil {
-		return "", errors.New("unable to instantiate Terraform: " + err.Error())
+		return nil, "", errors.New("unable to instantiate Terraform: " + err.Error())
 	}
 
 	terraform.SetStdout(&out)
@@ -127,12 +129,12 @@ func (m *ApplierImpl) TerraformInitAndPlan(namespace, directory string) (string,
 	// Sometimes the error text would be useful in the command output that's
 	// displayed in the UI. For this reason, we append the error to the
 	// output before we return it.
-	errReturn := func(out bytes.Buffer, err error) (string, error) {
+	errReturn := func(out bytes.Buffer, err error) (*tfjson.Plan, string, error) {
 		if err != nil {
-			return fmt.Sprintf("%s\n%s", out.String(), err.Error()), err
+			return nil, fmt.Sprintf("%s\n%s", out.String(), err.Error()), err
 		}
 
-		return out.String(), nil
+		return nil, out.String(), nil
 	}
 
 	key := m.config.PipelineStateKeyPrefix + m.config.PipelineClusterState + "/" + namespace + "/terraform.tfstate"
@@ -146,13 +148,16 @@ func (m *ApplierImpl) TerraformInitAndPlan(namespace, directory string) (string,
 		return errReturn(out, err)
 	}
 
-	// ignore if any changes or no changes.
-	_, err = terraform.Plan(context.Background())
+	outOption := tfexec.Out("plan-" + namespace + ".out")
+	_, err = terraform.Plan(context.Background(), outOption)
+
+	tfPlan, _ := terraform.ShowPlanFile(context.Background(), "plan-"+namespace+".out")
+
 	if err != nil {
-		return "", errors.New("unable to do Terraform Plan: " + err.Error())
+		return nil, "", errors.New("unable to do Terraform Plan: " + err.Error())
 	}
 
-	return out.String(), nil
+	return tfPlan, out.String(), nil
 }
 
 func (m *ApplierImpl) TerraformInitAndDestroy(namespace, directory string) (string, error) {

@@ -1,10 +1,10 @@
 # Build Cloud Platform tools (CLI)
-FROM golang:1.21.7-bookworm AS cli_builder
+FROM golang:1.23.2-bookworm AS cli_builder
 
 ENV \
   CGO_ENABLED=0 \
   GOOS=linux \
-  KUBECTL_VERSION=1.27.9 \
+  KUBECTL_VERSION=1.28.11 \
   CLOUD_PLATFORM_CLI_VERSION=DOCKER \
   TERRAFORM_VERSION=1.2.5
 
@@ -37,7 +37,7 @@ RUN chmod +x kubectl terraform
 
 # ---
 
-FROM debian:bookworm-20240211-slim
+FROM debian:bookworm-20241016-slim
 
 ENV AWSCLI_VERSION=2.7.6
 

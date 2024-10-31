@@ -350,3 +350,37 @@ func TestGetGithubRawContents(t *testing.T) {
 		})
 	}
 }
+
+func Test_contains(t *testing.T) {
+	type args struct {
+		s   []string
+		str string
+	}
+
+	validStrArr := []string{"testVal"}
+	validArgs := args{
+		s:   validStrArr,
+		str: "testVal",
+	}
+
+	invalidArgs := args{
+		s:   validStrArr,
+		str: "incorrect",
+	}
+
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{name: "GIVEN a string and that string is also in the string array THEN return true", args: validArgs, want: true},
+		{name: "GIVEN a string and that string is NOT in the string array THEN return false", args: invalidArgs, want: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Contains(tt.args.s, tt.args.str); got != tt.want {
+				t.Errorf("contains() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
