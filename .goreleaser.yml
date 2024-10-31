@@ -1,4 +1,5 @@
 project_name: cloud-platform-cli
+version: 2
 env:
   - DOCKERFILE=Dockerfile-goreleaser
 before:
@@ -36,11 +37,11 @@ changelog:
       - Merge branch
       - go mod tidy
 brews:
-  - tap:
+  - repository:
       owner: ministryofjustice
       name: homebrew-cloud-platform-tap
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
-    folder: Formula
+    directory: Formula
     homepage: https://user-guide.cloud-platform.service.justice.gov.uk/#cloud-platform-user-guide
     description: Multi-purpose CLI for Ministry of Justice Cloud Platform.
     license: MIT
