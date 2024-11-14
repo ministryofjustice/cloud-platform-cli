@@ -189,7 +189,7 @@ func (a *Apply) applyNamespaceDirs(chunkFolder []string) error {
 
 	chunkStream := util.Generator(done, chunkFolder...)
 
-	routineResults := a.parallelApplyNamespace(done, chunkStream, 2) // goroutines are very lightweight and can number in millions, but the tasks we are doing are very heavy so we need to limit this as much as possible
+	routineResults := a.parallelApplyNamespace(done, chunkStream, 3) // goroutines are very lightweight and can number in millions, but the tasks we are doing are very heavy so we need to limit this as much as possible
 
 	results := util.FanIn(done, routineResults...)
 
