@@ -77,7 +77,10 @@ func (sd *secretDecoder) processJson(jsn string, rawPrint bool) (string, error) 
 		return "", err
 	}
 
-	data := result["data"].(map[string]interface{})
+	data, valid := result["data"].(map[string]interface{})
+	if !valid {
+		return "", errors.New("unable to decode secret, does it have a data key?")
+	}
 
 	err = decodeKeys(data)
 	if err != nil {

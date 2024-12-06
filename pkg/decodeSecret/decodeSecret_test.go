@@ -106,4 +106,17 @@ func TestFormatJson(t *testing.T) {
 	if err == nil {
 		t.Fatal("Expected error and received nil")
 	}
+
+}
+
+func TestJsonNoDataKey(t *testing.T) {
+	jsn := `{ "key1": "1", "key2": "2" }`
+	sd := secretDecoder{}
+	_, err := sd.processJson(jsn, false)
+	if err == nil {
+		t.Error("Expected an error when no data key is present")
+	}
+	if err.Error() != "unable to decode secret, does it have a data key?" {
+		t.Errorf("Expected error message 'unable to decode secret, does it have a data key?', got '%s'", err.Error())
+	}
 }
