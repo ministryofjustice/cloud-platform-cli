@@ -34,3 +34,17 @@ func CordonAndDrainPipelineShellCmds(clusterName, nodeGroup string) {
 	runCmd("fly", []string{"--target", "manager", "trigger-job", "-j", "cordon-and-drain-nodes/cordon-and-drain-nodes"})
 	fmt.Println("Cordoning and Draining... https://concourse.cloud-platform.service.justice.gov.uk/teams/main/pipelines/cordon-and-drain-nodes/jobs/cordon-and-drain-nodes/builds/latest")
 }
+
+func CreateCustomPipelineShellCmds(branchName string) {
+	runCmd("fly", []string{"--target", "manager", "login", "--team-name", "main", "--concourse-url", "https://concourse.cloud-platform.service.justice.gov.uk/"})
+	runCmd("bash", []string{"-c", "wget -qO- https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-concourse/main/pipelines/manager/main/custom-cluster.yaml | fly --target manager set-pipeline -p custom-cluster -c - -v branch_name=" + branchName})
+	runCmd("fly", []string{"--target", "manager", "trigger-job", "-j", "custom-cluster/create"})
+	fmt.Println("Creating... https://concourse.cloud-platform.service.justice.gov.uk/teams/main/pipelines/custom-cluster/jobs/create/builds/latest")
+}
+
+func TestCustomPipelineShellCmds(clusterName string, branchName string) {
+	runCmd("fly", []string{"--target", "manager", "login", "--team-name", "main", "--concourse-url", "https://concourse.cloud-platform.service.justice.gov.uk/"})
+	runCmd("bash", []string{"-c", "wget -qO- https://raw.githubusercontent.com/ministryofjustice/cloud-platform-terraform-concourse/main/pipelines/manager/main/custom-cluster.yaml | fly --target manager set-pipeline -p custom-cluster -c - -v cluster_name=" + clusterName + " -v branch_name=" + branchName})
+	runCmd("fly", []string{"--target", "manager", "trigger-job", "-j", "custom-cluster/custom-integration-tests"})
+	fmt.Println("Testing... https://concourse.cloud-platform.service.justice.gov.uk/teams/main/pipelines/custom-cluster/jobs/custom-integration-tests/builds/latest")
+}
