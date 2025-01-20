@@ -37,7 +37,7 @@ RUN chmod +x kubectl terraform
 
 # ---
 
-FROM debian:bookworm-20241016-slim
+FROM debian:bookworm-20250113-slim
 
 ENV AWSCLI_VERSION=2.7.6
 
