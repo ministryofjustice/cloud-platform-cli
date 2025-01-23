@@ -282,7 +282,7 @@ func (a *Apply) applyTerraform() (string, error) {
 
 	tfFolder := a.Dir + "/resources"
 
-	if strings.Contains(a.Dir, a.Options.Namespace) {
+	if !strings.Contains(a.Dir, a.Options.Namespace) {
 		return "", fmt.Errorf("error running terraform as directory and namespace are not aligned Dir=%v and Namespace=%v", a.Dir, a.Options.Namespace)
 	}
 
