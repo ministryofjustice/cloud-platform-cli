@@ -278,9 +278,13 @@ func (a *Apply) deleteKubectl() (string, error) {
 
 // applyTerraform calls applier -> TerraformInitAndApply and prints the output from applier
 func (a *Apply) applyTerraform() (string, error) {
-	log.Printf("Running Terraform Apply for namespace: %v", a.Options.Namespace)
+	log.Printf("Running Terraform Apply for namespace: %v. In directory %v", a.Options.Namespace, a.Dir)
 
 	tfFolder := a.Dir + "/resources"
+
+	if strings.Contains(a.Dir, a.Options.Namespace) {
+		return "", fmt.Errorf("error running terraform as directory and namespace are not aligned Dir=%v and Namespace=%v", a.Dir, a.Options.Namespace)
+	}
 
 	outputTerraform, err := a.Applier.TerraformInitAndApply(a.Options.Namespace, tfFolder)
 
