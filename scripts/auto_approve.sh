@@ -1,10 +1,9 @@
-#!/bin/sh
+#!/usr/bin/env bash
 set -eu
 
-PLAN_FILE=$1
-PLAN_DIR=$2
-PLAN_NAME=$3
-PR=$4
+PLAN_DIR=$1
+PLAN_NAME=$2
+PR=$3
 
 JSON_FILE="${PLAN_NAME%.out}.json"
 
@@ -27,7 +26,7 @@ for f in $CHANGED_FILES; do
     fi
 done
 
-if [ "$OPA_RESULT" == "true" ] && [ "$YAML_CHANGES" -eq 0 ]; then
+if [ "$OPA_RESULT" = true ] && [ "$YAML_CHANGES" -eq 0 ]; then
     curl -L \
     -X POST \
     -H "Accept: application/vnd.github+json" \
@@ -40,16 +39,16 @@ if [ "$OPA_RESULT" == "true" ] && [ "$YAML_CHANGES" -eq 0 ]; then
     }'
 else
     REASON=""
-    if [ "$OPA_RESULT" != "true" ]; then
-    REASON="OPA auto approval policy check failed"
+    if [ "$OPA_RESULT" != true ]; then
+        REASON="OPA auto approval policy check failed"
     fi
 
     if [ "$YAML_CHANGES" -ne 0 ]; then
-    if [ -n "$REASON" ]; then
-        REASON="$REASON and changes exist outside the 'resources/' folder"
-    else
-        REASON="Changes exist outside the 'resources/' folder"
-    fi
+        if [ -n "$REASON" ]; then
+            REASON="$REASON and changes exist outside the 'resources/' folder"
+        else
+            REASON="Changes exist outside the 'resources/' folder"
+        fi
     fi
 
     curl -L \
