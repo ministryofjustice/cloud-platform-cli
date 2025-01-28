@@ -33,7 +33,9 @@ RUN curl -sLo ./kubectl https://storage.googleapis.com/kubernetes-release/releas
 # Install terraform
 RUN curl -sLo terraform.zip https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip && unzip terraform.zip
 
-RUN chmod +x kubectl terraform
+RUN curl -sLo opa "https://openpolicyagent.org/downloads/latest/opa_linux_amd64"
+
+RUN chmod +x kubectl terraform opa
 
 # ---
 
@@ -64,5 +66,7 @@ RUN ./aws/install
 COPY --from=cli_builder /build/cloud-platform /usr/local/bin/cloud-platform
 COPY --from=cli_builder /build/kubectl /usr/local/bin/kubectl
 COPY --from=cli_builder /build/terraform /usr/local/bin/terraform
+COPY --from=cli_builder /build/scripts/auto_approve.sh /usr/local/bin/auto_approve.sh
+COPY --from=cli_builder /build/opa /usr/local/bin/opa
 
 CMD /bin/sh

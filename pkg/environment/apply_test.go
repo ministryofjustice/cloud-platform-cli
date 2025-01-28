@@ -41,11 +41,11 @@ func TestApply_ApplyTerraform(t *testing.T) {
 					githubtoken:        "githubtoken",
 					pingdomapitoken:    "pingdomApikey",
 				},
-				Dir: "/root/foo",
+				Dir: "/root/foobar",
 			},
 			TerraformOutputs: "foo",
 			checkExpectations: func(t *testing.T, apply *mocks.Applier, outputs string, err error) {
-				apply.AssertCalled(t, "TerraformInitAndApply", "foobar", "/root/foo/resources")
+				apply.AssertCalled(t, "TerraformInitAndApply", "foobar", "/root/foobar/resources")
 				assert.Nil(t, err)
 				assert.Len(t, outputs, 3)
 			},
@@ -97,13 +97,13 @@ func TestApply_PlanKubectl(t *testing.T) {
 					githubtoken:        "githubtoken",
 					pingdomapitoken:    "pingdomApikey",
 				},
-				Dir: "/root/foo",
+				Dir: "/root/foobar",
 			},
-			KubectlOutputs: "/root/foo",
+			KubectlOutputs: "/root/foobar",
 			checkExpectations: func(t *testing.T, apply *mocks.Applier, outputs string, err error) {
-				apply.AssertCalled(t, "KubectlApply", "foobar", "/root/foo", false)
+				apply.AssertCalled(t, "KubectlApply", "foobar", "/root/foobar", false)
 				assert.Nil(t, err)
-				assert.Len(t, outputs, 9)
+				assert.Len(t, outputs, 12)
 			},
 		},
 	}
@@ -152,13 +152,13 @@ func TestApply_ApplyKubectl(t *testing.T) {
 					githubtoken:        "githubtoken",
 					pingdomapitoken:    "pingdomApikey",
 				},
-				Dir: "/root/foo",
+				Dir: "/root/foobar",
 			},
-			KubectlOutputs: "/root/foo",
+			KubectlOutputs: "/root/foobar",
 			checkExpectations: func(t *testing.T, apply *mocks.Applier, outputs string, err error) {
-				apply.AssertCalled(t, "KubectlApply", "foobar", "/root/foo", false)
+				apply.AssertCalled(t, "KubectlApply", "foobar", "/root/foobar", false)
 				assert.Nil(t, err)
-				assert.Len(t, outputs, 9)
+				assert.Len(t, outputs, 12)
 			},
 		},
 	}
@@ -193,7 +193,6 @@ func TestSecretBlockerExists(t *testing.T) {
 		t.Errorf("secretBlocker should return true as the file does exist")
 	}
 	defer os.RemoveAll("namespaces")
-
 }
 
 func Test_applySkipExists(t *testing.T) {
@@ -211,7 +210,6 @@ func Test_applySkipExists(t *testing.T) {
 		t.Errorf("secretBlocker should return true as the file does exist")
 	}
 	defer os.RemoveAll("namespaces")
-
 }
 
 func Test_canCreateNamespaces(t *testing.T) {
@@ -411,7 +409,6 @@ func TestApply_destroyTerraform(t *testing.T) {
 			tests[i].checkExpectations(t, terraform, outputs, err)
 		})
 	}
-
 }
 
 func TestApply_deleteKubectl(t *testing.T) {
@@ -443,13 +440,13 @@ func TestApply_deleteKubectl(t *testing.T) {
 					githubtoken:        "githubtoken",
 					pingdomapitoken:    "pingdomApikey",
 				},
-				Dir: "/root/foo",
+				Dir: "/root/foobar",
 			},
-			KubectlOutputs: "/root/foo",
+			KubectlOutputs: "/root/foobar",
 			checkExpectations: func(t *testing.T, apply *mocks.Applier, outputs string, err error) {
-				apply.AssertCalled(t, "KubectlDelete", "foobar", "/root/foo", false)
+				apply.AssertCalled(t, "KubectlDelete", "foobar", "/root/foobar", false)
 				assert.Nil(t, err)
-				assert.Len(t, outputs, 9)
+				assert.Len(t, outputs, 12)
 			},
 		},
 	}
