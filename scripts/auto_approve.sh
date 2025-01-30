@@ -20,7 +20,7 @@ CHANGED_FILES=$(curl -L \
 
 YAML_CHANGES=0
 for f in $CHANGED_FILES; do
-    if [[ "$f" != "namespaces/live.cloud-platform.service.justice.gov.uk/"*"/resources/"* ]]; then
+    if [[ "$f" == namespaces/live.cloud-platform.service.justice.gov.uk/*/*.yaml ]]; then
         YAML_CHANGES=1
         break
     fi
@@ -34,20 +34,20 @@ if [ "$OPA_RESULT" = true ] && [ "$YAML_CHANGES" -eq 0 ]; then
     -H "X-GitHub-Api-Version: 2022-11-28" \
     "https://api.github.com/repos/ministryofjustice/cloud-platform-environments/pulls/$PR/reviews" \
     -d '{
-        "body": "Automatically approving PR",
+        "body": ":white_check_mark: **Auto-Approved!**\n\nThis PR has **passed the OPA policy check and security validation**.\n\nYou can merge whenever suits you! :rocket:",
         "event": "APPROVE"
     }'
 else
     REASON=""
     if [ "$OPA_RESULT" != true ]; then
-        REASON="OPA auto approval policy check failed"
+        REASON=":male_detective: **Manual review required: OPA policy checks did not pass.**"
     fi
 
     if [ "$YAML_CHANGES" -ne 0 ]; then
         if [ -n "$REASON" ]; then
-            REASON="$REASON and changes exist outside the 'resources/' folder"
+            REASON="$REASON\n:male_detective: **Detected changes to K8s YAML files. Manual review needed.**"
         else
-            REASON="Changes exist outside the 'resources/' folder"
+            REASON=":male_detective: **Detected changes to K8s YAML files. Manual review needed.**"
         fi
     fi
 
@@ -58,7 +58,7 @@ else
     -H "X-GitHub-Api-Version: 2022-11-28" \
     "https://api.github.com/repos/ministryofjustice/cloud-platform-environments/issues/$PR/comments" \
     -d '{
-        "body": "This PR requires approval from the Cloud Platform team.\n Reason: '"$REASON"'.\n Please raise it in #ask-cloud-platform Slack channel."
+        "body": "This PR **CANNOT** be auto approved and requires manual approval from the Cloud Platform team.\n Reason:\n '"$REASON"'\n Please raise it in #ask-cloud-platform Slack channel."
     }'
 fi
 
