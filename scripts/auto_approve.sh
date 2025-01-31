@@ -18,6 +18,13 @@ CHANGED_FILES=$(curl -L \
     -H "X-GitHub-Api-Version: 2022-11-28" \
     "https://api.github.com/repos/ministryofjustice/cloud-platform-environments/pulls/$PR/files" |  jq -r '.[].filename')
 
+
+NUM_CHANGED_FILES=$(echo "$CHANGED_FILES" | wc -l)
+
+if [[ "$CHANGED_FILES" == namespaces/live.cloud-platform.service.justice.gov.uk/*/APPLY_PIPELINE_SKIP_THIS_NAMESPACE ]] && [[ "$NUM_CHANGED_FILES" -eq 1 ]] ; then
+    exit 0
+fi
+
 YAML_CHANGES=0
 for f in $CHANGED_FILES; do
     if [[ "$f" == namespaces/live.cloud-platform.service.justice.gov.uk/*/*.yaml ]]; then
