@@ -143,12 +143,10 @@ func base64decode(i interface{}) string {
 }
 
 func formatJson(result map[string]interface{}) (string, error) {
-	var buf bytes.Buffer
-	encoder := json.NewEncoder(&buf)
-	encoder.SetEscapeHTML(false)
-	encoder.SetIndent("", "    ")
-	if err := encoder.Encode(result); err != nil {
+	str, err := json.MarshalIndent(result, "", "    ")
+	if err != nil {
 		return "", err
 	}
-	return buf.String(), nil
+
+	return string(str), nil
 }
