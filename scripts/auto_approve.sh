@@ -41,13 +41,13 @@ if [ "$OPA_RESULT" = true ] && [ "$YAML_CHANGES" -eq 0 ]; then
     -H "X-GitHub-Api-Version: 2022-11-28" \
     "https://api.github.com/repos/ministryofjustice/cloud-platform-environments/pulls/$PR/reviews" \
     -d '{
-        "body": ":white_check_mark: **Auto-Approved!**\n\nThis PR has **passed the OPA policy check and security validation**.\n\nYou can merge whenever suits you! :rocket:",
+        "body": ":white_check_mark: **Auto-Approved!**\n\nThis PR has **passed the [OPA auto approve policy](https://github.com/ministryofjustice/cloud-platform-environments/tree/main/opa-auto-approve-policy) check and security validation**.\n\nYou can merge whenever suits you! :rocket:",
         "event": "APPROVE"
     }'
 else
     REASON=""
     if [ "$OPA_RESULT" != true ]; then
-        REASON=":male_detective: **Manual review required: OPA policy checks did not pass.**"
+        REASON=":male_detective: **Manual review required: [OPA auto approve policy](https://github.com/ministryofjustice/cloud-platform-environments/tree/main/opa-auto-approve-policy) checks did not pass.**"
     fi
 
     if [ "$YAML_CHANGES" -ne 0 ]; then
