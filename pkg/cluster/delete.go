@@ -28,6 +28,7 @@ var EKS_SYSTEM_NAMESPACES = []string{
 	"tigera-operator",
 	"gatekeeper-system",
 	"cloud-platform-label-pods",
+	"cloud-platform-github-teams-filter",
 }
 
 // DestroyComponents will destroy the Cloud Platform specific components on top of a running cluster. At this point your
