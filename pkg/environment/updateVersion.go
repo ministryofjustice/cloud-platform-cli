@@ -25,7 +25,7 @@ func updateVersion(moduleName, actualDbVersion, terraformDbVersion, tfDir string
 
 	lineNum, lineErr := lineCmd.Output()
 
-	dbEngine := regexp.MustCompile(`(\d+).*db_engine_version`)
+	dbEngine := regexp.MustCompile(`(\d+).*engine_version`)
 	dbMatch := dbEngine.FindStringSubmatch(string(lineNum))
 
 	if dbMatch == nil {

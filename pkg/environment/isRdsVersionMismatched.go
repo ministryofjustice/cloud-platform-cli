@@ -15,15 +15,15 @@ type RdsVersionResults struct {
 }
 
 func IsRdsVersionMismatched(outputTerraform string) (*RdsVersionResults, error) {
-	match, _ := regexp.MatchString("Error: updating RDS DB Instance .* api error InvalidParameterCombination:.* from .* to .*", outputTerraform)
+	match, _ := regexp.MatchString("Error: updating RDS .* api error InvalidParameterCombination:.* from .* (?:to|with requested version) .*", outputTerraform)
 
 	if !match {
 		return nil, errors.New("terraform is failing but it doesn't look like a rds version mismatch")
 	}
 
-	versionRe := regexp.MustCompile(`from (?P<actual_db_version>\d+\.\d+) to (?P<terraform_db_version>\d+\.\d+)`)
+	versionRe := regexp.MustCompile(`from (?P<actual_db_version>\d+\.\d+) (?:to|with requested version) (?P<terraform_db_version>\d+\.\d+)`)
 
-	moduleNameRe := regexp.MustCompile(`with module\.(.+)\.aws_db_instance\.rds,`)
+	moduleNameRe := regexp.MustCompile(`with module\.(.+)\.(?:aws_db_instance\.rds|aws_rds_cluster\.aurora),`)
 
 	moduleMatches := moduleNameRe.FindAllStringSubmatch(outputTerraform, -1)
 	versionMatches := versionRe.FindAllStringSubmatch(outputTerraform, -1)
