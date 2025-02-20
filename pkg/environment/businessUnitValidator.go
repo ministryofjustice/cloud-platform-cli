@@ -5,13 +5,15 @@ type businessUnitValidator struct{}
 func (v *businessUnitValidator) isValid(s string) bool {
 	l := inListValidator{
 		list: []string{
-			"CICA",
-			"HMCTS",
-			"HMPPS",
-			"LAA",
-			"OPG",
-			"Platforms",
 			"HQ",
+			"HMPPS",
+			"OPG",
+			"LAA",
+			"Central Digital",
+			"Technology Services",
+			"HMCTS",
+			"CICA",
+			"Platforms",
 		},
 	}
 	return l.isValid(s)
