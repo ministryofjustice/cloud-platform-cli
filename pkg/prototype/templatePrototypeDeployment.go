@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	prototypeResourcesUrl = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/main/namespace-resources-cli-template/resources/prototype"
+	prototypeResourcesUrl = "https://raw.githubusercontent.com/ministryofjustice/cloud-platform-environments/prototype-basic-auth/namespace-resources-cli-template/resources/prototype"
 )
 
 func CreateDeploymentPrototype(skipDockerFiles bool) error {
