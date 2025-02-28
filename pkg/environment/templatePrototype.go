@@ -2,7 +2,6 @@ package environment
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/MakeNowJust/heredoc"
 )
@@ -29,6 +28,17 @@ func CreateTemplatePrototype() error {
 	s := proto.Namespace.Namespace
 
 	fmt.Printf(`
+NOTE: Prototype kit websites must be protected by HTTP basic authentication,
+this is so citizens don't mistake them for real government services.
+
+A default username and password will be set for your site, these credentials
+will be stored in plaintext in a public github repository. This means the
+site will not be secure and should not contain information that should not
+be accessible by the public.
+
+USERNAME: prototype
+PASSWORD: notarealwebsite
+
 Please run:
 
     git add %s
@@ -129,34 +139,6 @@ func promptUserForPrototypeValues() (*Prototype, error) {
 	values.Application = "Gov.UK Prototype Kit"
 	values.SourceCode = "https://github.com/ministryofjustice/" + values.Namespace
 
-	fmt.Println(`
-Prototype kit websites must be protected by HTTP basic
-authentication, so that citizens don't mistake them for
-real government services.
-You need to choose a username and password for your site.
-
-NB: The username and password you choose will be stored in
-plaintext in a public github repository, so do not choose any
-sensitive values here.`)
-
-	q = userQuestion{
-		description: heredoc.Doc(`Please choose a username for your site:
-		`),
-		prompt:    "Username",
-		validator: new(notEmptyValidator),
-	}
-	_ = q.getAnswer()
-	proto.BasicAuthUsername = q.value
-
-	q = userQuestion{
-		description: heredoc.Doc(`Please choose a password for your site:
-		`),
-		prompt:    "Password",
-		validator: new(notEmptyValidator),
-	}
-	_ = q.getAnswer()
-	proto.BasicAuthPassword = q.value
-
 	proto.Namespace = values
 
 	return &proto, nil
@@ -164,11 +146,6 @@ sensitive values here.`)
 
 func createPrototypeFiles(p *Prototype) error {
 	err := createNamespaceFiles(&p.Namespace)
-	if err != nil {
-		return err
-	}
-
-	err = p.appendBasicAuthVariables()
 	if err != nil {
 		return err
 	}
@@ -185,37 +162,6 @@ func createPrototypeFiles(p *Prototype) error {
 	}
 	err = CopyUrlToFile(prototypeTemplateUrl+"/basic-auth.tf", nsdir+"/resources/basic-auth.tf")
 	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// Append the extra terraform variables required by a prototype site
-// to the namespace's resources/variables.tf file
-func (p *Prototype) appendBasicAuthVariables() error {
-	str := `
-## Prototype kit variables
-
-variable "basic-auth-username" {
-  description = "Basic auth. username of the deployed prototype website"
-  default     = "` + p.BasicAuthUsername + `"
-}
-
-variable "basic-auth-password" {
-  description = "Basic auth. password of the deployed prototype website"
-  default     = "` + p.BasicAuthPassword + `"
-}
-`
-	varTf := fmt.Sprintf("%s/%s/resources/variables.tf", namespaceBaseFolder, p.Namespace.Namespace)
-
-	file, err := os.OpenFile(varTf, os.O_APPEND|os.O_WRONLY, 0o644)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	if _, err := file.WriteString(str); err != nil {
 		return err
 	}
 
