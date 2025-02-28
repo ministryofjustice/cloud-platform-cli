@@ -28,7 +28,7 @@ func CreateTemplatePrototype() error {
 	s := proto.Namespace.Namespace
 
 	fmt.Printf(`
-Prototype kit websites must be protected by HTTP basic authentication,
+NOTE: Prototype kit websites must be protected by HTTP basic authentication,
 this is so citizens don't mistake them for real government services.
 
 A default username and password will be set for your site, these credentials
@@ -36,8 +36,8 @@ will be stored in plaintext in a public github repository. This means the
 site will not be secure and should not contain information that should not
 be accessible by the public.
 
-Username: prototype
-Password: notarealwebsite
+USERNAME: prototype
+PASSWORD: notarealwebsite
 
 Please run:
 
