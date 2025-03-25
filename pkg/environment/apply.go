@@ -288,7 +288,8 @@ func (a *Apply) applyTerraform() (string, error) {
 
 	outputTerraform, err := a.Applier.TerraformInitAndApply(a.Options.Namespace, tfFolder)
 
-	if a.Options.IsApplyPipeline && err != nil {
+	TEMP_DISABLE_DRIFT := true
+	if a.Options.IsApplyPipeline && err != nil && !TEMP_DISABLE_DRIFT {
 		versionDescription, filenames, updateErr := checkRdsAndUpdate(err.Error(), tfFolder)
 
 		if updateErr != nil {
