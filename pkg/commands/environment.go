@@ -429,7 +429,6 @@ var environmentDivergenceCmd = &cobra.Command{
 			"kube-node-lease",
 			"kube-public",
 			"kube-system",
-			"kuberhealthy",
 			"kuberos",
 			"logging",
 			"gatekeeper-system",
