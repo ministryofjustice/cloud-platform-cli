@@ -43,7 +43,7 @@ func CreateCommentBody(tfPlan *tfjson.Plan) string {
 	}
 
 	body += `
-<details "open">
+<details open>
 	<summary>
 		<b>Terraform Plan: %d to be created, %d to be destroyed, %d to be updated, %d to be replaced and %d unchanged.</b>
 	</summary>
