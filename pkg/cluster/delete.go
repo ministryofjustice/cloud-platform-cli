@@ -21,7 +21,6 @@ var EKS_SYSTEM_NAMESPACES = []string{
 	"logging",
 	"monitoring",
 	"velero",
-	"kuberhealthy",
 	"trivy-system",
 	"calico-apiserver",
 	"calico-system",
