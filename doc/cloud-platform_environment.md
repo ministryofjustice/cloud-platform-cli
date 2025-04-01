@@ -27,6 +27,7 @@ Cloud Platform Environment actions
 	the namespace in the given PR Id/Number
 * [cloud-platform environment prototype](cloud-platform_environment_prototype.md)	 - Create a gov.uk prototype kit site on the cloud platform
 * [cloud-platform environment rds](cloud-platform_environment_rds.md)	 - Add an RDS instance to a namespace
+* [cloud-platform environment rds-drift-checker](cloud-platform_environment_rds-drift-checker.md)	 - Detect and correct RDS engine version drift from a CSV file in S3 or locally
 * [cloud-platform environment s3](cloud-platform_environment_s3.md)	 - Add a S3 bucket to a namespace
 * [cloud-platform environment serviceaccount](cloud-platform_environment_serviceaccount.md)	 - Add a serviceaccount to a namespace
 
