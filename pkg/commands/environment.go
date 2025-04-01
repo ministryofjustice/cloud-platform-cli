@@ -43,6 +43,7 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 		environmentRdsCmd,
 		environmentS3Cmd,
 		environmentSvcCmd,
+		environmentRdsDriftBotCmd,
 	}
 
 	for _, cmd := range envSubCommands {
@@ -446,4 +447,15 @@ var environmentDivergenceCmd = &cobra.Command{
 			contextLogger.Fatal(err)
 		}
 	},
+}
+
+var environmentRdsDriftBotCmd = &cobra.Command{
+	Use:   "rds-drift-bot <s3-location>",
+	Short: "Detect and correct RDS engine version drift from a CSV file in S3",
+	Example: heredoc.Doc(`
+		> cloud-platform environment rds-drift-bot s3://your-bucket/path/to/merged-rds-errored-namespaces.csv
+	`),
+	Args:   cobra.ExactArgs(1),
+	PreRun: upgradeIfNotLatest,
+	RunE:   environment.RdsDriftBot,
 }
