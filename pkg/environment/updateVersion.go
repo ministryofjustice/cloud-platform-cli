@@ -11,45 +11,56 @@ import (
 // and updates the Terraform version in the file from the reported (Terraform) version
 // to the actual (desired) version.
 func updateVersion(moduleName, actualDbVersion, terraformDbVersion, tfDir string) (string, error) {
-	// Find file(s) that contain the module declaration.
-	grepCmd := exec.Command("/bin/sh", "-c", "grep -l 'module \""+moduleName+"\"' *")
-	grepCmd.Dir = tfDir
-	fileNameBytes, err := grepCmd.Output()
+	// Try find a hardcoded db_engine_version assignment
+	grepHardcoded := exec.Command("/bin/sh", "-c", "grep -lr 'module \""+moduleName+"\"' *")
+	grepHardcoded.Dir = tfDir
+	fileBytes, err := grepHardcoded.Output()
 	if err != nil {
-		return "", fmt.Errorf("git grep error: %v", err)
+		return "", fmt.Errorf("grep module error: %v", err)
 	}
-	fileName := strings.TrimSpace(string(fileNameBytes))
-	if fileName == "" {
-		return "", fmt.Errorf("no file found for module %s", moduleName)
+	fileName := strings.TrimSpace(string(fileBytes))
+
+	// Attempt to directly replace hardcoded engine version first
+	hardcodeSed := exec.Command("/bin/sh", "-c", "sed -i'' -e 's/db_engine_version *= *\""+terraformDbVersion+"\"/db_engine_version = \""+actualDbVersion+"\"/g' "+fileName)
+	hardcodeSed.Dir = tfDir
+	hardcodeSed.Run()
+
+	// Check if file actually changed (simple diff check)
+	diffCmd := exec.Command("/bin/sh", "-c", "git diff --name-only "+fileName)
+	diffCmd.Dir = tfDir
+	diffOut, _ := diffCmd.Output()
+	if strings.TrimSpace(string(diffOut)) != "" {
+		return fileName, nil
 	}
 
-	// Get a snippet of the file to locate the engine_version line.
-	execLine := "grep -A 40 -n 'module \"" + moduleName + "\"' " + fileName
-	lineCmd := exec.Command("/bin/sh", "-c", execLine)
-	lineCmd.Dir = tfDir
-	lineNumBytes, err := lineCmd.Output()
+	// Otherwise, it's probably using a variable
+	scanCmd := exec.Command("/bin/sh", "-c", "grep -A 40 'module \""+moduleName+"\"' "+fileName)
+	scanCmd.Dir = tfDir
+	scanOut, _ := scanCmd.Output()
+	re := regexp.MustCompile(`db_engine_version *= *var\.([a-zA-Z0-9_\-]+)`)
+	match := re.FindStringSubmatch(string(scanOut))
+	if match == nil {
+		return "", fmt.Errorf("could not find db_engine_version assignment in module block")
+	}
+	varName := match[1]
+
+	// Look for the variable definition in the directory
+	grepVar := exec.Command("/bin/sh", "-c", "grep -l 'variable \""+varName+"\"' *")
+	grepVar.Dir = tfDir
+	varFileBytes, err := grepVar.Output()
 	if err != nil {
-		return "", fmt.Errorf("error running grep for engine_version: %v", err)
+		return "", fmt.Errorf("could not find variable definition for %s: %v", varName, err)
 	}
-	lineNum := string(lineNumBytes)
+	varFile := strings.TrimSpace(string(varFileBytes))
 
-	// Use a regex to find the line number that contains engine_version.
-	dbEngine := regexp.MustCompile(`(\d+).*engine_version`)
-	dbMatch := dbEngine.FindStringSubmatch(lineNum)
-	if dbMatch == nil {
-		return "", fmt.Errorf("no engine_version match found in %s", fileName)
-	}
-
-	// Prepare a sed command to update the version.
-	splitTfDbVersion := strings.Split(terraformDbVersion, ".")
-	escapedTfDbVersion := "\"" + splitTfDbVersion[0] + "\\." + splitTfDbVersion[1] + "\""
-	sedCmd := exec.Command("/bin/sh", "-c", "sed -i'' -e '"+dbMatch[1]+"s/"+escapedTfDbVersion+"/\""+actualDbVersion+"\"/g' "+fileName)
-	sedCmd.Dir = tfDir
-	if err := sedCmd.Run(); err != nil {
-		return "", fmt.Errorf("sed command failed: %v", err)
+	// Update the default value
+	sedVar := exec.Command("/bin/sh", "-c", "sed -i'' -e 's/default = \""+terraformDbVersion+"\"/default = \""+actualDbVersion+"\"/' "+varFile)
+	sedVar.Dir = tfDir
+	if err := sedVar.Run(); err != nil {
+		return "", fmt.Errorf("failed to update variable default: %v", err)
 	}
 
-	return fileName, nil
+	return varFile, nil
 }
 
 func checkRdsAndUpdate(tfErr, tfDir string) (string, []string, error) {

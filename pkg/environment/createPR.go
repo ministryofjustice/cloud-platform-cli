@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"log"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -14,50 +16,45 @@ import (
 
 func createPR(description, namespace, ghToken, repo string) func(github.GithubIface, []string) (string, error) {
 	b := make([]byte, 2)
-
-	rand.Read(b) //nolint:errcheck
-
+	rand.Read(b)
 	fourCharUid := hex.EncodeToString(b)
 	branchName := namespace + "-rds-minor-version-bump-" + fourCharUid
 
 	return func(gh github.GithubIface, filenames []string) (string, error) {
-		removeRemoteCmd := exec.Command("/bin/sh", "-c", "git remote remove origin")
-		removeRemoteCmd.Start() //nolint:errcheck
-		removeRemoteCmd.Wait()  //nolint:errcheck
-
-		useGhTokenCmd := exec.Command("/bin/sh", "-c", "git remote add origin https://"+ghToken+"@github.com/ministryofjustice/"+repo)
-		useGhTokenCmd.Start() //nolint:errcheck
-		useGhTokenCmd.Wait()  //nolint:errcheck
+		repoPath := "namespaces/live.cloud-platform.service.justice.gov.uk/" + namespace + "/resources"
+		log.Printf("🌿 Creating new branch: %s", branchName)
 
 		pulls, err := gh.ListOpenPRs(namespace)
 		if err != nil {
-			fmt.Printf("warning: Error listing open prs: %v\n", err)
+			log.Printf("⚠️ Warning: Error listing open PRs: %v\n", err)
 		}
-
 		if len(pulls) > 0 {
-			return "", errors.New("a pr is already open for this namespace, skipping opening another")
+			return "", errors.New("a PR is already open for this namespace, skipping")
 		}
 
-		checkCmd := exec.Command("/bin/sh", "-c", "git checkout -b "+branchName)
-		checkCmd.Start() //nolint:errcheck
-		checkCmd.Wait()  //nolint:errcheck
+		exec.Command("/bin/sh", "-c", "git checkout main && git pull").Run()
+		exec.Command("/bin/sh", "-c", "git checkout -b "+branchName).Run()
 
-		strFiles := strings.Join(filenames, " ")
-		cmd := exec.Command("/bin/sh", "-c", "git add "+strFiles)
-		cmd.Dir = "namespaces/live.cloud-platform.service.justice.gov.uk/" + namespace + "/resources"
-		cmd.Start() //nolint:errcheck
-		cmd.Wait()  //nolint:errcheck
+		originalDir, _ := os.Getwd()
+		os.Chdir(repoPath)
+		defer os.Chdir(originalDir)
 
-		commitCmd := exec.Command("/bin/sh", "-c", "git -c user.name='cloud-platform-moj' -c user.email='platforms+githubuser@digital.justice.gov.uk' commit -m 'concourse: correcting rds version drift'")
-		commitCmd.Dir = "namespaces/live.cloud-platform.service.justice.gov.uk/" + namespace + "/resources"
-		commitCmd.Start() //nolint:errcheck
-		commitCmd.Wait()  //nolint:errcheck
+		log.Printf("📄 Files to stage for commit (relative): %v", filenames)
+		exec.Command("/bin/sh", "-c", "git add "+strings.Join(filenames, " ")).Run()
+		exec.Command("/bin/sh", "-c", "git -c user.name='cloud-platform-moj' -c user.email='platforms+githubuser@digital.justice.gov.uk' commit -m 'concourse: correcting rds version drift'").Run()
+		os.Chdir(originalDir)
+		exec.Command("/bin/sh", "-c", "git push --set-upstream origin "+branchName).Run()
 
-		pushCmd := exec.Command("/bin/sh", "-c", "git push --set-upstream origin "+branchName)
-		pushCmd.Start() //nolint:errcheck
-		pushCmd.Wait()  //nolint:errcheck
+		prUrl, err := gh.CreatePR(branchName, namespace, description)
+		if err != nil {
+			return "", err
+		}
 
-		return gh.CreatePR(branchName, namespace, description)
+		log.Printf("🧹 Resetting Git state after PR")
+		exec.Command("/bin/sh", "-c", "git reset --hard").Run()
+		exec.Command("/bin/sh", "-c", "git clean -fd").Run()
+
+		return prUrl, nil
 	}
 }
 
