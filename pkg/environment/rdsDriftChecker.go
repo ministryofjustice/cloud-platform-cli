@@ -12,8 +12,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// RdsDriftBot groups CSV records by namespace and processes each namespace individually.
-func RdsDriftBot(cmd *cobra.Command, args []string) error {
+func RdsDriftChecker(cmd *cobra.Command, args []string) error {
 	sourceLocation := args[0]
 	localCSV := "merged-rds-errored-namespaces.csv"
 
@@ -58,7 +57,7 @@ func RdsDriftBot(cmd *cobra.Command, args []string) error {
 			continue
 		}
 		namespace := strings.TrimSpace(record[0])
-		errorMsg := strings.Trim(strings.Join(record[1:], ","), " ,")
+		errorMsg := strings.TrimSpace(strings.Join(record[1:], " "))
 		log.Printf("🧩 Grouping error under namespace '%s'\n", namespace)
 		namespaceMap[namespace] = append(namespaceMap[namespace], errorMsg)
 	}

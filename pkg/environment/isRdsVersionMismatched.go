@@ -17,41 +17,60 @@ type RdsVersionResults struct {
 }
 
 func IsRdsVersionMismatched(outputTerraform string) (*RdsVersionResults, error) {
-	// Check for a version-downgrade error message.
-	match, _ := regexp.MatchString("Cannot upgrade postgres from \\d+\\.\\d+ to \\d+\\.\\d+", outputTerraform)
+	// First check it's an RDS InvalidParameterCombination error
+	match, _ := regexp.MatchString(`(?i)Error: updating RDS .* InvalidParameterCombination:`, outputTerraform)
 	if !match {
 		return nil, errors.New("terraform is failing but it doesn't look like a rds version mismatch")
 	}
 
-	// Regular expression to capture version numbers.
-	versionRe := regexp.MustCompile(`from (\d+\.\d+) to (\d+\.\d+)`)
-	// Modified regex to capture module name.
-	// This will match "with module." then capture any characters until the first period.
+	// Now make sure it's specifically about version mismatch (not storage, etc)
+	if !strings.Contains(outputTerraform, "Cannot upgrade") &&
+		!strings.Contains(outputTerraform, "Cannot find upgrade path") {
+		return nil, errors.New("terraform is failing but it doesn't look like a rds version mismatch")
+	}
+
+	// Define regex patterns
+	versionRePrimary := regexp.MustCompile(`(?i)from ([^\s]+) (?:to|with requested version) ([^\s]+)`)
+	versionReFallback := regexp.MustCompile(`(?i)Cannot find upgrade path from ([^\s,]+) to ([^\s,]+)[.,]?`)
+
+	var versionMatches [][]string
+
+	if strings.Contains(outputTerraform, "Cannot find upgrade path from") {
+		versionMatches = versionReFallback.FindAllStringSubmatch(outputTerraform, -1)
+		for i := range versionMatches {
+			if len(versionMatches[i]) == 3 {
+				versionMatches[i][1] = strings.TrimSuffix(versionMatches[i][1], ".")
+				versionMatches[i][2] = strings.TrimSuffix(versionMatches[i][2], ".")
+			}
+		}
+	} else {
+		versionMatches = versionRePrimary.FindAllStringSubmatch(outputTerraform, -1)
+	}
+
+	// Module name regex
 	moduleNameRe := regexp.MustCompile(`with module\.([^\s,]+?)\.aws_db_instance\.rds,?`)
-
-	// Find all matches.
 	moduleMatches := moduleNameRe.FindAllStringSubmatch(outputTerraform, -1)
-	versionMatches := versionRe.FindAllStringSubmatch(outputTerraform, -1)
 
-	// Debug: log raw matches.
-	log.Printf("DEBUG: versionMatches: %+v", versionMatches)
-	log.Printf("DEBUG: moduleMatches: %+v", moduleMatches)
+	log.Printf("DEBUG: Raw versionMatches: %+v", versionMatches)
+	log.Printf("DEBUG: Raw moduleMatches: %+v", moduleMatches)
+
+	// If we found no version matches, it's not a version mismatch
+	if len(versionMatches) == 0 {
+		return nil, errors.New("terraform is failing but it doesn't look like a rds version mismatch")
+	}
 
 	sanitisedVersions := removeInputStr(versionMatches)
 	sanitisedNames := removeInputStr(moduleMatches)
 
-	// Debug: log sanitised results.
 	log.Printf("DEBUG: sanitisedVersions: %+v", sanitisedVersions)
 	log.Printf("DEBUG: sanitisedNames: %+v", sanitisedNames)
 
-	// Validate that the versions indicate a downgrade.
 	if !checkVersionDowngrade(sanitisedVersions) {
 		return nil, errors.New("terraform is failing, but it isn't trying to downgrade the RDS versions so it needs more investigation")
 	}
 
-	// Ensure we have the same count for versions and module names.
 	if len(sanitisedVersions) != len(sanitisedNames) {
-		return nil, fmt.Errorf("error: there is an inconistent number of versions vs module names, there should be an even amount but we have %d sets of versions and %d module names", len(sanitisedVersions), len(sanitisedNames))
+		return nil, fmt.Errorf("error: there is an inconsistent number of versions vs module names, there should be an even amount but we have %d sets of versions and %d module names", len(sanitisedVersions), len(sanitisedNames))
 	}
 
 	return &RdsVersionResults{
@@ -65,12 +84,8 @@ func checkVersionDowngrade(versions [][]string) bool {
 	isValid := true
 	for _, inner := range versions {
 		if len(inner) == 2 {
-			splitAcc := strings.Split(inner[0], ".")
-			splitTf := strings.Split(inner[1], ".")
-			adjustedAcc := strings.Join(splitAcc, "")
-			adjustedTf := strings.Join(splitTf, "")
-			acc, accErr := strconv.ParseInt(adjustedAcc, 0, 64)
-			tf, tfErr := strconv.ParseInt(adjustedTf, 0, 64)
+			acc, accErr := versionToInt(inner[0])
+			tf, tfErr := versionToInt(inner[1])
 			isUpgrade := tf > acc
 			if accErr != nil || tfErr != nil || isUpgrade {
 				isValid = false
@@ -84,11 +99,17 @@ func checkVersionDowngrade(versions [][]string) bool {
 	return isValid
 }
 
+func versionToInt(version string) (int64, error) {
+	parts := strings.FieldsFunc(version, func(r rune) bool {
+		return !(r >= '0' && r <= '9')
+	})
+	return strconv.ParseInt(strings.Join(parts, ""), 10, 64)
+}
+
 func removeInputStr(res [][]string) [][]string {
 	outer := make([][]string, 0)
 	for _, inner := range res {
 		ret := make([]string, 0)
-		// Remove the full match (first element) and keep the captured groups.
 		ret = append(ret, inner[1:]...)
 		outer = append(outer, ret)
 	}

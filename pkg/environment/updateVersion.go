@@ -2,7 +2,9 @@ package environment
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -11,40 +13,49 @@ import (
 // and updates the Terraform version in the file from the reported (Terraform) version
 // to the actual (desired) version.
 func updateVersion(moduleName, actualDbVersion, terraformDbVersion, tfDir string) (string, error) {
-	// Try find a hardcoded db_engine_version assignment
-	grepHardcoded := exec.Command("/bin/sh", "-c", "grep -lr 'module \""+moduleName+"\"' *")
-	grepHardcoded.Dir = tfDir
-	fileBytes, err := grepHardcoded.Output()
-	if err != nil {
-		return "", fmt.Errorf("grep module error: %v", err)
+	if _, err := os.Stat(tfDir); os.IsNotExist(err) {
+		abs, _ := filepath.Abs(tfDir)
+		return "", fmt.Errorf("directory does not exist: %s (resolved to: %s)", tfDir, abs)
 	}
-	fileName := strings.TrimSpace(string(fileBytes))
+	grepModule := exec.Command("/bin/sh", "-c", "grep -lr 'module \""+moduleName+"\"' *")
+	grepModule.Dir = tfDir
+	moduleFileBytes, err := grepModule.Output()
+	if err != nil {
+		return "", fmt.Errorf("failed to grep module reference: %w", err)
+	}
+	fileName := strings.TrimSpace(string(moduleFileBytes))
 
-	// Attempt to directly replace hardcoded engine version first
-	hardcodeSed := exec.Command("/bin/sh", "-c", "sed -i'' -e 's/db_engine_version *= *\""+terraformDbVersion+"\"/db_engine_version = \""+actualDbVersion+"\"/g' "+fileName)
-	hardcodeSed.Dir = tfDir
-	hardcodeSed.Run()
+	// Attempt to replace hardcoded db_engine_version
+	sedCmd := fmt.Sprintf("sed -i'' -e 's/db_engine_version *= *\"%s\"/db_engine_version = \"%s\"/g' %s", terraformDbVersion, actualDbVersion, fileName)
+	hardcodedSed := exec.Command("/bin/sh", "-c", sedCmd)
+	hardcodedSed.Dir = tfDir
+	_ = hardcodedSed.Run()
 
-	// Check if file actually changed (simple diff check)
-	diffCmd := exec.Command("/bin/sh", "-c", "git diff --name-only "+fileName)
-	diffCmd.Dir = tfDir
-	diffOut, _ := diffCmd.Output()
-	if strings.TrimSpace(string(diffOut)) != "" {
+	// Check if a change occurred
+	diffCheck := exec.Command("/bin/sh", "-c", "git diff --name-only "+fileName)
+	diffCheck.Dir = tfDir
+	diffOutput, _ := diffCheck.Output()
+	if strings.TrimSpace(string(diffOutput)) != "" {
 		return fileName, nil
 	}
 
-	// Otherwise, it's probably using a variable
-	scanCmd := exec.Command("/bin/sh", "-c", "grep -A 40 'module \""+moduleName+"\"' "+fileName)
-	scanCmd.Dir = tfDir
-	scanOut, _ := scanCmd.Output()
-	re := regexp.MustCompile(`db_engine_version *= *var\.([a-zA-Z0-9_\-]+)`)
+	// Fallback: handle variable case
+	scanModuleBlock := exec.Command("/bin/sh", "-c", "grep -A 40 'module \""+moduleName+"\"' "+fileName)
+	scanModuleBlock.Dir = tfDir
+	scanOut, err := scanModuleBlock.Output()
+	if err != nil {
+		return "", fmt.Errorf("failed to scan module block: %w", err)
+	}
+
+	// Match variable reference (e.g., db_engine_version = var.some_version)
+	re := regexp.MustCompile(`(?i)db_engine_version *= *var\.([a-zA-Z0-9_\-]+)`)
 	match := re.FindStringSubmatch(string(scanOut))
-	if match == nil {
+	if match == nil || len(match) < 2 {
 		return "", fmt.Errorf("could not find db_engine_version assignment in module block")
 	}
 	varName := match[1]
 
-	// Look for the variable definition in the directory
+	// Find file that defines the variable
 	grepVar := exec.Command("/bin/sh", "-c", "grep -l 'variable \""+varName+"\"' *")
 	grepVar.Dir = tfDir
 	varFileBytes, err := grepVar.Output()
@@ -53,42 +64,41 @@ func updateVersion(moduleName, actualDbVersion, terraformDbVersion, tfDir string
 	}
 	varFile := strings.TrimSpace(string(varFileBytes))
 
-	// Update the default value
-	sedVar := exec.Command("/bin/sh", "-c", "sed -i'' -e 's/default = \""+terraformDbVersion+"\"/default = \""+actualDbVersion+"\"/' "+varFile)
-	sedVar.Dir = tfDir
-	if err := sedVar.Run(); err != nil {
+	// Replace default value in variable block
+	varSedCmd := fmt.Sprintf("sed -i'' -e 's/default = \"%s\"/default = \"%s\"/' %s", terraformDbVersion, actualDbVersion, varFile)
+	replaceDefault := exec.Command("/bin/sh", "-c", varSedCmd)
+	replaceDefault.Dir = tfDir
+	if err := replaceDefault.Run(); err != nil {
 		return "", fmt.Errorf("failed to update variable default: %v", err)
 	}
 
 	return varFile, nil
 }
 
-func checkRdsAndUpdate(tfErr, tfDir string) (string, []string, error) {
-	var filenames []string
+// not need as used in apply pipeline
+// func checkRdsAndUpdate(tfErr, tfDir string) (string, []string, error) {
+// 	var filenames []string
 
-	matches, rdsErr := IsRdsVersionMismatched(tfErr)
-	versionDescription := "Fix Terraform RDS version drift. Here are the RDS version mismatches: \n\n"
+// 	matches, rdsErr := IsRdsVersionMismatched(tfErr)
+// 	versionDescription := "Fix Terraform RDS version drift. Here are the RDS version mismatches: \n\n"
 
-	if rdsErr != nil {
-		return "", nil, rdsErr
-	}
+// 	if rdsErr != nil {
+// 		return "", nil, rdsErr
+// 	}
 
-	for i := 0; i < matches.TotalVersionMismatches; i++ {
-		moduleName := matches.ModuleNames[i][0]
-		actualDbVersion := matches.Versions[i][0]
-		terraformDbVersion := matches.Versions[i][1]
+// 	for i := 0; i < matches.TotalVersionMismatches; i++ {
+// 		moduleName := matches.ModuleNames[i][0]
+// 		actualDbVersion := matches.Versions[i][0]
+// 		terraformDbVersion := matches.Versions[i][1]
 
-		versionDescription += versionDescription + "downgrade from " + actualDbVersion + " to " + terraformDbVersion + "\n"
+// 		versionDescription += versionDescription + "downgrade from " + actualDbVersion + " to " + terraformDbVersion + "\n"
 
-		file, updateErr := updateVersion(moduleName, actualDbVersion, terraformDbVersion, tfDir)
+// 		file, updateErr := updateVersion(moduleName, actualDbVersion, terraformDbVersion, tfDir)
+// 		filenames = append(filenames, file)
+// 		if updateErr != nil {
+// 			return "", nil, updateErr
+// 		}
+// 	}
 
-		filenames = append(filenames, file)
-
-		if updateErr != nil {
-			return "", nil, updateErr
-		}
-
-	}
-
-	return versionDescription, filenames, nil
-}
+// 	return versionDescription, filenames, nil
+// }
