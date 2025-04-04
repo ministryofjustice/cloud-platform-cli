@@ -81,22 +81,53 @@ func IsRdsVersionMismatched(outputTerraform string) (*RdsVersionResults, error) 
 }
 
 func checkVersionDowngrade(versions [][]string) bool {
-	isValid := true
-	for _, inner := range versions {
-		if len(inner) == 2 {
-			acc, accErr := versionToInt(inner[0])
-			tf, tfErr := versionToInt(inner[1])
-			isUpgrade := tf > acc
-			if accErr != nil || tfErr != nil || isUpgrade {
-				isValid = false
-				break
+	for _, pair := range versions {
+		if len(pair) != 2 {
+			log.Printf("DEBUG: Skipping invalid version pair (not length 2): %v", pair)
+			return false
+		}
+		actual, desired := strings.Trim(pair[0], " ,."), strings.Trim(pair[1], " ,.")
+
+		// Try numeric version parsing (works for postgres, mariadb, mysql, etc.)
+		actInt, actErr := versionToInt(actual)
+		desInt, desErr := versionToInt(desired)
+
+		if actErr == nil && desErr == nil {
+			if desInt >= actInt {
+				log.Printf("DEBUG: Not a downgrade – desired (%s) >= actual (%s)", desired, actual)
+				return false
 			}
-		} else {
-			isValid = false
-			break
+			log.Printf("DEBUG: Valid numeric downgrade (postgres/mariadb): actual (%s) → desired (%s)", actual, desired)
+			continue
+		}
+
+		// Oracle fallback
+		actOracle, desOracle := extractOracleDate(actual), extractOracleDate(desired)
+		if actOracle != 0 && desOracle != 0 {
+			if desOracle >= actOracle {
+				log.Printf("DEBUG: Not a downgrade (oracle) – desired (%s) >= actual (%s)", desired, actual)
+				return false
+			}
+			log.Printf("DEBUG: Valid Oracle downgrade: actual (%s) → desired (%s)", actual, desired)
+			continue
+		}
+
+		log.Printf("DEBUG: Failed to compare version pair – actual: %s, desired: %s", actual, desired)
+		return false
+	}
+	return true
+}
+
+func extractOracleDate(version string) int {
+	re := regexp.MustCompile(`ru-(\d{4})-(\d{2})`)
+	match := re.FindStringSubmatch(version)
+	if len(match) == 3 {
+		dateStr := match[1] + match[2] // "202501"
+		if val, err := strconv.Atoi(dateStr); err == nil {
+			return val
 		}
 	}
-	return isValid
+	return 0
 }
 
 func versionToInt(version string) (int64, error) {
