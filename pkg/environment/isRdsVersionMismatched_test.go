@@ -25,21 +25,22 @@ func createTempCsv(t *testing.T, content string) string {
 }
 
 func TestIsRdsVersionMismatched(t *testing.T) {
-	csvData := `foolbar-ns-postgres-downgrade,Error: updating RDS DB Instance (cloud-platform-x): operation error RDS: ModifyDBInstance, api error InvalidParameterCombination: Cannot upgrade postgres from 14.13 to 14.7., with module.rds.aws_db_instance.rds,
-foolbar-ns-rds-non-downgrade,Error: updating RDS DB Instance (cloud-platform-y): operation error RDS: ModifyDBInstance, api error InvalidParameterCombination: Max storage size must be greater than storage size, with module.rds.aws_db_instance.rds,
-foolbar-ns-oracle-upgrade,Error: updating RDS DB Instance (cloud-platform-z): operation error RDS: ModifyDBInstance, api error InvalidParameterCombination: Cannot upgrade oracle-ee from 19.0.0.0.ru-2024-10.rur-2024-10.r1 to 19.0.0.0.ru-2025-01.rur-2025-01.r1, with module.oracle.aws_db_instance.rds,
-foolbar-ns-oracle-downgrade,Error: updating RDS DB Instance (cloud-platform-a): operation error RDS: ModifyDBInstance, api error InvalidParameterCombination: Cannot upgrade oracle-ee from 19.0.0.0.ru-2025-10.rur-2025-10.r1 to 19.0.0.0.ru-2024-01.rur-2024-01.r1, with module.oracle.aws_db_instance.rds,
-foolbar-ns-postgres-upgrade,Error: updating RDS DB Instance (cloud-platform-w): operation error RDS: ModifyDBInstance, api error InvalidParameterCombination: Cannot upgrade postgres from 14.7 to 14.13, with module.rds.aws_db_instance.rds,
-foolbar-ns-mariadb-downgrade,Error: updating RDS DB Instance (cloud-platform-s): operation error RDS: ModifyDBInstance, https response error StatusCode: 400, RequestID: xxx, api error InvalidParameterCombination: Cannot upgrade mariadb from 10.11.8 to 10.11.6, with module.rds.aws_db_instance.rds,
-foolbar-ns-mariadb-upgrade,Error: updating RDS DB Instance (cloud-platform-s): operation error RDS: ModifyDBInstance, https response error StatusCode: 400, RequestID: yyy, api error InvalidParameterCombination: Cannot upgrade mariadb from 10.11.8 to 10.11.9, with module.rds.aws_db_instance.rds,
-foolbar-ns-postrgres-same-ns,Error: updating RDS DB Instance (cloud-platform-01152bdef9e4faaf): operation error RDS: ModifyDBInstance, https response error StatusCode: 400, RequestID: zzz, api error InvalidParameterCombination: Cannot upgrade postgres from 16.6 to 16.4, with module.rds_2.aws_db_instance.rds,
-foolbar-ns-postrgres-same-ns,Error: updating RDS DB Instance (cloud-platform-35c7710fbe6aa229): operation error RDS: ModifyDBInstance, https response error StatusCode: 400, RequestID: aaa, api error InvalidParameterCombination: Cannot upgrade postgres from 16.6 to 16.4, with module.rds.aws_db_instance.rds,
-foolbar-ns-invalid-version-format,Error: updating RDS DB Instance: api error InvalidParameterCombination: Cannot upgrade postgres from x.y to z.q, with module.rds.aws_db_instance.rds,
-foolbar-ns-missing-module-name,Error: updating RDS DB Instance: api error InvalidParameterCombination: Cannot upgrade postgres from 13.6 to 12.4,
-foolbar-ns-oracle-same-ru-upgrade,Error: updating RDS DB Instance (cloud-platform-test): operation error RDS: ModifyDBInstance, api error InvalidParameterCombination: Cannot upgrade oracle-ee from 19.0.0.0.ru-2025-01.rur-2025-01.r1 to 19.0.0.0.ru-2025-01.rur-2025-01.r2, with module.oracle.aws_db_instance.rds,
+	csvData := `foobar-ns-postgres-downgrade,Error: updating RDS DB Instance (cloud-platform-x): operation error RDS: ModifyDBInstance, api error InvalidParameterCombination: Cannot upgrade postgres from 14.13 to 14.7., with module.rds.aws_db_instance.rds,
+foobar-ns-rds-non-downgrade,Error: updating RDS DB Instance (cloud-platform-y): operation error RDS: ModifyDBInstance, api error InvalidParameterCombination: Max storage size must be greater than storage size, with module.rds.aws_db_instance.rds,
+foobar-ns-oracle-upgrade,Error: updating RDS DB Instance (cloud-platform-z): operation error RDS: ModifyDBInstance, api error InvalidParameterCombination: Cannot upgrade oracle-ee from 19.0.0.0.ru-2024-10.rur-2024-10.r1 to 19.0.0.0.ru-2025-01.rur-2025-01.r1, with module.oracle.aws_db_instance.rds,
+foobar-ns-oracle-downgrade,Error: updating RDS DB Instance (cloud-platform-a): operation error RDS: ModifyDBInstance, api error InvalidParameterCombination: Cannot upgrade oracle-ee from 19.0.0.0.ru-2025-10.rur-2025-10.r1 to 19.0.0.0.ru-2024-01.rur-2024-01.r1, with module.oracle.aws_db_instance.rds,
+foobar-ns-postgres-upgrade,Error: updating RDS DB Instance (cloud-platform-w): operation error RDS: ModifyDBInstance, api error InvalidParameterCombination: Cannot upgrade postgres from 14.7 to 14.13, with module.rds.aws_db_instance.rds,
+foobar-ns-mariadb-downgrade,Error: updating RDS DB Instance (cloud-platform-s): operation error RDS: ModifyDBInstance, https response error StatusCode: 400, RequestID: xxx, api error InvalidParameterCombination: Cannot upgrade mariadb from 10.11.8 to 10.11.6, with module.rds.aws_db_instance.rds,
+foobar-ns-mariadb-upgrade,Error: updating RDS DB Instance (cloud-platform-s): operation error RDS: ModifyDBInstance, https response error StatusCode: 400, RequestID: yyy, api error InvalidParameterCombination: Cannot upgrade mariadb from 10.11.8 to 10.11.9, with module.rds.aws_db_instance.rds,
+foobar-ns-postrgres-same-ns,Error: updating RDS DB Instance (cloud-platform-01152bdef9e4faaf): operation error RDS: ModifyDBInstance, https response error StatusCode: 400, RequestID: zzz, api error InvalidParameterCombination: Cannot upgrade postgres from 16.6 to 16.4, with module.rds_2.aws_db_instance.rds,
+foobar-ns-postrgres-same-ns,Error: updating RDS DB Instance (cloud-platform-35c7710fbe6aa229): operation error RDS: ModifyDBInstance, https response error StatusCode: 400, RequestID: aaa, api error InvalidParameterCombination: Cannot upgrade postgres from 16.6 to 16.4, with module.rds.aws_db_instance.rds,
+foobar-ns-invalid-version-format,Error: updating RDS DB Instance: api error InvalidParameterCombination: Cannot upgrade postgres from x.y to z.q, with module.rds.aws_db_instance.rds,
+foobar-ns-missing-module-name,Error: updating RDS DB Instance: api error InvalidParameterCombination: Cannot upgrade postgres from 13.6 to 12.4,
+foobar-ns-oracle-same-ru-upgrade,Error: updating RDS DB Instance (cloud-platform-test): operation error RDS: ModifyDBInstance, api error InvalidParameterCombination: Cannot upgrade oracle-ee from 19.0.0.0.ru-2025-01.rur-2025-01.r1 to 19.0.0.0.ru-2025-01.rur-2025-01.r2, with module.oracle.aws_db_instance.rds,
 `
 
 	tmpFile := createTempCsv(t, csvData)
+	defer os.Remove(tmpFile)
 
 	file, err := os.Open(tmpFile)
 	if err != nil {
@@ -67,43 +68,83 @@ foolbar-ns-oracle-same-ru-upgrade,Error: updating RDS DB Instance (cloud-platfor
 		namespaceMap[namespace] = append(namespaceMap[namespace], errorMsg)
 	}
 
-	for ns, msgs := range namespaceMap {
-		combined := strings.Join(msgs, "\n")
-		t.Logf("[%s] ➤ Checking combined error:\n%s", ns, combined)
+	tests := []struct {
+		testDescription string
+		ns              string
+		wantErr         string
+		wantSuccess     bool
+	}{
+		{
+			testDescription: "GIVEN a downgrade mismatch for postgres THEN expect a valid result",
+			ns:              "foobar-ns-postgres-downgrade",
+			wantSuccess:     true,
+		},
+		{
+			testDescription: "GIVEN a storage error THEN expect a non-mismatch RDS error",
+			ns:              "foobar-ns-rds-non-downgrade",
+			wantErr:         "terraform is failing but it doesn't look like a rds version mismatch",
+		},
+		{
+			testDescription: "GIVEN an upgrade for oracle THEN expect rejection due to upgrade",
+			ns:              "foobar-ns-oracle-upgrade",
+			wantErr:         "terraform is failing, but it isn't trying to downgrade the RDS versions so it needs more investigation",
+		},
+		{
+			testDescription: "GIVEN a downgrade mismatch for oracle THEN expect a valid result",
+			ns:              "foobar-ns-oracle-downgrade",
+			wantSuccess:     true,
+		},
+		{
+			testDescription: "GIVEN an upgrade for postgres THEN expect rejection due to upgrade",
+			ns:              "foobar-ns-postgres-upgrade",
+			wantErr:         "terraform is failing, but it isn't trying to downgrade the RDS versions so it needs more investigation",
+		},
+		{
+			testDescription: "GIVEN a downgrade mismatch for mariadb THEN expect a valid result",
+			ns:              "foobar-ns-mariadb-downgrade",
+			wantSuccess:     true,
+		},
+		{
+			testDescription: "GIVEN an upgrade for mariadb THEN expect rejection due to upgrade",
+			ns:              "foobar-ns-mariadb-upgrade",
+			wantErr:         "terraform is failing, but it isn't trying to downgrade the RDS versions so it needs more investigation",
+		},
+		{
+			testDescription: "GIVEN multiple downgrade errors in same namespace THEN expect a valid result",
+			ns:              "foobar-ns-postrgres-same-ns",
+			wantSuccess:     true,
+		},
+		{
+			testDescription: "GIVEN an invalid version format THEN expect downgrade rejection",
+			ns:              "foobar-ns-invalid-version-format",
+			wantErr:         "terraform is failing, but it isn't trying to downgrade the RDS versions so it needs more investigation",
+		},
+		{
+			testDescription: "GIVEN a missing module name THEN expect an error",
+			ns:              "foobar-ns-missing-module-name",
+			wantErr:         "error: there is an inconsistent number of versions vs module names, there should be an even amount but we have 1 sets of versions and 0 module names",
+		},
+		{
+			testDescription: "GIVEN an upgrade for oracle (same date but newer release version) THEN expect rejection due to upgrade",
+			ns:              "foobar-ns-oracle-same-ru-upgrade",
+			wantErr:         "terraform is failing, but it isn't trying to downgrade the RDS versions so it needs more investigation",
+		},
+	}
 
-		res, err := environment.IsRdsVersionMismatched(combined)
+	for _, tt := range tests {
+		t.Run(tt.testDescription, func(t *testing.T) {
+			msgs := strings.Join(namespaceMap[tt.ns], "\n")
+			_, err := environment.IsRdsVersionMismatched(msgs)
 
-		switch ns {
-		case "foolbar-ns-postgres-downgrade", "foolbar-ns-oracle-downgrade", "foolbar-ns-mariadb-downgrade", "foolbar-ns-postrgres-same-ns":
-			if err != nil || res == nil || res.TotalVersionMismatches == 0 {
-				t.Errorf("[%s] Expected downgrade mismatch, got: %v / %v", ns, res, err)
+			if tt.wantSuccess {
+				if err != nil {
+					t.Errorf("Expected no error, got %v", err)
+				}
+			} else {
+				if err == nil || err.Error() != tt.wantErr {
+					t.Errorf("Expected error %q but got %v", tt.wantErr, err)
+				}
 			}
-
-		case "foolbar-ns-rds-non-downgrade":
-			want := "terraform is failing but it doesn't look like a rds version mismatch"
-			if err == nil || err.Error() != want {
-				t.Errorf("[%s] Expected non-mismatch error, got: %v", ns, err)
-			}
-
-		case "foolbar-ns-postgres-upgrade", "foolbar-ns-oracle-upgrade", "foolbar-ns-mariadb-upgrade", "foolbar-ns-oracle-same-ru-upgrade":
-			want := "terraform is failing, but it isn't trying to downgrade the RDS versions so it needs more investigation"
-			if err == nil || err.Error() != want {
-				t.Errorf("[%s] Expected upgrade rejection, got: %v", ns, err)
-			}
-
-		case "foolbar-ns-invalid-version-format":
-			want := "terraform is failing, but it isn't trying to downgrade the RDS versions so it needs more investigation"
-			if err == nil || err.Error() != want {
-				t.Errorf("[%s] Expected failure on invalid version comparison, got: %v", ns, err)
-			}
-
-		case "foolbar-ns-missing-module-name":
-			if err == nil {
-				t.Errorf("[%s] Expected error due to missing module name, but got: %v", ns, res)
-			}
-
-		default:
-			t.Errorf("[%s] Unexpected namespace in test", ns)
-		}
+		})
 	}
 }
