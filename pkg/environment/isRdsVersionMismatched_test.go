@@ -75,57 +75,57 @@ foobar-ns-oracle-same-ru-upgrade,Error: updating RDS DB Instance (cloud-platform
 		wantSuccess     bool
 	}{
 		{
-			testDescription: "GIVEN a downgrade mismatch for postgres THEN expect a valid result",
+			testDescription: "GIVEN a downgrade mismatch for postgres THEN expect a VALID RESULT",
 			ns:              "foobar-ns-postgres-downgrade",
 			wantSuccess:     true,
 		},
 		{
-			testDescription: "GIVEN a storage error THEN expect a non-mismatch RDS error",
+			testDescription: "GIVEN a storage error THEN expect a INVALID RESULT due to non-mismatch RDS error",
 			ns:              "foobar-ns-rds-non-downgrade",
 			wantErr:         "terraform is failing but it doesn't look like a rds version mismatch",
 		},
 		{
-			testDescription: "GIVEN an upgrade for oracle THEN expect rejection due to upgrade",
+			testDescription: "GIVEN an upgrade for oracle THEN expect a INVALID RESULT due to upgrade",
 			ns:              "foobar-ns-oracle-upgrade",
 			wantErr:         "terraform is failing, but it isn't trying to downgrade the RDS versions so it needs more investigation",
 		},
 		{
-			testDescription: "GIVEN a downgrade mismatch for oracle THEN expect a valid result",
+			testDescription: "GIVEN a downgrade mismatch for oracle THEN expect a VALID RESULT",
 			ns:              "foobar-ns-oracle-downgrade",
 			wantSuccess:     true,
 		},
 		{
-			testDescription: "GIVEN an upgrade for postgres THEN expect rejection due to upgrade",
+			testDescription: "GIVEN an upgrade for postgres THEN expect a INVALID RESULT due to upgrade",
 			ns:              "foobar-ns-postgres-upgrade",
 			wantErr:         "terraform is failing, but it isn't trying to downgrade the RDS versions so it needs more investigation",
 		},
 		{
-			testDescription: "GIVEN a downgrade mismatch for mariadb THEN expect a valid result",
+			testDescription: "GIVEN a downgrade mismatch for mariadb THEN expect a VALID RESULT",
 			ns:              "foobar-ns-mariadb-downgrade",
 			wantSuccess:     true,
 		},
 		{
-			testDescription: "GIVEN an upgrade for mariadb THEN expect rejection due to upgrade",
+			testDescription: "GIVEN an upgrade for mariadb THEN expect a INVALID RESULT due to upgrade",
 			ns:              "foobar-ns-mariadb-upgrade",
 			wantErr:         "terraform is failing, but it isn't trying to downgrade the RDS versions so it needs more investigation",
 		},
 		{
-			testDescription: "GIVEN multiple downgrade errors in same namespace THEN expect a valid result",
+			testDescription: "GIVEN multiple downgrade errors in the same namespace THEN expect a VALID RESULT",
 			ns:              "foobar-ns-postrgres-same-ns",
 			wantSuccess:     true,
 		},
 		{
-			testDescription: "GIVEN an invalid version format THEN expect downgrade rejection",
+			testDescription: "GIVEN an invalid version format THEN expect a INVALID RESULT due to failed version parsing",
 			ns:              "foobar-ns-invalid-version-format",
 			wantErr:         "terraform is failing, but it isn't trying to downgrade the RDS versions so it needs more investigation",
 		},
 		{
-			testDescription: "GIVEN a missing module name THEN expect an error",
+			testDescription: "GIVEN a missing module name THEN expect a INVALID RESULT due to missing module and inconsistent version and module count",
 			ns:              "foobar-ns-missing-module-name",
 			wantErr:         "error: there is an inconsistent number of versions vs module names, there should be an even amount but we have 1 sets of versions and 0 module names",
 		},
 		{
-			testDescription: "GIVEN an upgrade for oracle (same date but newer release version) THEN expect rejection due to upgrade",
+			testDescription: "GIVEN an upgrade for oracle (same date but newer release version) THEN expect a INVALID RESULT due to upgrade",
 			ns:              "foobar-ns-oracle-same-ru-upgrade",
 			wantErr:         "terraform is failing, but it isn't trying to downgrade the RDS versions so it needs more investigation",
 		},
