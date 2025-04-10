@@ -80,13 +80,6 @@ func createPR(description, namespace, ghToken, repo string) func(github.GithubIf
 			return "", fmt.Errorf("failed to create PR: %w", err)
 		}
 
-		if err := exec.Command("git", "reset", "--hard").Run(); err != nil {
-			log.Printf("Warning: failed to reset Git state: %v", err)
-		}
-		if err := exec.Command("git", "clean", "-fd").Run(); err != nil {
-			log.Printf("Warning: failed to clean Git state: %v", err)
-		}
-
 		return prUrl, nil
 	}
 }
