@@ -44,7 +44,6 @@ func DecodeSecret(opts *DecodeSecretOptions) error {
 }
 
 func retrieveSecret(namespace, secret string) string {
-
 	// declare cmd variable
 	var cmd *exec.Cmd
 

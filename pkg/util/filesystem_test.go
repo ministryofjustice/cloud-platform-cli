@@ -99,7 +99,6 @@ func createTestFolderStructure(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-
 }
 
 func TestGetFolderChunks(t *testing.T) {

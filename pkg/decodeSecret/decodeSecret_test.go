@@ -106,7 +106,6 @@ func TestFormatJson(t *testing.T) {
 	if err == nil {
 		t.Fatal("Expected error and received nil")
 	}
-
 }
 
 func TestJsonNoDataKey(t *testing.T) {

@@ -287,7 +287,6 @@ func (a *Apply) applyTerraform() (string, error) {
 	}
 
 	outputTerraform, err := a.Applier.TerraformInitAndApply(a.Options.Namespace, tfFolder)
-
 	if err != nil {
 		return "", fmt.Errorf("error running terraform on namespace %s: %v \n %v", a.Options.Namespace, err, outputTerraform)
 	}

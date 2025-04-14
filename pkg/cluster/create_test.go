@@ -156,7 +156,6 @@ func TestGetVpc(t *testing.T) {
 	if err == nil {
 		t.Errorf("was expecting an error. checkVpc() error = %v", "expected error")
 	}
-
 }
 
 func TestCheckCluster(t *testing.T) {
