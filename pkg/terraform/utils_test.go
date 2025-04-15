@@ -11,7 +11,7 @@ func Test_DeleteLocalState(t *testing.T) {
 	siblingDir := "testDir"
 
 	os.RemoveAll(parentDir)
-	err := os.Mkdir(parentDir, 0755)
+	err := os.Mkdir(parentDir, 0o755)
 	if err != nil {
 		t.Errorf("DeleteLocalState() error = %v", err)
 	}

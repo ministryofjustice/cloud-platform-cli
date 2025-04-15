@@ -122,7 +122,7 @@ func (a *Apply) nsCreateRawChangedFilesInPR(cluster string, prNumber int) ([]str
 			return nil, fmt.Errorf("failed to get raw contents: %s", err)
 		}
 		// Create List with changed files
-		if err := os.WriteFile(*file.Filename, data, 0644); err != nil {
+		if err := os.WriteFile(*file.Filename, data, 0o644); err != nil {
 			return nil, fmt.Errorf("failed to write file list: %s", err)
 		}
 	}
@@ -157,11 +157,11 @@ func canCreateNamespaces(namespaces []string, cluster string) (bool, error) {
 	for _, ns := range namespaces {
 		// make directory if it doesn't exist
 		if _, err := os.Stat(wd + "/namespaces/" + cluster + "/" + ns); err != nil {
-			err := os.Mkdir(wd+"/namespaces/"+cluster+"/"+ns, 0755)
+			err := os.Mkdir(wd+"/namespaces/"+cluster+"/"+ns, 0o755)
 			if err != nil {
 				return false, fmt.Errorf("error creating namespaces directory: %s", err)
 			}
-			err = os.Mkdir(wd+"/namespaces/"+cluster+"/"+ns+"/resources", 0755)
+			err = os.Mkdir(wd+"/namespaces/"+cluster+"/"+ns+"/resources", 0o755)
 			if err != nil {
 				return false, fmt.Errorf("error creating resources directory: %s", err)
 			}

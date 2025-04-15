@@ -54,6 +54,7 @@ func RootCmdFlags(cmd *cobra.Command) {
 	rootCmd.PersistentFlags().BoolVarP(&SkipVersionCheck, "skip-version-check", "", false, "don't check for updates")
 	_ = viper.BindPFlag("skip-version-check", rootCmd.PersistentFlags().Lookup("skip-version-check"))
 }
+
 func init() {
 	RootCmdFlags(rootCmd)
 }
