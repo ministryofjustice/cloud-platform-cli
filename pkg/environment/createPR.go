@@ -34,40 +34,33 @@ func createPR(description, namespace, ghToken, repo string) func(github.GithubIf
 			return "", errors.New("a PR is already open for this namespace, skipping")
 		}
 
-		if err := exec.Command("/bin/sh", "-c", "git checkout main").Run(); err != nil {
-			checkMainCmd := exec.Command("/bin/sh", "-c", "git checkout main")
-			if err := checkMainCmd.Run(); err != nil {
-				return "", fmt.Errorf("failed to checkout main: %w", err)
-			}
+		checkMainCmd := exec.Command("/bin/sh", "-c", "git checkout main")
+		if err := checkMainCmd.Run(); err != nil {
+			return "", fmt.Errorf("failed to checkout main: %w", err)
 		}
-		if err := func() error {
-			checkBranchCmd := exec.Command("/bin/sh", "-c", "git checkout -b "+branchName)
-			return checkBranchCmd.Run()
-		}(); err != nil {
+
+		checkBranchCmd := exec.Command("/bin/sh", "-c", "git checkout -b "+branchName)
+		if err := checkBranchCmd.Run(); err != nil {
 			return "", fmt.Errorf("failed to create new branch: %w", err)
 		}
 
-		if err := func() error {
-			addCmd := exec.Command("/bin/sh", "-c", "git add "+strings.Join(filenames, " "))
-			addCmd.Dir = repoPath
-			return addCmd.Run()
-		}(); err != nil {
+		addCmd := exec.Command("/bin/sh", "-c", "git add "+strings.Join(filenames, " "))
+		addCmd.Dir = repoPath
+		if err := addCmd.Run(); err != nil {
 			return "", fmt.Errorf("failed to git add: %w", err)
 		}
 
-		if err := func() error {
-			commitCmd := exec.Command("/bin/sh", "-c", "git -c user.name='cloud-platform-moj' -c user.email='cloudplatform@justiceuk.onmicrosoft.com' commit -m 'concourse: correcting rds version drift'")
-			commitCmd.Dir = repoPath
-			return commitCmd.Run()
-		}(); err != nil {
+		commitCmd := exec.Command("/bin/sh", "-c",
+			"git -c user.name='cloud-platform-moj' -c user.email='cloudplatform@justiceuk.onmicrosoft.com' commit -m 'concourse: correcting rds version drift'",
+		)
+		commitCmd.Dir = repoPath
+		if err := commitCmd.Run(); err != nil {
 			return "", fmt.Errorf("failed to git commit: %w", err)
 		}
 
-		if err := func() error {
-			pushCmd := exec.Command("/bin/sh", "-c", "git push --set-upstream origin "+branchName)
-			pushCmd.Dir = repoPath
-			return pushCmd.Run()
-		}(); err != nil {
+		pushCmd := exec.Command("/bin/sh", "-c", "git push --set-upstream origin "+branchName)
+		pushCmd.Dir = repoPath
+		if err := pushCmd.Run(); err != nil {
 			return "", fmt.Errorf("failed to push branch: %w", err)
 		}
 
