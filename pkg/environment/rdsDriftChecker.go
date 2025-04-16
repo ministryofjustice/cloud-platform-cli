@@ -111,9 +111,15 @@ func RdsDriftChecker(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if len(failures) > 0 {
-		fmt.Printf("\n")
-		return fmt.Errorf("failed to process %d namespaces", len(failures))
+	criticalFailureCount := 0
+	for _, reason := range failures {
+		if strings.Contains(reason, "PR creation failed") {
+			criticalFailureCount++
+		}
+	}
+
+	if criticalFailureCount > 0 {
+		return fmt.Errorf("failed to create PR for %d namespaces", criticalFailureCount)
 	}
 
 	return nil
