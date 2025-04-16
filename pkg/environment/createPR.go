@@ -26,6 +26,16 @@ func createPR(description, namespace, ghToken, repo string) func(github.GithubIf
 	return func(gh github.GithubIface, filenames []string) (string, error) {
 		repoPath := "namespaces/live.cloud-platform.service.justice.gov.uk/" + namespace + "/resources"
 
+		removeRemoteCmd := exec.Command("/bin/sh", "-c", "git remote remove origin")
+		if err := removeRemoteCmd.Run(); err != nil {
+			return "", fmt.Errorf("failed to remove remote origin: %w", err)
+		}
+
+		useGhTokenCmd := exec.Command("/bin/sh", "-c", "git remote add origin https://"+ghToken+"@github.com/ministryofjustice/"+repo)
+		if err := useGhTokenCmd.Run(); err != nil {
+			return "", fmt.Errorf("failed to remote add origin: %w", err)
+		}
+
 		pulls, err := gh.ListOpenPRs(namespace)
 		if err != nil {
 			log.Printf("Warning: error listing open PRs: %v", err)
