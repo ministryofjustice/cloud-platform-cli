@@ -14,11 +14,18 @@ results=()
 for dir in opa-auto-approve-policy/*/;
 do
     OUTPUT=$(opa exec --decision terraform/analysis/allow --bundle $dir "$JSON_FILE")
-    OPA_RESULT=$(echo "$OUTPUT" | jq -r '.result[0].result')
-    results+=($dir","$OPA_RESULT)
-done
+    OPA_RESULT=$(echo "$OUTPUT" | jq -r '.result[0].result.valid')
+    OPA_MESSAGE=$(echo "$OUTPUT" | jq -r '.result[0].result.msg')
+    testname=$(echo "$dir" | sed 's/opa\-auto\-approve\-policy\///g' | sed 's/\///g')
+    if [[ $OPA_RESULT == "true" ]]
+    then
+      testresult=":white_check_mark:"
+    else
+      testresult=":x:"
+    fi
+    results+=($testname";"$testresult";""$OPA_MESSAGE")
 
-# test=("opa-auto-approve-policy/ecr/,true" "opa-auto-approve-policy/service_pod/,true")
+done
 
 CHANGED_FILES=$(curl -L \
     -H "Accept: application/vnd.github+json" \
@@ -41,13 +48,14 @@ for f in $CHANGED_FILES; do
     fi
 done
 
-if [[ ${results[@]} =~ "false" ]] && [ "$YAML_CHANGES" -eq 0 ];
+if [[ ${results[@]} =~ ":x:" ]] && [ "$YAML_CHANGES" -eq 0 ];
 then
   REASON=":male_detective: **Manual review required: [OPA auto approve policy](https://github.com/ministryofjustice/cloud-platform-environments/tree/main/opa-auto-approve-policy) checks did not pass.**"
 
-  string="\n| Test | Passed? |\n| --- | --- |\n|"
-  for t in ${result[@]}; do
-    for th in $(echo $t | tr "," "\n")
+  string="\n| Test | Passed? | Reason | \n| --- | --- | --- |\n|"
+  for t in "${results[@]}"; do
+    split=$(echo "$t" | tr ";" "|")
+    for th in "$split"
     do
       string+=" $th |"
     done
