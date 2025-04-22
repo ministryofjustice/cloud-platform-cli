@@ -66,7 +66,6 @@ RUN ./aws/install
 COPY --from=cli_builder /build/cloud-platform /usr/local/bin/cloud-platform
 COPY --from=cli_builder /build/kubectl /usr/local/bin/kubectl
 COPY --from=cli_builder /build/terraform /usr/local/bin/terraform
-COPY --from=cli_builder /build/scripts/auto_approve.sh /usr/local/bin/auto_approve.sh
 COPY --from=cli_builder /build/opa /usr/local/bin/opa
 
 CMD /bin/sh
