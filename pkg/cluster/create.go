@@ -111,7 +111,6 @@ func (c *Cluster) ApplyComponents(tf *terraform.TerraformCLIConfig, awsCreds *cl
 	// Turn the monitoring options off.
 	vars := []string{
 		fmt.Sprintf("%s=%s", "pagerduty_config", "dummydummy"),
-		fmt.Sprintf("%s=%s", "slack_hook_id", "dummydummy"),
 	}
 	for _, v := range vars {
 		tf.ApplyVars = append(tf.ApplyVars, tfexec.Var(v))
