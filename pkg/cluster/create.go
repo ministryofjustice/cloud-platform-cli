@@ -108,14 +108,6 @@ func (c *Cluster) ApplyComponents(tf *terraform.TerraformCLIConfig, awsCreds *cl
 	// Reset any previous variables that might've been set.
 	tf.ApplyVars = nil
 
-	// Turn the monitoring options off.
-	vars := []string{
-		fmt.Sprintf("%s=%s", "pagerduty_config", "dummydummy"),
-	}
-	for _, v := range vars {
-		tf.ApplyVars = append(tf.ApplyVars, tfexec.Var(v))
-	}
-
 	// Auth to the cluster and write the kubeconfig to disk.
 	_, err := AuthToCluster(tf.Workspace, awsCreds.Eks, kubeconf, awsCreds.Profile)
 	if err != nil {
