@@ -113,7 +113,8 @@ func RdsDriftChecker(cmd *cobra.Command, args []string) error {
 
 	criticalFailureCount := 0
 	for _, reason := range failures {
-		if strings.Contains(reason, "PR creation failed") {
+		if !strings.Contains(reason, "terraform is failing but it doesn't look like a rds version mismatch") &&
+			!strings.Contains(reason, "a PR is already open for this namespace") {
 			criticalFailureCount++
 		}
 	}
