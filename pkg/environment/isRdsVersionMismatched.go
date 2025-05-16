@@ -23,12 +23,16 @@ func IsRdsVersionMismatched(csvErr string) (*RdsVersionResults, error) {
 
 	versionRegex := regexp.MustCompile(`(?i)from ([^\s]+) (?:to|with requested version) ([^\s]+)`)
 	versionMatches := versionRegex.FindAllStringSubmatch(csvErr, -1)
+	log.Printf("Raw versionMatches: %+v", versionMatches)
 
 	moduleNameRe := regexp.MustCompile(`with module\.([^\s,]+?)\.aws_db_instance\.rds|aws_rds_cluster\.aurora,?`)
 	moduleMatches := moduleNameRe.FindAllStringSubmatch(csvErr, -1)
 
 	sanitisedVersions := removeInputStr(versionMatches)
 	sanitisedNames := removeInputStr(moduleMatches)
+
+	log.Printf("Sanitised Versions: %+v", sanitisedVersions)
+	log.Printf("Sanitised Module Names: %+v", sanitisedNames)
 
 	if !checkVersionDowngrade(sanitisedVersions) {
 		return nil, errors.New("terraform is failing, but it isn't trying to downgrade the RDS versions so it needs more investigation")
@@ -79,7 +83,10 @@ func removeInputStr(res [][]string) [][]string {
 	outer := make([][]string, 0)
 	for _, inner := range res {
 		ret := make([]string, 0)
-		ret = append(ret, inner[1:]...)
+		for _, val := range inner[1:] {
+			clean := strings.Trim(val, " .,")
+			ret = append(ret, clean)
+		}
 		outer = append(outer, ret)
 	}
 	return outer

@@ -57,6 +57,7 @@ func createPR(description, namespace, ghToken, repo string) func(github.GithubIf
 		addCmd := exec.Command("/bin/sh", "-c", "git add "+strings.Join(filenames, " "))
 		addCmd.Dir = repoPath
 		if err := addCmd.Run(); err != nil {
+			log.Printf("[ERROR] Failed to git add: %v", err)
 			return "", fmt.Errorf("failed to git add: %w", err)
 		}
 
@@ -65,17 +66,20 @@ func createPR(description, namespace, ghToken, repo string) func(github.GithubIf
 		)
 		commitCmd.Dir = repoPath
 		if err := commitCmd.Run(); err != nil {
+			log.Printf("[ERROR] Failed to git commit: %v", err)
 			return "", fmt.Errorf("failed to git commit: %w", err)
 		}
 
 		pushCmd := exec.Command("/bin/sh", "-c", "git push --set-upstream origin "+branchName)
 		pushCmd.Dir = repoPath
 		if err := pushCmd.Run(); err != nil {
+			log.Printf("[ERROR] Failed to push branch: %v", err)
 			return "", fmt.Errorf("failed to push branch: %w", err)
 		}
 
 		prUrl, err := gh.CreatePR(branchName, namespace, description)
 		if err != nil {
+			log.Printf("[ERROR] Failed to create GitHub PR: %v", err)
 			return "", fmt.Errorf("failed to create PR: %w", err)
 		}
 
