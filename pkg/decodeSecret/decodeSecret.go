@@ -83,8 +83,6 @@ func (sd *secretDecoder) processJson(jsn string, rawPrint bool) (string, error) 
 		return "", errors.New("unable to decode secret, does it have a data key?")
 	}
 
-	fmt.Println(data)
-
 	err = decodeKeys(data)
 	if err != nil {
 		return "", err
