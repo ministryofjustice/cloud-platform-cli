@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
+	"strconv"
+	"strings"
 )
 
 type secretDecoder struct {
@@ -81,6 +83,8 @@ func (sd *secretDecoder) processJson(jsn string, rawPrint bool) (string, error) 
 		return "", errors.New("unable to decode secret, does it have a data key?")
 	}
 
+	fmt.Println(data)
+
 	err = decodeKeys(data)
 	if err != nil {
 		return "", err
@@ -141,8 +145,18 @@ func base64decode(i interface{}) string {
 	return string(str)
 }
 
+func _UnescapeUnicodeCharactersInJSON(_jsonRaw json.RawMessage) (json.RawMessage, error) {
+	str, err := strconv.Unquote(strings.Replace(strconv.Quote(string(_jsonRaw)), `\\u`, `\u`, -1))
+	if err != nil {
+		return nil, err
+	}
+	return []byte(str), nil
+}
+
 func formatJson(result map[string]interface{}) (string, error) {
 	str, err := json.MarshalIndent(result, "", "    ")
+
+	str, _ = _UnescapeUnicodeCharactersInJSON(str)
 	if err != nil {
 		return "", err
 	}
