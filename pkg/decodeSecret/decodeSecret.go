@@ -143,7 +143,7 @@ func base64decode(i interface{}) string {
 	return string(str)
 }
 
-func _UnescapeUnicodeCharactersInJSON(_jsonRaw json.RawMessage) (json.RawMessage, error) {
+func unescapeUnicodeCharactersInJSON(_jsonRaw json.RawMessage) (json.RawMessage, error) {
 	str, err := strconv.Unquote(strings.Replace(strconv.Quote(string(_jsonRaw)), `\\u`, `\u`, -1))
 	if err != nil {
 		return nil, err
@@ -154,7 +154,7 @@ func _UnescapeUnicodeCharactersInJSON(_jsonRaw json.RawMessage) (json.RawMessage
 func formatJson(result map[string]interface{}) (string, error) {
 	str, err := json.MarshalIndent(result, "", "    ")
 
-	str, _ = _UnescapeUnicodeCharactersInJSON(str)
+	str, _ = unescapeUnicodeCharactersInJSON(str)
 	if err != nil {
 		return "", err
 	}
