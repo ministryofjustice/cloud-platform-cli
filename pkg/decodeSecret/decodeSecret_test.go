@@ -24,6 +24,17 @@ func TestDecodeSecret(t *testing.T) {
 	}
 }
 
+func TestUnescapeUnicodeCharactersInJSON(t *testing.T) {
+	escaped := []byte(`{"data": "\u003cbadger\u003c\u003e"}`)
+
+	expected := []byte(`{"data": "<badger<>"}`)
+
+	actual, err := unescapeUnicodeCharactersInJSON(escaped)
+	if err != nil || string(actual) != string(expected) {
+		t.Errorf("Expected:\n%s\nGot:\n%s\n", expected, actual)
+	}
+}
+
 func TestBadBase64(t *testing.T) {
 	jsn := `{ "data": { "key1": "1", "key2": "2" } }`
 
