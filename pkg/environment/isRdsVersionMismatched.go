@@ -85,6 +85,7 @@ func removeInputStr(res [][]string) [][]string {
 		ret := make([]string, 0)
 		for _, val := range inner[1:] {
 			clean := strings.Trim(val, " .,")
+			clean = strings.Split(clean, "[")[0]
 			ret = append(ret, clean)
 		}
 		outer = append(outer, ret)
