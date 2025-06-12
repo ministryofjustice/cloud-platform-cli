@@ -25,18 +25,19 @@ func createTempCsv(t *testing.T, content string) string {
 }
 
 func TestIsRdsVersionMismatched(t *testing.T) {
-	csvData := `foobar-ns-postgres-downgrade,Error: updating RDS DB Instance (cloud-platform-x): operation error RDS: ModifyDBInstance, api error InvalidParameterCombination: Cannot upgrade postgres from 14.13 to 14.7., with module.rds.aws_db_instance.rds,
-foobar-ns-rds-non-downgrade,Error: updating RDS DB Instance (cloud-platform-y): operation error RDS: ModifyDBInstance, api error InvalidParameterCombination: Max storage size must be greater than storage size, with module.rds.aws_db_instance.rds,
-foobar-ns-oracle-upgrade,Error: updating RDS DB Instance (cloud-platform-z): operation error RDS: ModifyDBInstance, api error InvalidParameterCombination: Cannot upgrade oracle-ee from 19.0.0.0.ru-2024-10.rur-2024-10.r1 to 19.0.0.0.ru-2025-01.rur-2025-01.r1, with module.oracle.aws_db_instance.rds,
-foobar-ns-oracle-downgrade,Error: updating RDS DB Instance (cloud-platform-a): operation error RDS: ModifyDBInstance, api error InvalidParameterCombination: Cannot upgrade oracle-ee from 19.0.0.0.ru-2025-10.rur-2025-10.r1 to 19.0.0.0.ru-2024-01.rur-2024-01.r1, with module.oracle.aws_db_instance.rds,
-foobar-ns-postgres-upgrade,Error: updating RDS DB Instance (cloud-platform-w): operation error RDS: ModifyDBInstance, api error InvalidParameterCombination: Cannot upgrade postgres from 14.7 to 14.13, with module.rds.aws_db_instance.rds,
-foobar-ns-mariadb-downgrade,Error: updating RDS DB Instance (cloud-platform-s): operation error RDS: ModifyDBInstance, https response error StatusCode: 400, RequestID: xxx, api error InvalidParameterCombination: Cannot upgrade mariadb from 10.11.8 to 10.11.6, with module.rds.aws_db_instance.rds,
-foobar-ns-mariadb-upgrade,Error: updating RDS DB Instance (cloud-platform-s): operation error RDS: ModifyDBInstance, https response error StatusCode: 400, RequestID: yyy, api error InvalidParameterCombination: Cannot upgrade mariadb from 10.11.8 to 10.11.9, with module.rds.aws_db_instance.rds,
-foobar-ns-postrgres-same-ns,Error: updating RDS DB Instance (cloud-platform-01152bdef9e4faaf): operation error RDS: ModifyDBInstance, https response error StatusCode: 400, RequestID: zzz, api error InvalidParameterCombination: Cannot upgrade postgres from 16.6 to 16.4, with module.rds_2.aws_db_instance.rds,
-foobar-ns-postrgres-same-ns,Error: updating RDS DB Instance (cloud-platform-35c7710fbe6aa229): operation error RDS: ModifyDBInstance, https response error StatusCode: 400, RequestID: aaa, api error InvalidParameterCombination: Cannot upgrade postgres from 16.6 to 16.4, with module.rds.aws_db_instance.rds,
-foobar-ns-invalid-version-format,Error: updating RDS DB Instance: api error InvalidParameterCombination: Cannot upgrade postgres from x.y to z.q, with module.rds.aws_db_instance.rds,
-foobar-ns-missing-module-name,Error: updating RDS DB Instance: api error InvalidParameterCombination: Cannot upgrade postgres from 13.6 to 12.4,
-foobar-ns-oracle-same-ru-upgrade,Error: updating RDS DB Instance (cloud-platform-test): operation error RDS: ModifyDBInstance, api error InvalidParameterCombination: Cannot upgrade oracle-ee from 19.0.0.0.ru-2025-01.rur-2025-01.r1 to 19.0.0.0.ru-2025-01.rur-2025-01.r2, with module.oracle.aws_db_instance.rds,
+	csvData := `foobar-ns-postgres-downgrade,Error: updating RDS DB Instance (cloud-platform-a): operation error RDS: ModifyDBInstance, api error InvalidParameterCombination: Cannot upgrade postgres from 14.13 to 14.7., with module.rds.aws_db_instance.rds,
+foobar-ns-rds-non-downgrade,Error: updating RDS DB Instance (cloud-platform-b): operation error RDS: ModifyDBInstance, api error InvalidParameterCombination: Max storage size must be greater than storage size, with module.rds.aws_db_instance.rds,
+foobar-ns-oracle-upgrade,Error: updating RDS DB Instance (cloud-platform-c): operation error RDS: ModifyDBInstance, api error InvalidParameterCombination: Cannot upgrade oracle-ee from 19.0.0.0.ru-2024-10.rur-2024-10.r1 to 19.0.0.0.ru-2025-01.rur-2025-01.r1, with module.oracle.aws_db_instance.rds,
+foobar-ns-oracle-downgrade,Error: updating RDS DB Instance (cloud-platform-d): operation error RDS: ModifyDBInstance, api error InvalidParameterCombination: Cannot upgrade oracle-ee from 19.0.0.0.ru-2025-10.rur-2025-10.r1 to 19.0.0.0.ru-2024-01.rur-2024-01.r1, with module.oracle.aws_db_instance.rds,
+foobar-ns-postgres-upgrade,Error: updating RDS DB Instance (cloud-platform-e): operation error RDS: ModifyDBInstance, api error InvalidParameterCombination: Cannot upgrade postgres from 14.7 to 14.13, with module.rds.aws_db_instance.rds,
+foobar-ns-mariadb-downgrade,Error: updating RDS DB Instance (cloud-platform-f): operation error RDS: ModifyDBInstance, https response error StatusCode: 400, RequestID: xxx, api error InvalidParameterCombination: Cannot upgrade mariadb from 10.11.8 to 10.11.6, with module.rds.aws_db_instance.rds,
+foobar-ns-mariadb-upgrade,Error: updating RDS DB Instance (cloud-platform-g): operation error RDS: ModifyDBInstance, https response error StatusCode: 400, RequestID: yyy, api error InvalidParameterCombination: Cannot upgrade mariadb from 10.11.8 to 10.11.9, with module.rds.aws_db_instance.rds,
+foobar-ns-postrgres-same-ns,Error: updating RDS DB Instance (cloud-platform-h): operation error RDS: ModifyDBInstance, https response error StatusCode: 400, RequestID: zzz, api error InvalidParameterCombination: Cannot upgrade postgres from 16.6 to 16.4, with module.rds_2.aws_db_instance.rds,
+foobar-ns-postrgres-same-ns,Error: updating RDS DB Instance (cloud-platform-i): operation error RDS: ModifyDBInstance, https response error StatusCode: 400, RequestID: aaa, api error InvalidParameterCombination: Cannot upgrade postgres from 16.6 to 16.4, with module.rds.aws_db_instance.rds,
+foobar-ns-invalid-version-format,Error: updating RDS DB Instance (cloud-platform-j): api error InvalidParameterCombination: Cannot upgrade postgres from x.y to z.q, with module.rds.aws_db_instance.rds,
+foobar-ns-missing-module-name,Error: updating RDS DB Instance (cloud-platform-k): api error InvalidParameterCombination: Cannot upgrade postgres from 13.6 to 12.4,
+foobar-ns-oracle-same-ru-upgrade,Error: updating RDS DB Instance (cloud-platform-l): operation error RDS: ModifyDBInstance, api error InvalidParameterCombination: Cannot upgrade oracle-ee from 19.0.0.0.ru-2025-01.rur-2025-01.r1 to 19.0.0.0.ru-2025-01.rur-2025-01.r2, with module.oracle.aws_db_instance.rds,
+foobar-ns-postgres-replica-downgrade,Error: updating RDS DB Instance (cloud-platform-m): operation error RDS: ModifyDBInstance, api error InvalidParameterCombination: Cannot upgrade postgres from 14.13 to 14.7., with module.rds_replica[0].aws_db_instance.rds,
 `
 
 	tmpFile := createTempCsv(t, csvData)
@@ -128,6 +129,11 @@ foobar-ns-oracle-same-ru-upgrade,Error: updating RDS DB Instance (cloud-platform
 			testDescription: "GIVEN an upgrade for oracle (same date but newer release version) THEN expect a INVALID RESULT due to upgrade",
 			ns:              "foobar-ns-oracle-same-ru-upgrade",
 			wantErr:         "terraform is failing, but it isn't trying to downgrade the RDS versions so it needs more investigation",
+		},
+		{
+			testDescription: "GIVEN a downgrade mismatch for postgres replica THEN expect a VALID RESULT",
+			ns:              "foobar-ns-postgres-replica-downgrade",
+			wantSuccess:     true,
 		},
 	}
 
