@@ -28,7 +28,7 @@ COPY . .
 RUN go build -ldflags "-X github.com/ministryofjustice/cloud-platform-cli/pkg/commands.Version=${CLOUD_PLATFORM_CLI_VERSION}" -o cloud-platform .
 
 # Install kubectl
-RUN curl -sLo ./kubectl https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl
+RUN curl -sLo ./kubectl https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl
 
 # Install terraform
 RUN curl -sLo terraform.zip https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip && unzip terraform.zip
