@@ -90,23 +90,28 @@ func GetAllNodes(c *client.KubeClient) ([]v1.Node, error) {
 	return n, nil
 }
 
+// oldestNode returns the oldest node in a slice of nodes, skipping monitoring-node tainted nodes
 func oldestNode(nodes []v1.Node) (v1.Node, error) {
-	oldestNode := nodes[0]
-	for _, node := range nodes {
-		// We don't want to recycle nodes tainted with a monitoring label
-		if node.CreationTimestamp.Before(&oldestNode.CreationTimestamp) && node.Spec.Taints == nil {
-			oldestNode = node
+	var oldest *v1.Node
+	for i, node := range nodes {
+		skip := false
+		for _, taint := range node.Spec.Taints {
+			if taint.Key == "monitoring-node" {
+				skip = true
+				break
+			}
+		}
+		if skip {
+			continue
+		}
+		if oldest == nil || node.CreationTimestamp.Before(&oldest.CreationTimestamp) {
+			oldest = &nodes[i]
 		}
 	}
-
-	// Assert the oldest node is not tainted and fail if it is
-	for _, taints := range oldestNode.Spec.Taints {
-		if taints.Key == "monitoring-node" {
-			return v1.Node{}, errors.New("oldest node is tainted with monitoring-node and can't find a new node")
-		}
+	if oldest == nil {
+		return v1.Node{}, errors.New("unable to find oldest default node")
 	}
-
-	return oldestNode, nil
+	return *oldest, nil
 }
 
 // GetNodeByName takes a node name and returns the node object that has the newest creation timestamp
