@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	gogithub "github.com/google/go-github/github"
+	gogithub "github.com/google/go-github/v68/github"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/util"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"

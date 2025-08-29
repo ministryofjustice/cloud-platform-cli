@@ -1,7 +1,7 @@
 package github
 
 import (
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v68/github"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/util"
 )
 

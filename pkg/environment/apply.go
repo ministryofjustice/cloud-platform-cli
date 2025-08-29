@@ -15,13 +15,13 @@ import (
 // Options are used to configure plan/apply sessions.
 // These options are normally passed via flags in a command line.
 type Options struct {
-	Namespace, KubecfgPath, ClusterCtx, ClusterDir, GithubToken string
-	PRNumber                                                    int
-	BuildUrl                                                    string
-	AllNamespaces                                               bool
-	EnableApplySkip, RedactedEnv, SkipProdDestroy               bool
-	BatchApplyIndex, BatchApplySize                             int
-	OnlySkipFileChanged, IsApplyPipeline                        bool
+	Namespace, KubecfgPath, ClusterCtx, ClusterDir, GithubToken, AppID, InstallID, PemFile string
+	PRNumber                                                                               int
+	BuildUrl                                                                               string
+	AllNamespaces                                                                          bool
+	EnableApplySkip, RedactedEnv, SkipProdDestroy                                          bool
+	BatchApplyIndex, BatchApplySize                                                        int
+	OnlySkipFileChanged, IsApplyPipeline                                                   bool
 }
 
 // RequiredEnvVars is used to store values such as TF_VAR_ , github and pingdom tokens
