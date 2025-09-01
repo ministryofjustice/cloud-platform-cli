@@ -114,7 +114,9 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentAppPlanCmd.Flags().StringVarP(&optFlags.Namespace, "namespace", "n", "", "Namespace which you want to perform the plan")
 
 	// Re-use the environmental variable TF_VAR_github_token to call Github Client which is needed to perform terraform operations on each namespace
-	environmentAppPlanCmd.Flags().StringVar(&optFlags.GithubToken, "github-token", os.Getenv("TF_VAR_github_token"), "Personal access Token from Github ")
+	environmentAppPlanCmd.Flags().StringVar(&optFlags.AppID, "github-appid", os.Getenv("TF_VAR_github_cloud_platform_concourse_bot_app_id"), "App ID ")
+	environmentAppPlanCmd.Flags().StringVar(&optFlags.InstallID, "github-installation-id", os.Getenv("TF_VAR_github_cloud_platform_concourse_bot_installation_id"), "Installation ID ")
+	environmentAppPlanCmd.Flags().StringVar(&optFlags.PemFile, "github-pem-file", os.Getenv("TF_VAR_github_cloud_platform_concourse_bot_pem_file"), "PEM file ")
 	environmentAppPlanCmd.Flags().StringVar(&optFlags.KubecfgPath, "kubecfg", filepath.Join(homedir.HomeDir(), ".kube", "config"), "path to kubeconfig file")
 	environmentAppPlanCmd.Flags().StringVar(&optFlags.ClusterCtx, "cluster", "", "cluster context from kubeconfig file")
 	environmentAppPlanCmd.Flags().StringVar(&optFlags.ClusterDir, "clusterdir", "", "folder name under namespaces/ inside cloud-platform-environments repo referring to full cluster name")
