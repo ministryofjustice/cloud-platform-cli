@@ -112,8 +112,6 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	// For testing only this should replace environmentPlanCmd
 	environmentAppPlanCmd.Flags().IntVar(&optFlags.PRNumber, "pr-number", 0, "Pull request ID or number to which you want to perform the plan")
 	environmentAppPlanCmd.Flags().StringVarP(&optFlags.Namespace, "namespace", "n", "", "Namespace which you want to perform the plan")
-
-	// Re-use the environmental variable TF_VAR_github_token to call Github Client which is needed to perform terraform operations on each namespace
 	environmentAppPlanCmd.Flags().StringVar(&optFlags.AppID, "github-appid", os.Getenv("TF_VAR_github_cloud_platform_concourse_bot_app_id"), "App ID ")
 	environmentAppPlanCmd.Flags().StringVar(&optFlags.InstallID, "github-installation-id", os.Getenv("TF_VAR_github_cloud_platform_concourse_bot_installation_id"), "Installation ID ")
 	environmentAppPlanCmd.Flags().StringVar(&optFlags.PemFile, "github-pem-file", os.Getenv("TF_VAR_github_cloud_platform_concourse_bot_pem_file"), "PEM file ")
@@ -234,9 +232,21 @@ var environmentAppPlanCmd = &cobra.Command{
 			Owner:      "ministryofjustice",
 		}
 
+		contextLogger.Infof("AppID: %q, InstallID: %q, PemFile (first 20 chars): %q", optFlags.AppID, optFlags.InstallID, func() string {
+			if len(optFlags.PemFile) > 20 {
+				return optFlags.PemFile[:20] + "..."
+			}
+			return optFlags.PemFile
+		}())
+
+		ghClient := github.NewGihubAppClient(ghConfig, optFlags.PemFile, optFlags.AppID, optFlags.InstallID)
+		if ghClient == nil {
+			contextLogger.Fatal("Failed to create Github App client: check AppID, InstallID, and PemFile are set and valid.")
+		}
+
 		applier := &environment.Apply{
 			Options:      &optFlags,
-			GithubClient: github.NewGihubAppClient(ghConfig, optFlags.AppID, optFlags.InstallID, optFlags.PemFile),
+			GithubClient: ghClient,
 		}
 
 		err := applier.Plan()

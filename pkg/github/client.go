@@ -69,16 +69,19 @@ func NewGihubAppClient(config *GithubClientConfig, key, appid, installid string)
 
 	appIDInt, err := strconv.ParseInt(appid, 10, 64)
 	if err != nil {
+		fmt.Printf("[NewGihubAppClient] Failed to parse appid '%s': %v\n", appid, err)
 		return nil
 	}
 
 	installIDInt, err := strconv.ParseInt(installid, 10, 64)
 	if err != nil {
+		fmt.Printf("[NewGihubAppClient] Failed to parse installid '%s': %v\n", installid, err)
 		return nil
 	}
 
 	appTokenSource, err := githubauth.NewApplicationTokenSource(appIDInt, privateKey)
 	if err != nil {
+		fmt.Printf("[NewGihubAppClient] Failed to create ApplicationTokenSource: %v\n", err)
 		return nil
 	}
 
