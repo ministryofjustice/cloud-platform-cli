@@ -18,9 +18,6 @@ func (a *Apply) Initialize() {
 	a.RequiredEnvVars.kubernetescluster = reqEnvVars.kubernetescluster
 	a.RequiredEnvVars.githubowner = reqEnvVars.githubowner
 	a.RequiredEnvVars.githubtoken = reqEnvVars.githubtoken
-	a.RequiredEnvVars.github_cloud_platform_concourse_bot_app_id = reqEnvVars.github_cloud_platform_concourse_bot_app_id
-	a.RequiredEnvVars.github_cloud_platform_concourse_bot_installation_id = reqEnvVars.github_cloud_platform_concourse_bot_installation_id
-	a.RequiredEnvVars.github_cloud_platform_concourse_bot_pem_file = reqEnvVars.github_cloud_platform_concourse_bot_pem_file
 	a.RequiredEnvVars.SlackBotToken = reqEnvVars.SlackBotToken
 	a.RequiredEnvVars.SlackWebhookUrl = reqEnvVars.SlackWebhookUrl
 	a.RequiredEnvVars.pingdomapitoken = reqEnvVars.pingdomapitoken
