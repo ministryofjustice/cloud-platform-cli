@@ -49,13 +49,13 @@ func addTerraformCmd(topLevel *cobra.Command) {
 			// print terraform init output irrespective of error. out captures both stdout and stderr of terraform
 			util.Redacted(os.Stdout, out.String(), tfCli.Redacted)
 			if err != nil {
-				contextLogger.Fatal("Failed to init terraform: %w", err)
+				contextLogger.Fatal("Failed to init terraform")
 			}
 
 			_, err = tfCli.Plan(context.Background(), &out)
 			util.Redacted(os.Stdout, out.String(), tfCli.Redacted)
 			if err != nil {
-				contextLogger.Fatal("Failed to plan terraform: %w", err)
+				contextLogger.Fatal("Failed to plan terraform")
 			}
 		},
 	}
@@ -85,13 +85,13 @@ func addTerraformCmd(topLevel *cobra.Command) {
 			// print terraform init output irrespective of error. out captures both stdout and stderr of addTerraformCmd
 			util.Redacted(os.Stdout, out.String(), tfCli.Redacted)
 			if err != nil {
-				contextLogger.Fatal("Failed to init terraform: %w", err)
+				contextLogger.Fatal("Failed to init terraform")
 			}
 
 			err = tfCli.Apply(context.Background(), &out)
 			util.Redacted(os.Stdout, out.String(), tfCli.Redacted)
 			if err != nil {
-				contextLogger.Fatal("Failed to apply terraform: %w", err)
+				contextLogger.Fatal("Failed to apply terraform")
 			}
 		},
 	}
@@ -118,14 +118,14 @@ func addTerraformCmd(topLevel *cobra.Command) {
 			// print terraform init output irrespective of error. out captures both stdout and stderr of terraform
 			util.Redacted(os.Stdout, out.String(), tfCli.Redacted)
 			if err != nil {
-				contextLogger.Fatal("Failed to init terraform: %w", err)
+				contextLogger.Fatal("Failed to init terraform")
 			}
 
 			// diff - false if there is are changes in the plan
 			diff, err = tfCli.Plan(context.Background(), &out)
 			util.Redacted(os.Stdout, out.String(), tfCli.Redacted)
 			if err != nil {
-				contextLogger.Fatal("Failed to plan terraform: %w", err)
+				contextLogger.Fatal("Failed to plan terraform")
 			}
 
 			if diff {
