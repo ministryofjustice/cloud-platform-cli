@@ -3,8 +3,10 @@ package github
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
 
-	"github.com/google/go-github/v68/github"
+	"github.com/google/go-github/v74/github"
 )
 
 func (c *GithubClient) SearchAuthTypeDefaultInPR(ctx context.Context, prNumber int) (string, error) {
@@ -15,7 +17,8 @@ func (c *GithubClient) SearchAuthTypeDefaultInPR(ctx context.Context, prNumber i
 			return "", fmt.Errorf("error listing files in pull request: %v", err)
 		}
 		for _, file := range files {
-			if file.GetFilename() == "variables.tf" && file.GetPatch() != "" {
+			fmt.Fprintf(os.Stderr, "PR FILE: %s patch-len=%d\n", file.GetFilename(), len(file.GetPatch())) // DEBUG
+			if strings.HasSuffix(file.GetFilename(), "variables.tf") && file.GetPatch() != "" {
 				// Try to extract default value for variable "auth_type"
 				if defVal := extractAuthTypeDefault(file.GetPatch()); defVal != "" {
 					return defVal, nil
@@ -32,17 +35,26 @@ func (c *GithubClient) SearchAuthTypeDefaultInPR(ctx context.Context, prNumber i
 
 // extractAuthTypeDefault parses a patch and returns the default value for variable "auth_type" if present
 func extractAuthTypeDefault(patch string) string {
-	// Look for lines like: +variable "auth_type" { ... default = "something" ... }
+	// More robust: allow for extra whitespace and ignore indentation
 	var inVarBlock bool
 	for _, line := range splitLines(patch) {
-		if !inVarBlock && (line == "+variable \"auth_type\" {" || line == "+variable \"auth_type\"{") {
+		l := trimSpace(line)
+		fmt.Fprintf(os.Stderr, "PATCH LINE: %s\n", l) // DEBUG
+		if !inVarBlock && len(l) > 0 && l[0] == '+' && containsVarAuthType(l) {
+			fmt.Fprintf(os.Stderr, "-- Entering auth_type variable block\n") // DEBUG
 			inVarBlock = true
-		} else if inVarBlock {
-			if line == "+}" {
+			continue
+		}
+		if inVarBlock {
+			if l == "+}" || l == "+ }" {
+				fmt.Fprintf(os.Stderr, "-- Exiting variable block\n") // DEBUG
 				inVarBlock = false
-			} else if len(line) > 0 && (line[0] == '+' || line[0] == ' ') {
-				// Look for default assignment
-				if _, val, ok := parseDefaultLine(line); ok {
+				continue
+			}
+			if len(l) > 0 && (l[0] == '+' || l[0] == ' ') {
+				key, val, ok := parseDefaultLine(l)
+				if ok {
+					fmt.Fprintf(os.Stderr, "-- Found default line: key=%s val=%s\n", key, val) // DEBUG
 					return val
 				}
 			}
@@ -59,24 +71,52 @@ func parseDefaultLine(line string) (string, string, bool) {
 		l = l[1:]
 	}
 	l = trimSpace(l)
-	if len(l) >= 8 && l[:8] == "default=" {
-		l = l[8:]
-	} else if len(l) >= 9 && l[:8] == "default " {
-		l = l[8:]
-		if l[0] == '=' {
-			l = l[1:]
+	// Accept various spacings: default=, default =, default   =
+	if len(l) >= 7 && l[:7] == "default" {
+		rest := l[7:]
+		rest = trimSpace(rest)
+		if len(rest) > 0 && rest[0] == '=' {
+			rest = rest[1:]
+			rest = trimSpace(rest)
+			l = rest
+			fmt.Fprintf(os.Stderr, "parseDefaultLine: found default assignment, value: %s\n", l) // DEBUG
+		} else {
+			return "", "", false
 		}
-	} else if len(l) >= 10 && l[:9] == "default =" {
-		l = l[9:]
 	} else {
 		return "", "", false
 	}
-	l = trimSpace(l)
 	// Remove quotes if present
 	if len(l) > 1 && l[0] == '"' && l[len(l)-1] == '"' {
 		return "default", l[1 : len(l)-1], true
 	}
 	return "default", l, true
+}
+
+// containsVarAuthType checks if a line contains the start of the auth_type variable block
+func containsVarAuthType(line string) bool {
+	// Accept: +variable "auth_type" {, +variable "auth_type"{, with any whitespace
+	if len(line) < 18 {
+		return false
+	}
+	// Remove leading + and whitespace
+	l := line
+	if l[0] == '+' {
+		l = l[1:]
+	}
+	l = trimSpace(l)
+	if len(l) >= 18 && l[:8] == "variable" {
+		rest := l[8:]
+		rest = trimSpace(rest)
+		if len(rest) >= 12 && rest[:11] == "\"auth_type\"" {
+			rest2 := rest[11:]
+			rest2 = trimSpace(rest2)
+			if rest2 == "{" || rest2 == "{" {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // splitLines splits a string into lines

@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/google/go-github/v68/github"
+	"github.com/google/go-github/v74/github"
 	"golang.org/x/oauth2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"

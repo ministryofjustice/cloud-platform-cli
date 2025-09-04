@@ -182,31 +182,22 @@ var environmentPlanCmd = &cobra.Command{
 			contextLogger.Fatalf("Failed to get auth_type from PR: %v", err)
 		}
 
+		var applier *environment.Apply
 		if authType == "app" {
-			ghClient := github.NewGithubAppClient(ghConfig, optFlags.PemFile, optFlags.AppID, optFlags.InstallID)
-			if ghClient == nil {
-				contextLogger.Fatal("Failed to create Github App client: check AppID, InstallID, and PemFile are set and valid.")
-			}
-
-			applier := &environment.Apply{
+			applier = &environment.Apply{
 				Options:      &optFlags,
-				GithubClient: ghClient,
-			}
-
-			err := applier.Plan()
-			if err != nil {
-				contextLogger.Fatal(err)
+				GithubClient: github.NewGithubAppClient(ghConfig, optFlags.PemFile, optFlags.AppID, optFlags.InstallID),
 			}
 		} else {
-			applier := &environment.Apply{
+			applier = &environment.Apply{
 				Options:      &optFlags,
 				GithubClient: github.NewGithubClient(ghConfig, optFlags.GithubToken),
 			}
+		}
 
-			err := applier.Plan()
-			if err != nil {
-				contextLogger.Fatal(err)
-			}
+		err = applier.Plan()
+		if err != nil {
+			contextLogger.Fatal(err)
 		}
 	},
 }
@@ -245,9 +236,23 @@ var environmentApplyCmd = &cobra.Command{
 			Owner:      "ministryofjustice",
 		}
 
-		applier := &environment.Apply{
-			Options:      &optFlags,
-			GithubClient: github.NewGithubClient(ghConfig, optFlags.GithubToken),
+		// get authtype this is only needed for migration purposes once users are all using github app this can be removed
+		authType, err := github.NewGithubAppClient(ghConfig, optFlags.PemFile, optFlags.AppID, optFlags.InstallID).SearchAuthTypeDefaultInPR(context.Background(), optFlags.PRNumber)
+		if err != nil {
+			contextLogger.Fatalf("Failed to get auth_type from PR: %v", err)
+		}
+
+		var applier *environment.Apply
+		if authType == "app" {
+			applier = &environment.Apply{
+				Options:      &optFlags,
+				GithubClient: github.NewGithubAppClient(ghConfig, optFlags.PemFile, optFlags.AppID, optFlags.InstallID),
+			}
+		} else {
+			applier = &environment.Apply{
+				Options:      &optFlags,
+				GithubClient: github.NewGithubClient(ghConfig, optFlags.GithubToken),
+			}
 		}
 
 		// if -namespace or a prNumber is provided, apply on given namespace
@@ -311,12 +316,26 @@ var environmentDestroyCmd = &cobra.Command{
 			Owner:      "ministryofjustice",
 		}
 
-		applier := &environment.Apply{
-			Options:      &optFlags,
-			GithubClient: github.NewGithubClient(ghConfig, optFlags.GithubToken),
+		// get authtype this is only needed for migration purposes once users are all using github app this can be removed
+		authType, err := github.NewGithubAppClient(ghConfig, optFlags.PemFile, optFlags.AppID, optFlags.InstallID).SearchAuthTypeDefaultInPR(context.Background(), optFlags.PRNumber)
+		if err != nil {
+			contextLogger.Fatalf("Failed to get auth_type from PR: %v", err)
 		}
 
-		err := applier.Destroy()
+		var applier *environment.Apply
+		if authType == "app" {
+			applier = &environment.Apply{
+				Options:      &optFlags,
+				GithubClient: github.NewGithubAppClient(ghConfig, optFlags.PemFile, optFlags.AppID, optFlags.InstallID),
+			}
+		} else {
+			applier = &environment.Apply{
+				Options:      &optFlags,
+				GithubClient: github.NewGithubClient(ghConfig, optFlags.GithubToken),
+			}
+		}
+
+		err = applier.Destroy()
 		if err != nil {
 			contextLogger.Fatal(err)
 		}
