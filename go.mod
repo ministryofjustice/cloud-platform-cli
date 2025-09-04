@@ -32,7 +32,7 @@ require (
 	github.com/deckarep/golang-set/v2 v2.6.0
 	github.com/dlclark/regexp2 v1.10.0
 	github.com/google/go-cmdtest v0.4.0
-	github.com/google/go-github/v68 v68.0.0
+	github.com/google/go-github/v74 v74.0.0
 	github.com/hashicorp/go-version v1.6.0
 	github.com/hashicorp/hc-install v0.6.2
 	github.com/hashicorp/terraform-exec v0.20.0

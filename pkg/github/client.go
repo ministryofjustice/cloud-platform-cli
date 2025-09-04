@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/go-github/v68/github"
+	"github.com/google/go-github/v74/github"
 	"github.com/jferrl/go-githubauth"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/util"
 	"github.com/shurcooL/githubv4"

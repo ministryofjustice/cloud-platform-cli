@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	github "github.com/google/go-github/v68/github"
+	github "github.com/google/go-github/v74/github"
 	mock "github.com/stretchr/testify/mock"
 
 	pkggithub "github.com/ministryofjustice/cloud-platform-cli/pkg/github"
