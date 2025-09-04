@@ -64,7 +64,7 @@ func NewGithubClient(config *GithubClientConfig, token string) *GithubClient {
 	}
 }
 
-func NewGihubAppClient(config *GithubClientConfig, key, appid, installid string) *GithubClient {
+func NewGithubAppClient(config *GithubClientConfig, key, appid, installid string) *GithubClient {
 	privateKey := []byte(key)
 
 	appIDInt, err := strconv.ParseInt(appid, 10, 64)

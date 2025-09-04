@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"errors"
 	"os"
 	"path/filepath"
@@ -100,7 +101,6 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	// e.g. if this is the Pull request to perform the apply: https://github.com/ministryofjustice/cloud-platform-environments/pull/8370, the pr ID is 8370.
 	environmentPlanCmd.Flags().IntVar(&optFlags.PRNumber, "pr-number", 0, "Pull request ID or number to which you want to perform the plan")
 	environmentPlanCmd.Flags().StringVarP(&optFlags.Namespace, "namespace", "n", "", "Namespace which you want to perform the plan")
-	environmentPlanCmd.Flags().StringVarP(&optFlags.Type, "type", "t", "", "Type of plan to perform: app or token")
 	// Re-use the environmental variable TF_VAR_github_token to call Github Client which is needed to perform terraform operations on each namespace
 	environmentPlanCmd.Flags().StringVar(&optFlags.GithubToken, "github-token", os.Getenv("TF_VAR_github_token"), "Personal access Token from Github ")
 	environmentPlanCmd.Flags().StringVar(&optFlags.KubecfgPath, "kubecfg", filepath.Join(homedir.HomeDir(), ".kube", "config"), "path to kubeconfig file")
@@ -176,8 +176,14 @@ var environmentPlanCmd = &cobra.Command{
 			Owner:      "ministryofjustice",
 		}
 
-		if optFlags.Type == "app" {
-			ghClient := github.NewGihubAppClient(ghConfig, optFlags.PemFile, optFlags.AppID, optFlags.InstallID)
+		// get authtype this is only needed for migration purposes once users are all using github app this can be removed
+		authType, err := github.NewGithubAppClient(ghConfig, optFlags.PemFile, optFlags.AppID, optFlags.InstallID).SearchAuthTypeDefaultInPR(context.Background(), optFlags.PRNumber)
+		if err != nil {
+			contextLogger.Fatalf("Failed to get auth_type from PR: %v", err)
+		}
+
+		if authType == "app" {
+			ghClient := github.NewGithubAppClient(ghConfig, optFlags.PemFile, optFlags.AppID, optFlags.InstallID)
 			if ghClient == nil {
 				contextLogger.Fatal("Failed to create Github App client: check AppID, InstallID, and PemFile are set and valid.")
 			}
