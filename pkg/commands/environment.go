@@ -179,7 +179,8 @@ var environmentPlanCmd = &cobra.Command{
 		// get authtype this is only needed for migration purposes once users are all using github app this can be removed
 		authType, err := github.NewGithubAppClient(ghConfig, optFlags.PemFile, optFlags.AppID, optFlags.InstallID).SearchAuthTypeDefaultInPR(context.Background(), optFlags.PRNumber)
 		if err != nil {
-			contextLogger.Fatalf("Failed to get auth_type from PR: %v", err)
+			contextLogger.Printf("Failed to get auth_type from PR: %v, defaulting to token auth", err)
+			authType = "token"
 		}
 
 		var applier *environment.Apply
@@ -239,7 +240,8 @@ var environmentApplyCmd = &cobra.Command{
 		// get authtype this is only needed for migration purposes once users are all using github app this can be removed
 		authType, err := github.NewGithubAppClient(ghConfig, optFlags.PemFile, optFlags.AppID, optFlags.InstallID).SearchAuthTypeDefaultInPR(context.Background(), optFlags.PRNumber)
 		if err != nil {
-			contextLogger.Fatalf("Failed to get auth_type from PR: %v", err)
+			contextLogger.Printf("Failed to get auth_type from PR: %v, defaulting to token auth", err)
+			authType = "token"
 		}
 
 		var applier *environment.Apply
@@ -319,7 +321,8 @@ var environmentDestroyCmd = &cobra.Command{
 		// get authtype this is only needed for migration purposes once users are all using github app this can be removed
 		authType, err := github.NewGithubAppClient(ghConfig, optFlags.PemFile, optFlags.AppID, optFlags.InstallID).SearchAuthTypeDefaultInPR(context.Background(), optFlags.PRNumber)
 		if err != nil {
-			contextLogger.Fatalf("Failed to get auth_type from PR: %v", err)
+			contextLogger.Printf("Failed to get auth_type from PR: %v, defaulting to token auth", err)
+			authType = "token"
 		}
 
 		var applier *environment.Apply
