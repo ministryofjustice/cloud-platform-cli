@@ -9,13 +9,13 @@ import (
 	"github.com/google/go-github/v74/github"
 )
 
-func (c *GithubClient) FlagCheckAuthType(ctx context.Context, prNumber int, namespace string) (string, error) {
+func (c *GithubClient) FlagCheckAuthType(ctx context.Context, prNumber int, namespace, clusterName string) (string, error) {
 	var branch string
 	if prNumber == 0 && namespace == "" {
 		return "", fmt.Errorf("either -pr-number or -namespace flag is required")
 	} else if prNumber > 0 {
 		// get namespace from PR
-		prDetails, err := c.PRDetails(context.Background(), prNumber)
+		prDetails, err := c.PRDetails(context.Background(), prNumber, clusterName)
 		if err != nil {
 			return "", fmt.Errorf("failed to get pr details: %v", err)
 		}
@@ -25,11 +25,12 @@ func (c *GithubClient) FlagCheckAuthType(ctx context.Context, prNumber int, name
 			return "", fmt.Errorf("namespace not found in pr %d", prNumber)
 		}
 	} else if namespace != "" {
-		branch = "main"
+		// get branch from from local
+		branch = getCurrentBranch()
 	}
 
 	// get authtype this is only needed for migration purposes once users are all using github app this can be removed
-	authType, err := c.SearchAuthTypeInRepo(context.Background(), namespace, branch)
+	authType, err := c.SearchAuthTypeInRepo(context.Background(), namespace, branch, clusterName)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to get auth_type from PR: %v, defaulting to token auth\n", err) // DEBUG
 		authType = "token"
@@ -38,28 +39,39 @@ func (c *GithubClient) FlagCheckAuthType(ctx context.Context, prNumber int, name
 	return authType, nil
 }
 
-func (c *GithubClient) PRDetails(ctx context.Context, prNumber int) ([]string, error) {
+func getCurrentBranch() string {
+	branchBytes, err := os.ReadFile(".git/HEAD")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to read .git/HEAD: %v, defaulting to main\n", err) // DEBUG
+		return "main"
+	}
+	branchRef := strings.TrimSpace(string(branchBytes))
+	if strings.HasPrefix(branchRef, "ref: refs/heads/") {
+		return strings.TrimPrefix(branchRef, "ref: refs/heads/")
+	}
+	fmt.Fprintf(os.Stderr, "Unexpected format in .git/HEAD: %s, defaulting to main\n", branchRef) // DEBUG
+	return "main"
+}
+
+func (c *GithubClient) PRDetails(ctx context.Context, prNumber int, clusterName string) ([]string, error) {
 	var namespace string
-	pr, _, err := c.V3.PullRequests.Get(ctx, c.Owner, c.Repository, prNumber)
+	pr, _, err := c.PullRequests.Get(ctx, c.Owner, c.Repository, prNumber)
 	if err != nil {
 		return nil, fmt.Errorf("error getting PR %d: %v", prNumber, err)
 	}
 	branch := pr.GetHead().GetRef()
-	fmt.Println(branch)
-	files, _, err := c.V3.PullRequests.ListFiles(ctx, c.Owner, c.Repository, prNumber, nil)
+	files, _, err := c.PullRequests.ListFiles(ctx, c.Owner, c.Repository, prNumber, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error listing files for PR %d: %v", prNumber, err)
 	}
 	for _, file := range files {
-		fmt.Println(file.Filename)
 		// split file path by "/"
 		pathParts := strings.Split(file.GetFilename(), "/")
 		// check if path matches expected pattern
-		if len(pathParts) >= 5 && pathParts[0] == "namespaces" && pathParts[1] == "live.cloud-platform.service.justice.gov.uk" {
+		if len(pathParts) >= 5 && pathParts[0] == "namespaces" && pathParts[1] == clusterName+".cloud-platform.service.justice.gov.uk" {
 			namespace = pathParts[2]
 			break
 		}
-		fmt.Println(namespace)
 	}
 
 	prDetails := []string{branch, namespace}
@@ -67,14 +79,27 @@ func (c *GithubClient) PRDetails(ctx context.Context, prNumber int) ([]string, e
 }
 
 // search repo for auth_type variable default in a PR depending on namespace directory name
-func (c *GithubClient) SearchAuthTypeInRepo(ctx context.Context, namespace, branch string) (string, error) {
-	path := fmt.Sprintf("namespaces/live.cloud-platform.service.justice.gov.uk/%s/resources/variables.tf", namespace)
+func (c *GithubClient) SearchAuthTypeInRepo(ctx context.Context, namespace, branch, clusterName string) (string, error) {
+	path := fmt.Sprintf("namespaces/%s.cloud-platform.service.justice.gov.uk/%s/resources/variables.tf", clusterName, namespace)
+
+	// Clean up branch reference - remove head/ prefix if present
+	cleanBranch := strings.TrimPrefix(branch, "head/")
+
 	opt := &github.RepositoryContentGetOptions{
-		Ref: branch,
+		Ref: cleanBranch,
 	}
+
 	fileContent, _, _, err := c.V3.Repositories.GetContents(ctx, c.Owner, c.Repository, path, opt)
 	if err != nil {
-		return "", fmt.Errorf("error getting directory contents for %s: %v", path, err)
+		// Try fallback: check if the file exists in main branch
+		mainOpt := &github.RepositoryContentGetOptions{
+			Ref: "main",
+		}
+		var fallbackErr error
+		fileContent, _, _, fallbackErr = c.V3.Repositories.GetContents(ctx, c.Owner, c.Repository, path, mainOpt)
+		if fallbackErr != nil {
+			return "", fmt.Errorf("error getting file %s (tried branch %s and main): %v", path, cleanBranch, err)
+		}
 	}
 
 	content, err := fileContent.GetContent()
@@ -96,22 +121,18 @@ func extractAuthTypeDefault(patch string) string {
 	var inVarBlock bool
 	for _, line := range splitLines(patch) {
 		l := trimSpace(line)
-		fmt.Fprintf(os.Stderr, "PATCH LINE: %s\n", l) // DEBUG
 		if !inVarBlock && len(l) > 0 && l[0] == '+' && containsVarAuthType(l) {
-			fmt.Fprintf(os.Stderr, "-- Entering auth_type variable block\n") // DEBUG
 			inVarBlock = true
 			continue
 		}
 		if inVarBlock {
 			if l == "+}" || l == "+ }" {
-				fmt.Fprintf(os.Stderr, "-- Exiting variable block\n") // DEBUG
 				inVarBlock = false
 				continue
 			}
 			if len(l) > 0 && (l[0] == '+' || l[0] == ' ') {
-				key, val, ok := parseDefaultLine(l)
+				_, val, ok := parseDefaultLine(l)
 				if ok {
-					fmt.Fprintf(os.Stderr, "-- Found default line: key=%s val=%s\n", key, val) // DEBUG
 					return val
 				}
 			}
@@ -168,7 +189,7 @@ func containsVarAuthType(line string) bool {
 		if len(rest) >= 12 && rest[:11] == "\"auth_type\"" {
 			rest2 := rest[11:]
 			rest2 = trimSpace(rest2)
-			if rest2 == "{" || rest2 == "{" {
+			if rest2 == "{" {
 				return true
 			}
 		}

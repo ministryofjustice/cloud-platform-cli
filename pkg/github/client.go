@@ -16,6 +16,7 @@ import (
 var _ GithubPullRequestsService = (*github.PullRequestsService)(nil)
 
 type GithubPullRequestsService interface {
+	Get(ctx context.Context, owner, repo string, number int) (*github.PullRequest, *github.Response, error)
 	ListFiles(ctx context.Context, owner string, repo string, number int, opt *github.ListOptions) ([]*github.CommitFile, *github.Response, error)
 	IsMerged(ctx context.Context, owner string, repo string, number int) (bool, *github.Response, error)
 	Create(ctx context.Context, owner string, repo string, pr *github.NewPullRequest) (*github.PullRequest, *github.Response, error)
@@ -69,19 +70,22 @@ func NewGithubAppClient(config *GithubClientConfig, key, appid, installid string
 
 	appIDInt, err := strconv.ParseInt(appid, 10, 64)
 	if err != nil {
-		fmt.Printf("[NewGihubAppClient] Failed to parse appid '%s': %v\n", appid, err)
+		fmt.Printf("[NewGithubAppClient] Failed to parse appid, value returned:'%s'\nerror message: %v\n", appid, err)
+		fmt.Println("[NewGithubAppClient] Check if the appid has been set correctly")
 		return nil
 	}
 
 	installIDInt, err := strconv.ParseInt(installid, 10, 64)
 	if err != nil {
-		fmt.Printf("[NewGihubAppClient] Failed to parse installid '%s': %v\n", installid, err)
+		fmt.Printf("[NewGithubAppClient] Failed to parse installid, value returned:'%s'\nerror message: %v\n", installid, err)
+		fmt.Println("[NewGithubAppClient] Check if the installid has been set correctly")
 		return nil
 	}
 
 	appTokenSource, err := githubauth.NewApplicationTokenSource(appIDInt, privateKey)
 	if err != nil {
-		fmt.Printf("[NewGihubAppClient] Failed to create ApplicationTokenSource: %v\n", err)
+		fmt.Printf("[NewGithubAppClient] Failed to create ApplicationTokenSource: %v\n", err)
+		fmt.Println("[NewGithubAppClient] Check if the private key has been set correctly")
 		return nil
 	}
 
