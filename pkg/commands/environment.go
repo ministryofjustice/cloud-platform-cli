@@ -182,8 +182,7 @@ var environmentPlanCmd = &cobra.Command{
 			Owner:      "ministryofjustice",
 		}
 
-		// get authtype this is only needed for migration purposes once users are all using github app this can be removed
-		authType, err := github.NewGithubAppClient(ghConfig, optFlags.PemFile, optFlags.AppID, optFlags.InstallID).SearchAuthTypeDefaultInPR(context.Background(), optFlags.PRNumber)
+		authType, err := github.NewGithubAppClient(ghConfig, optFlags.PemFile, optFlags.AppID, optFlags.InstallID).FlagCheckAuthType(context.Background(), optFlags.PRNumber, optFlags.Namespace)
 		if err != nil {
 			contextLogger.Printf("Failed to get auth_type from PR: %v, defaulting to token auth", err)
 			authType = "token"
@@ -243,8 +242,7 @@ var environmentApplyCmd = &cobra.Command{
 			Owner:      "ministryofjustice",
 		}
 
-		// get authtype this is only needed for migration purposes once users are all using github app this can be removed
-		authType, err := github.NewGithubAppClient(ghConfig, optFlags.PemFile, optFlags.AppID, optFlags.InstallID).SearchAuthTypeDefaultInPR(context.Background(), optFlags.PRNumber)
+		authType, err := github.NewGithubAppClient(ghConfig, optFlags.PemFile, optFlags.AppID, optFlags.InstallID).FlagCheckAuthType(context.Background(), optFlags.PRNumber, optFlags.Namespace)
 		if err != nil {
 			contextLogger.Printf("Failed to get auth_type from PR: %v, defaulting to token auth", err)
 			authType = "token"
@@ -324,8 +322,7 @@ var environmentDestroyCmd = &cobra.Command{
 			Owner:      "ministryofjustice",
 		}
 
-		// get authtype this is only needed for migration purposes once users are all using github app this can be removed
-		authType, err := github.NewGithubAppClient(ghConfig, optFlags.PemFile, optFlags.AppID, optFlags.InstallID).SearchAuthTypeDefaultInPR(context.Background(), optFlags.PRNumber)
+		authType, err := github.NewGithubAppClient(ghConfig, optFlags.PemFile, optFlags.AppID, optFlags.InstallID).FlagCheckAuthType(context.Background(), optFlags.PRNumber, optFlags.Namespace)
 		if err != nil {
 			contextLogger.Printf("Failed to get auth_type from PR: %v, defaulting to token auth", err)
 			authType = "token"

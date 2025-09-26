@@ -9,28 +9,85 @@ import (
 	"github.com/google/go-github/v74/github"
 )
 
-func (c *GithubClient) SearchAuthTypeDefaultInPR(ctx context.Context, prNumber int) (string, error) {
-	opt := &github.ListOptions{PerPage: 100}
-	for {
-		files, resp, err := c.PullRequests.ListFiles(ctx, c.Owner, c.Repository, prNumber, opt)
+func (c *GithubClient) FlagCheckAuthType(ctx context.Context, prNumber int, namespace string) (string, error) {
+	var branch string
+	if prNumber == 0 && namespace == "" {
+		return "", fmt.Errorf("either -pr-number or -namespace flag is required")
+	} else if prNumber > 0 {
+		// get namespace from PR
+		prDetails, err := c.PRDetails(context.Background(), prNumber)
 		if err != nil {
-			return "", fmt.Errorf("error listing files in pull request: %v", err)
+			return "", fmt.Errorf("failed to get pr details: %v", err)
 		}
-		for _, file := range files {
-			fmt.Fprintf(os.Stderr, "PR FILE: %s patch-len=%d\n", file.GetFilename(), len(file.GetPatch())) // DEBUG
-			if strings.HasSuffix(file.GetFilename(), "variables.tf") && file.GetPatch() != "" {
-				// Try to extract default value for variable "auth_type"
-				if defVal := extractAuthTypeDefault(file.GetPatch()); defVal != "" {
-					return defVal, nil
-				}
-			}
+		branch = prDetails[0]
+		namespace = prDetails[1]
+		if namespace == "" {
+			return "", fmt.Errorf("namespace not found in pr %d", prNumber)
 		}
-		if resp.NextPage == 0 {
+	} else if namespace != "" {
+		branch = "main"
+	}
+
+	// get authtype this is only needed for migration purposes once users are all using github app this can be removed
+	authType, err := c.SearchAuthTypeInRepo(context.Background(), namespace, branch)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to get auth_type from PR: %v, defaulting to token auth\n", err) // DEBUG
+		authType = "token"
+	}
+
+	return authType, nil
+}
+
+func (c *GithubClient) PRDetails(ctx context.Context, prNumber int) ([]string, error) {
+	var namespace string
+	pr, _, err := c.V3.PullRequests.Get(ctx, c.Owner, c.Repository, prNumber)
+	if err != nil {
+		return nil, fmt.Errorf("error getting PR %d: %v", prNumber, err)
+	}
+	branch := pr.GetHead().GetRef()
+	fmt.Println(branch)
+	files, _, err := c.V3.PullRequests.ListFiles(ctx, c.Owner, c.Repository, prNumber, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error listing files for PR %d: %v", prNumber, err)
+	}
+	for _, file := range files {
+		fmt.Println(file.Filename)
+		// split file path by "/"
+		pathParts := strings.Split(file.GetFilename(), "/")
+		// check if path matches expected pattern
+		if len(pathParts) >= 5 && pathParts[0] == "namespaces" && pathParts[1] == "live.cloud-platform.service.justice.gov.uk" {
+			namespace = pathParts[2]
 			break
 		}
-		opt.Page = resp.NextPage
+		fmt.Println(namespace)
 	}
-	return "", fmt.Errorf("auth_type variable with default not found in PR")
+
+	prDetails := []string{branch, namespace}
+	return prDetails, nil
+}
+
+// search repo for auth_type variable default in a PR depending on namespace directory name
+func (c *GithubClient) SearchAuthTypeInRepo(ctx context.Context, namespace, branch string) (string, error) {
+	path := fmt.Sprintf("namespaces/live.cloud-platform.service.justice.gov.uk/%s/resources/variables.tf", namespace)
+	opt := &github.RepositoryContentGetOptions{
+		Ref: branch,
+	}
+	fileContent, _, _, err := c.V3.Repositories.GetContents(ctx, c.Owner, c.Repository, path, opt)
+	if err != nil {
+		return "", fmt.Errorf("error getting directory contents for %s: %v", path, err)
+	}
+
+	content, err := fileContent.GetContent()
+	if err != nil {
+		return "", fmt.Errorf("error getting file content for %s: %v", path, err)
+	}
+
+	// Try to extract default value for variable "auth_type"
+	if defVal := extractAuthTypeDefault(content); defVal != "" {
+		return defVal, nil
+	}
+
+	return "", fmt.Errorf("auth_type variable with default not found in %s", path)
 }
 
 // extractAuthTypeDefault parses a patch and returns the default value for variable "auth_type" if present
