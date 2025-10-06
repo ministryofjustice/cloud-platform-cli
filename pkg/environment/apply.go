@@ -15,13 +15,13 @@ import (
 // Options are used to configure plan/apply sessions.
 // These options are normally passed via flags in a command line.
 type Options struct {
-	Namespace, KubecfgPath, ClusterCtx, ClusterDir, GithubToken string
-	PRNumber                                                    int
-	BuildUrl                                                    string
-	AllNamespaces                                               bool
-	EnableApplySkip, RedactedEnv, SkipProdDestroy               bool
-	BatchApplyIndex, BatchApplySize                             int
-	OnlySkipFileChanged, IsApplyPipeline                        bool
+	Namespace, KubecfgPath, ClusterCtx, ClusterDir, GithubToken, AppID, InstallID, PemFile string
+	PRNumber                                                                               int
+	BuildUrl                                                                               string
+	AllNamespaces                                                                          bool
+	EnableApplySkip, RedactedEnv, SkipProdDestroy                                          bool
+	BatchApplyIndex, BatchApplySize                                                        int
+	OnlySkipFileChanged, IsApplyPipeline                                                   bool
 }
 
 // RequiredEnvVars is used to store values such as TF_VAR_ , github and pingdom tokens
@@ -31,10 +31,14 @@ type RequiredEnvVars struct {
 	clusterstatebucket string `required:"true" envconfig:"TF_VAR_cluster_state_bucket"`
 	kubernetescluster  string `required:"true" envconfig:"TF_VAR_kubernetes_cluster"`
 	githubowner        string `required:"true" envconfig:"TF_VAR_github_owner"`
-	githubtoken        string `required:"true" envconfig:"TF_VAR_github_token"`
+	githubtoken        string `required:"false" envconfig:"TF_VAR_github_token"`
 	SlackBotToken      string `required:"false" envconfig:"SLACK_BOT_TOKEN"`
 	SlackWebhookUrl    string `required:"false" envconfig:"SLACK_WEBHOOK_URL"`
 	pingdomapitoken    string `required:"true" envconfig:"PINGDOM_API_TOKEN"`
+
+	cloud_platform_concourse_bot_app_id          string `required:"false" envconfig:"TF_VAR_github_cloud_platform_concourse_bot_app_id"`
+	cloud_platform_concourse_bot_installation_id string `required:"false" envconfig:"TF_VAR_github_cloud_platform_concourse_bot_installation_id"`
+	cloud_platform_concourse_bot_pem_file        string `required:"false" envconfig:"TF_VAR_github_cloud_platform_concourse_bot_pem_file"`
 }
 
 // Apply is used to store objects in a Apply/Plan session

@@ -39,14 +39,18 @@ $ cloud-platform environment plan
 ### Options
 
 ```
-      --cluster string        cluster context from kubeconfig file
-      --clusterdir string     folder name under namespaces/ inside cloud-platform-environments repo referring to full cluster name
-      --github-token string   Personal access Token from Github 
-  -h, --help                  help for plan
-      --kubecfg string        path to kubeconfig file (default "/home/runner/.kube/config")
-  -n, --namespace string      Namespace which you want to perform the plan
-      --pr-number int         Pull request ID or number to which you want to perform the plan
-      --redact                Redact the terraform output before printing (default true)
+      --cluster string                  cluster context from kubeconfig file
+  -c, --cluster-name string             [optional] Cluster name (default "live")
+      --clusterdir string               folder name under namespaces/ inside cloud-platform-environments repo referring to full cluster name
+      --github-appid string             App ID 
+      --github-installation-id string   Installation ID 
+      --github-pem-file string          PEM file 
+      --github-token string             Personal access Token from Github 
+  -h, --help                            help for plan
+      --kubecfg string                  path to kubeconfig file (default "/home/runner/.kube/config")
+  -n, --namespace string                Namespace which you want to perform the plan
+      --pr-number int                   Pull request ID or number to which you want to perform the plan
+      --redact                          Redact the terraform output before printing (default true)
 ```
 
 ### Options inherited from parent commands

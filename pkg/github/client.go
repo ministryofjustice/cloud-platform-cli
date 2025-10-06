@@ -3,9 +3,11 @@ package github
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v74/github"
+	"github.com/jferrl/go-githubauth"
 	"github.com/ministryofjustice/cloud-platform-cli/pkg/util"
 	"github.com/shurcooL/githubv4"
 	"golang.org/x/oauth2"
@@ -14,6 +16,7 @@ import (
 var _ GithubPullRequestsService = (*github.PullRequestsService)(nil)
 
 type GithubPullRequestsService interface {
+	Get(ctx context.Context, owner, repo string, number int) (*github.PullRequest, *github.Response, error)
 	ListFiles(ctx context.Context, owner string, repo string, number int, opt *github.ListOptions) ([]*github.CommitFile, *github.Response, error)
 	IsMerged(ctx context.Context, owner string, repo string, number int) (bool, *github.Response, error)
 	Create(ctx context.Context, owner string, repo string, pr *github.NewPullRequest) (*github.PullRequest, *github.Response, error)
@@ -52,6 +55,46 @@ func NewGithubClient(config *GithubClientConfig, token string) *GithubClient {
 
 	v3 := github.NewClient(client)
 	v4 := githubv4.NewClient(client)
+
+	return &GithubClient{
+		V3:           v3,
+		V4:           v4,
+		Repository:   config.Repository,
+		Owner:        config.Owner,
+		PullRequests: v3.PullRequests,
+	}
+}
+
+func NewGithubAppClient(config *GithubClientConfig, key, appid, installid string) *GithubClient {
+	privateKey := []byte(key)
+
+	appIDInt, err := strconv.ParseInt(appid, 10, 64)
+	if err != nil {
+		fmt.Printf("[NewGithubAppClient] Failed to parse appid, value returned:'%s'\nerror message: %v\n", appid, err)
+		fmt.Println("[NewGithubAppClient] Check if the appid has been set correctly")
+		return nil
+	}
+
+	installIDInt, err := strconv.ParseInt(installid, 10, 64)
+	if err != nil {
+		fmt.Printf("[NewGithubAppClient] Failed to parse installid, value returned:'%s'\nerror message: %v\n", installid, err)
+		fmt.Println("[NewGithubAppClient] Check if the installid has been set correctly")
+		return nil
+	}
+
+	appTokenSource, err := githubauth.NewApplicationTokenSource(appIDInt, privateKey)
+	if err != nil {
+		fmt.Printf("[NewGithubAppClient] Failed to create ApplicationTokenSource: %v\n", err)
+		fmt.Println("[NewGithubAppClient] Check if the private key has been set correctly")
+		return nil
+	}
+
+	installationTokenSource := githubauth.NewInstallationTokenSource(installIDInt, appTokenSource)
+
+	oauthHttpClient := oauth2.NewClient(context.Background(), installationTokenSource)
+
+	v3 := github.NewClient(oauthHttpClient)
+	v4 := githubv4.NewClient(oauthHttpClient)
 
 	return &GithubClient{
 		V3:           v3,

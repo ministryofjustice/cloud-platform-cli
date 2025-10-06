@@ -22,6 +22,10 @@ func (a *Apply) Initialize() {
 	a.RequiredEnvVars.SlackWebhookUrl = reqEnvVars.SlackWebhookUrl
 	a.RequiredEnvVars.pingdomapitoken = reqEnvVars.pingdomapitoken
 
+	a.RequiredEnvVars.cloud_platform_concourse_bot_app_id = reqEnvVars.cloud_platform_concourse_bot_app_id
+	a.RequiredEnvVars.cloud_platform_concourse_bot_installation_id = reqEnvVars.cloud_platform_concourse_bot_installation_id
+	a.RequiredEnvVars.cloud_platform_concourse_bot_pem_file = reqEnvVars.cloud_platform_concourse_bot_pem_file
+
 	// Set KUBE_CONFIG_PATH to the path of the kubeconfig file
 	// This is needed for terraform to be able to connect to the cluster when a different kubecfg is passed
 	if err := os.Setenv("KUBE_CONFIG_PATH", a.Options.KubecfgPath); err != nil {

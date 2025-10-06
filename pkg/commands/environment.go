@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"errors"
 	"os"
 	"path/filepath"
@@ -72,6 +73,11 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentApplyCmd.Flags().StringVar(&optFlags.BuildUrl, "build-url", "", "The concourse apply build url")
 	environmentApplyCmd.Flags().BoolVar(&optFlags.IsApplyPipeline, "is-apply-pipeline", false, "is this running in the apply pipelines")
 
+	environmentApplyCmd.Flags().StringVar(&optFlags.AppID, "github-appid", os.Getenv("TF_VAR_github_cloud_platform_concourse_bot_app_id"), "App ID ")
+	environmentApplyCmd.Flags().StringVar(&optFlags.InstallID, "github-installation-id", os.Getenv("TF_VAR_github_cloud_platform_concourse_bot_installation_id"), "Installation ID ")
+	environmentApplyCmd.Flags().StringVar(&optFlags.PemFile, "github-pem-file", os.Getenv("TF_VAR_github_cloud_platform_concourse_bot_pem_file"), "PEM file ")
+	environmentApplyCmd.Flags().StringVarP(&clusterName, "cluster-name", "c", "live", "[optional] Cluster name")
+
 	environmentBumpModuleCmd.Flags().StringVarP(&module, "module", "m", "", "Module to upgrade the version")
 	environmentBumpModuleCmd.Flags().StringVarP(&moduleVersion, "module-version", "v", "", "Semantic version to bump a module to")
 
@@ -90,6 +96,11 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentDestroyCmd.PersistentFlags().BoolVar(&optFlags.RedactedEnv, "redact", true, "Redact the terraform output before printing")
 	environmentDestroyCmd.Flags().BoolVar(&optFlags.SkipProdDestroy, "skip-prod-destroy", true, "skip prod namespaces from destroy namespace")
 
+	environmentDestroyCmd.Flags().StringVar(&optFlags.AppID, "github-appid", os.Getenv("TF_VAR_github_cloud_platform_concourse_bot_app_id"), "App ID ")
+	environmentDestroyCmd.Flags().StringVar(&optFlags.InstallID, "github-installation-id", os.Getenv("TF_VAR_github_cloud_platform_concourse_bot_installation_id"), "Installation ID ")
+	environmentDestroyCmd.Flags().StringVar(&optFlags.PemFile, "github-pem-file", os.Getenv("TF_VAR_github_cloud_platform_concourse_bot_pem_file"), "PEM file ")
+	environmentDestroyCmd.Flags().StringVarP(&clusterName, "cluster-name", "c", "live", "[optional] Cluster name")
+
 	environmentDivergenceCmd.Flags().StringVarP(&clusterName, "cluster-name", "c", "live", "[optional] Cluster name")
 	environmentDivergenceCmd.Flags().StringVarP(&githubToken, "github-token", "g", "", "[required] Github token")
 	environmentDivergenceCmd.Flags().StringVarP(&kubeconfig, "kubeconfig", "k", "", "[optional] Kubeconfig file path")
@@ -100,13 +111,18 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	// e.g. if this is the Pull request to perform the apply: https://github.com/ministryofjustice/cloud-platform-environments/pull/8370, the pr ID is 8370.
 	environmentPlanCmd.Flags().IntVar(&optFlags.PRNumber, "pr-number", 0, "Pull request ID or number to which you want to perform the plan")
 	environmentPlanCmd.Flags().StringVarP(&optFlags.Namespace, "namespace", "n", "", "Namespace which you want to perform the plan")
-
 	// Re-use the environmental variable TF_VAR_github_token to call Github Client which is needed to perform terraform operations on each namespace
 	environmentPlanCmd.Flags().StringVar(&optFlags.GithubToken, "github-token", os.Getenv("TF_VAR_github_token"), "Personal access Token from Github ")
 	environmentPlanCmd.Flags().StringVar(&optFlags.KubecfgPath, "kubecfg", filepath.Join(homedir.HomeDir(), ".kube", "config"), "path to kubeconfig file")
 	environmentPlanCmd.Flags().StringVar(&optFlags.ClusterCtx, "cluster", "", "cluster context from kubeconfig file")
 	environmentPlanCmd.Flags().StringVar(&optFlags.ClusterDir, "clusterdir", "", "folder name under namespaces/ inside cloud-platform-environments repo referring to full cluster name")
 	environmentPlanCmd.PersistentFlags().BoolVar(&optFlags.RedactedEnv, "redact", true, "Redact the terraform output before printing")
+
+	environmentPlanCmd.Flags().StringVar(&optFlags.AppID, "github-appid", os.Getenv("TF_VAR_github_cloud_platform_concourse_bot_app_id"), "App ID ")
+	environmentPlanCmd.Flags().StringVar(&optFlags.InstallID, "github-installation-id", os.Getenv("TF_VAR_github_cloud_platform_concourse_bot_installation_id"), "Installation ID ")
+	environmentPlanCmd.Flags().StringVar(&optFlags.PemFile, "github-pem-file", os.Getenv("TF_VAR_github_cloud_platform_concourse_bot_pem_file"), "PEM file ")
+	environmentPlanCmd.Flags().StringVarP(&clusterName, "cluster-name", "c", "live", "[optional] Cluster name")
+
 }
 
 var environmentCmd = &cobra.Command{
@@ -164,6 +180,7 @@ var environmentPlanCmd = &cobra.Command{
 	`),
 	PreRun: upgradeIfNotLatest,
 	Run: func(cmd *cobra.Command, args []string) {
+
 		contextLogger := log.WithFields(log.Fields{"subcommand": "plan"})
 
 		ghConfig := &github.GithubClientConfig{
@@ -171,12 +188,26 @@ var environmentPlanCmd = &cobra.Command{
 			Owner:      "ministryofjustice",
 		}
 
-		applier := &environment.Apply{
-			Options:      &optFlags,
-			GithubClient: github.NewGithubClient(ghConfig, optFlags.GithubToken),
+		authType, err := github.NewGithubAppClient(ghConfig, optFlags.PemFile, optFlags.AppID, optFlags.InstallID).FlagCheckAuthType(context.Background(), optFlags.PRNumber, optFlags.Namespace, clusterName)
+		if err != nil {
+			contextLogger.Printf("Failed to get auth_type from PR: %v, defaulting to token auth", err)
+			authType = "token"
 		}
 
-		err := applier.Plan()
+		var applier *environment.Apply
+		if authType == "app" {
+			applier = &environment.Apply{
+				Options:      &optFlags,
+				GithubClient: github.NewGithubAppClient(ghConfig, optFlags.PemFile, optFlags.AppID, optFlags.InstallID),
+			}
+		} else {
+			applier = &environment.Apply{
+				Options:      &optFlags,
+				GithubClient: github.NewGithubClient(ghConfig, optFlags.GithubToken),
+			}
+		}
+
+		err = applier.Plan()
 		if err != nil {
 			contextLogger.Fatal(err)
 		}
@@ -217,9 +248,23 @@ var environmentApplyCmd = &cobra.Command{
 			Owner:      "ministryofjustice",
 		}
 
-		applier := &environment.Apply{
-			Options:      &optFlags,
-			GithubClient: github.NewGithubClient(ghConfig, optFlags.GithubToken),
+		authType, err := github.NewGithubAppClient(ghConfig, optFlags.PemFile, optFlags.AppID, optFlags.InstallID).FlagCheckAuthType(context.Background(), optFlags.PRNumber, optFlags.Namespace, clusterName)
+		if err != nil {
+			contextLogger.Printf("Failed to get auth_type from PR: %v, defaulting to token auth", err)
+			authType = "token"
+		}
+
+		var applier *environment.Apply
+		if authType == "app" {
+			applier = &environment.Apply{
+				Options:      &optFlags,
+				GithubClient: github.NewGithubAppClient(ghConfig, optFlags.PemFile, optFlags.AppID, optFlags.InstallID),
+			}
+		} else {
+			applier = &environment.Apply{
+				Options:      &optFlags,
+				GithubClient: github.NewGithubClient(ghConfig, optFlags.GithubToken),
+			}
 		}
 
 		// if -namespace or a prNumber is provided, apply on given namespace
@@ -283,12 +328,26 @@ var environmentDestroyCmd = &cobra.Command{
 			Owner:      "ministryofjustice",
 		}
 
-		applier := &environment.Apply{
-			Options:      &optFlags,
-			GithubClient: github.NewGithubClient(ghConfig, optFlags.GithubToken),
+		authType, err := github.NewGithubAppClient(ghConfig, optFlags.PemFile, optFlags.AppID, optFlags.InstallID).FlagCheckAuthType(context.Background(), optFlags.PRNumber, optFlags.Namespace, clusterName)
+		if err != nil {
+			contextLogger.Printf("Failed to get auth_type from PR: %v, defaulting to token auth", err)
+			authType = "token"
 		}
 
-		err := applier.Destroy()
+		var applier *environment.Apply
+		if authType == "app" {
+			applier = &environment.Apply{
+				Options:      &optFlags,
+				GithubClient: github.NewGithubAppClient(ghConfig, optFlags.PemFile, optFlags.AppID, optFlags.InstallID),
+			}
+		} else {
+			applier = &environment.Apply{
+				Options:      &optFlags,
+				GithubClient: github.NewGithubClient(ghConfig, optFlags.GithubToken),
+			}
+		}
+
+		err = applier.Destroy()
 		if err != nil {
 			contextLogger.Fatal(err)
 		}

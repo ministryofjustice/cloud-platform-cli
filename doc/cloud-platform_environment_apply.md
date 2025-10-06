@@ -38,20 +38,24 @@ $ cloud-platform environment apply -n <namespace>
 ### Options
 
 ```
-      --all-namespaces          Apply all namespaces with -all-namespaces
-      --batch-apply-index int   Starting index for Apply to a batch of namespaces
-      --batch-apply-size int    Number of namespaces to apply in a batch
-      --build-url string        The concourse apply build url
-      --cluster string          cluster context from kubeconfig file
-      --clusterdir string       folder name under namespaces/ inside cloud-platform-environments repo referring to full cluster name
-      --enable-apply-skip       Enable skipping apply for a namespace
-      --github-token string     Personal access Token from Github 
-  -h, --help                    help for apply
-      --is-apply-pipeline       is this running in the apply pipelines
-      --kubecfg string          path to kubeconfig file (default "/home/runner/.kube/config")
-  -n, --namespace string        Namespace which you want to perform the apply
-      --pr-number int           Pull request ID or number to which you want to perform the apply
-      --redact                  Redact the terraform output before printing (default true)
+      --all-namespaces                  Apply all namespaces with -all-namespaces
+      --batch-apply-index int           Starting index for Apply to a batch of namespaces
+      --batch-apply-size int            Number of namespaces to apply in a batch
+      --build-url string                The concourse apply build url
+      --cluster string                  cluster context from kubeconfig file
+  -c, --cluster-name string             [optional] Cluster name (default "live")
+      --clusterdir string               folder name under namespaces/ inside cloud-platform-environments repo referring to full cluster name
+      --enable-apply-skip               Enable skipping apply for a namespace
+      --github-appid string             App ID 
+      --github-installation-id string   Installation ID 
+      --github-pem-file string          PEM file 
+      --github-token string             Personal access Token from Github 
+  -h, --help                            help for apply
+      --is-apply-pipeline               is this running in the apply pipelines
+      --kubecfg string                  path to kubeconfig file (default "/home/runner/.kube/config")
+  -n, --namespace string                Namespace which you want to perform the apply
+      --pr-number int                   Pull request ID or number to which you want to perform the apply
+      --redact                          Redact the terraform output before printing (default true)
 ```
 
 ### Options inherited from parent commands
