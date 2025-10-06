@@ -28,6 +28,7 @@ var EKS_SYSTEM_NAMESPACES = []string{
 	"gatekeeper-system",
 	"cloud-platform-label-pods",
 	"cloud-platform-github-teams-filter",
+	"amazon-guardduty",
 }
 
 // DestroyComponents will destroy the Cloud Platform specific components on top of a running cluster. At this point your
