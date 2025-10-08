@@ -33,7 +33,7 @@ RUN curl -sLo ./kubectl https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/
 # Install terraform
 RUN curl -sLo terraform.zip https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip && unzip terraform.zip
 
-RUN curl -sLo opa "https://openpolicyagent.org/downloads/latest/opa_linux_amd64"
+RUN curl -sLo opa "https://openpolicyagent.org/downloads/v1.8.0/opa_linux_amd64"
 
 RUN chmod +x kubectl terraform opa
 
