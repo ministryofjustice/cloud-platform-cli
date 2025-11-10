@@ -21,7 +21,7 @@ jobs:
           go-version: " 1.23.x"
 
       - name: Perform staticcheck on codebase
-        uses: dominikh/staticcheck-action@ba605356b4b29a60e87ab9404b712f3461e566dc # v1.3.0
+        uses: dominikh/staticcheck-action@024238d2898c874f26d723e7d0ff4308c35589a2 # v1.4.0
         with:
           install-go: false
 
