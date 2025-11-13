@@ -17,11 +17,12 @@ import (
 type Options struct {
 	Namespace, KubecfgPath, ClusterCtx, ClusterDir, GithubToken string
 	PRNumber                                                    int
-	BuildUrl                                                    string
+	BuildUrl, RepoPath                                          string
 	AllNamespaces                                               bool
 	EnableApplySkip, RedactedEnv, SkipProdDestroy               bool
 	BatchApplyIndex, BatchApplySize                             int
 	OnlySkipFileChanged, IsApplyPipeline                        bool
+	Namespaces                                                  []string
 }
 
 // RequiredEnvVars is used to store values such as TF_VAR_ , github and pingdom tokens
