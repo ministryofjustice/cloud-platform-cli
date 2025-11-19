@@ -110,7 +110,7 @@ func addEnvironmentCmd(topLevel *cobra.Command) {
 	environmentPlanCmd.PersistentFlags().BoolVar(&optFlags.RedactedEnv, "redact", true, "Redact the terraform output before printing")
 
 	environmentNamespaceTagsCmd.Flags().StringSliceVarP(&optFlags.Namespaces, "namespaces", "n", []string{}, "Comma separated list of namespaces to add default tags to")
-	environmentNamespaceTagsCmd.Flags().StringVarP(&optFlags.RepoPath, "repo-path", "rp", "", "Local Path to the cloud-platform-environments repository")
+	environmentNamespaceTagsCmd.Flags().StringVarP(&optFlags.RepoPath, "repo-path", "r", "", "Local Path to the cloud-platform-environments repository")
 }
 
 var environmentCmd = &cobra.Command{
@@ -472,12 +472,12 @@ var environmentNamespaceTagsCmd = &cobra.Command{
 	Use:   "namespace-tags",
 	Short: `Manage mandatory tags in cloud-platform-environments namespace resource files for aws providers`,
 	Example: heredoc.Doc(`
-	> cloud-platform environment namespace-tags --namespaces namespace1,namespace2 
+	> cloud-platform environment namespace-tags --namespaces namespace1,namespace2 --repo-path /path/to/cloud-platform-environments
 	`),
 	PreRun: upgradeIfNotLatest,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(optFlags.Namespaces) == 0 || optFlags.RepoPath == "" {
-			return errors.New("at least one namespace must be provided using the [--namespaces/-n] flag and a valid [--repo-path/-rp] to the cloud-platform-environments repository")
+			return errors.New("at least one namespace must be provided using the [--namespaces/-n] flag and a valid [--repo-path/-r] to the cloud-platform-environments repository")
 		}
 		if err := environment.NamespaceTagging(optFlags); err != nil {
 			return err

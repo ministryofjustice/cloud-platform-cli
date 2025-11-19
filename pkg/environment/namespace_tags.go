@@ -49,7 +49,8 @@ func NamespaceTagging(opt Options) error {
 	response := strings.ToLower(strings.TrimSpace(scanner.Text()))
 
 	if response != "y" && response != "yes" {
-		return fmt.Errorf("Exiting without making changes.")
+		fmt.Printf("Exiting without making changes.")
+		return nil
 	}
 
 	fmt.Printf("\nChecking tags for %s namespaces...\n", namespacesToProcess)
