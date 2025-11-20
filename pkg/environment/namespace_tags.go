@@ -10,6 +10,12 @@ import (
 	"strings"
 )
 
+var (
+	defaultTagsPattern = regexp.MustCompile(`\s*default_tags\s*=?\s*{`)
+	tagsPattern        = regexp.MustCompile(`\s*tags\s*=\s*{`)
+	providerAwsPattern = regexp.MustCompile(`provider\s+"aws"\s*{`)
+)
+
 type TagChecker struct {
 	searchTags []string
 	baseDir    string
@@ -39,8 +45,7 @@ func NamespaceTagging(opt Options) error {
 	fmt.Printf("\nProcessing %d namespaces: %v\n", len(namespacesToProcess), namespacesToProcess)
 
 	if len(namespacesToProcess) == 0 {
-		return fmt.Errorf("No namespaces found for environment: %s\n", namespacesToProcess)
-
+		return fmt.Errorf("no namespaces found for environment: %s", namespacesToProcess)
 	}
 
 	fmt.Printf("\nDo you want to check and add missing tags for %s environment(s)? (y/N): ", namespacesToProcess)
@@ -241,14 +246,14 @@ func (tc *TagChecker) addMissingTags(filePath, content string, missingTags []str
 	for _, line := range lines {
 		newLines = append(newLines, line)
 
-		if matched, _ := regexp.MatchString(`\s*default_tags\s*=?\s*{`, line); matched {
+		if defaultTagsPattern.MatchString(line) {
 			defaultTagsFound = true
 			inDefaultTagsBlock = true
 			braceCount = 1
 		} else if inDefaultTagsBlock {
 			braceCount += strings.Count(line, "{")
 			braceCount -= strings.Count(line, "}")
-			if matched, _ := regexp.MatchString(`\s*tags\s*=\s*{`, line); matched {
+			if tagsPattern.MatchString(line) {
 				tagsSectionFound = true
 				for _, tag := range missingTags {
 					tagValue := tc.getTagValue(tag)
@@ -285,7 +290,7 @@ func (tc *TagChecker) addDefaultTagsBlock(lines []string) []string {
 	for _, line := range lines {
 		newLines = append(newLines, line)
 
-		if matched, _ := regexp.MatchString(`provider\s+"aws"\s*{`, line); matched {
+		if providerAwsPattern.MatchString(line) {
 			providerBlockFound = true
 
 			newLines = append(newLines, "  default_tags {")

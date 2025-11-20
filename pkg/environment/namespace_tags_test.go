@@ -30,24 +30,6 @@ func (m *mockFileSystem) addFile(path, content string) {
 	}
 }
 
-func (m *mockFileSystem) fileExists(path string) bool {
-	_, exists := m.files[path]
-	return exists
-}
-
-func (m *mockFileSystem) getContent(path string) string {
-	return m.files[path]
-}
-
-func (m *mockFileSystem) findFile(baseDir, namespace string) (string, bool) {
-	for path := range m.files {
-		if strings.Contains(path, namespace) && strings.Contains(path, "resources") && strings.HasSuffix(path, "main.tf") {
-			return path, true
-		}
-	}
-	return "", false
-}
-
 func Test_newTagChecker(t *testing.T) {
 	tests := []struct {
 		name    string
