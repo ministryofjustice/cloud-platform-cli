@@ -168,7 +168,6 @@ func (tc *TagChecker) findTerraformFileRecursive(namespace string) (string, erro
 
 		return nil
 	})
-
 	if err != nil {
 		return "", err
 	}
@@ -275,7 +274,7 @@ func (tc *TagChecker) addMissingTags(filePath, content string, missingTags []str
 	}
 
 	newContent := strings.Join(newLines, "\n")
-	err := os.WriteFile(filePath, []byte(newContent), 0644)
+	err := os.WriteFile(filePath, []byte(newContent), 0o644)
 	if err != nil {
 		return fmt.Errorf("error writing file: %w", err)
 	}

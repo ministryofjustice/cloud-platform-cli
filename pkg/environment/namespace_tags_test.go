@@ -201,10 +201,10 @@ func TestTagChecker_findTerraformFile(t *testing.T) {
 				// Replace /mock/repo with tmpDir
 				actualPath := strings.Replace(path, "/mock/repo", tmpDir, 1)
 				dir := filepath.Dir(actualPath)
-				if err := os.MkdirAll(dir, 0755); err != nil {
+				if err := os.MkdirAll(dir, 0o755); err != nil {
 					t.Fatalf("Failed to create directory: %v", err)
 				}
-				if err := os.WriteFile(actualPath, []byte(mfs.files[path]), 0644); err != nil {
+				if err := os.WriteFile(actualPath, []byte(mfs.files[path]), 0o644); err != nil {
 					t.Fatalf("Failed to write file: %v", err)
 				}
 			}
@@ -314,10 +314,10 @@ func TestTagChecker_findTerraformFileRecursive(t *testing.T) {
 				// Replace /mock/repo with tmpDir
 				actualPath := strings.Replace(path, "/mock/repo", tmpDir, 1)
 				dir := filepath.Dir(actualPath)
-				if err := os.MkdirAll(dir, 0755); err != nil {
+				if err := os.MkdirAll(dir, 0o755); err != nil {
 					t.Fatalf("Failed to create directory: %v", err)
 				}
-				if err := os.WriteFile(actualPath, []byte(mfs.files[path]), 0644); err != nil {
+				if err := os.WriteFile(actualPath, []byte(mfs.files[path]), 0o644); err != nil {
 					t.Fatalf("Failed to write file: %v", err)
 				}
 			}
@@ -534,10 +534,10 @@ func TestTagChecker_addMissingTags(t *testing.T) {
 
 			// Create the file with initial content
 			dir := filepath.Dir(filePath)
-			if err := os.MkdirAll(dir, 0755); err != nil {
+			if err := os.MkdirAll(dir, 0o755); err != nil {
 				t.Fatalf("Failed to create directory: %v", err)
 			}
-			if err := os.WriteFile(filePath, []byte(tt.content), 0644); err != nil {
+			if err := os.WriteFile(filePath, []byte(tt.content), 0o644); err != nil {
 				t.Fatalf("Failed to write initial file: %v", err)
 			}
 
