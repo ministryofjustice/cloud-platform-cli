@@ -161,6 +161,18 @@ func (values *Namespace) promptUserForNamespaceValues() error {
 
 	q = userQuestion{
 		description: heredoc.Doc(`
+			Which service area does this application belong to?
+			Should be the full name of the Service Area in which your team is based 
+			e.g. Education Skills & Work, Manage a Workforce, Hosting.
+			 `),
+		prompt:    "Service Area",
+		validator: new(notEmptyValidator),
+	}
+	_ = q.getAnswer()
+	values.ServiceArea = q.value
+
+	q = userQuestion{
+		description: heredoc.Doc(`
 			What is the email address for the team
 			which owns the application?
 			(this should not be a named individual's email address)

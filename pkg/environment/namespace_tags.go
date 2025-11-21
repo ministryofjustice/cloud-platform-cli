@@ -71,7 +71,7 @@ func NamespaceTagging(opt Options) error {
 
 func newTagChecker(baseDir string) *TagChecker {
 	return &TagChecker{
-		searchTags: []string{"business-unit", "application", "is-production", "owner", "namespace"},
+		searchTags: []string{"business-unit", "application", "is-production", "owner", "namespace", "service-area"},
 		baseDir:    baseDir,
 	}
 }
@@ -325,6 +325,8 @@ func (tc *TagChecker) getTagValue(tag string) string {
 		return "var.application"
 	case "namespace":
 		return "var.namespace"
+	case "service-area":
+		return "var.service_area"
 	default:
 		return fmt.Sprintf("var.%s", strings.ReplaceAll(tag, "-", "_"))
 	}
