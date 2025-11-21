@@ -40,7 +40,7 @@ func Test_newTagChecker(t *testing.T) {
 			name:    "Creates TagChecker with correct baseDir and searchTags",
 			baseDir: "/path/to/repo",
 			want: &TagChecker{
-				searchTags: []string{"business-unit", "application", "is-production", "owner", "namespace"},
+				searchTags: []string{"business-unit", "application", "is-production", "owner", "namespace", "service-area"},
 				baseDir:    "/path/to/repo",
 			},
 		},
@@ -48,7 +48,7 @@ func Test_newTagChecker(t *testing.T) {
 			name:    "Creates TagChecker with different path",
 			baseDir: "/another/path",
 			want: &TagChecker{
-				searchTags: []string{"business-unit", "application", "is-production", "owner", "namespace"},
+				searchTags: []string{"business-unit", "application", "is-production", "owner", "namespace", "service-area"},
 				baseDir:    "/another/path",
 			},
 		},
@@ -56,7 +56,7 @@ func Test_newTagChecker(t *testing.T) {
 			name:    "Creates TagChecker with empty path",
 			baseDir: "",
 			want: &TagChecker{
-				searchTags: []string{"business-unit", "application", "is-production", "owner", "namespace"},
+				searchTags: []string{"business-unit", "application", "is-production", "owner", "namespace", "service-area"},
 				baseDir:    "",
 			},
 		},
@@ -366,6 +366,7 @@ func TestTagChecker_findMissingTags(t *testing.T) {
 				is-production  = var.is_production
 				owner          = var.team_name
 				namespace      = var.namespace
+				service-area   = var.service_area
 			}
 		}
 	}`,
@@ -380,6 +381,7 @@ func TestTagChecker_findMissingTags(t *testing.T) {
 			is-production  = var.is_production
 			owner          = var.team_name
 			namespace      = var.namespace
+			service-area   = var.service_area
 		}
 	}`,
 			want: []string{},
@@ -395,19 +397,19 @@ func TestTagChecker_findMissingTags(t *testing.T) {
 			}
 		}
 	}`,
-			want: []string{"application", "is-production", "namespace"},
+			want: []string{"application", "is-production", "namespace", "service-area"},
 		},
 		{
 			name: "No default_tags block present",
 			content: `provider "aws" {
 		region = "eu-west-2"
 	}`,
-			want: []string{"business-unit", "application", "is-production", "owner", "namespace"},
+			want: []string{"business-unit", "application", "is-production", "owner", "namespace", "service-area"},
 		},
 		{
 			name:    "Empty content",
 			content: ``,
-			want:    []string{"business-unit", "application", "is-production", "owner", "namespace"},
+			want:    []string{"business-unit", "application", "is-production", "owner", "namespace", "service-area"},
 		},
 		{
 			name: "Tags with quoted keys",
@@ -419,6 +421,7 @@ func TestTagChecker_findMissingTags(t *testing.T) {
 				"is-production"  = var.is_production
 				"owner"          = var.team_name
 				"namespace"      = var.namespace
+				"service-area"   = var.service_area
 			}
 		}
 	}`,
@@ -434,7 +437,7 @@ func TestTagChecker_findMissingTags(t *testing.T) {
 			}
 		}
 	}`,
-			want: []string{"is-production", "owner", "namespace"},
+			want: []string{"is-production", "owner", "namespace", "service-area"},
 		},
 	}
 	for _, tt := range tests {
@@ -597,6 +600,7 @@ func TestTagChecker_addDefaultTagsBlock(t *testing.T) {
 				`      is-production = var.is_production`,
 				`      owner = var.team_name`,
 				`      namespace = var.namespace`,
+				`      service-area = var.service_area`,
 				`    }`,
 				`  }`,
 				`  region = "eu-west-2"`,

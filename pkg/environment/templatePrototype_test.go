@@ -19,6 +19,7 @@ func TestCreatePrototype(t *testing.T) {
 		GithubTeam:            "my-github-team",
 		SlackChannel:          "my-team-slack_channel",
 		IsProduction:          "false",
+		ServiceArea:           "My Service Area",
 	}
 	proto := Prototype{
 		Namespace:         ns,
@@ -68,6 +69,7 @@ func TestCreatePrototype(t *testing.T) {
 		rbacFile:        "name: \"github:my-github-team\"",
 		variablesTfFile: "my-team-slack_channel",
 		variablesTfFile: "my-github-team",
+		variablesTfFile: "My Service Area",
 		ecrTfFile:       "github_repositories = [var.namespace]",
 	}
 

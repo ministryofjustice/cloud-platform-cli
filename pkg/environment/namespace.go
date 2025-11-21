@@ -26,6 +26,7 @@ type Namespace struct {
 	SlackChannel          string `yaml:"slackChannel"`
 	SourceCode            string `yaml:"sourceCode"`
 	ReviewAfter           string `yaml:"reviewAfter"`
+	ServiceArea           string `yaml:"serviceArea"`
 }
 
 // This is a public function so that we can use it in our tests

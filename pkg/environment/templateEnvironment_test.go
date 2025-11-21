@@ -82,6 +82,7 @@ func TestCreateNamespace(t *testing.T) {
 		GithubTeam:            "my-github-2-team",
 		SlackChannel:          "my-team-slack_channel",
 		IsProduction:          "false",
+		ServiceArea:           "My Service Area",
 	}
 
 	err := createNamespaceFiles(&ns)
@@ -123,6 +124,7 @@ func TestCreateNamespace(t *testing.T) {
 		rbacFile:        "name: \"github:my-github-2-team\"",
 		variablesTfFile: "my-team-slack_channel",
 		variablesTfFile: "my-github-2-team",
+		variablesTfFile: "My Service Area",
 	}
 
 	for filename, searchString := range stringsInFiles {
