@@ -237,40 +237,94 @@ func (tc *TagChecker) addMissingTags(filePath, content string, missingTags []str
 	lines := strings.Split(content, "\n")
 	var newLines []string
 
-	defaultTagsFound := false
+	inProviderBlock := false
 	inDefaultTagsBlock := false
-	braceCount := 0
-	tagsSectionFound := false
+	providerBraceCount := 0
+	defaultTagsBraceCount := 0
+	currentProviderHasDefaultTags := false
+	tagsAdded := false
 
-	for _, line := range lines {
-		newLines = append(newLines, line)
+	for i, line := range lines {
+		// Check if we're entering an AWS provider block
+		if providerAwsPattern.MatchString(line) {
+			inProviderBlock = true
+			providerBraceCount = strings.Count(line, "{") - strings.Count(line, "}")
+			currentProviderHasDefaultTags = false
+			tagsAdded = false
+			newLines = append(newLines, line)
+			continue
+		}
 
-		if defaultTagsPattern.MatchString(line) {
-			defaultTagsFound = true
-			inDefaultTagsBlock = true
-			braceCount = 1
-		} else if inDefaultTagsBlock {
-			braceCount += strings.Count(line, "{")
-			braceCount -= strings.Count(line, "}")
-			if tagsPattern.MatchString(line) {
-				tagsSectionFound = true
-				for _, tag := range missingTags {
-					tagValue := tc.getTagValue(tag)
-					tagLine := fmt.Sprintf("      %s = %s", tag, tagValue)
-					newLines = append(newLines, tagLine)
+		// Track brace count in provider block
+		if inProviderBlock {
+			providerBraceCount += strings.Count(line, "{")
+			providerBraceCount -= strings.Count(line, "}")
+
+			// Check if we're entering a default_tags block
+			if defaultTagsPattern.MatchString(line) && !inDefaultTagsBlock {
+				inDefaultTagsBlock = true
+				currentProviderHasDefaultTags = true
+				defaultTagsBraceCount = strings.Count(line, "{") - strings.Count(line, "}")
+				newLines = append(newLines, line)
+				continue
+			}
+
+			// Inside default_tags block
+			if inDefaultTagsBlock {
+				defaultTagsBraceCount += strings.Count(line, "{")
+				defaultTagsBraceCount -= strings.Count(line, "}")
+
+				// Check if we're in the tags section
+				if tagsPattern.MatchString(line) && !tagsAdded {
+					newLines = append(newLines, line)
+					// Add missing tags
+					for _, tag := range missingTags {
+						tagValue := tc.getTagValue(tag)
+						tagLine := fmt.Sprintf("      %s = %s", tag, tagValue)
+						newLines = append(newLines, tagLine)
+					}
+					tagsAdded = true
+					continue
+				}
+
+				newLines = append(newLines, line)
+
+				// Check if we're exiting default_tags block
+				if defaultTagsBraceCount == 0 {
+					inDefaultTagsBlock = false
+				}
+				continue
+			}
+
+			// If we're closing the provider block and it didn't have default_tags, add it
+			if providerBraceCount == 1 && !currentProviderHasDefaultTags && !tagsAdded {
+				// Insert default_tags block before the closing brace
+				// Check if the next line is the closing brace
+				if i+1 < len(lines) && strings.TrimSpace(lines[i+1]) == "}" {
+					newLines = append(newLines, "  default_tags {")
+					newLines = append(newLines, "    tags = {")
+					for _, tag := range tc.searchTags {
+						tagValue := tc.getTagValue(tag)
+						tagLine := fmt.Sprintf("      %s = %s", tag, tagValue)
+						newLines = append(newLines, tagLine)
+					}
+					newLines = append(newLines, "    }")
+					newLines = append(newLines, "  }")
+					tagsAdded = true
 				}
 			}
 
-			if braceCount == 0 {
-				inDefaultTagsBlock = false
-			}
-		}
-	}
+			newLines = append(newLines, line)
 
-	if !defaultTagsFound {
-		newLines = tc.addDefaultTagsBlock(lines)
-	} else if !tagsSectionFound {
-		fmt.Printf("Warning: default_tags block found but no tags section in %s\n", filePath)
+			// Check if we're exiting provider block
+			if providerBraceCount == 0 {
+				inProviderBlock = false
+			}
+			continue
+		}
+
+		// Not in any special block, just copy the line
+		newLines = append(newLines, line)
 	}
 
 	newContent := strings.Join(newLines, "\n")
@@ -280,37 +334,6 @@ func (tc *TagChecker) addMissingTags(filePath, content string, missingTags []str
 	}
 
 	return nil
-}
-
-func (tc *TagChecker) addDefaultTagsBlock(lines []string) []string {
-	var newLines []string
-	providerBlockFound := false
-
-	for _, line := range lines {
-		newLines = append(newLines, line)
-
-		if providerAwsPattern.MatchString(line) {
-			providerBlockFound = true
-
-			newLines = append(newLines, "  default_tags {")
-			newLines = append(newLines, "    tags = {")
-
-			for _, tag := range tc.searchTags {
-				tagValue := tc.getTagValue(tag)
-				tagLine := fmt.Sprintf("      %s = %s", tag, tagValue)
-				newLines = append(newLines, tagLine)
-			}
-
-			newLines = append(newLines, "    }")
-			newLines = append(newLines, "  }")
-		}
-	}
-
-	if !providerBlockFound {
-		fmt.Printf("Warning: No provider 'aws' block found, manual intervention may be required\n")
-	}
-
-	return newLines
 }
 
 func (tc *TagChecker) getTagValue(tag string) string {

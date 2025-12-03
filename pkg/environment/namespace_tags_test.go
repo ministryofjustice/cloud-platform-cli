@@ -528,6 +528,42 @@ func TestTagChecker_addMissingTags(t *testing.T) {
 			missingTags: []string{"namespace"},
 			wantErr:     false,
 		},
+		{
+			name: "Multiple AWS providers - add default_tags to all",
+			content: `provider "aws" {
+  region = "eu-west-2"
+}
+
+provider "aws" {
+  alias  = "virginia"
+  region = "us-east-1"
+}`,
+			missingTags: []string{"business-unit", "application", "is-production", "owner", "namespace", "service-area"},
+			wantErr:     false,
+		},
+		{
+			name: "Multiple providers - one has default_tags, one doesn't",
+			content: `provider "aws" {
+  region = "eu-west-2"
+  default_tags {
+    tags = {
+      business-unit = var.business_unit
+      application = var.application
+      is-production = var.is_production
+      owner = var.team_name
+      namespace = var.namespace
+      service-area = var.service_area
+    }
+  }
+}
+
+provider "aws" {
+  alias  = "virginia"
+  region = "us-east-1"
+}`,
+			missingTags: []string{"business-unit", "application", "is-production", "owner", "namespace", "service-area"},
+			wantErr:     false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -572,48 +608,16 @@ func TestTagChecker_addMissingTags(t *testing.T) {
 					t.Errorf("addMissingTags() modified content missing tag %q\nContent:\n%s", tag, contentStr)
 				}
 			}
-		})
-	}
-}
 
-func TestTagChecker_addDefaultTagsBlock(t *testing.T) {
-	tests := []struct {
-		name    string
-		baseDir string
-		lines   []string
-		want    []string
-	}{
-		{
-			name:    "Adds default_tags block to provider",
-			baseDir: "/test",
-			lines: []string{
-				`provider "aws" {`,
-				`  region = "eu-west-2"`,
-				`}`,
-			},
-			want: []string{
-				`provider "aws" {`,
-				`  default_tags {`,
-				`    tags = {`,
-				`      business-unit = var.business_unit`,
-				`      application = var.application`,
-				`      is-production = var.is_production`,
-				`      owner = var.team_name`,
-				`      namespace = var.namespace`,
-				`      service-area = var.service_area`,
-				`    }`,
-				`  }`,
-				`  region = "eu-west-2"`,
-				`}`,
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tc := newTagChecker(tt.baseDir)
-			got := tc.addDefaultTagsBlock(tt.lines)
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("addDefaultTagsBlock() = %v, want %v", got, tt.want)
+			// For multiple provider tests, verify both providers got default_tags
+			if tt.name == "Multiple AWS providers - add default_tags to all" ||
+				tt.name == "Multiple providers - one has default_tags, one doesn't" {
+				// Count occurrences of default_tags
+				defaultTagsCount := strings.Count(contentStr, "default_tags")
+				expectedCount := 2
+				if defaultTagsCount != expectedCount {
+					t.Errorf("Expected %d default_tags blocks, got %d\nContent:\n%s", expectedCount, defaultTagsCount, contentStr)
+				}
 			}
 		})
 	}
