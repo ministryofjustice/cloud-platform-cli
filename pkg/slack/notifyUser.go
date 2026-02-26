@@ -13,10 +13,17 @@ func Notify(prNumber, token, webhookUrl, buildUrl string) error {
 
 	results, searchErr := search(slackClient, defaultSearchParams, prNumber)
 
+	// Don't post if slack search failed
 	if searchErr != nil {
-		fmt.Printf("Failed to find pr in slack %v\n", searchErr)
+		fmt.Printf("Failed to find pr in slack with error: %v\n", searchErr)
 		return nil
 	}
+
+	// Don't post if no matching posts found
+    if len(Matches) == 0 {
+        fmt.Println("Failed to find pr in slack: no matches")
+        return nil
+    }
 
 	// get the user who posted
 	user := results.Matches[0].User
