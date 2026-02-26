@@ -20,10 +20,10 @@ func Notify(prNumber, token, webhookUrl, buildUrl string) error {
 	}
 
 	// Don't post if no matching posts found
-    if len(results.Matches) == 0 {
-        fmt.Println("Failed to find pr in slack: no matches")
-        return nil
-    }
+	if len(results.Matches) == 0 {
+		fmt.Println("Failed to find pr in slack: no matches")
+		return nil
+	}
 
 	// get the user who posted
 	user := results.Matches[0].User
