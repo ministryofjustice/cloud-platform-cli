@@ -20,7 +20,7 @@ func Notify(prNumber, token, webhookUrl, buildUrl string) error {
 	}
 
 	// Don't post if no matching posts found
-    if len(Matches) == 0 {
+    if len(results.Matches) == 0 {
         fmt.Println("Failed to find pr in slack: no matches")
         return nil
     }
