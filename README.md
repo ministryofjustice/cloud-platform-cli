@@ -122,6 +122,8 @@ The `Build and push a new release` action updates [this file](https://github.com
 - Request a token in **ministryofjustice** org, with the following access to `ministryofjustice/homebrew-cloud-platform-tap`:
   - **Read** access to metadata (selcted by default)
   - **Read** and **Write** access to code (select 'Contents' from the permissions drop-down)
+- Then get this Token approved by an org admin (e.g. Sablu)
+- Update `HOMEBREW_TAP_GITHUB_TOKEN` in the [CLI repository](https://github.com/ministryofjustice/cloud-platform-cli/settings/secrets/actions)
 
 The current token expires on _Wed, Mar 3 2027_
 
