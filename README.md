@@ -103,6 +103,7 @@ will automatically do the following steps:
 
 - build a new release and make it available in the [github ui]
 - build a new docker image and push it to [docker hub], tagged with the version number
+- update the [homebrew-cloud-platform-tap](https://github.com/ministryofjustice/homebrew-cloud-platform-tap) repository with the latest version number
 
 In order to trigger this action, push a new tag version like this:
 
@@ -112,6 +113,19 @@ git push --tags
 ```
 
 When pushing a new tag, consider following [Semantic Versioning](https://semver.org/#semantic-versioning-200) with version format of `MAJOR.MINOR.PATCH`
+
+#### Homebrew Tap Update
+
+The `Build and push a new release` action updates [this file](https://github.com/ministryofjustice/homebrew-cloud-platform-tap/blob/main/Formula/cloud-platform-cli.rb) directly with the latest version number. To do this it needs a [Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens). When this token expires, the build will fail and you will need to generate a new token:
+
+- Go to [your personal access tokens](https://github.com/settings/personal-access-tokens)
+- Request a token in **ministryofjustice** org, with the following access to `ministryofjustice/homebrew-cloud-platform-tap`:
+  - **Read** access to metadata (selcted by default)
+  - **Read** and **Write** access to code (select 'Contents' from the permissions drop-down)
+- Then get this Token approved by an org admin (e.g. Sablu)
+- Update `HOMEBREW_TAP_GITHUB_TOKEN` in the [CLI repository](https://github.com/ministryofjustice/cloud-platform-cli/settings/secrets/actions)
+
+The current token expires on _Wed, Mar 3 2027_
 
 #### `PreRun` hook
 
