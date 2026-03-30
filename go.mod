@@ -1,13 +1,13 @@
 module github.com/ministryofjustice/cloud-platform-cli
 
-go 1.23
+go 1.24.0
 
 require (
 	github.com/MakeNowJust/heredoc v1.0.0
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible
-	github.com/google/go-cmp v0.6.0
+	github.com/google/go-cmp v0.7.0
 	github.com/gookit/color v1.5.4
 	github.com/hashicorp/hcl/v2 v2.19.1
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
@@ -17,12 +17,12 @@ require (
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.18.2
-	github.com/zclconf/go-cty v1.14.1
-	golang.org/x/crypto v0.19.0 // indirect
-	golang.org/x/mod v0.14.0
-	golang.org/x/net v0.21.0 // indirect
-	golang.org/x/sys v0.17.0 // indirect
-	golang.org/x/text v0.14.0 // indirect
+	github.com/zclconf/go-cty v1.17.0
+	golang.org/x/crypto v0.45.0 // indirect
+	golang.org/x/mod v0.33.0
+	golang.org/x/net v0.47.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
+	golang.org/x/text v0.31.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 )
@@ -33,10 +33,10 @@ require (
 	github.com/dlclark/regexp2 v1.10.0
 	github.com/google/go-cmdtest v0.4.0
 	github.com/google/go-github v17.0.0+incompatible
-	github.com/hashicorp/go-version v1.6.0
-	github.com/hashicorp/hc-install v0.6.2
-	github.com/hashicorp/terraform-exec v0.20.0
-	github.com/hashicorp/terraform-json v0.21.0
+	github.com/hashicorp/go-version v1.8.0
+	github.com/hashicorp/hc-install v0.9.3
+	github.com/hashicorp/terraform-exec v0.25.0
+	github.com/hashicorp/terraform-json v0.27.2
 	github.com/jedib0t/go-pretty/v6 v6.5.3
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/migueleliasweb/go-github-mock v0.0.22
@@ -56,12 +56,12 @@ require (
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
-	github.com/ProtonMail/go-crypto v0.0.0-20230828082145-3c4c8a2d2371 // indirect
+	github.com/ProtonMail/go-crypto v1.3.0 // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/chai2010/gettext-go v1.0.2 // indirect
-	github.com/cloudflare/circl v1.3.7 // indirect
+	github.com/cloudflare/circl v1.6.1 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.3 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/emicklei/go-restful/v3 v3.9.0 // indirect
@@ -89,6 +89,7 @@ require (
 	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
+	github.com/hashicorp/go-retryablehttp v0.7.8 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/imdario/mergo v0.3.15 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
@@ -99,7 +100,7 @@ require (
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.19 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2 // indirect
 	github.com/ministryofjustice/cloud-platform-how-out-of-date-are-we/reports/pkg/hoodaw v0.0.0-20230210112905-1665bd8fd8d4 // indirect
@@ -132,7 +133,7 @@ require (
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
-	golang.org/x/term v0.17.0 // indirect
+	golang.org/x/term v0.37.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect

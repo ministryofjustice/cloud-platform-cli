@@ -262,17 +262,24 @@ func (_m *TerraformExec) WorkspaceNew(ctx context.Context, workspace string, opt
 	return r0
 }
 
-// WorkspaceSelect provides a mock function with given fields: ctx, workspace
-func (_m *TerraformExec) WorkspaceSelect(ctx context.Context, workspace string) error {
-	ret := _m.Called(ctx, workspace)
+// WorkspaceSelect provides a mock function with given fields: ctx, workspace, opts
+func (_m *TerraformExec) WorkspaceSelect(ctx context.Context, workspace string, opts ...tfexec.WorkspaceSelectOption) error {
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, workspace)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for WorkspaceSelect")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = rf(ctx, workspace)
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...tfexec.WorkspaceSelectOption) error); ok {
+		r0 = rf(ctx, workspace, opts...)
 	} else {
 		r0 = ret.Error(0)
 	}

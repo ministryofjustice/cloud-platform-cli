@@ -1,12 +1,14 @@
 # Build Cloud Platform tools (CLI)
 FROM golang:1.24.3-bookworm AS cli_builder
 
+ARG TERRAFORM_VERSION=1.2.5
+
 ENV \
   CGO_ENABLED=0 \
   GOOS=linux \
   KUBECTL_VERSION=1.33.7\
   CLOUD_PLATFORM_CLI_VERSION=DOCKER \
-  TERRAFORM_VERSION=1.2.5
+  TERRAFORM_VERSION=${TERRAFORM_VERSION}
 
 WORKDIR /build
 
@@ -25,6 +27,7 @@ COPY go.sum .
 RUN go mod download
 COPY . .
 # To get the latest build tag into the image please build using docker build --build-arg CLOUD_PLATFORM_CLI_VERSION=<latest-tag> .
+# To override Terraform version for a specific image build, pass --build-arg TERRAFORM_VERSION=<version>.
 RUN go build -ldflags "-X github.com/ministryofjustice/cloud-platform-cli/pkg/commands.Version=${CLOUD_PLATFORM_CLI_VERSION}" -o cloud-platform .
 
 # Install kubectl

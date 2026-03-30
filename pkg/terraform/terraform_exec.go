@@ -23,7 +23,7 @@ type terraformExec interface {
 	Plan(ctx context.Context, opts ...tfexec.PlanOption) (bool, error)
 	Output(ctx context.Context, opts ...tfexec.OutputOption) (map[string]tfexec.OutputMeta, error)
 	WorkspaceNew(ctx context.Context, workspace string, opts ...tfexec.WorkspaceNewCmdOption) error
-	WorkspaceSelect(ctx context.Context, workspace string) error
+	WorkspaceSelect(ctx context.Context, workspace string, opts ...tfexec.WorkspaceSelectOption) error
 	WorkspaceDelete(ctx context.Context, workspace string, opts ...tfexec.WorkspaceDeleteCmdOption) error
 	Show(ctx context.Context, opts ...tfexec.ShowOption) (*tfjson.State, error)
 }

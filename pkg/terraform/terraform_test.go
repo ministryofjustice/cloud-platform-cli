@@ -98,6 +98,16 @@ func TestNewTerraformCLI(t *testing.T) {
 			},
 		},
 		{
+			"supports newer terraform versions",
+			false,
+			&TerraformCLIConfig{
+				ExecPath:   "path/to/tf",
+				WorkingDir: "./",
+				Workspace:  "my-workspace",
+				Version:    "1.14.8",
+			},
+		},
+		{
 			"null execPath path",
 			false,
 			&TerraformCLIConfig{

@@ -158,7 +158,7 @@ TF_INIT_AGAIN:
 	if !wsCreated {
 		if err := t.Tf.WorkspaceNew(ctx, t.Workspace); err != nil {
 			matchedAlreadyExists := wsAlreadyExists.MatchString(err.Error())
-			if err != nil && !matchedAlreadyExists {
+			if !matchedAlreadyExists {
 				return err
 			}
 		}
