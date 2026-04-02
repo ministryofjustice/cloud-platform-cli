@@ -12,11 +12,14 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
-          go-version: " 1.23.x"
+          go-version: "1.23.x"
       - run: go install
         working-directory: ./
       - run: rm -r doc/ && mkdir -p doc
       - run: go run main.go generate-docs --skip-version-check
-      - uses: stefanzweifel/git-auto-commit-action@b863ae1933cb653a53c021fe36dbb774e1fb9403 # v5.2.0
-        with:
-          commit_message: "docs(cobra): update auto-generated documentation"
+      - run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add doc/
+          git commit -m "Auto Commit Docs"
+          git push
