@@ -18,6 +18,6 @@ jobs:
         run: docker images
 
       - name: Run docker tests
-        uses: docker://gcr.io/gcp-runtimes/container-structure-test:latest
+        uses: docker://gcr.io/gcp-runtimes/container-structure-test@sha256:1ad62d510afe4c326153cf4a9f2e52036dd28cb0893278263b3245e87b78d570 # latest
         with:
           args: "test --image cli-test --config docker-test.yaml"
