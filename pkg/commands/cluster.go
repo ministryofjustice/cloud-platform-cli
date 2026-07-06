@@ -295,7 +295,7 @@ func (opt *clusterOptions) addDeleteClusterFlags(cmd *cobra.Command, auth *authO
 	cmd.Flags().BoolVar(&opt.DestroyVpc, "destroy-vpc", true, "[optional] if true, will destroy the vpc")
 
 	// Terraform options
-	cmd.Flags().StringVar(&opt.TfVersion, "terraform-version", "1.2.5", "[optional] the terraform version to use.")
+	cmd.Flags().StringVar(&opt.TfVersion, "terraform-version", "1.14.3", "[optional] the terraform version to use.")
 }
 
 // createCluster performs the actual logic of creating a cloud platform cluster. Assuming you're in the infrastructure repo, it will:
@@ -375,7 +375,7 @@ func (opt *clusterOptions) addCreateClusterFlags(cmd *cobra.Command, auth *authO
 	cmd.Flags().BoolVar(&opt.Fast, "fast", false, "[optional] if true, will skip the slow parts of the cluster creation process")
 
 	// Terraform options
-	cmd.Flags().StringVar(&opt.TfVersion, "terraform-version", "1.2.5", "[optional] the terraform version to use.")
+	cmd.Flags().StringVar(&opt.TfVersion, "terraform-version", "1.14.3", "[optional] the terraform version to use.")
 }
 
 func getCredentials(awsRegion string) (*client.AwsCredentials, error) {

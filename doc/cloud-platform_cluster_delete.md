@@ -37,7 +37,7 @@ cloud-platform cluster delete [flags]
   -h, --help                         help for delete
       --kubecfg string               [optional] path to kubeconfig file (default "/home/runner/.kube/config")
       --name string                  [required] name of the cluster
-      --terraform-version string     [optional] the terraform version to use. (default "1.2.5")
+      --terraform-version string     [optional] the terraform version to use. (default "1.14.3")
 ```
 
 ### Options inherited from parent commands

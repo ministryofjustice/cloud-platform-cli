@@ -13,7 +13,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 )
 
-const TerraformVersion = "1.2.5"
+const TerraformVersion = "1.14.3"
 
 type Applier interface {
 	Initialize()

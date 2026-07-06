@@ -84,7 +84,7 @@ func TestNewTerraformCLI(t *testing.T) {
 				ExecPath:   "path/to/tf",
 				WorkingDir: "",
 				Workspace:  "default",
-				Version:    "1.2.5",
+				Version:    "1.14.3",
 			},
 		},
 		{
@@ -94,7 +94,7 @@ func TestNewTerraformCLI(t *testing.T) {
 				ExecPath:   "path/to/tf",
 				WorkingDir: "./",
 				Workspace:  "my-workspace",
-				Version:    "1.2.5",
+				Version:    "1.14.3",
 			},
 		},
 		{
@@ -104,7 +104,7 @@ func TestNewTerraformCLI(t *testing.T) {
 				ExecPath:   "",
 				WorkingDir: "./",
 				Workspace:  "my-workspace",
-				Version:    "1.2.5",
+				Version:    "1.14.3",
 			},
 		},
 	}
@@ -470,14 +470,14 @@ func TestTerraformCLI_WorkspaceDelete(t *testing.T) {
 			"GIVEN a terraform workspace THEN delete it successfully", &TerraformCLIConfig{
 				WorkingDir: "./",
 				Workspace:  "test-workspace",
-				Version:    "1.2.5",
+				Version:    "1.14.3",
 			}, args{context.Background(), "test-workspace", nil}, false,
 		},
 		{
 			"GIVEN a terraform workspace AND the delete errors THEN return the error", &TerraformCLIConfig{
 				WorkingDir: "./",
 				Workspace:  "test-workspace",
-				Version:    "1.2.5",
+				Version:    "1.14.3",
 			}, args{context.Background(), "test-workspace", errors.New("deleting tf workspace")}, true,
 		},
 	}

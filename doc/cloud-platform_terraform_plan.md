@@ -16,7 +16,7 @@ cloud-platform terraform plan [flags]
       --is-pipeline                    [required] if the terraform is being executed from the pipeline
       --plan-filename string           [optional] the plan filename to be output from the terraform plan or used for the terraform apply eg. 'plan-$PR_NUM.out' [default] ''
       --redact                         Redact the terraform output before printing (default true)
-      --terraform-version string       [optional] the terraform version to use. (default "1.2.5")
+      --terraform-version string       [optional] the terraform version to use. (default "1.14.3")
       --workdir string                 [optional] the terraform working directory to perform terraform operation [default] . (default ".")
   -w, --workspace string               [required] workspace where terraform is going to be executed
 ```

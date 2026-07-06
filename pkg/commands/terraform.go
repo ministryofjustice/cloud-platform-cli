@@ -153,7 +153,7 @@ func addCommonFlags(cmd *cobra.Command, tf *terraform.TerraformCLIConfig) {
 	// Terraform options
 	cmd.PersistentFlags().StringVar(&tf.WorkingDir, "workdir", ".", "[optional] the terraform working directory to perform terraform operation [default] .")
 	cmd.PersistentFlags().StringVarP(&tf.Workspace, "workspace", "w", "", "[required] workspace where terraform is going to be executed")
-	cmd.PersistentFlags().StringVar(&tf.Version, "terraform-version", "1.2.5", "[optional] the terraform version to use.")
+	cmd.PersistentFlags().StringVar(&tf.Version, "terraform-version", "1.14.3", "[optional] the terraform version to use.")
 	cmd.PersistentFlags().BoolVar(&tf.Redacted, "redact", true, "Redact the terraform output before printing")
 	cmd.PersistentFlags().BoolVar(&tf.IsPipeline, "is-pipeline", false, "[required] if the terraform is being executed from the pipeline")
 	cmd.PersistentFlags().StringVar(&tf.PlanFilename, "plan-filename", "", "[optional] the plan filename to be output from the terraform plan or used for the terraform apply eg. 'plan-$PR_NUM.out' [default] ''")
