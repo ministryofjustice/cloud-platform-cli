@@ -84,6 +84,15 @@ func (c *Cluster) ApplyCore(tf *terraform.TerraformCLIConfig, awsCreds *client.A
 		return err
 	}
 
+	return c.checkNodesAndPods(tf.Workspace, awsCreds, kubeconf)
+}
+
+// checkNodesAndPods re-authenticates, as the kubeconfig token can expire during a long apply.
+func (c *Cluster) checkNodesAndPods(name string, awsCreds *client.AwsCredentials, kubeconf string) error {
+	if _, err := AuthToCluster(name, awsCreds.Eks, kubeconf, awsCreds.Profile); err != nil {
+		return fmt.Errorf("failed to auth to cluster: %w", err)
+	}
+
 	kube, err := client.NewKubeClient(kubeconf)
 	if err != nil {
 		return err
@@ -95,11 +104,7 @@ func (c *Cluster) ApplyCore(tf *terraform.TerraformCLIConfig, awsCreds *client.A
 	}
 	c.Nodes = nodes
 
-	if err := c.GetStuckPods(kube); err != nil {
-		return err
-	}
-
-	return nil
+	return c.GetStuckPods(kube)
 }
 
 // ApplyComponents will apply the Cloud Platform specific components on top of a running cluster. At this point your
@@ -121,22 +126,7 @@ func (c *Cluster) ApplyComponents(tf *terraform.TerraformCLIConfig, awsCreds *cl
 		return err
 	}
 
-	kube, err := client.NewKubeClient(kubeconf)
-	if err != nil {
-		return err
-	}
-
-	nodes, err := GetAllNodes(kube)
-	if err != nil {
-		return err
-	}
-	c.Nodes = nodes
-
-	if err := c.GetStuckPods(kube); err != nil {
-		return err
-	}
-
-	return nil
+	return c.checkNodesAndPods(tf.Workspace, awsCreds, kubeconf)
 }
 
 func terraformApply(tf *terraform.TerraformCLIConfig) (map[string]tfexec.OutputMeta, error) {
