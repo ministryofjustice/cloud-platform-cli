@@ -40,4 +40,4 @@ jobs:
           context: .
           push: true
           tags: ministryofjustice/cloud-platform-cli:${{ github.event.inputs.tag }}
-          build-args: build-args: CLOUD_PLATFORM_CLI_VERSION=${{ github.event.inputs.tag }}
+          build-args: CLOUD_PLATFORM_CLI_VERSION=${{ github.event.inputs.tag }}
