@@ -1,4 +1,4 @@
-name: Build and push a new release
+name: Publish Docker Image 1.52.0
 
 on:
   workflow_dispatch:
